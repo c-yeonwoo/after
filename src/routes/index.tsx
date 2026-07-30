@@ -61,7 +61,7 @@ function Landing() {
 
 
       <main>
-        <section className="relative overflow-hidden px-5 pt-10 pb-14">
+        <section className="relative overflow-hidden px-6 pt-10 pb-14">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -top-24 -right-16 size-64 rounded-full bg-coral-300/45 blur-3xl"
@@ -86,7 +86,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card/50 px-5 py-14">
+        <section className="border-y border-border bg-card/50 px-6 py-14">
           <h2 className="text-xl font-semibold">바쁜 직장인에게 필요한 만큼만</h2>
           <p className="mt-3 text-[0.9rem] leading-[1.75] text-muted-foreground">
             시간을 많이 쓰지 않아도 되도록, 소개부터 실제 만남까지를 서비스가 대신 챙깁니다.
@@ -117,18 +117,18 @@ function Landing() {
         </section>
 
 
-        <section className="px-5 py-12 text-center">
+        <section className="px-6 py-12 text-center">
           <h2 className="font-serif text-[1.45rem] leading-relaxed font-normal">{BRAND.tagline}</h2>
         </section>
       </main>
 
-      <footer className="border-t border-border px-5 py-8 text-xs leading-relaxed text-muted-foreground">
+      <footer className="border-t border-border px-6 py-8 text-xs leading-relaxed text-muted-foreground">
         {BRAND.name} · {hub.label} 단일 지역 운영 · 그룹 미팅·전국 매칭은 제공하지 않습니다.
       </footer>
 
       {/* 모바일 고정 CTA */}
       <div
-        className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-5 pt-3 backdrop-blur"
+        className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-6 pt-3 backdrop-blur"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
         <Button asChild size="lg" className="w-full">
