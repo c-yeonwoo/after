@@ -2,31 +2,19 @@ import { cn } from "@/lib/utils";
 
 /**
  * 세렌디피티 로고.
- * mark: 두 개의 궤도가 한 점에서 우연히 겹치는 형태 (우연한 만남).
+ * mark: 두 개의 부드러운 원이 겹쳐 하나의 따뜻한 렌즈 형태를 만드는 모양 (우연히 겹친 두 사람).
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      fill="none"
-      aria-hidden="true"
-      className={cn("size-7", className)}
-    >
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" className={cn("size-7", className)}>
+      <circle cx="12.4" cy="16" r="8.4" fill="currentColor" className="text-accent" />
+      <circle cx="19.6" cy="16" r="8.4" fill="currentColor" className="text-primary/85" />
       <path
-        d="M6 21.5c4.6 0 8-3.6 8-8s3.4-8 8-8"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        className="text-foreground"
+        d="M16 8.6a8.4 8.4 0 0 0 0 14.8 8.4 8.4 0 0 0 0-14.8Z"
+        fill="currentColor"
+        className="text-background"
+        opacity="0.55"
       />
-      <path
-        d="M6 10.5c4.6 0 8 3.6 8 8s3.4 8 8 8"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        className="text-primary"
-      />
-      <circle cx="14" cy="16" r="3" fill="currentColor" className="text-primary" />
     </svg>
   );
 }
@@ -43,13 +31,12 @@ export function Logo({
       <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
       <span
         className={cn(
-          "headline truncate uppercase",
-          size === "sm" ? "text-[0.95rem]" : "text-[1.12rem]",
+          "font-serif truncate tracking-[-0.01em] lowercase",
+          size === "sm" ? "text-[1.15rem]" : "text-[1.35rem]",
         )}
       >
-        Serendipity
+        serendipity
       </span>
     </span>
   );
 }
-
