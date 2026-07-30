@@ -45,7 +45,7 @@ function Onboarding() {
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [intro, setIntro] = useState("");
-  const [drinkPref, setDrinkPref] = useState<DrinkPref>("cafe_only");
+  
 
   const question = INTERVIEW_QUESTIONS[qIndex];
   const answered = (answers[question?.id ?? ""] ?? "").trim().length >= 10;
