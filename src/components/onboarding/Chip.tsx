@@ -5,11 +5,13 @@ export function Chip({
   disabled,
   onClick,
   children,
+  className,
 }: {
   selected: boolean;
   disabled?: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
@@ -25,7 +27,9 @@ export function Chip({
           ? "border-primary bg-primary text-primary-foreground font-semibold"
           : "border-border bg-card text-foreground",
         disabled && !selected ? "cursor-not-allowed opacity-45" : "",
+        className,
       )}
+
 
     >
       {children}
