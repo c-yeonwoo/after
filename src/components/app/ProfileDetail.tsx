@@ -75,18 +75,18 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <Reveal className="mt-8 first:mt-0">
+    <Reveal className="mt-9 first:mt-0">
       <section>
-        <div className="flex items-baseline gap-2">
-          <span className="font-mono text-[0.65rem] text-muted-foreground/70">
+        <div className="flex items-center gap-2.5">
+          <span className="font-serif text-base leading-none text-primary">
             {String(index).padStart(2, "0")}
           </span>
-          <h2 className="text-xs font-bold tracking-[0.14em] text-primary-strong uppercase">
+          <h2 className="text-[0.7rem] font-semibold tracking-[0.2em] text-ink-muted uppercase">
             {title}
           </h2>
-          <span className="h-px flex-1 bg-border" aria-hidden="true" />
+          <span className="h-px w-6 bg-primary/40" aria-hidden="true" />
         </div>
-        <div className="mt-3">{children}</div>
+        <div className="mt-3.5">{children}</div>
       </section>
     </Reveal>
   );
@@ -96,10 +96,10 @@ function Tag({ children, tone = "muted" }: { children: ReactNode; tone?: "muted"
   return (
     <span
       className={cn(
-        "rounded-control px-3 py-1.5 text-xs font-medium",
+        "rounded-control px-3.5 py-2 text-[0.8rem] leading-none font-medium",
         tone === "accent"
-          ? "bg-accent/50 text-accent-foreground"
-          : "border border-border bg-card text-foreground",
+          ? "bg-accent/45 text-accent-foreground"
+          : "border border-foreground/12 bg-card text-foreground/85",
       )}
     >
       {children}
@@ -108,7 +108,7 @@ function Tag({ children, tone = "muted" }: { children: ReactNode; tone?: "muted"
 }
 
 export function ProfileDetail({ p }: { p: ProfileView }) {
-  const meta = [p.mbti, p.smoking, p.drinking, p.religion].filter(Boolean);
+  const meta = [p.mbti, p.smoking, p.drinking, p.religion].filter(Boolean) as string[];
   let n = 0;
   const next = () => ++n;
 
@@ -137,7 +137,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
             aria-hidden="true"
           />
 
-          <div className="absolute inset-x-0 bottom-0 px-6 pb-12">
+          <div className="absolute inset-x-0 bottom-0 px-6 pb-14">
             {p.area ? (
               <span className="inline-flex rounded-control bg-white/15 px-3 py-1 text-[0.68rem] font-semibold tracking-wide text-white backdrop-blur-md">
                 {p.area}
@@ -152,75 +152,112 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
                 “{p.headline}”
               </p>
             ) : null}
-            <p className="mt-3 text-xs font-medium text-white/70">
-              {[p.job, ...meta].filter(Boolean).join(" · ")}
-            </p>
           </div>
         </div>
 
         {/* 시트 — 스크롤하면 히어로 위로 자연스럽게 덮인다 */}
-        <div className="relative z-10 -mt-8 rounded-t-[2rem] bg-background px-6 pt-6 pb-2 shadow-[0_-18px_40px_-24px_rgba(0,0,0,0.45)]">
+        <div className="relative z-10 -mt-10 rounded-t-[1.75rem] bg-background pb-2 shadow-[0_-24px_60px_-28px_oklch(0.203_0_0/0.55)]">
           <div
-            className="mx-auto mb-6 h-1 w-10 rounded-full bg-foreground/15"
+            className="pointer-events-none absolute inset-x-0 top-0 h-40 rounded-t-[1.75rem] bg-gradient-to-b from-coral-100/70 to-transparent"
             aria-hidden="true"
           />
 
-          {p.intro ? (
-            <Section title="소개" index={next()}>
-              <p className="text-[0.95rem] leading-relaxed whitespace-pre-line text-foreground">
-                {p.intro}
-              </p>
-            </Section>
-          ) : null}
+          <div className="relative px-6 pt-5">
+            <div
+              className="mx-auto h-1 w-9 rounded-full bg-foreground/12"
+              aria-hidden="true"
+            />
 
-          {p.interests.length ? (
-            <Section title="요즘 시간을 쓰는 것" index={next()}>
-              <div className="flex flex-wrap gap-1.5">
-                {p.interests.map((i) => (
-                  <Tag key={i}>{i}</Tag>
+            {/* 기본 정보 — 원장(ledger) 스트립 */}
+            <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-foreground/10 py-4">
+              {[
+                { k: "직업", v: p.job },
+                ...(p.mbti ? [{ k: "MBTI", v: p.mbti }] : []),
+                ...(p.smoking ? [{ k: "흡연", v: p.smoking }] : []),
+                ...(p.drinking ? [{ k: "음주", v: p.drinking }] : []),
+                ...(p.religion ? [{ k: "종교", v: p.religion }] : []),
+              ]
+                .filter((r) => Boolean(r.v))
+                .map((r) => (
+                  <div key={r.k}>
+                    <dt className="text-[0.65rem] tracking-[0.16em] text-ink-muted uppercase">
+                      {r.k}
+                    </dt>
+                    <dd className="mt-1 text-[0.9rem] font-medium text-foreground">{r.v}</dd>
+                  </div>
                 ))}
-              </div>
-            </Section>
-          ) : null}
+              {meta.length === 0 && !p.job ? null : null}
+            </dl>
 
-          {p.answers.length ? (
-            <Section title="이런 사람입니다" index={next()}>
-              <div className="space-y-2.5">
-                {p.answers.map((a, i) => (
-                  <Reveal key={a.q} delay={i * 70}>
-                    <div className="rounded-surface border border-border bg-card p-4 shadow-card">
-                      <p className="text-xs font-semibold text-muted-foreground">{a.q}</p>
-                      <p className="mt-1.5 text-sm leading-relaxed text-foreground">{a.a}</p>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </Section>
-          ) : null}
+            <div className="mt-9">
+              {p.intro ? (
+                <Section title="소개" index={next()}>
+                  <p className="font-serif text-[1.35rem] leading-[1.45] whitespace-pre-line text-foreground">
+                    {p.intro}
+                  </p>
+                </Section>
+              ) : null}
 
-          {p.matchTags.length ? (
-            <Section title="잘 맞는 사람" index={next()}>
-              <div className="flex flex-wrap gap-1.5">
-                {p.matchTags.map((t) => (
-                  <Tag key={t}>{t}</Tag>
-                ))}
-              </div>
-            </Section>
-          ) : null}
+              {p.interests.length ? (
+                <Section title="요즘 시간을 쓰는 것" index={next()}>
+                  <div className="flex flex-wrap gap-2">
+                    {p.interests.map((i) => (
+                      <Tag key={i}>{i}</Tag>
+                    ))}
+                  </div>
+                </Section>
+              ) : null}
 
-          {p.topics.length ? (
-            <Section title="나누고 싶은 이야기" index={next()}>
-              <div className="flex flex-wrap gap-1.5">
-                {p.topics.map((t) => (
-                  <Tag key={t} tone="accent">
-                    {t}
-                  </Tag>
-                ))}
-              </div>
-            </Section>
-          ) : null}
+              {p.answers.length ? (
+                <Section title="이런 사람입니다" index={next()}>
+                  <div className="overflow-hidden rounded-surface bg-card shadow-card">
+                    {p.answers.map((a, i) => (
+                      <Reveal key={a.q} delay={i * 70}>
+                        <div
+                          className={cn(
+                            "px-4 py-4",
+                            i > 0 && "border-t border-foreground/8",
+                          )}
+                        >
+                          <p className="font-serif text-[0.95rem] leading-snug text-primary-strong">
+                            {a.q}
+                          </p>
+                          <p className="mt-2 border-l-2 border-accent pl-3 text-[0.9rem] leading-relaxed text-foreground/90">
+                            {a.a}
+                          </p>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                </Section>
+              ) : null}
+
+              {p.matchTags.length ? (
+                <Section title="잘 맞는 사람" index={next()}>
+                  <div className="flex flex-wrap gap-2">
+                    {p.matchTags.map((t) => (
+                      <Tag key={t}>{t}</Tag>
+                    ))}
+                  </div>
+                </Section>
+              ) : null}
+
+              {p.topics.length ? (
+                <Section title="나누고 싶은 이야기" index={next()}>
+                  <div className="flex flex-wrap gap-2">
+                    {p.topics.map((t) => (
+                      <Tag key={t} tone="accent">
+                        {t}
+                      </Tag>
+                    ))}
+                  </div>
+                </Section>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
