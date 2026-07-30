@@ -327,37 +327,7 @@ function Onboarding() {
       </p>
 
 
-      <div className="mt-8">
-        <p className="text-sm font-bold">1차 만남 선호</p>
-        <div className="mt-3 grid gap-3">
-          <ChoiceCard
-            selected={drinkPref === "cafe_only"}
-            onClick={() => setDrinkPref("cafe_only")}
-            title="카페만"
-            body="퇴근길 카페 한 잔, 45~60분."
-            icon={<Coffee className="size-4" />}
-          />
-          <ChoiceCard
-            selected={drinkPref === "open_to_drink"}
-            onClick={() => setDrinkPref("open_to_drink")}
-            title="술도 괜찮아요"
-            body="상대도 같은 선호일 때만 술자리가 열립니다."
-            icon={<Wine className="size-4" />}
-          />
-        </div>
-      </div>
 
-      <ul className="mt-8 space-y-3 rounded-xl border border-border bg-card p-5">
-        {FIRST_MEETING_PROTOCOL.map((rule) => (
-          <li key={rule.title} className="flex gap-3">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div>
-              <p className="text-sm font-bold">{rule.title}</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">{rule.body}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
 
       <div className="mt-8 flex gap-2">
         <Button variant="ghost" onClick={() => setStep(4)}>
