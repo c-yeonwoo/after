@@ -391,7 +391,7 @@ function ChoiceCard({
   disabled?: boolean;
   onClick: () => void;
   title: string;
-  body: string;
+  body?: string;
   icon?: React.ReactNode;
 }) {
   return (
