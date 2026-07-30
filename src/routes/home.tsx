@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ArrowRight, CalendarCheck, Check, MessageCircle, Sparkles } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { BRAND, HUBS } from "@/lib/brand";
 import { getCandidate } from "@/lib/candidates";
@@ -64,7 +65,21 @@ function HomePage() {
                 : "곧 소개를 보내드릴게요."}
       </h1>
 
-      {/* 진행 단계 */}
+      <div className="mt-5">
+        <GuideNote>
+          {flow.meetupAt
+            ? "약속이 확정됐어요. 만나기 전날 자정에 사적인 대화가 열립니다."
+            : flow.chatOpen
+              ? "이제 날짜와 장소만 정하면 됩니다. 대화 탭에서 이어가세요."
+              : flow.myAnswer === "pass"
+                ? "이번 소개는 넘겼어요. 다음 사람을 고르는 중입니다."
+                : candidate
+                  ? "프로필을 천천히 읽어보고 답해주세요. 답은 상대에게 바로 보이지 않습니다."
+                  : "지금은 기다리는 단계예요. 준비되면 알려드릴게요."}
+        </GuideNote>
+      </div>
+
+
       <ol className="mt-6 flex items-center gap-1.5" aria-label="진행 단계">
         {STEPS.map((s, i) => (
           <li key={s.id} className="flex-1">
