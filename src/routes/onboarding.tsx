@@ -65,7 +65,7 @@ function Onboarding() {
         total={TOTAL}
         eyebrow="가입"
         title="성별을 알려주세요"
-        description="프로필과 매칭에 사용되며, 가입 후에는 바꿀 수 없습니다."
+        description="가입 후에는 변경할 수 없습니다."
       >
         <div className="grid gap-3">
           <ChoiceCard
@@ -95,8 +95,8 @@ function Onboarding() {
         step={2}
         total={TOTAL}
         eyebrow="활동 지역"
-        title="주로 어느 지역에서 만나시겠어요?"
-        description="같은 존 또는 인접 존에서만 소개가 이뤄집니다. 지금은 테헤란로·역삼권 한 곳만 열려 있습니다."
+        title="주로 어디서 만나시겠어요?"
+        description="같은 지역 안에서만 소개됩니다."
       >
         <div className="grid gap-3">
           {HUBS.map((hub) => (
@@ -128,8 +128,8 @@ function Onboarding() {
         step={3}
         total={TOTAL}
         eyebrow="직장 인증"
-        title="회사 이메일로 재직을 확인합니다"
-        description="인증 코드 확인 외에 이메일 주소는 프로필에 노출되지 않습니다. 개인 메일(gmail, naver 등)은 사용할 수 없습니다."
+        title="회사 이메일로 인증해 주세요"
+        description="주소는 프로필에 노출되지 않습니다."
       >
         <label className="text-sm font-semibold text-foreground" htmlFor="work-email">
           회사 이메일
@@ -157,7 +157,7 @@ function Onboarding() {
           </p>
         ) : (
           <p id="work-email-hint" className="mt-2 text-sm text-muted-foreground">
-            개인 메일(gmail, naver 등)은 사용할 수 없습니다.
+            개인 메일은 사용할 수 없습니다.
           </p>
         )}
 
@@ -189,7 +189,7 @@ function Onboarding() {
               </p>
             ) : (
               <p id="code-hint" className="mt-2 text-sm text-muted-foreground">
-                지금은 화면 흐름만 연결된 상태입니다. 실제 코드 발송은 다음 단계에서 붙습니다.
+                메일로 받은 6자리를 입력해 주세요.
               </p>
             )}
           </div>
@@ -234,7 +234,7 @@ function Onboarding() {
         total={TOTAL}
         eyebrow={`AI 인터뷰 ${qIndex + 1}/${INTERVIEW_QUESTIONS.length}`}
         title={question.prompt}
-        description="스펙 나열 대신, 결과 가치관으로 소개합니다. 두세 문장이면 충분합니다."
+        description="두세 문장이면 충분합니다."
       >
         <label className="text-sm font-semibold text-foreground" htmlFor={`answer-${question.id}`}>
           답변
@@ -296,7 +296,7 @@ function Onboarding() {
       total={TOTAL}
       eyebrow="프로필 확인"
       title="이렇게 소개해도 될까요?"
-      description="인터뷰 답변으로 만든 초안입니다. 직접 다듬은 뒤 확정하세요."
+      description="답변으로 만든 초안입니다. 다듬어 확정하세요."
     >
       <label className="text-sm font-semibold text-foreground" htmlFor="intro">
         내 소개 초안
