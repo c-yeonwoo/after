@@ -399,18 +399,27 @@ function ChoiceCard({
     <button
       type="button"
       disabled={disabled}
+      aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        "rounded-xl border border-border bg-card p-5 text-left transition-colors",
-        selected && "border-primary bg-primary/8",
-        disabled ? "cursor-not-allowed opacity-45" : "hover:border-primary/50",
+        "min-h-11 rounded-xl border border-border bg-card p-5 text-left transition-colors",
+        "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+        selected && "border-primary-strong bg-primary/10 ring-1 ring-primary-strong",
+        disabled ? "cursor-not-allowed opacity-60" : "hover:border-primary-strong/60",
       )}
     >
       <div className="flex items-center gap-2">
-        {icon ? <span className="text-primary">{icon}</span> : null}
+        {icon ? <span className="text-primary-strong">{icon}</span> : null}
         <p className="font-bold">{title}</p>
+        {selected ? (
+          <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-primary-strong">
+            <Check className="size-4" aria-hidden="true" />
+            선택됨
+          </span>
+        ) : null}
       </div>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </button>
+
   );
 }
