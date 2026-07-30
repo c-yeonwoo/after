@@ -49,7 +49,7 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-const TOTAL = 9;
+const TOTAL = 8;
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 5;
 type Gender = "female" | "male";
@@ -71,7 +71,6 @@ function Onboarding() {
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
-  const [detailIndex, setDetailIndex] = useState(0);
   const [intro, setIntro] = useState("");
 
 
@@ -459,12 +458,12 @@ function Onboarding() {
 
 
 
-  // 7 — 잘 맞는 사람 + 이번 만남 대화 주제
+  // 6 — 잘 맞는 사람 + 이번 만남 대화 주제
   if (step === 8) {
     const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
     return (
       <StepShell
-        step={8}
+        step={7}
         total={TOTAL}
         eyebrow="프로필"
         title="어떤 사람과, 무슨 이야기를"
@@ -517,7 +516,7 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(7)}>
+          <Button variant="ghost" onClick={() => setStep(6)}>
             이전
           </Button>
           <Button
@@ -539,7 +538,7 @@ function Onboarding() {
   const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
 
   return (
-    <StepShell step={9} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
+    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
       <div className="rounded-2xl border border-border bg-card p-5">
         <p className="text-base font-semibold">
           {basics.name}
