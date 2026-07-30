@@ -31,7 +31,7 @@ export function StepShell({
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
-          <span className="rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
+          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
             {step} / {total}
           </span>
         </div>
@@ -62,7 +62,12 @@ export function StepShell({
 
       {footer ? (
         <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
-          <div className="mx-auto px-5 py-4">{footer}</div>
+          <div
+            className="mx-auto px-5 pt-4"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+          >
+            {footer}
+          </div>
         </footer>
       ) : null}
     </div>
