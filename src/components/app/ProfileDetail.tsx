@@ -19,9 +19,9 @@ export type ProfileView = {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-7">
+    <section className="mt-5">
       <h2 className="text-xs font-semibold tracking-wide text-primary-strong">{title}</h2>
-      <div className="mt-2.5">{children}</div>
+      <div className="mt-2">{children}</div>
     </section>
   );
 }
@@ -68,7 +68,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
             </p>
           ) : null}
           {p.headline ? (
-            <p className="mt-4 font-serif text-lg leading-snug text-foreground">“{p.headline}”</p>
+            <p className="mt-3 font-serif text-lg leading-snug text-foreground">“{p.headline}”</p>
           ) : null}
         </div>
       </div>
@@ -91,9 +91,9 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
 
       {p.answers.length ? (
         <Section title="이런 사람입니다">
-          <ul className="space-y-4">
+          <ul className="space-y-2.5">
             {p.answers.map((a) => (
-              <li key={a.q} className="rounded-xl border border-border/70 bg-card/60 p-5">
+              <li key={a.q} className="rounded-xl border border-border/70 bg-card/60 p-4">
                 <p className="text-xs font-medium text-muted-foreground">{a.q}</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground">{a.a}</p>
               </li>
