@@ -23,7 +23,7 @@ export function StepShell({
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex items-center justify-between px-5 py-4">
-          <span className="font-serif text-base font-bold">{BRAND.name}</span>
+          <span className="font-serif text-lg font-normal">{BRAND.name}</span>
           <span className="text-xs text-muted-foreground">
             {step} / {total}
           </span>
@@ -38,7 +38,7 @@ export function StepShell({
 
       <main className="mx-auto w-full flex-1 px-5 py-10">
         <p className="text-sm font-semibold tracking-wide text-primary-strong">{eyebrow}</p>
-        <h1 className="mt-3 text-2xl leading-snug font-bold">{title}</h1>
+        <h1 className="mt-3 text-2xl leading-snug font-semibold">{title}</h1>
         {description ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
         ) : null}

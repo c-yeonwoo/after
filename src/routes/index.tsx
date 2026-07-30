@@ -38,43 +38,60 @@ function Landing() {
   return (
     <div className="min-h-dvh bg-background pb-24">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-5 py-4 backdrop-blur">
-        <span className="font-serif text-lg font-bold tracking-tight">{BRAND.name}</span>
+        <span className="font-serif text-xl font-normal tracking-tight">{BRAND.name}</span>
         <Button asChild variant="ghost" size="sm">
           <Link to="/onboarding">시작하기</Link>
         </Button>
       </header>
 
       <main>
-        <section className="px-5 pt-10 pb-12">
-          <p className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-primary" />
-            지금 열려 있는 지역 · {hub.label}
-          </p>
-          <h1 className="mt-6 text-[2rem] leading-[1.3] font-bold">
-            퇴근하고 만나기 좋은 거리에,
-            <br />
-            <span className="text-primary">좋은 사람 한 명.</span>
-          </h1>
-          <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-            {BRAND.description}
-          </p>
+        <section className="relative overflow-hidden px-5 pt-10 pb-14">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 -right-16 size-64 rounded-full bg-coral-300/45 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-28 -left-20 size-64 rounded-full bg-brand-200/50 blur-3xl"
+          />
+          <div className="relative">
+            <p className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
+              <span className="size-1.5 rounded-full bg-primary" />
+              지금 열려 있는 지역 · {hub.label}
+            </p>
+            <h1 className="mt-6 text-[2.05rem] leading-[1.38] font-semibold">
+              퇴근하고 만나기 좋은 거리에,
+              <br />
+              <span className="text-primary">좋은 사람 한 명.</span>
+            </h1>
+            <p className="mt-5 text-[0.9rem] leading-[1.75] text-muted-foreground">
+              {BRAND.description}
+            </p>
+          </div>
         </section>
 
-        <section className="border-y border-border bg-card/40 px-5 py-12">
-          <h2 className="text-xl font-bold">바쁜 직장인에게 필요한 만큼만</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <section className="border-y border-border bg-card/50 px-5 py-14">
+          <h2 className="text-xl font-semibold">바쁜 직장인에게 필요한 만큼만</h2>
+          <p className="mt-3 text-[0.9rem] leading-[1.75] text-muted-foreground">
             시간을 많이 쓰지 않아도 되도록, 소개부터 실제 만남까지를 서비스가 대신 챙깁니다.
           </p>
-          <div className="mt-8 flex flex-col gap-7">
-            {FEATURES.map((feature) => {
+          <div className="mt-9 flex flex-col gap-8">
+            {FEATURES.map((feature, i) => {
               const Icon = FEATURE_ICONS[feature.id] ?? Sparkles;
+              const tint = [
+                "bg-brand-100 text-primary-strong",
+                "bg-coral-100 text-coral-600",
+                "bg-apricot-300/45 text-accent-foreground",
+              ][i % 3];
               return (
                 <div key={feature.id}>
-                  <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 text-primary-strong">
-                    <Icon className="size-4" aria-hidden="true" />
+                  <span
+                    className={`flex size-10 items-center justify-center rounded-2xl ${tint}`}
+                  >
+                    <Icon className="size-[18px]" aria-hidden="true" />
                   </span>
-                  <h3 className="mt-3 text-base font-bold">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <h3 className="mt-3.5 text-base font-semibold">{feature.title}</h3>
+                  <p className="mt-2 text-[0.9rem] leading-[1.75] text-muted-foreground">
                     {feature.body}
                   </p>
                 </div>
@@ -83,8 +100,9 @@ function Landing() {
           </div>
         </section>
 
+
         <section className="px-5 py-12 text-center">
-          <h2 className="text-lg leading-relaxed font-bold">{BRAND.tagline}</h2>
+          <h2 className="font-serif text-[1.45rem] leading-relaxed font-normal">{BRAND.tagline}</h2>
         </section>
       </main>
 
