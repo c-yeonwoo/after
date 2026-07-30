@@ -31,12 +31,13 @@ export function Logo({
       <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
       <span
         className={cn(
-          "font-serif truncate tracking-[-0.01em] lowercase",
-          size === "sm" ? "text-[1.15rem]" : "text-[1.35rem]",
+          "headline truncate tracking-[-0.02em] lowercase",
+          size === "sm" ? "text-[1.1rem]" : "text-[1.3rem]",
         )}
       >
         serendipity
       </span>
+
     </span>
   );
 }
