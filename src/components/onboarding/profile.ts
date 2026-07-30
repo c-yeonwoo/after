@@ -64,12 +64,10 @@ export const emptyProfile: ProfileDraft = {
 };
 
 export function buildIntro(p: ProfileDraft) {
-  const labels = p.interests
-    .map((id) => ALL_INTERESTS.find((i) => i.id === id)?.label)
-    .filter(Boolean) as string[];
+  const labels = p.interests.map((v) => v.trim()).filter(Boolean);
 
   const details = p.interests
-    .map((id) => p.details[id]?.trim())
+    .map((label) => p.details[label]?.trim())
     .filter((v): v is string => Boolean(v));
 
   const lines: string[] = [];
