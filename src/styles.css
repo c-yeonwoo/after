@@ -265,3 +265,20 @@
   background-clip: text;
   color: transparent;
 }
+
+/* 헤드라인 — Archivo Black, 타이트한 자간/행간 */
+@utility headline {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+
+/* 벤토 카드 기본형 */
+@utility bento {
+  border-radius: 2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
