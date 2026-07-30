@@ -4,7 +4,16 @@ import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { StepShell } from "@/components/onboarding/StepShell";
-import { INTERVIEW_QUESTIONS, buildDraftIntro } from "@/components/onboarding/interview";
+import { Chip } from "@/components/onboarding/Chip";
+import {
+  ALL_INTERESTS,
+  INTEREST_GROUPS,
+  MATCH_TAGS,
+  TOPIC_TAGS,
+  buildIntro,
+  emptyProfile,
+  type ProfileDraft,
+} from "@/components/onboarding/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,21 +27,28 @@ export const Route = createFileRoute("/onboarding")({
       {
         name: "description",
         content:
-          "활동 지역 선택, 회사 이메일 직장 인증, AI 인터뷰 프로필까지 1분이면 끝나는 가입 절차입니다.",
+          "활동 지역 선택, 회사 이메일 직장 인증, 취향에 따라 달라지는 프로필 작성까지 몇 분이면 끝나는 가입 절차입니다.",
       },
       { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "활동 지역 선택 · 회사 이메일 인증 · AI 인터뷰 프로필",
+        content: "활동 지역 선택 · 회사 이메일 인증 · 적응형 프로필 작성",
       },
     ],
   }),
   component: Onboarding,
 });
 
-const TOTAL = 5;
+const TOTAL = 8;
+const MIN_INTERESTS = 3;
+const MAX_INTERESTS = 5;
 type Gender = "female" | "male";
 
+function toggle(list: string[], id: string, max?: number) {
+  if (list.includes(id)) return list.filter((v) => v !== id);
+  if (max && list.length >= max) return list;
+  return [...list, id];
+}
 
 function Onboarding() {
   const navigate = useNavigate();
@@ -42,44 +58,34 @@ function Onboarding() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
-  const [qIndex, setQIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [intro, setIntro] = useState("");
-  
 
-  const question = INTERVIEW_QUESTIONS[qIndex];
-  const answered = (answers[question?.id ?? ""] ?? "").trim().length >= 10;
+  const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
+  const [detailIndex, setDetailIndex] = useState(0);
+  const [intro, setIntro] = useState("");
+
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
-  const draft = useMemo(() => buildDraftIntro(answers), [answers]);
+  const selectedInterests = useMemo(
+    () =>
+      profile.interests
+        .map((id) => ALL_INTERESTS.find((i) => i.id === id))
+        .filter((i): i is NonNullable<typeof i> => Boolean(i)),
+    [profile.interests],
+  );
 
-  function goProfile() {
-    setIntro(draft);
-    setStep(5);
+  const draft = useMemo(() => buildIntro(profile), [profile]);
+
+  function patch(next: Partial<ProfileDraft>) {
+    setProfile((prev) => ({ ...prev, ...next }));
   }
 
   if (step === 1) {
     return (
-      <StepShell
-        step={1}
-        total={TOTAL}
-        eyebrow="가입"
-        title="성별을 알려주세요"
-        description="가입 후에는 변경할 수 없습니다."
-      >
+      <StepShell step={1} total={TOTAL} eyebrow="가입" title="성별을 알려주세요" description="가입 후 변경할 수 없습니다.">
         <div className="grid gap-3">
-          <ChoiceCard
-            selected={gender === "female"}
-            onClick={() => setGender("female")}
-            title="여성"
-          />
-          <ChoiceCard
-            selected={gender === "male"}
-            onClick={() => setGender("male")}
-            title="남성"
-          />
+          <ChoiceCard selected={gender === "female"} onClick={() => setGender("female")} title="여성" />
+          <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
-
         <div className="mt-8">
           <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
             다음
@@ -147,13 +153,9 @@ function Onboarding() {
           className="mt-2"
         />
         {email.length > 3 && !emailValid ? (
-          <p
-            id="work-email-error"
-            role="alert"
-            className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
-          >
+          <p id="work-email-error" role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive">
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            <span>회사 도메인 이메일만 인증할 수 있습니다. (예: name@company.co.kr)</span>
+            <span>회사 도메인 이메일만 인증할 수 있습니다.</span>
           </p>
         ) : (
           <p id="work-email-hint" className="mt-2 text-sm text-muted-foreground">
@@ -179,13 +181,9 @@ function Onboarding() {
               className="mt-2 tracking-[0.4em]"
             />
             {code.length > 0 && code.length !== 6 ? (
-              <p
-                id="code-error"
-                role="alert"
-                className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
-              >
+              <p id="code-error" role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive">
                 <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <span>숫자 6자리를 모두 입력해 주세요. (현재 {code.length}자리)</span>
+                <span>숫자 6자리를 입력해 주세요.</span>
               </p>
             ) : (
               <p id="code-hint" className="mt-2 text-sm text-muted-foreground">
@@ -195,18 +193,12 @@ function Onboarding() {
           </div>
         ) : null}
 
-
         <div className="mt-8 flex gap-2">
           <Button variant="ghost" onClick={() => setStep(2)}>
             이전
           </Button>
           {codeSent ? (
-            <Button
-              className="flex-1"
-              size="lg"
-              disabled={code.length !== 6}
-              onClick={() => setStep(4)}
-            >
+            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(4)}>
               인증하고 계속
             </Button>
           ) : (
@@ -227,83 +219,269 @@ function Onboarding() {
     );
   }
 
+  // 4 — 한 줄 소개
   if (step === 4) {
+    const ok = profile.headline.trim().length >= 8;
     return (
       <StepShell
         step={4}
         total={TOTAL}
-        eyebrow={`AI 인터뷰 ${qIndex + 1}/${INTERVIEW_QUESTIONS.length}`}
-        title={question.prompt}
-        description="두세 문장이면 충분합니다."
+        eyebrow="프로필"
+        title="나를 한 문장으로 소개한다면"
+        description="직업이나 스펙 말고, 지금의 나를 설명하는 한 줄."
       >
-        <label className="text-sm font-semibold text-foreground" htmlFor={`answer-${question.id}`}>
-          답변
+        <label className="text-sm font-semibold text-foreground" htmlFor="headline">
+          한 줄 소개
         </label>
         <Textarea
-          key={question.id}
-          id={`answer-${question.id}`}
-          rows={5}
+          id="headline"
+          rows={3}
           className="mt-2"
-          placeholder={question.placeholder}
-          value={answers[question.id] ?? ""}
-          onChange={(e) => setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))}
-          aria-invalid={(answers[question.id] ?? "").length > 0 && !answered}
-          aria-describedby={`answer-${question.id}-help`}
+          placeholder="예: 평일엔 조용히 일하고, 주말엔 새로운 동네를 걷는 사람."
+          value={profile.headline}
+          onChange={(e) => patch({ headline: e.target.value })}
+          aria-invalid={profile.headline.length > 0 && !ok}
+          aria-describedby="headline-help"
         />
         <p
-          id={`answer-${question.id}-help`}
+          id="headline-help"
           aria-live="polite"
           className={cn(
-            "mt-2 flex items-start gap-1.5 text-sm",
-            (answers[question.id] ?? "").length > 0 && !answered
-              ? "font-medium text-destructive"
-              : "text-muted-foreground",
+            "mt-2 text-sm",
+            profile.headline.length > 0 && !ok ? "font-medium text-destructive" : "text-muted-foreground",
           )}
         >
-          {(answers[question.id] ?? "").length > 0 && !answered ? (
-            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          ) : null}
-          <span>
-            최소 10자 이상 입력해 주세요. (현재 {(answers[question.id] ?? "").trim().length}자)
-          </span>
+          최소 8자 ({profile.headline.trim().length}자)
         </p>
-
         <div className="mt-8 flex gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => (qIndex === 0 ? setStep(3) : setQIndex(qIndex - 1))}
-          >
+          <Button variant="ghost" onClick={() => setStep(3)}>
             이전
           </Button>
-          <Button
-            className="flex-1"
-            size="lg"
-            disabled={!answered}
-            onClick={() =>
-              qIndex === INTERVIEW_QUESTIONS.length - 1 ? goProfile() : setQIndex(qIndex + 1)
-            }
-          >
-            {qIndex === INTERVIEW_QUESTIONS.length - 1 ? "프로필 초안 만들기" : "다음"}
+          <Button className="flex-1" size="lg" disabled={!ok} onClick={() => setStep(5)}>
+            다음
           </Button>
         </div>
       </StepShell>
     );
   }
 
+  // 5 — 관심사 선택 (이후 질문이 여기에 따라 달라짐)
+  if (step === 5) {
+    const count = profile.interests.length;
+    const ok = count >= MIN_INTERESTS;
+    return (
+      <StepShell
+        step={5}
+        total={TOTAL}
+        eyebrow="프로필"
+        title="요즘 시간을 쓰는 것들"
+        description={`${MIN_INTERESTS}~${MAX_INTERESTS}개를 고르면, 고른 것에 대해서만 물어봅니다.`}
+      >
+        <div className="space-y-6">
+          {INTEREST_GROUPS.map((group) => (
+            <div key={group.id}>
+              <p className="text-sm font-semibold text-muted-foreground">{group.title}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {group.items.map((item) => (
+                  <Chip
+                    key={item.id}
+                    selected={profile.interests.includes(item.id)}
+                    disabled={count >= MAX_INTERESTS && !profile.interests.includes(item.id)}
+                    onClick={() => patch({ interests: toggle(profile.interests, item.id, MAX_INTERESTS) })}
+                  >
+                    {item.label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p aria-live="polite" className="mt-6 text-sm text-muted-foreground">
+          {count} / {MAX_INTERESTS} 선택
+        </p>
+        <div className="mt-6 flex gap-2">
+          <Button variant="ghost" onClick={() => setStep(4)}>
+            이전
+          </Button>
+          <Button
+            className="flex-1"
+            size="lg"
+            disabled={!ok}
+            onClick={() => {
+              setDetailIndex(0);
+              setStep(6);
+            }}
+          >
+            다음
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  // 6 — 적응형 후속 질문
+  if (step === 6) {
+    const current = selectedInterests[detailIndex];
+    if (!current) {
+      setStep(5);
+      return null;
+    }
+    const value = profile.details[current.id] ?? "";
+    const ok = value.trim().length >= 10;
+    const last = detailIndex === selectedInterests.length - 1;
+    return (
+      <StepShell
+        step={6}
+        total={TOTAL}
+        eyebrow={`${current.label} · ${detailIndex + 1}/${selectedInterests.length}`}
+        title={current.followUp}
+        description="한두 문장이면 충분합니다."
+      >
+        <Textarea
+          key={current.id}
+          id={`detail-${current.id}`}
+          rows={5}
+          className="mt-1"
+          placeholder={current.placeholder}
+          value={value}
+          onChange={(e) => patch({ details: { ...profile.details, [current.id]: e.target.value } })}
+          aria-invalid={value.length > 0 && !ok}
+          aria-describedby={`detail-${current.id}-help`}
+          aria-label={current.followUp}
+        />
+        <p
+          id={`detail-${current.id}-help`}
+          aria-live="polite"
+          className={cn("mt-2 text-sm", value.length > 0 && !ok ? "font-medium text-destructive" : "text-muted-foreground")}
+        >
+          최소 10자 ({value.trim().length}자)
+        </p>
+        <div className="mt-8 flex gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => (detailIndex === 0 ? setStep(5) : setDetailIndex(detailIndex - 1))}
+          >
+            이전
+          </Button>
+          <Button
+            className="flex-1"
+            size="lg"
+            disabled={!ok}
+            onClick={() => (last ? setStep(7) : setDetailIndex(detailIndex + 1))}
+          >
+            {last ? "다음" : "계속"}
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  // 7 — 잘 맞는 사람 + 이번 만남 대화 주제
+  if (step === 7) {
+    const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
+    return (
+      <StepShell
+        step={7}
+        total={TOTAL}
+        eyebrow="프로필"
+        title="어떤 사람과, 무슨 이야기를"
+        description="상대를 고르는 기준과, 만나면 꺼내고 싶은 주제."
+      >
+        <div>
+          <p className="text-sm font-semibold text-foreground">잘 맞았던 사람 (2개 이상)</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {MATCH_TAGS.map((tag) => (
+              <Chip
+                key={tag}
+                selected={profile.matchTags.includes(tag)}
+                onClick={() => patch({ matchTags: toggle(profile.matchTags, tag, 4) })}
+              >
+                {tag}
+              </Chip>
+            ))}
+          </div>
+          <Textarea
+            rows={3}
+            className="mt-3"
+            aria-label="이상형 자유 입력"
+            placeholder="덧붙이고 싶은 말이 있다면 (선택)"
+            value={profile.matchNote}
+            onChange={(e) => patch({ matchNote: e.target.value })}
+          />
+        </div>
+
+        <div className="mt-8">
+          <p className="text-sm font-semibold text-foreground">이번 만남에서 이야기하고 싶은 주제 (2개 이상)</p>
+          <p className="mt-1 text-sm text-muted-foreground">상대에게도 그대로 보여집니다.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {TOPIC_TAGS.map((tag) => (
+              <Chip
+                key={tag}
+                selected={profile.topics.includes(tag)}
+                onClick={() => patch({ topics: toggle(profile.topics, tag, 4) })}
+              >
+                {tag}
+              </Chip>
+            ))}
+          </div>
+          <Input
+            className="mt-3"
+            aria-label="직접 적는 대화 주제"
+            placeholder="직접 적기 (선택)"
+            value={profile.topicNote}
+            onChange={(e) => patch({ topicNote: e.target.value })}
+          />
+        </div>
+
+        <div className="mt-8 flex gap-2">
+          <Button variant="ghost" onClick={() => setStep(6)}>
+            이전
+          </Button>
+          <Button
+            className="flex-1"
+            size="lg"
+            disabled={!ok}
+            onClick={() => {
+              setIntro(draft);
+              setStep(8);
+            }}
+          >
+            프로필 만들기
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
+
   return (
-    <StepShell
-      step={5}
-      total={TOTAL}
-      eyebrow="프로필 확인"
-      title="이렇게 소개해도 될까요?"
-      description="답변으로 만든 초안입니다. 다듬어 확정하세요."
-    >
-      <label className="text-sm font-semibold text-foreground" htmlFor="intro">
-        내 소개 초안
+    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <p className="text-xs font-semibold tracking-wide text-primary-strong">관심사</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {selectedInterests.map((i) => (
+            <span key={i.id} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
+              {i.label}
+            </span>
+          ))}
+        </div>
+        <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">이번 만남에서 나누고 싶은 이야기</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {topics.map((t) => (
+            <span key={t} className="rounded-full bg-accent/40 px-3 py-1 text-xs text-foreground">
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <label className="mt-6 block text-sm font-semibold text-foreground" htmlFor="intro">
+        소개글
       </label>
       <Textarea
         id="intro"
-        rows={7}
+        rows={9}
         className="mt-2"
         value={intro}
         onChange={(e) => setIntro(e.target.value)}
@@ -314,23 +492,15 @@ function Onboarding() {
         id="intro-help"
         aria-live="polite"
         className={cn(
-          "mt-2 flex items-start gap-1.5 text-sm",
-          intro.trim().length > 0 && intro.trim().length < 20
-            ? "font-medium text-destructive"
-            : "text-muted-foreground",
+          "mt-2 text-sm",
+          intro.trim().length > 0 && intro.trim().length < 20 ? "font-medium text-destructive" : "text-muted-foreground",
         )}
       >
-        {intro.trim().length > 0 && intro.trim().length < 20 ? (
-          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-        ) : null}
-        <span>최소 20자 이상 입력해 주세요. (현재 {intro.trim().length}자)</span>
+        최소 20자 ({intro.trim().length}자)
       </p>
 
-
-
-
       <div className="mt-8 flex gap-2">
-        <Button variant="ghost" onClick={() => setStep(4)}>
+        <Button variant="ghost" onClick={() => setStep(7)}>
           이전
         </Button>
         <Button
@@ -338,7 +508,7 @@ function Onboarding() {
           size="lg"
           disabled={intro.trim().length < 20}
           onClick={() => {
-            toast.success("프로필 초안이 저장되었습니다 (데모)");
+            toast.success("프로필이 저장되었습니다 (데모)");
             navigate({ to: "/" });
           }}
         >
@@ -389,6 +559,5 @@ function ChoiceCard({
       </div>
       {body ? <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p> : null}
     </button>
-
   );
 }
