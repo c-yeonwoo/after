@@ -456,7 +456,7 @@ function Onboarding() {
     const seeds = profile.interests.map((v) => v.trim()).filter(Boolean);
     const filled = seeds.length;
     const grown = seeds.filter((s) => profile.details[s]?.trim()).length;
-    const ok = filled >= MIN_INTERESTS && grown >= 1;
+    const ok = filled >= MIN_INTERESTS;
     const active = seeds[activeSeed] ?? "";
     const canAdd = profile.interests.length < MAX_INTERESTS;
 
@@ -474,7 +474,7 @@ function Onboarding() {
         total={TOTAL}
         eyebrow="프로필"
         title="요즘 시간 쓰는 것들"
-        description={`${MIN_INTERESTS}~${MAX_INTERESTS}개를 적어주세요. 적은 것에 대해서만 하나씩 되묻습니다.`}
+        description={`${MIN_INTERESTS}~${MAX_INTERESTS}개를 적어주세요. 아래 한 줄 메모는 선택이고, 적으면 소개글이 더 좋아집니다.`}
       >
         <div className="flex items-center gap-2">
           <Input
@@ -527,7 +527,10 @@ function Onboarding() {
 
         {active ? (
           <div className="mt-5 rounded-surface border border-border bg-muted/40 p-4">
-            <p className="text-sm font-semibold text-foreground">{followUpFor(active)}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {followUpFor(active)}
+              <span className="ml-1.5 font-normal text-muted-foreground">선택</span>
+            </p>
             <Textarea
               rows={3}
               className="mt-3 bg-card"
@@ -555,7 +558,8 @@ function Onboarding() {
         ) : null}
 
         <p aria-live="polite" className="mt-4 text-sm text-muted-foreground">
-          {filled} / {MAX_INTERESTS} · 답변 {grown}개
+          {filled} / {MAX_INTERESTS}
+          {grown ? ` · 메모 ${grown}개` : ""}
         </p>
 
         <div className="mt-6 flex gap-2">
