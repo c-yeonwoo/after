@@ -59,9 +59,11 @@ function Onboarding() {
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
 
+  const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
   const [detailIndex, setDetailIndex] = useState(0);
   const [intro, setIntro] = useState("");
+
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
