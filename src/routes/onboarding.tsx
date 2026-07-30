@@ -1,0 +1,338 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Check, Coffee, Wine } from "lucide-react";
+import { toast } from "sonner";
+
+import { StepShell } from "@/components/onboarding/StepShell";
+import { INTERVIEW_QUESTIONS, buildDraftIntro } from "@/components/onboarding/interview";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { BRAND, FIRST_MEETING_PROTOCOL, HUBS, isCompanyEmail } from "@/lib/brand";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/onboarding")({
+  head: () => ({
+    meta: [
+      { title: `가입 · 퇴근존 인증 — ${BRAND.name}` },
+      {
+        name: "description",
+        content:
+          "퇴근존 선택, 회사 이메일 직장 인증, AI 인터뷰 프로필까지 1분이면 끝나는 가입 절차입니다.",
+      },
+      { property: "og:title", content: `가입 · 퇴근존 인증 — ${BRAND.name}` },
+      {
+        property: "og:description",
+        content: "퇴근존 선택 · 회사 이메일 인증 · AI 인터뷰 프로필",
+      },
+    ],
+  }),
+  component: Onboarding,
+});
+
+const TOTAL = 5;
+type Gender = "female" | "male";
+type DrinkPref = "cafe_only" | "open_to_drink";
+
+function Onboarding() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [gender, setGender] = useState<Gender | null>(null);
+  const [hubId, setHubId] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [qIndex, setQIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [intro, setIntro] = useState("");
+  const [drinkPref, setDrinkPref] = useState<DrinkPref>("cafe_only");
+
+  const question = INTERVIEW_QUESTIONS[qIndex];
+  const answered = (answers[question?.id ?? ""] ?? "").trim().length >= 10;
+  const emailValid = email.includes("@") && isCompanyEmail(email);
+
+  const draft = useMemo(() => buildDraftIntro(answers), [answers]);
+
+  function goProfile() {
+    setIntro(draft);
+    setStep(5);
+  }
+
+  if (step === 1) {
+    return (
+      <StepShell
+        step={1}
+        total={TOTAL}
+        eyebrow="가입"
+        title="어떤 성별로 참여하세요?"
+        description="이 서비스는 여성이 먼저 호감을 남기고, 남성이 그 안에서 한 명씩 소개받는 구조입니다. 역할에 따라 화면이 달라집니다."
+      >
+        <div className="grid gap-3">
+          <ChoiceCard
+            selected={gender === "female"}
+            onClick={() => setGender("female")}
+            title="여성"
+            body="같은 퇴근존 남성 프로필을 무료로 호·불 평가하고 크레딧을 쌓습니다."
+          />
+          <ChoiceCard
+            selected={gender === "male"}
+            onClick={() => setGender("male")}
+            title="남성"
+            body="나에게 호감을 준 분들 중에서만, 소개 티켓으로 한 명씩 프로필을 엽니다."
+          />
+        </div>
+        <div className="mt-8">
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
+            다음
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <StepShell
+        step={2}
+        total={TOTAL}
+        eyebrow="퇴근존"
+        title="어느 퇴근존에서 만나시겠어요?"
+        description="같은 존 또는 인접 존에서만 소개가 이뤄집니다. 지금은 테헤란로·역삼권 한 곳만 열려 있습니다."
+      >
+        <div className="grid gap-3">
+          {HUBS.map((hub) => (
+            <ChoiceCard
+              key={hub.id}
+              selected={hubId === hub.id}
+              disabled={!hub.available}
+              onClick={() => setHubId(hub.id)}
+              title={hub.label}
+              body={hub.available ? hub.detail : `${hub.detail} · 준비 중`}
+            />
+          ))}
+        </div>
+        <div className="mt-8 flex gap-2">
+          <Button variant="ghost" onClick={() => setStep(1)}>
+            이전
+          </Button>
+          <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(3)}>
+            다음
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <StepShell
+        step={3}
+        total={TOTAL}
+        eyebrow="직장 인증"
+        title="회사 이메일로 재직을 확인합니다"
+        description="인증 코드 확인 외에 이메일 주소는 프로필에 노출되지 않습니다. 개인 메일(gmail, naver 등)은 사용할 수 없습니다."
+      >
+        <label className="text-sm text-muted-foreground" htmlFor="work-email">
+          회사 이메일
+        </label>
+        <Input
+          id="work-email"
+          type="email"
+          inputMode="email"
+          placeholder="name@company.co.kr"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mt-2"
+        />
+        {email.length > 3 && !emailValid ? (
+          <p className="mt-2 text-xs text-destructive">
+            회사 도메인 이메일만 인증할 수 있습니다.
+          </p>
+        ) : null}
+
+        {codeSent ? (
+          <div className="mt-6">
+            <label className="text-sm text-muted-foreground" htmlFor="code">
+              인증 코드 6자리
+            </label>
+            <Input
+              id="code"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              className="mt-2 tracking-[0.4em]"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              지금은 화면 흐름만 연결된 상태입니다. 실제 코드 발송은 다음 단계에서 붙습니다.
+            </p>
+          </div>
+        ) : null}
+
+        <div className="mt-8 flex gap-2">
+          <Button variant="ghost" onClick={() => setStep(2)}>
+            이전
+          </Button>
+          {codeSent ? (
+            <Button
+              className="flex-1"
+              size="lg"
+              disabled={code.length !== 6}
+              onClick={() => setStep(4)}
+            >
+              인증하고 계속
+            </Button>
+          ) : (
+            <Button
+              className="flex-1"
+              size="lg"
+              disabled={!emailValid}
+              onClick={() => {
+                setCodeSent(true);
+                toast.success("인증 코드를 보냈습니다 (데모)");
+              }}
+            >
+              인증 코드 받기
+            </Button>
+          )}
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (step === 4) {
+    return (
+      <StepShell
+        step={4}
+        total={TOTAL}
+        eyebrow={`AI 인터뷰 ${qIndex + 1}/${INTERVIEW_QUESTIONS.length}`}
+        title={question.prompt}
+        description="스펙 나열 대신, 결과 가치관으로 소개합니다. 두세 문장이면 충분합니다."
+      >
+        <Textarea
+          key={question.id}
+          rows={5}
+          placeholder={question.placeholder}
+          value={answers[question.id] ?? ""}
+          onChange={(e) => setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))}
+        />
+        <p className="mt-2 text-xs text-muted-foreground">최소 10자 이상 입력해 주세요.</p>
+        <div className="mt-8 flex gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => (qIndex === 0 ? setStep(3) : setQIndex(qIndex - 1))}
+          >
+            이전
+          </Button>
+          <Button
+            className="flex-1"
+            size="lg"
+            disabled={!answered}
+            onClick={() =>
+              qIndex === INTERVIEW_QUESTIONS.length - 1 ? goProfile() : setQIndex(qIndex + 1)
+            }
+          >
+            {qIndex === INTERVIEW_QUESTIONS.length - 1 ? "프로필 초안 만들기" : "다음"}
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  return (
+    <StepShell
+      step={5}
+      total={TOTAL}
+      eyebrow="프로필 확인"
+      title="이렇게 소개해도 될까요?"
+      description="인터뷰 답변으로 만든 초안입니다. 직접 다듬은 뒤 확정하세요."
+    >
+      <Textarea rows={7} value={intro} onChange={(e) => setIntro(e.target.value)} />
+
+      <div className="mt-8">
+        <p className="text-sm font-bold">1차 만남 선호</p>
+        <div className="mt-3 grid gap-3">
+          <ChoiceCard
+            selected={drinkPref === "cafe_only"}
+            onClick={() => setDrinkPref("cafe_only")}
+            title="카페만"
+            body="퇴근길 카페 한 잔, 45~60분."
+            icon={<Coffee className="size-4" />}
+          />
+          <ChoiceCard
+            selected={drinkPref === "open_to_drink"}
+            onClick={() => setDrinkPref("open_to_drink")}
+            title="술도 괜찮아요"
+            body="상대도 같은 선호일 때만 술자리가 열립니다."
+            icon={<Wine className="size-4" />}
+          />
+        </div>
+      </div>
+
+      <ul className="mt-8 space-y-3 rounded-xl border border-border bg-card p-5">
+        {FIRST_MEETING_PROTOCOL.map((rule) => (
+          <li key={rule.title} className="flex gap-3">
+            <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div>
+              <p className="text-sm font-bold">{rule.title}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{rule.body}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-8 flex gap-2">
+        <Button variant="ghost" onClick={() => setStep(4)}>
+          이전
+        </Button>
+        <Button
+          className="flex-1"
+          size="lg"
+          disabled={intro.trim().length < 20}
+          onClick={() => {
+            toast.success("프로필 초안이 저장되었습니다 (데모)");
+            navigate({ to: "/" });
+          }}
+        >
+          프로필 확정
+        </Button>
+      </div>
+    </StepShell>
+  );
+}
+
+function ChoiceCard({
+  selected,
+  disabled,
+  onClick,
+  title,
+  body,
+  icon,
+}: {
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  title: string;
+  body: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "rounded-xl border border-border bg-card p-5 text-left transition-colors",
+        selected && "border-primary bg-primary/8",
+        disabled ? "cursor-not-allowed opacity-45" : "hover:border-primary/50",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {icon ? <span className="text-primary">{icon}</span> : null}
+        <p className="font-bold">{title}</p>
+      </div>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
+    </button>
+  );
+}
