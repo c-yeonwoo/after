@@ -11,6 +11,7 @@ import {
   SMOKING_OPTIONS,
   ageFrom,
 } from "@/components/onboarding/basics";
+import { followUpFor } from "@/components/onboarding/profile";
 import { BRAND, HUBS } from "@/lib/brand";
 import { resetAll, useMe } from "@/lib/store";
 
