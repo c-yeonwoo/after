@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
+import { SeedTree } from "@/components/onboarding/SeedTree";
 import {
   DRINKING_OPTIONS,
   MBTI_AXES,
@@ -19,6 +20,7 @@ import {
 import {
   INTEREST_PLACEHOLDERS,
   MATCH_TAGS,
+  followUpFor,
   TOPIC_TAGS,
   buildIntro,
   suggestHeadlines,
@@ -74,6 +76,8 @@ function Onboarding() {
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
   const [intro, setIntro] = useState("");
+  const [seedInput, setSeedInput] = useState("");
+  const [activeSeed, setActiveSeed] = useState(0);
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
 
 
