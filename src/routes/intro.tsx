@@ -49,6 +49,7 @@ function IntroPage() {
 
 
 
+
       <ProfileDetail
         p={{
           name: candidate.name,
@@ -119,8 +120,7 @@ function IntroPage() {
         </div>
       )}
 
-      {!answered ? <div aria-hidden="true" className="h-32" /> : null}
-
+      {!answered ? <div aria-hidden="true" className="h-20" /> : null}
     </AppScreen>
   );
 }
