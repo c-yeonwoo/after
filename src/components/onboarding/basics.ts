@@ -1,8 +1,9 @@
-export const MBTI_OPTIONS = [
-  "ISTJ", "ISFJ", "INFJ", "INTJ",
-  "ISTP", "ISFP", "INFP", "INTP",
-  "ESTP", "ESFP", "ENFP", "ENTP",
-  "ESTJ", "ESFJ", "ENFJ", "ENTJ",
+/** MBTI 4개 축 — 각 축에서 하나씩 골라 완성합니다. */
+export const MBTI_AXES = [
+  { key: "ei", left: "I", right: "E", leftHint: "내향", rightHint: "외향" },
+  { key: "sn", left: "S", right: "N", leftHint: "감각", rightHint: "직관" },
+  { key: "tf", left: "T", right: "F", leftHint: "사고", rightHint: "감정" },
+  { key: "pj", left: "P", right: "J", leftHint: "탐색", rightHint: "계획" },
 ] as const;
 
 export const SMOKING_OPTIONS = [
@@ -19,6 +20,15 @@ export const DRINKING_OPTIONS = [
   { id: "often", label: "자주" },
 ] as const;
 
+export const RELIGION_OPTIONS = [
+  { id: "none", label: "없음" },
+  { id: "christian", label: "기독교" },
+  { id: "catholic", label: "천주교" },
+  { id: "buddhist", label: "불교" },
+  { id: "other", label: "기타" },
+  { id: "secret", label: "밝히지 않음" },
+] as const;
+
 export type Basics = {
   name: string;
   /** 프로필 사진 1장 (data URL) */
@@ -28,6 +38,7 @@ export type Basics = {
   mbti: string;
   smoking: string;
   drinking: string;
+  religion: string;
 };
 
 export const emptyBasics: Basics = {
@@ -38,7 +49,9 @@ export const emptyBasics: Basics = {
   mbti: "",
   smoking: "",
   drinking: "",
+  religion: "",
 };
+
 
 export function ageFrom(birth: string) {
   const d = new Date(birth);

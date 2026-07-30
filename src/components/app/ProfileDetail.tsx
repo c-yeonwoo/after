@@ -7,6 +7,7 @@ export type ProfileView = {
   mbti?: string;
   smoking?: string;
   drinking?: string;
+  religion?: string;
   area?: string;
   photo?: string;
   headline: string;
@@ -41,7 +42,7 @@ function Tag({ children, tone = "muted" }: { children: ReactNode; tone?: "muted"
 }
 
 export function ProfileDetail({ p }: { p: ProfileView }) {
-  const meta = [p.mbti, p.smoking, p.drinking].filter(Boolean).join(" · ");
+  const meta = [p.mbti, p.smoking, p.drinking, p.religion].filter(Boolean).join(" · ");
 
   return (
     <div>

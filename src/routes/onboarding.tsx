@@ -7,8 +7,10 @@ import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
-  MBTI_OPTIONS,
+  MBTI_AXES,
+  RELIGION_OPTIONS,
   SMOKING_OPTIONS,
+
   ageFrom,
   basicsValid,
   emptyBasics,
@@ -213,17 +215,31 @@ function Onboarding() {
 
           <div>
             <p className="text-sm font-semibold text-foreground">MBTI (선택)</p>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {MBTI_OPTIONS.map((m) => (
-                <Chip
-                  key={m}
-                  selected={basics.mbti === m}
-                  onClick={() => setB({ mbti: basics.mbti === m ? "" : m })}
-                >
-                  {m}
-                </Chip>
-              ))}
+            <div className="mt-3 space-y-2">
+              {MBTI_AXES.map((axis, i) => {
+                const current = basics.mbti.length === 4 ? basics.mbti[i] : "";
+                const pick = (letter: string) => {
+                  const parts = basics.mbti.length === 4 ? basics.mbti.split("") : ["", "", "", ""];
+                  parts[i] = parts[i] === letter ? "" : letter;
+                  setB({ mbti: parts.every(Boolean) ? parts.join("") : "" });
+                };
+                return (
+                  <div key={axis.key} className="grid grid-cols-2 gap-2">
+                    {[
+                      { letter: axis.left, hint: axis.leftHint },
+                      { letter: axis.right, hint: axis.rightHint },
+                    ].map((o) => (
+                      <Chip key={o.letter} selected={current === o.letter} onClick={() => pick(o.letter)}>
+                        {o.letter} · {o.hint}
+                      </Chip>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {basics.mbti ? `선택한 유형 ${basics.mbti}` : "네 줄 모두 고르면 유형이 완성됩니다."}
+            </p>
           </div>
 
           <div>
@@ -247,6 +263,22 @@ function Onboarding() {
               ))}
             </div>
           </div>
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">종교 (선택)</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {RELIGION_OPTIONS.map((o) => (
+                <Chip
+                  key={o.id}
+                  selected={basics.religion === o.id}
+                  onClick={() => setB({ religion: basics.religion === o.id ? "" : o.id })}
+                >
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         <div className="mt-8 flex gap-2">
@@ -593,6 +625,7 @@ function Onboarding() {
             basics.mbti,
             SMOKING_OPTIONS.find((o) => o.id === basics.smoking)?.label,
             `음주 ${DRINKING_OPTIONS.find((o) => o.id === basics.drinking)?.label ?? ""}`.trim(),
+            RELIGION_OPTIONS.find((o) => o.id === basics.religion)?.label,
           ]
             .filter(Boolean)
             .join(" · ")}

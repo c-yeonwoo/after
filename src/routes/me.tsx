@@ -7,6 +7,7 @@ import { ProfileDetail, type ProfileView } from "@/components/app/ProfileDetail"
 import { Button } from "@/components/ui/button";
 import {
   DRINKING_OPTIONS,
+  RELIGION_OPTIONS,
   SMOKING_OPTIONS,
   ageFrom,
 } from "@/components/onboarding/basics";
@@ -51,6 +52,7 @@ function MePage() {
     mbti: me.basics.mbti || undefined,
     smoking: SMOKING_OPTIONS.find((o) => o.id === me.basics.smoking)?.label,
     drinking: DRINKING_OPTIONS.find((o) => o.id === me.basics.drinking)?.label,
+    religion: RELIGION_OPTIONS.find((o) => o.id === me.basics.religion)?.label,
     area: HUBS.find((h) => h.id === me.hubId)?.label,
     photo: me.basics.photo || undefined,
     headline: me.profile.headline,
