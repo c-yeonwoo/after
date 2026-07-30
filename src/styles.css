@@ -37,6 +37,9 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  /* 작은 텍스트/아이콘용 고대비 브랜드 컬러 (WCAG AA) */
+  --color-primary-strong: var(--primary-strong);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
