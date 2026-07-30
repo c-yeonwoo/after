@@ -21,6 +21,7 @@ import {
   MATCH_TAGS,
   TOPIC_TAGS,
   buildIntro,
+  suggestHeadlines,
   emptyProfile,
   type ProfileDraft,
 } from "@/components/onboarding/profile";
@@ -614,6 +615,43 @@ function Onboarding() {
           ))}
         </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <p className="text-sm font-semibold text-foreground">한 줄 소개 제안</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          적어주신 답변을 바탕으로 만든 문장입니다. 마음에 드는 것을 고르거나 직접 고쳐 쓰세요.
+        </p>
+        <div className="mt-3 space-y-2">
+          {headlineOptions.map((line) => {
+            const selected = profile.headline === line;
+            return (
+              <button
+                key={line}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => {
+                  patch({ headline: line });
+                  setIntro(buildIntro({ ...profile, headline: line }));
+                }}
+                className={cn(
+                  "w-full rounded-xl border border-border bg-card p-4 text-left text-sm leading-relaxed transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  selected ? "border-primary-strong bg-primary/10" : "hover:border-primary-strong/60",
+                )}
+              >
+                “{line}”
+              </button>
+            );
+          })}
+        </div>
+        <Input
+          className="mt-3"
+          aria-label="한 줄 소개 직접 쓰기"
+          placeholder="직접 쓰기 (선택)"
+          value={profile.headline}
+          onChange={(e) => patch({ headline: e.target.value })}
+        />
       </div>
 
       <label className="mt-6 block text-sm font-semibold text-foreground" htmlFor="intro">
