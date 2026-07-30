@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { BRAND } from "@/lib/brand";
+import { Logo } from "@/components/Logo";
 
 export function StepShell({
   step,
@@ -21,20 +21,28 @@ export function StepShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex items-center justify-between px-5 py-4">
-          <span className="font-serif text-lg font-normal">{BRAND.name}</span>
-          <span className="text-xs text-muted-foreground">
+      <header className="sticky top-0 z-20 bg-background/80 px-4 pt-3 pb-2 backdrop-blur-xl">
+        <div className="flex items-center justify-between">
+          <Logo size="sm" />
+          <span className="rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
             {step} / {total}
           </span>
         </div>
-        <div className="h-0.5 w-full bg-muted">
+        <div
+          className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={step}
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-label="가입 진행률"
+        >
           <div
-            className="h-full bg-primary transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-500"
             style={{ width: `${(step / total) * 100}%` }}
           />
         </div>
       </header>
+
 
       <main className="mx-auto w-full flex-1 px-5 py-10">
         <p className="text-sm font-semibold tracking-wide text-primary-strong">{eyebrow}</p>
