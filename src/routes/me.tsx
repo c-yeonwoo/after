@@ -83,9 +83,8 @@ function MePage() {
         </Link>
       }
     >
-      <p className="mb-4 rounded-xl bg-muted/70 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-        소개가 열린 상대에게 아래 화면 그대로 보입니다. 회사명과 이메일은 인증에만 쓰이고 공개되지 않습니다.
-      </p>
+
+
 
       <ProfileDetail p={view} />
 
