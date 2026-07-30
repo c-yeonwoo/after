@@ -6,24 +6,6 @@ export const MBTI_AXES = [
   { key: "pj", left: "P", right: "J", leftHint: "탐색", rightHint: "계획" },
 ] as const;
 
-/** 저장 문자열(EI-SN-TF-PJ 순) 조합/분해 유틸 */
-export function mbtiLetterAt(mbti: string, axisIndex: number) {
-  return mbti.length === 4 ? mbti[axisIndex] : "";
-}
-
-export function setMbtiLetter(mbti: string, axisIndex: number, letter: string) {
-  const base = mbti.length === 4 ? mbti.split("") : ["", "", "", ""];
-  base[axisIndex] = base[axisIndex] === letter ? "" : letter;
-  return base.every(Boolean) ? base.join("") : base.map((c) => c || "·").join("").replace(/·/g, "");
-}
-
-/** 부분 선택 상태를 4칸 배열로 다룹니다. */
-export function mbtiToParts(mbti: string): string[] {
-  const parts = ["", "", "", ""];
-  if (mbti.length === 4) return mbti.split("");
-  return parts;
-}
-
 export const SMOKING_OPTIONS = [
   { id: "none", label: "비흡연" },
   { id: "quit", label: "금연 중" },
