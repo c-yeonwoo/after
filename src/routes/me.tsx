@@ -10,7 +10,7 @@ import {
   SMOKING_OPTIONS,
   ageFrom,
 } from "@/components/onboarding/basics";
-import { ALL_INTERESTS } from "@/components/onboarding/profile";
+import { followUpFor } from "@/components/onboarding/profile";
 import { BRAND, HUBS } from "@/lib/brand";
 import { resetAll, useMe } from "@/lib/store";
 
@@ -55,16 +55,13 @@ function MePage() {
     area: HUBS.find((h) => h.id === me.hubId)?.label,
     headline: me.profile.headline,
     intro: me.intro,
-    interests: me.profile.interests
-      .map((id) => ALL_INTERESTS.find((i) => i.id === id)?.label)
-      .filter((v): v is string => Boolean(v)),
+    interests: me.profile.interests.map((v) => v.trim()).filter(Boolean),
     matchTags: me.profile.matchTags,
     topics: me.profile.topics,
     answers: me.profile.interests
-      .map((id) => {
-        const interest = ALL_INTERESTS.find((i) => i.id === id);
-        const a = me.profile.details[id]?.trim();
-        return interest && a ? { q: interest.followUp, a } : null;
+      .map((label) => {
+        const a = me.profile.details[label]?.trim();
+        return a ? { q: followUpFor(label), a } : null;
       })
       .filter((v): v is { q: string; a: string } => Boolean(v)),
   };

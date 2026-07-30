@@ -15,12 +15,12 @@ import {
   type Basics,
 } from "@/components/onboarding/basics";
 import {
-  ALL_INTERESTS,
-  INTEREST_GROUPS,
+  INTEREST_PLACEHOLDERS,
   MATCH_TAGS,
   TOPIC_TAGS,
   buildIntro,
   emptyProfile,
+  followUpFor,
   type ProfileDraft,
 } from "@/components/onboarding/profile";
 import { Button } from "@/components/ui/button";
@@ -78,10 +78,7 @@ function Onboarding() {
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
   const selectedInterests = useMemo(
-    () =>
-      profile.interests
-        .map((id) => ALL_INTERESTS.find((i) => i.id === id))
-        .filter((i): i is NonNullable<typeof i> => Boolean(i)),
+    () => profile.interests.map((v) => v.trim()).filter(Boolean),
     [profile.interests],
   );
 
@@ -396,39 +393,49 @@ function Onboarding() {
     );
   }
 
-  // 5 — 관심사 선택 (이후 질문이 여기에 따라 달라짐)
+  // 5 — 관심사 직접 입력 (이후 질문이 여기에 따라 달라짐)
   if (step === 6) {
-    const count = profile.interests.length;
-    const ok = count >= MIN_INTERESTS;
+    const rows =
+      profile.interests.length < MAX_INTERESTS ? [...profile.interests, ""] : profile.interests;
+    const filled = profile.interests.map((v) => v.trim()).filter(Boolean).length;
+    const ok = filled >= MIN_INTERESTS;
+    const setRow = (index: number, value: string) => {
+      const next = [...profile.interests];
+      next[index] = value;
+      patch({ interests: next.filter((v, i) => v.trim() || i < next.length - 1) });
+    };
     return (
       <StepShell
         step={6}
         total={TOTAL}
         eyebrow="프로필"
         title="요즘 시간을 쓰는 것들"
-        description={`${MIN_INTERESTS}~${MAX_INTERESTS}개를 고르면, 고른 것에 대해서만 물어봅니다.`}
+        description={`${MIN_INTERESTS}~${MAX_INTERESTS}가지를 직접 적어주세요. 적은 것에 대해서만 물어봅니다.`}
       >
-        <div className="space-y-6">
-          {INTEREST_GROUPS.map((group) => (
-            <div key={group.id}>
-              <p className="text-sm font-semibold text-muted-foreground">{group.title}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {group.items.map((item) => (
-                  <Chip
-                    key={item.id}
-                    selected={profile.interests.includes(item.id)}
-                    disabled={count >= MAX_INTERESTS && !profile.interests.includes(item.id)}
-                    onClick={() => patch({ interests: toggle(profile.interests, item.id, MAX_INTERESTS) })}
-                  >
-                    {item.label}
-                  </Chip>
-                ))}
-              </div>
+        <div className="space-y-2">
+          {rows.map((value, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Input
+                value={value}
+                aria-label={`관심사 ${i + 1}`}
+                placeholder={INTEREST_PLACEHOLDERS[i] ?? "직접 적기"}
+                onChange={(e) => setRow(i, e.target.value)}
+              />
+              {value.trim() ? (
+                <button
+                  type="button"
+                  aria-label={`${value} 삭제`}
+                  className="min-h-11 shrink-0 rounded-full px-3 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  onClick={() => patch({ interests: profile.interests.filter((_, idx) => idx !== i) })}
+                >
+                  삭제
+                </button>
+              ) : null}
             </div>
           ))}
         </div>
-        <p aria-live="polite" className="mt-6 text-sm text-muted-foreground">
-          {count} / {MAX_INTERESTS} 선택
+        <p aria-live="polite" className="mt-4 text-sm text-muted-foreground">
+          {filled} / {MAX_INTERESTS} 작성
         </p>
         <div className="mt-6 flex gap-2">
           <Button variant="ghost" onClick={() => setStep(5)}>
@@ -439,6 +446,7 @@ function Onboarding() {
             size="lg"
             disabled={!ok}
             onClick={() => {
+              patch({ interests: profile.interests.map((v) => v.trim()).filter(Boolean) });
               setDetailIndex(0);
               setStep(7);
             }}
@@ -450,6 +458,7 @@ function Onboarding() {
     );
   }
 
+
   // 6 — 적응형 후속 질문
   if (step === 7) {
     const current = selectedInterests[detailIndex];
@@ -457,31 +466,32 @@ function Onboarding() {
       setStep(6);
       return null;
     }
-    const value = profile.details[current.id] ?? "";
+    const question = followUpFor(current);
+    const value = profile.details[current] ?? "";
     const ok = value.trim().length >= 10;
     const last = detailIndex === selectedInterests.length - 1;
     return (
       <StepShell
         step={7}
         total={TOTAL}
-        eyebrow={`${current.label} · ${detailIndex + 1}/${selectedInterests.length}`}
-        title={current.followUp}
+        eyebrow={`${current} · ${detailIndex + 1}/${selectedInterests.length}`}
+        title={question}
         description="한두 문장이면 충분합니다."
       >
         <Textarea
-          key={current.id}
-          id={`detail-${current.id}`}
+          key={current}
+          id={`detail-${detailIndex}`}
           rows={5}
           className="mt-1"
-          placeholder={current.placeholder}
+          placeholder="예: 일주일에 두세 번, 기록보다 그날 컨디션대로."
           value={value}
-          onChange={(e) => patch({ details: { ...profile.details, [current.id]: e.target.value } })}
+          onChange={(e) => patch({ details: { ...profile.details, [current]: e.target.value } })}
           aria-invalid={value.length > 0 && !ok}
-          aria-describedby={`detail-${current.id}-help`}
-          aria-label={current.followUp}
+          aria-describedby={`detail-${detailIndex}-help`}
+          aria-label={question}
         />
         <p
-          id={`detail-${current.id}-help`}
+          id={`detail-${detailIndex}-help`}
           aria-live="polite"
           className={cn("mt-2 text-sm", value.length > 0 && !ok ? "font-medium text-destructive" : "text-muted-foreground")}
         >
@@ -608,8 +618,8 @@ function Onboarding() {
 
         <div className="mt-2 flex flex-wrap gap-1.5">
           {selectedInterests.map((i) => (
-            <span key={i.id} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
-              {i.label}
+            <span key={i} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
+              {i}
             </span>
           ))}
         </div>
