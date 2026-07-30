@@ -109,6 +109,13 @@ function Onboarding() {
   if (step === 2) {
     const age = ageFrom(basics.birth);
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
+    const pickMbti = (i: number, letter: string) => {
+      const next = [...mbtiParts];
+      next[i] = next[i] === letter ? "" : letter;
+      setMbtiParts(next);
+      setB({ mbti: next.every(Boolean) ? next.join("") : "" });
+    };
+
     return (
       <StepShell
         step={2}
