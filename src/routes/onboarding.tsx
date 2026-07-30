@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
-import { SeedTree } from "@/components/onboarding/SeedTree";
 import {
   DRINKING_OPTIONS,
   MBTI_AXES,
