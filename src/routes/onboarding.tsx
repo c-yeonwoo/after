@@ -570,6 +570,8 @@ function Onboarding() {
   }
 
   const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
+  const headlineOptions = suggestHeadlines(profile, basics.job);
+
 
   return (
     <StepShell step={7} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
