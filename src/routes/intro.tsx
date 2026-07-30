@@ -119,6 +119,9 @@ function IntroPage() {
           </div>
         </div>
       )}
+
+      {!answered ? <div aria-hidden="true" className="h-32" /> : null}
+
     </AppScreen>
   );
 }
