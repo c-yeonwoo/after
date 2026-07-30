@@ -20,7 +20,7 @@ export function Chip({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center rounded-full border px-4 text-center",
+        "inline-flex min-h-11 items-center justify-center rounded-control border px-4 text-center",
         "font-sans text-[0.9rem] leading-none font-medium tracking-[-0.01em] transition-colors",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         selected

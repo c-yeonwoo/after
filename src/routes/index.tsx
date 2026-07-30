@@ -109,7 +109,7 @@ function Landing() {
           ref={btnRef}
           type="button"
           onClick={start}
-          className="headline flex w-full items-center justify-center rounded-full bg-foreground py-5 text-base text-background transition-colors duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="headline flex w-full items-center justify-center rounded-control bg-foreground py-5 text-base text-background transition-colors duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           직장 인증하고 시작하기
         </button>

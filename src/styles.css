@@ -31,6 +31,14 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* 시맨틱 라운드 토큰 — 역할별로 하나씩만 쓴다 */
+  --radius-field: var(--radius-field-value); /* 입력폼(input/textarea/select) */
+  --radius-control: 9999px; /* 버튼·칩 등 눌리는 컨트롤 */
+  --radius-surface: var(--radius-2xl); /* 카드·모달·시트 */
+  --radius-overlay: var(--radius-lg); /* 드롭다운·팝오버·툴팁 */
+  --radius-item: var(--radius-sm); /* 메뉴 아이템 */
+
   --color-background: var(--background);
 
   --color-foreground: var(--foreground);
@@ -103,6 +111,9 @@
 :root {
   /* 라운드 스케일 기준값 — sm .5 / md .625 / lg .75 / xl 1 / 2xl 1.25 / 3xl 1.5rem */
   --radius: 0.75rem;
+  /* 입력폼은 한 단계 더 각지게 */
+  --radius-field-value: 0.5rem;
+
 
   /* ── 브랜드 원천 값 (single source of truth) — 코럴 레드 ── */
   --brand-50: oklch(0.972 0.012 34);
@@ -278,7 +289,7 @@
 
 /* 벤토 카드 기본형 */
 @utility bento {
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-surface);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
