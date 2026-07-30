@@ -95,7 +95,7 @@ function HomePage() {
               {candidate.name} · 만 {candidate.age}
             </p>
             <p className="mt-0.5 text-xs text-primary-foreground/80">
-              {candidate.job} · {candidate.distance}
+              {candidate.job} · {candidate.area}
             </p>
           </div>
           <div className="px-6 py-5">

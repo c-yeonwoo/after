@@ -1,3 +1,5 @@
+import hanaPhoto from "@/assets/candidate-hana.jpg";
+
 /** 데모 소개 상대 — Cloud 연결 전 화면 확인용 고정 데이터 */
 export type Candidate = {
   id: string;
@@ -8,8 +10,8 @@ export type Candidate = {
   smoking: string;
   drinking: string;
   area: string;
-  /** 퇴근길 겹침 정도 */
-  distance: string;
+  /** 프로필 사진 (1장) */
+  photo: string;
   headline: string;
   intro: string;
   interests: string[];
@@ -28,7 +30,7 @@ export const CANDIDATES: Candidate[] = [
     smoking: "비흡연",
     drinking: "가끔 한 잔",
     area: "선릉",
-    distance: "퇴근길 도보 12분 겹침",
+    photo: hanaPhoto,
     headline: "평일 저녁을 잘 쓰는 사람이 되고 싶어요.",
     intro:
       "회사에서는 화면을 만들고, 퇴근하면 주로 걷습니다. 요즘은 양재천을 따라 천천히 뛰는 게 하루의 마무리예요.\n\n말수가 많은 편은 아니지만 궁금한 게 생기면 질문이 길어집니다. 처음 만나는 자리에서도 날씨 이야기보다는 요즘 무엇에 빠져 있는지 듣는 쪽이 편해요.",

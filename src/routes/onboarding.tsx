@@ -115,6 +115,46 @@ function Onboarding() {
       >
         <div className="space-y-5">
           <div>
+            <p className="text-sm font-semibold text-foreground">프로필 사진 (1장)</p>
+            <div className="mt-3 flex items-center gap-4">
+              <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
+                {basics.photo ? (
+                  <img src={basics.photo} alt="선택한 프로필 사진 미리보기" className="size-full object-cover" />
+                ) : (
+                  <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                    미등록
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <label
+                  htmlFor="photo"
+                  className="inline-flex min-h-10 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
+                >
+                  {basics.photo ? "사진 변경" : "사진 선택"}
+                  <input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => setB({ photo: String(reader.result) });
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  얼굴이 잘 보이는 사진 한 장이면 충분합니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+
             <label className="text-sm font-semibold text-foreground" htmlFor="name">
               이름
             </label>
@@ -538,7 +578,11 @@ function Onboarding() {
 
   return (
     <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {basics.photo ? (
+          <img src={basics.photo} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
+        ) : null}
+        <div className="p-5">
         <p className="text-base font-semibold">
           {basics.name}
           {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
@@ -570,6 +614,7 @@ function Onboarding() {
               {t}
             </span>
           ))}
+        </div>
         </div>
       </div>
 
