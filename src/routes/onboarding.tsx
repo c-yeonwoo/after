@@ -73,6 +73,8 @@ function Onboarding() {
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
   const [intro, setIntro] = useState("");
+  const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
+
 
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
