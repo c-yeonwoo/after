@@ -3,11 +3,6 @@
  * (Step 3에서 실제 AI 생성으로 교체 예정. 지금은 규칙 기반 초안.)
  */
 
-/** 자유롭게 적은 관심사에 대한 후속 질문 */
-export function followUpFor(label: string) {
-  return `${label}, 어떤 식으로 즐기고 계세요?`;
-}
-
 /** 입력을 막지 않는 가벼운 예시 (플레이스홀더 용도) */
 export const INTEREST_PLACEHOLDERS = [
   "예: 퇴근 후 러닝",

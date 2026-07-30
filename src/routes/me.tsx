@@ -10,7 +10,6 @@ import {
   SMOKING_OPTIONS,
   ageFrom,
 } from "@/components/onboarding/basics";
-import { followUpFor } from "@/components/onboarding/profile";
 import { BRAND, HUBS } from "@/lib/brand";
 import { resetAll, useMe } from "@/lib/store";
 
@@ -58,12 +57,7 @@ function MePage() {
     interests: me.profile.interests.map((v) => v.trim()).filter(Boolean),
     matchTags: me.profile.matchTags,
     topics: me.profile.topics,
-    answers: me.profile.interests
-      .map((label) => {
-        const a = me.profile.details[label]?.trim();
-        return a ? { q: followUpFor(label), a } : null;
-      })
-      .filter((v): v is { q: string; a: string } => Boolean(v)),
+    answers: [],
   };
 
   return (

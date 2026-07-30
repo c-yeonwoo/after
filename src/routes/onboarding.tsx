@@ -20,7 +20,6 @@ import {
   TOPIC_TAGS,
   buildIntro,
   emptyProfile,
-  followUpFor,
   type ProfileDraft,
 } from "@/components/onboarding/profile";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,7 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-const TOTAL = 9;
+const TOTAL = 8;
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 5;
 type Gender = "female" | "male";
@@ -71,7 +70,6 @@ function Onboarding() {
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
-  const [detailIndex, setDetailIndex] = useState(0);
   const [intro, setIntro] = useState("");
 
 
@@ -447,8 +445,7 @@ function Onboarding() {
             disabled={!ok}
             onClick={() => {
               patch({ interests: profile.interests.map((v) => v.trim()).filter(Boolean) });
-              setDetailIndex(0);
-              setStep(7);
+              setStep(8);
             }}
           >
             다음
@@ -459,70 +456,13 @@ function Onboarding() {
   }
 
 
-  // 6 — 적응형 후속 질문
-  if (step === 7) {
-    const current = selectedInterests[detailIndex];
-    if (!current) {
-      setStep(6);
-      return null;
-    }
-    const question = followUpFor(current);
-    const value = profile.details[current] ?? "";
-    const ok = value.trim().length >= 10;
-    const last = detailIndex === selectedInterests.length - 1;
-    return (
-      <StepShell
-        step={7}
-        total={TOTAL}
-        eyebrow={`${current} · ${detailIndex + 1}/${selectedInterests.length}`}
-        title={question}
-        description="한두 문장이면 충분합니다."
-      >
-        <Textarea
-          key={current}
-          id={`detail-${detailIndex}`}
-          rows={5}
-          className="mt-1"
-          placeholder="예: 일주일에 두세 번, 기록보다 그날 컨디션대로."
-          value={value}
-          onChange={(e) => patch({ details: { ...profile.details, [current]: e.target.value } })}
-          aria-invalid={value.length > 0 && !ok}
-          aria-describedby={`detail-${detailIndex}-help`}
-          aria-label={question}
-        />
-        <p
-          id={`detail-${detailIndex}-help`}
-          aria-live="polite"
-          className={cn("mt-2 text-sm", value.length > 0 && !ok ? "font-medium text-destructive" : "text-muted-foreground")}
-        >
-          최소 10자 ({value.trim().length}자)
-        </p>
-        <div className="mt-8 flex gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => (detailIndex === 0 ? setStep(6) : setDetailIndex(detailIndex - 1))}
-          >
-            이전
-          </Button>
-          <Button
-            className="flex-1"
-            size="lg"
-            disabled={!ok}
-            onClick={() => (last ? setStep(8) : setDetailIndex(detailIndex + 1))}
-          >
-            {last ? "다음" : "계속"}
-          </Button>
-        </div>
-      </StepShell>
-    );
-  }
 
-  // 7 — 잘 맞는 사람 + 이번 만남 대화 주제
+  // 6 — 잘 맞는 사람 + 이번 만남 대화 주제
   if (step === 8) {
     const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
     return (
       <StepShell
-        step={8}
+        step={7}
         total={TOTAL}
         eyebrow="프로필"
         title="어떤 사람과, 무슨 이야기를"
@@ -575,7 +515,7 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(7)}>
+          <Button variant="ghost" onClick={() => setStep(6)}>
             이전
           </Button>
           <Button
@@ -597,7 +537,7 @@ function Onboarding() {
   const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
 
   return (
-    <StepShell step={9} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
+    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
       <div className="rounded-2xl border border-border bg-card p-5">
         <p className="text-base font-semibold">
           {basics.name}
