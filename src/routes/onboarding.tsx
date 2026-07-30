@@ -6,6 +6,15 @@ import { toast } from "sonner";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
 import {
+  DRINKING_OPTIONS,
+  MBTI_OPTIONS,
+  SMOKING_OPTIONS,
+  ageFrom,
+  basicsValid,
+  emptyBasics,
+  type Basics,
+} from "@/components/onboarding/basics";
+import {
   ALL_INTERESTS,
   INTEREST_GROUPS,
   MATCH_TAGS,
@@ -89,7 +98,126 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
+            다음
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (step === 2) {
+    const age = ageFrom(basics.birth);
+    const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
+    return (
+      <StepShell
+        step={2}
+        total={TOTAL}
+        eyebrow="기본 정보"
+        title="기본적인 것부터"
+        description="이름과 나이는 소개가 열린 상대에게만 보입니다."
+      >
+        <div className="space-y-5">
+          <div>
+            <label className="text-sm font-semibold text-foreground" htmlFor="name">
+              이름
+            </label>
+            <Input
+              id="name"
+              className="mt-2"
+              placeholder="실명 또는 불리고 싶은 이름"
+              value={basics.name}
+              onChange={(e) => setB({ name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-foreground" htmlFor="birth">
+              생년월일
+            </label>
+            <Input
+              id="birth"
+              type="date"
+              className="mt-2"
+              value={basics.birth}
+              onChange={(e) => setB({ birth: e.target.value })}
+              aria-invalid={Boolean(basics.birth) && (age === null || age < 19)}
+              aria-describedby="birth-help"
+            />
+            <p
+              id="birth-help"
+              aria-live="polite"
+              className={cn(
+                "mt-2 text-sm",
+                basics.birth && (age === null || age < 19)
+                  ? "font-medium text-destructive"
+                  : "text-muted-foreground",
+              )}
+            >
+              {basics.birth
+                ? age !== null && age >= 19
+                  ? `만 ${age}세`
+                  : "만 19세 이상만 가입할 수 있습니다."
+                : "만 나이로 표시됩니다."}
+            </p>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-foreground" htmlFor="job">
+              직업
+            </label>
+            <Input
+              id="job"
+              className="mt-2"
+              placeholder="예: IT 기획, 회계사, 디자이너"
+              value={basics.job}
+              onChange={(e) => setB({ job: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">MBTI (선택)</p>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {MBTI_OPTIONS.map((m) => (
+                <Chip
+                  key={m}
+                  selected={basics.mbti === m}
+                  onClick={() => setB({ mbti: basics.mbti === m ? "" : m })}
+                >
+                  {m}
+                </Chip>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">흡연</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {SMOKING_OPTIONS.map((o) => (
+                <Chip key={o.id} selected={basics.smoking === o.id} onClick={() => setB({ smoking: o.id })}>
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">음주</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DRINKING_OPTIONS.map((o) => (
+                <Chip key={o.id} selected={basics.drinking === o.id} onClick={() => setB({ drinking: o.id })}>
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex gap-2">
+          <Button variant="ghost" onClick={() => setStep(1)}>
+            이전
+          </Button>
+          <Button className="flex-1" size="lg" disabled={!basicsValid(basics)} onClick={() => setStep(3)}>
             다음
           </Button>
         </div>
@@ -119,7 +247,7 @@ function Onboarding() {
           ))}
         </div>
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(1)}>
+          <Button variant="ghost" onClick={() => setStep(2)}>
             이전
           </Button>
           <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4)}>
