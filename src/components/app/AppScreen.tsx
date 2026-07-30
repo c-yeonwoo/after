@@ -37,7 +37,7 @@ export function AppScreen({
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           {title ? (
-            <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight">{title}</h1>
+            <h1 className="headline min-w-0 truncate text-xl">{title}</h1>
           ) : (
             <Logo size="sm" className="min-w-0 shrink" />
           )}
