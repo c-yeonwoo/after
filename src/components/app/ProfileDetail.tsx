@@ -117,7 +117,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
     <div className="-mx-6">
       <div className="relative">
         {/* 히어로 — 사진 + 하단 딤 */}
-        <div className="sticky top-0 -z-0 h-[68vh] max-h-[560px] min-h-[380px] overflow-hidden">
+        <div className="sticky top-0 h-[68vh] max-h-[560px] min-h-[380px] overflow-hidden">
           {p.photo ? (
             <img
               src={p.photo}
@@ -185,16 +185,16 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
 
           {p.answers.length ? (
             <Section title="이런 사람입니다" index={next()}>
-              <ul className="space-y-2.5">
+              <div className="space-y-2.5">
                 {p.answers.map((a, i) => (
                   <Reveal key={a.q} delay={i * 70}>
-                    <li className="rounded-surface border border-border bg-card p-4 shadow-card">
+                    <div className="rounded-surface border border-border bg-card p-4 shadow-card">
                       <p className="text-xs font-semibold text-muted-foreground">{a.q}</p>
                       <p className="mt-1.5 text-sm leading-relaxed text-foreground">{a.a}</p>
-                    </li>
+                    </div>
                   </Reveal>
                 ))}
-              </ul>
+              </div>
             </Section>
           ) : null}
 
