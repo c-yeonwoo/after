@@ -38,8 +38,15 @@ function Landing() {
 
   return (
     <div className="min-h-dvh bg-background pb-24">
-      <header className="sticky top-0 z-20 px-4 pt-3 pb-2">
-        <div className="flex items-center justify-between rounded-full border border-border/60 bg-background/70 py-2 pr-2 pl-4 shadow-[0_6px_24px_-16px_oklch(0_0_0/0.5)] backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-20 px-3 pb-2 sm:px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 0.75rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 0.75rem)",
+        }}
+      >
+        <div className="flex min-w-0 items-center justify-between gap-2 rounded-full border border-border/60 bg-background/70 py-2 pr-2 pl-4 shadow-[0_6px_24px_-16px_oklch(0_0_0/0.5)] backdrop-blur-xl">
           <Logo size="sm" />
           <Button
             asChild
