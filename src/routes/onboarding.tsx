@@ -652,7 +652,7 @@ function Onboarding() {
           onClick={() => {
             saveMe({
               gender: gender ?? "female",
-              hubId: hubId ?? "teheran",
+              hubId: hubId ?? "gangnam",
               email,
               basics,
               profile,

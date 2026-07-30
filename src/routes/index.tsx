@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: `${BRAND.name} — 테헤란로 직장인 1:1 소개 서비스` },
+      { title: `${BRAND.name} — 강남·역삼 직장인 1:1 소개 서비스` },
       { name: "description", content: BRAND.description },
-      { property: "og:title", content: `${BRAND.name} — 테헤란로 직장인 1:1 소개 서비스` },
+      { property: "og:title", content: `${BRAND.name} — 강남·역삼 직장인 1:1 소개 서비스` },
       { property: "og:description", content: BRAND.tagline },
     ],
   }),

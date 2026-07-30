@@ -84,13 +84,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: "세렌디피티 — 테헤란로 직장인 1:1 프라이빗 매칭" },
+      { title: "세렌디피티 — 강남·역삼 직장인 1:1 프라이빗 매칭" },
       {
         name: "description",
         content:
           "같은 퇴근길에서, 호감 있는 한 사람과, 카페 한 잔. 스와이프 없는 1:1 프라이빗 매칭.",
       },
-      { property: "og:title", content: "세렌디피티 — 테헤란로 직장인 1:1 프라이빗 매칭" },
+      { property: "og:title", content: "세렌디피티 — 강남·역삼 직장인 1:1 프라이빗 매칭" },
       {
         property: "og:description",
         content: "같은 퇴근길에서, 호감 있는 한 사람과, 카페 한 잔.",
