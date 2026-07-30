@@ -21,6 +21,8 @@
 @theme inline {
   --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", "Pretendard Variable", Pretendard, ui-serif, Georgia, serif;
+  /* 워드마크 전용: 가로로 넓은 그로테스크 */
+  --font-display: "Archivo", "Pretendard Variable", Pretendard, ui-sans-serif, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
