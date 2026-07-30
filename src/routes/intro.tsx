@@ -3,6 +3,7 @@ import { Heart, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { GuideNote } from "@/components/app/GuideNote";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
@@ -46,6 +47,14 @@ function IntroPage() {
 
   return (
     <AppScreen title="이번 소개">
+      <div className="mb-4">
+        <GuideNote>
+          {answered
+            ? "답을 받았어요. 다음은 제가 이어서 안내할게요."
+            : "오늘 소개할 한 분입니다. 편하게 읽고 답해주세요."}
+        </GuideNote>
+      </div>
+
 
 
 
