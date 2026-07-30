@@ -228,17 +228,15 @@ function Onboarding() {
               {[0, 1].map((row) =>
                 MBTI_AXES.map((axis, i) => {
                   const letter = row === 0 ? axis.left : axis.right;
-                  const hint = row === 0 ? axis.leftHint : axis.rightHint;
                   const selected = mbtiParts[i] === letter;
                   return (
                     <Chip
                       key={`${axis.key}-${letter}`}
                       selected={selected}
                       onClick={() => pickMbti(i, letter)}
-                      className="w-full flex-col gap-0.5 py-2"
+                      className="w-full justify-center py-2.5 text-sm font-semibold"
                     >
-                      <span className="text-sm font-semibold">{letter}</span>
-                      <span className="text-[0.62rem] opacity-70">{hint}</span>
+                      {letter}
                     </Chip>
                   );
                 }),
