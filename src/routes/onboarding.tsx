@@ -132,43 +132,70 @@ function Onboarding() {
         title="회사 이메일로 재직을 확인합니다"
         description="인증 코드 확인 외에 이메일 주소는 프로필에 노출되지 않습니다. 개인 메일(gmail, naver 등)은 사용할 수 없습니다."
       >
-        <label className="text-sm text-muted-foreground" htmlFor="work-email">
+        <label className="text-sm font-semibold text-foreground" htmlFor="work-email">
           회사 이메일
         </label>
         <Input
           id="work-email"
           type="email"
           inputMode="email"
+          autoComplete="email"
           placeholder="name@company.co.kr"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          aria-invalid={email.length > 3 && !emailValid}
+          aria-describedby={email.length > 3 && !emailValid ? "work-email-error" : "work-email-hint"}
           className="mt-2"
         />
         {email.length > 3 && !emailValid ? (
-          <p className="mt-2 text-xs text-destructive">
-            회사 도메인 이메일만 인증할 수 있습니다.
+          <p
+            id="work-email-error"
+            role="alert"
+            className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>회사 도메인 이메일만 인증할 수 있습니다. (예: name@company.co.kr)</span>
           </p>
-        ) : null}
+        ) : (
+          <p id="work-email-hint" className="mt-2 text-sm text-muted-foreground">
+            개인 메일(gmail, naver 등)은 사용할 수 없습니다.
+          </p>
+        )}
 
         {codeSent ? (
           <div className="mt-6">
-            <label className="text-sm text-muted-foreground" htmlFor="code">
+            <label className="text-sm font-semibold text-foreground" htmlFor="code">
               인증 코드 6자리
             </label>
             <Input
               id="code"
               inputMode="numeric"
+              autoComplete="one-time-code"
               maxLength={6}
               placeholder="000000"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              aria-invalid={code.length > 0 && code.length !== 6}
+              aria-describedby={code.length > 0 && code.length !== 6 ? "code-error" : "code-hint"}
               className="mt-2 tracking-[0.4em]"
             />
-            <p className="mt-2 text-xs text-muted-foreground">
-              지금은 화면 흐름만 연결된 상태입니다. 실제 코드 발송은 다음 단계에서 붙습니다.
-            </p>
+            {code.length > 0 && code.length !== 6 ? (
+              <p
+                id="code-error"
+                role="alert"
+                className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
+              >
+                <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <span>숫자 6자리를 모두 입력해 주세요. (현재 {code.length}자리)</span>
+              </p>
+            ) : (
+              <p id="code-hint" className="mt-2 text-sm text-muted-foreground">
+                지금은 화면 흐름만 연결된 상태입니다. 실제 코드 발송은 다음 단계에서 붙습니다.
+              </p>
+            )}
           </div>
         ) : null}
+
 
         <div className="mt-8 flex gap-2">
           <Button variant="ghost" onClick={() => setStep(2)}>
