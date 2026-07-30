@@ -237,14 +237,38 @@ function Onboarding() {
         title={question.prompt}
         description="스펙 나열 대신, 결과 가치관으로 소개합니다. 두세 문장이면 충분합니다."
       >
+        <label className="text-sm font-semibold text-foreground" htmlFor={`answer-${question.id}`}>
+          답변
+        </label>
         <Textarea
           key={question.id}
+          id={`answer-${question.id}`}
           rows={5}
+          className="mt-2"
           placeholder={question.placeholder}
           value={answers[question.id] ?? ""}
           onChange={(e) => setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))}
+          aria-invalid={(answers[question.id] ?? "").length > 0 && !answered}
+          aria-describedby={`answer-${question.id}-help`}
         />
-        <p className="mt-2 text-xs text-muted-foreground">최소 10자 이상 입력해 주세요.</p>
+        <p
+          id={`answer-${question.id}-help`}
+          aria-live="polite"
+          className={cn(
+            "mt-2 flex items-start gap-1.5 text-sm",
+            (answers[question.id] ?? "").length > 0 && !answered
+              ? "font-medium text-destructive"
+              : "text-muted-foreground",
+          )}
+        >
+          {(answers[question.id] ?? "").length > 0 && !answered ? (
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          ) : null}
+          <span>
+            최소 10자 이상 입력해 주세요. (현재 {(answers[question.id] ?? "").trim().length}자)
+          </span>
+        </p>
+
         <div className="mt-8 flex gap-2">
           <Button
             variant="ghost"
