@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import type { Basics } from "@/components/onboarding/basics";
 import type { ProfileDraft } from "@/components/onboarding/profile";
+import type { MeetPrefs } from "@/lib/meet";
 
 export type MeRecord = {
   gender: "female" | "male";
