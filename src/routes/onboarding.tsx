@@ -73,6 +73,8 @@ function Onboarding() {
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
   const [intro, setIntro] = useState("");
+  const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
+
 
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
@@ -107,6 +109,13 @@ function Onboarding() {
   if (step === 2) {
     const age = ageFrom(basics.birth);
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
+    const pickMbti = (i: number, letter: string) => {
+      const next = [...mbtiParts];
+      next[i] = next[i] === letter ? "" : letter;
+      setMbtiParts(next);
+      setB({ mbti: next.every(Boolean) ? next.join("") : "" });
+    };
+
     return (
       <StepShell
         step={2}
@@ -215,32 +224,31 @@ function Onboarding() {
 
           <div>
             <p className="text-sm font-semibold text-foreground">MBTI (선택)</p>
-            <div className="mt-3 space-y-2">
-              {MBTI_AXES.map((axis, i) => {
-                const current = basics.mbti.length === 4 ? basics.mbti[i] : "";
-                const pick = (letter: string) => {
-                  const parts = basics.mbti.length === 4 ? basics.mbti.split("") : ["", "", "", ""];
-                  parts[i] = parts[i] === letter ? "" : letter;
-                  setB({ mbti: parts.every(Boolean) ? parts.join("") : "" });
-                };
-                return (
-                  <div key={axis.key} className="grid grid-cols-2 gap-2">
-                    {[
-                      { letter: axis.left, hint: axis.leftHint },
-                      { letter: axis.right, hint: axis.rightHint },
-                    ].map((o) => (
-                      <Chip key={o.letter} selected={current === o.letter} onClick={() => pick(o.letter)}>
-                        {o.letter} · {o.hint}
-                      </Chip>
-                    ))}
-                  </div>
-                );
-              })}
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {[0, 1].map((row) =>
+                MBTI_AXES.map((axis, i) => {
+                  const letter = row === 0 ? axis.left : axis.right;
+                  const hint = row === 0 ? axis.leftHint : axis.rightHint;
+                  const selected = mbtiParts[i] === letter;
+                  return (
+                    <Chip
+                      key={`${axis.key}-${letter}`}
+                      selected={selected}
+                      onClick={() => pickMbti(i, letter)}
+                      className="w-full flex-col gap-0.5 py-2"
+                    >
+                      <span className="text-sm font-semibold">{letter}</span>
+                      <span className="text-[0.62rem] opacity-70">{hint}</span>
+                    </Chip>
+                  );
+                }),
+              )}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              {basics.mbti ? `선택한 유형 ${basics.mbti}` : "네 줄 모두 고르면 유형이 완성됩니다."}
+              {basics.mbti ? `선택한 유형 ${basics.mbti}` : "네 축 모두 고르면 유형이 완성됩니다."}
             </p>
           </div>
+
 
           <div>
             <p className="text-sm font-semibold text-foreground">흡연</p>
