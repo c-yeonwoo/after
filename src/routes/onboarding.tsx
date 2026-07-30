@@ -15,12 +15,12 @@ import {
   type Basics,
 } from "@/components/onboarding/basics";
 import {
-  ALL_INTERESTS,
-  INTEREST_GROUPS,
+  INTEREST_PLACEHOLDERS,
   MATCH_TAGS,
   TOPIC_TAGS,
   buildIntro,
   emptyProfile,
+  followUpFor,
   type ProfileDraft,
 } from "@/components/onboarding/profile";
 import { Button } from "@/components/ui/button";
