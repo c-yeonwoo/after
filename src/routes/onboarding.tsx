@@ -299,7 +299,34 @@ function Onboarding() {
       title="이렇게 소개해도 될까요?"
       description="인터뷰 답변으로 만든 초안입니다. 직접 다듬은 뒤 확정하세요."
     >
-      <Textarea rows={7} value={intro} onChange={(e) => setIntro(e.target.value)} />
+      <label className="text-sm font-semibold text-foreground" htmlFor="intro">
+        내 소개 초안
+      </label>
+      <Textarea
+        id="intro"
+        rows={7}
+        className="mt-2"
+        value={intro}
+        onChange={(e) => setIntro(e.target.value)}
+        aria-invalid={intro.trim().length > 0 && intro.trim().length < 20}
+        aria-describedby="intro-help"
+      />
+      <p
+        id="intro-help"
+        aria-live="polite"
+        className={cn(
+          "mt-2 flex items-start gap-1.5 text-sm",
+          intro.trim().length > 0 && intro.trim().length < 20
+            ? "font-medium text-destructive"
+            : "text-muted-foreground",
+        )}
+      >
+        {intro.trim().length > 0 && intro.trim().length < 20 ? (
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        ) : null}
+        <span>최소 20자 이상 입력해 주세요. (현재 {intro.trim().length}자)</span>
+      </p>
+
 
       <div className="mt-8">
         <p className="text-sm font-bold">1차 만남 선호</p>
