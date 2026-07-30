@@ -31,8 +31,8 @@ export function AppScreen({
         className="sticky top-0 z-20 bg-background/80 pb-3 backdrop-blur-xl"
         style={{
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
-          paddingLeft: "max(env(safe-area-inset-left, 0px), 1.25rem)",
-          paddingRight: "max(env(safe-area-inset-right, 0px), 1.25rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 1.5rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 1.5rem)",
         }}
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
@@ -46,7 +46,7 @@ export function AppScreen({
       </header>
 
       <main
-        className="mx-auto w-full flex-1 px-5 pt-1"
+        className="mx-auto w-full flex-1 px-6 pt-1"
         style={{ paddingBottom: hideTabs ? "1.5rem" : "6.5rem" }}
       >
         {children}

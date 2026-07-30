@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CalendarCheck, Send } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { MeetPlanner } from "@/components/app/MeetPlanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BRAND } from "@/lib/brand";
@@ -52,8 +53,6 @@ function ChatRoom() {
     saveFlow({ messages: [...flow.messages, mine] });
     setText("");
   }
-
-  const meetupDate = flow.meetupAt ? new Date(flow.meetupAt) : null;
 
   return (
     <AppScreen
@@ -114,7 +113,7 @@ function ChatRoom() {
 
       {/* 입력 */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-border/70 bg-background/95 px-4 pt-3 backdrop-blur-xl"
+        className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-border/70 bg-background/95 px-6 pt-3 backdrop-blur-xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
         {flow.messages.length === 0 ? (
