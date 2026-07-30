@@ -32,7 +32,7 @@ export const Route = createFileRoute("/onboarding")({
 
 const TOTAL = 5;
 type Gender = "female" | "male";
-type DrinkPref = "cafe_only" | "open_to_drink";
+
 
 function Onboarding() {
   const navigate = useNavigate();
