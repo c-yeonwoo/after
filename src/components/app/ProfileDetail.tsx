@@ -8,7 +8,7 @@ export type ProfileView = {
   smoking?: string;
   drinking?: string;
   area?: string;
-  distance?: string;
+  photo?: string;
   headline: string;
   intro: string;
   interests: string[];
@@ -45,22 +45,32 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
 
   return (
     <div>
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-        <p className="text-xl font-semibold tracking-tight">
-          {p.name}
-          {p.age ? <span className="text-muted-foreground"> · 만 {p.age}</span> : null}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {[p.job, meta].filter(Boolean).join(" · ")}
-        </p>
-        {p.distance || p.area ? (
-          <p className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary-strong">
-            {[p.area, p.distance].filter(Boolean).join(" · ")}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        {p.photo ? (
+          <img
+            src={p.photo}
+            alt={`${p.name} 프로필 사진`}
+            loading="lazy"
+            className="aspect-[4/5] w-full object-cover"
+          />
+        ) : null}
+        <div className="p-5">
+          <p className="text-xl font-semibold tracking-tight">
+            {p.name}
+            {p.age ? <span className="text-muted-foreground"> · 만 {p.age}</span> : null}
           </p>
-        ) : null}
-        {p.headline ? (
-          <p className="mt-4 font-serif text-lg leading-snug text-foreground">“{p.headline}”</p>
-        ) : null}
+          <p className="mt-1 text-sm text-muted-foreground">
+            {[p.job, meta].filter(Boolean).join(" · ")}
+          </p>
+          {p.area ? (
+            <p className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary-strong">
+              {p.area}
+            </p>
+          ) : null}
+          {p.headline ? (
+            <p className="mt-4 font-serif text-lg leading-snug text-foreground">“{p.headline}”</p>
+          ) : null}
+        </div>
       </div>
 
       {p.intro ? (
@@ -83,7 +93,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         <Section title="이런 사람입니다">
           <ul className="space-y-4">
             {p.answers.map((a) => (
-              <li key={a.q} className="rounded-xl border border-border/70 bg-card/60 p-4">
+              <li key={a.q} className="rounded-xl border border-border/70 bg-card/60 p-5">
                 <p className="text-xs font-medium text-muted-foreground">{a.q}</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground">{a.a}</p>
               </li>
