@@ -39,7 +39,7 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-const TOTAL = 8;
+const TOTAL = 9;
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 5;
 type Gender = "female" | "male";
@@ -87,7 +87,7 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3}>
             다음
           </Button>
         </div>
@@ -95,10 +95,10 @@ function Onboarding() {
     );
   }
 
-  if (step === 2) {
+  if (step === 3) {
     return (
       <StepShell
-        step={2}
+        step={3}
         total={TOTAL}
         eyebrow="활동 지역"
         title="주로 어디서 만나시겠어요?"
@@ -120,7 +120,7 @@ function Onboarding() {
           <Button variant="ghost" onClick={() => setStep(1)}>
             이전
           </Button>
-          <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(3)}>
+          <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4}>
             다음
           </Button>
         </div>
@@ -128,10 +128,10 @@ function Onboarding() {
     );
   }
 
-  if (step === 3) {
+  if (step === 4) {
     return (
       <StepShell
-        step={3}
+        step={4}
         total={TOTAL}
         eyebrow="직장 인증"
         title="회사 이메일로 인증해 주세요"
@@ -194,11 +194,11 @@ function Onboarding() {
         ) : null}
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(2)}>
+          <Button variant="ghost" onClick={() => setStep(3}>
             이전
           </Button>
           {codeSent ? (
-            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(4)}>
+            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(5}>
               인증하고 계속
             </Button>
           ) : (
@@ -220,11 +220,11 @@ function Onboarding() {
   }
 
   // 4 — 한 줄 소개
-  if (step === 4) {
+  if (step === 5) {
     const ok = profile.headline.trim().length >= 8;
     return (
       <StepShell
-        step={4}
+        step={5}
         total={TOTAL}
         eyebrow="프로필"
         title="나를 한 문장으로 소개한다면"
@@ -254,10 +254,10 @@ function Onboarding() {
           최소 8자 ({profile.headline.trim().length}자)
         </p>
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(3)}>
+          <Button variant="ghost" onClick={() => setStep(4}>
             이전
           </Button>
-          <Button className="flex-1" size="lg" disabled={!ok} onClick={() => setStep(5)}>
+          <Button className="flex-1" size="lg" disabled={!ok} onClick={() => setStep(6}>
             다음
           </Button>
         </div>
@@ -266,12 +266,12 @@ function Onboarding() {
   }
 
   // 5 — 관심사 선택 (이후 질문이 여기에 따라 달라짐)
-  if (step === 5) {
+  if (step === 6) {
     const count = profile.interests.length;
     const ok = count >= MIN_INTERESTS;
     return (
       <StepShell
-        step={5}
+        step={6}
         total={TOTAL}
         eyebrow="프로필"
         title="요즘 시간을 쓰는 것들"
@@ -300,7 +300,7 @@ function Onboarding() {
           {count} / {MAX_INTERESTS} 선택
         </p>
         <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(4)}>
+          <Button variant="ghost" onClick={() => setStep(5}>
             이전
           </Button>
           <Button
@@ -309,7 +309,7 @@ function Onboarding() {
             disabled={!ok}
             onClick={() => {
               setDetailIndex(0);
-              setStep(6);
+              setStep(7;
             }}
           >
             다음
@@ -320,10 +320,10 @@ function Onboarding() {
   }
 
   // 6 — 적응형 후속 질문
-  if (step === 6) {
+  if (step === 7) {
     const current = selectedInterests[detailIndex];
     if (!current) {
-      setStep(5);
+      setStep(6;
       return null;
     }
     const value = profile.details[current.id] ?? "";
@@ -331,7 +331,7 @@ function Onboarding() {
     const last = detailIndex === selectedInterests.length - 1;
     return (
       <StepShell
-        step={6}
+        step={7}
         total={TOTAL}
         eyebrow={`${current.label} · ${detailIndex + 1}/${selectedInterests.length}`}
         title={current.followUp}
@@ -359,7 +359,7 @@ function Onboarding() {
         <div className="mt-8 flex gap-2">
           <Button
             variant="ghost"
-            onClick={() => (detailIndex === 0 ? setStep(5) : setDetailIndex(detailIndex - 1))}
+            onClick={() => (detailIndex === 0 ? setStep(6 : setDetailIndex(detailIndex - 1))}
           >
             이전
           </Button>
@@ -367,7 +367,7 @@ function Onboarding() {
             className="flex-1"
             size="lg"
             disabled={!ok}
-            onClick={() => (last ? setStep(7) : setDetailIndex(detailIndex + 1))}
+            onClick={() => (last ? setStep(8 : setDetailIndex(detailIndex + 1))}
           >
             {last ? "다음" : "계속"}
           </Button>
@@ -377,11 +377,11 @@ function Onboarding() {
   }
 
   // 7 — 잘 맞는 사람 + 이번 만남 대화 주제
-  if (step === 7) {
+  if (step === 8) {
     const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
     return (
       <StepShell
-        step={7}
+        step={8}
         total={TOTAL}
         eyebrow="프로필"
         title="어떤 사람과, 무슨 이야기를"
@@ -434,7 +434,7 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(6)}>
+          <Button variant="ghost" onClick={() => setStep(7}>
             이전
           </Button>
           <Button
@@ -443,7 +443,7 @@ function Onboarding() {
             disabled={!ok}
             onClick={() => {
               setIntro(draft);
-              setStep(8);
+              setStep(9;
             }}
           >
             프로필 만들기
@@ -456,7 +456,7 @@ function Onboarding() {
   const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
 
   return (
-    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
+    <StepShell step={9} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
       <div className="rounded-2xl border border-border bg-card p-5">
         <p className="text-xs font-semibold tracking-wide text-primary-strong">관심사</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -500,7 +500,7 @@ function Onboarding() {
       </p>
 
       <div className="mt-8 flex gap-2">
-        <Button variant="ghost" onClick={() => setStep(7)}>
+        <Button variant="ghost" onClick={() => setStep(8}>
           이전
         </Button>
         <Button
