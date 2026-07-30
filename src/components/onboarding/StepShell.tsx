@@ -21,9 +21,16 @@ export function StepShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-20 bg-background/80 px-4 pt-3 pb-2 backdrop-blur-xl">
-        <div className="flex items-center justify-between">
-          <Logo size="sm" />
+      <header
+        className="sticky top-0 z-20 bg-background/80 pb-2 backdrop-blur-xl"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 1rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 1rem)",
+        }}
+      >
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <Logo size="sm" className="min-w-0 shrink" />
           <span className="rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
             {step} / {total}
           </span>
