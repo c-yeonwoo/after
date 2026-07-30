@@ -417,7 +417,7 @@ function ChoiceCard({
           </span>
         ) : null}
       </div>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
+      {body ? <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p> : null}
     </button>
 
   );
