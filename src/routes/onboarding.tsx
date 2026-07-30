@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AlertCircle, Check, Coffee, Wine } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { StepShell } from "@/components/onboarding/StepShell";
@@ -8,22 +8,22 @@ import { INTERVIEW_QUESTIONS, buildDraftIntro } from "@/components/onboarding/in
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { BRAND, FIRST_MEETING_PROTOCOL, HUBS, isCompanyEmail } from "@/lib/brand";
+import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: `가입 · 퇴근존 인증 — ${BRAND.name}` },
+      { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {
         name: "description",
         content:
-          "퇴근존 선택, 회사 이메일 직장 인증, AI 인터뷰 프로필까지 1분이면 끝나는 가입 절차입니다.",
+          "활동 지역 선택, 회사 이메일 직장 인증, AI 인터뷰 프로필까지 1분이면 끝나는 가입 절차입니다.",
       },
-      { property: "og:title", content: `가입 · 퇴근존 인증 — ${BRAND.name}` },
+      { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "퇴근존 선택 · 회사 이메일 인증 · AI 인터뷰 프로필",
+        content: "활동 지역 선택 · 회사 이메일 인증 · AI 인터뷰 프로필",
       },
     ],
   }),
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/onboarding")({
 
 const TOTAL = 5;
 type Gender = "female" | "male";
-type DrinkPref = "cafe_only" | "open_to_drink";
+
 
 function Onboarding() {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ function Onboarding() {
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [intro, setIntro] = useState("");
-  const [drinkPref, setDrinkPref] = useState<DrinkPref>("cafe_only");
+  
 
   const question = INTERVIEW_QUESTIONS[qIndex];
   const answered = (answers[question?.id ?? ""] ?? "").trim().length >= 10;
@@ -94,8 +94,8 @@ function Onboarding() {
       <StepShell
         step={2}
         total={TOTAL}
-        eyebrow="퇴근존"
-        title="어느 퇴근존에서 만나시겠어요?"
+        eyebrow="활동 지역"
+        title="주로 어느 지역에서 만나시겠어요?"
         description="같은 존 또는 인접 존에서만 소개가 이뤄집니다. 지금은 테헤란로·역삼권 한 곳만 열려 있습니다."
       >
         <div className="grid gap-3">
@@ -327,37 +327,7 @@ function Onboarding() {
       </p>
 
 
-      <div className="mt-8">
-        <p className="text-sm font-bold">1차 만남 선호</p>
-        <div className="mt-3 grid gap-3">
-          <ChoiceCard
-            selected={drinkPref === "cafe_only"}
-            onClick={() => setDrinkPref("cafe_only")}
-            title="카페만"
-            body="퇴근길 카페 한 잔, 45~60분."
-            icon={<Coffee className="size-4" />}
-          />
-          <ChoiceCard
-            selected={drinkPref === "open_to_drink"}
-            onClick={() => setDrinkPref("open_to_drink")}
-            title="술도 괜찮아요"
-            body="상대도 같은 선호일 때만 술자리가 열립니다."
-            icon={<Wine className="size-4" />}
-          />
-        </div>
-      </div>
 
-      <ul className="mt-8 space-y-3 rounded-xl border border-border bg-card p-5">
-        {FIRST_MEETING_PROTOCOL.map((rule) => (
-          <li key={rule.title} className="flex gap-3">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div>
-              <p className="text-sm font-bold">{rule.title}</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">{rule.body}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
 
       <div className="mt-8 flex gap-2">
         <Button variant="ghost" onClick={() => setStep(4)}>
