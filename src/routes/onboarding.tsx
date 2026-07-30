@@ -50,7 +50,7 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-const TOTAL = 8;
+const TOTAL = 7;
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 5;
 type Gender = "female" | "male";
@@ -402,7 +402,7 @@ function Onboarding() {
             이전
           </Button>
           {codeSent ? (
-            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(5)}>
+            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(6)}>
               인증하고 계속
             </Button>
           ) : (
@@ -439,7 +439,7 @@ function Onboarding() {
     };
     return (
       <StepShell
-        step={6}
+        step={5}
         total={TOTAL}
         eyebrow="프로필"
         title="요즘 시간을 쓰는 것들"
@@ -471,7 +471,7 @@ function Onboarding() {
           {filled} / {MAX_INTERESTS} 작성
         </p>
         <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(5)}>
+          <Button variant="ghost" onClick={() => setStep(4)}>
             이전
           </Button>
           <Button
@@ -497,7 +497,7 @@ function Onboarding() {
     const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
     return (
       <StepShell
-        step={7}
+        step={6}
         total={TOTAL}
         eyebrow="프로필"
         title="어떤 사람과, 무슨 이야기를"
@@ -572,7 +572,7 @@ function Onboarding() {
   const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
 
   return (
-    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
+    <StepShell step={7} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {basics.photo ? (
           <img src={basics.photo} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
