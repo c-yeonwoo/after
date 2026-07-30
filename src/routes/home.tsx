@@ -203,16 +203,17 @@ function NextItem({
   const inner = (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5",
-        locked && "opacity-60",
+        "flex items-center gap-3 rounded-2xl border-2 border-foreground/10 bg-card px-4 py-4",
+        locked && "opacity-50",
       )}
     >
       <span
         className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-full",
-          done ? "bg-primary text-primary-foreground" : "bg-muted text-primary-strong",
+          "flex size-9 shrink-0 items-center justify-center rounded-full",
+          done ? "bg-primary text-primary-foreground" : "bg-foreground text-background",
         )}
       >
+
         {done ? <Check className="size-4" aria-hidden="true" /> : icon}
       </span>
       <span className="min-w-0">
