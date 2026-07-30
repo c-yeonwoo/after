@@ -14,16 +14,16 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: `가입 · 퇴근존 인증 — ${BRAND.name}` },
+      { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {
         name: "description",
         content:
-          "퇴근존 선택, 회사 이메일 직장 인증, AI 인터뷰 프로필까지 1분이면 끝나는 가입 절차입니다.",
+          "활동 지역 선택, 회사 이메일 직장 인증, AI 인터뷰 프로필까지 1분이면 끝나는 가입 절차입니다.",
       },
-      { property: "og:title", content: `가입 · 퇴근존 인증 — ${BRAND.name}` },
+      { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "퇴근존 선택 · 회사 이메일 인증 · AI 인터뷰 프로필",
+        content: "활동 지역 선택 · 회사 이메일 인증 · AI 인터뷰 프로필",
       },
     ],
   }),
@@ -94,8 +94,8 @@ function Onboarding() {
       <StepShell
         step={2}
         total={TOTAL}
-        eyebrow="퇴근존"
-        title="어느 퇴근존에서 만나시겠어요?"
+        eyebrow="활동 지역"
+        title="주로 어느 지역에서 만나시겠어요?"
         description="같은 존 또는 인접 존에서만 소개가 이뤄집니다. 지금은 테헤란로·역삼권 한 곳만 열려 있습니다."
       >
         <div className="grid gap-3">
