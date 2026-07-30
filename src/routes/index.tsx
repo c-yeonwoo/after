@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { BRAND, FEATURES, HUBS } from "@/lib/brand";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -37,12 +38,20 @@ function Landing() {
 
   return (
     <div className="min-h-dvh bg-background pb-24">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-5 py-4 backdrop-blur">
-        <span className="font-serif text-xl font-normal tracking-tight">{BRAND.name}</span>
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/onboarding">시작하기</Link>
-        </Button>
+      <header className="sticky top-0 z-20 px-4 pt-3 pb-2">
+        <div className="flex items-center justify-between rounded-full border border-border/60 bg-background/70 py-2 pr-2 pl-4 shadow-[0_6px_24px_-16px_oklch(0_0_0/0.5)] backdrop-blur-xl">
+          <Logo size="sm" />
+          <Button
+            asChild
+            size="sm"
+            variant="ghost"
+            className="h-8 rounded-full px-3 text-xs text-primary-strong hover:bg-primary/10"
+          >
+            <Link to="/onboarding">시작</Link>
+          </Button>
+        </div>
       </header>
+
 
       <main>
         <section className="relative overflow-hidden px-5 pt-10 pb-14">
