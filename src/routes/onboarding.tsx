@@ -35,9 +35,8 @@ import { loadMe, saveMe } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    edit: search.edit === "1" || search.edit === true ? true : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { edit?: true } =>
+    search.edit === "1" || search.edit === true ? { edit: true } : {},
   head: () => ({
     meta: [
       { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
