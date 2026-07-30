@@ -618,8 +618,8 @@ function Onboarding() {
 
         <div className="mt-2 flex flex-wrap gap-1.5">
           {selectedInterests.map((i) => (
-            <span key={i.id} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
-              {i.label}
+            <span key={i} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
+              {i}
             </span>
           ))}
         </div>
