@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
+import { saveMe } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
@@ -654,8 +655,16 @@ function Onboarding() {
           size="lg"
           disabled={intro.trim().length < 20}
           onClick={() => {
-            toast.success("프로필이 저장되었습니다 (데모)");
-            navigate({ to: "/" });
+            saveMe({
+              gender: gender ?? "female",
+              hubId: hubId ?? "teheran",
+              email,
+              basics,
+              profile,
+              intro: intro.trim(),
+            });
+            toast.success("프로필이 저장되었습니다");
+            navigate({ to: "/me" });
           }}
         >
           프로필 확정
