@@ -176,7 +176,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
           <Reveal>
             <section>
               <SectionHead index={next()} title="소개" kicker="Profile" />
-              <p className="text-[1.02rem] leading-[1.75] whitespace-pre-line text-foreground/90 first-letter:mr-1.5 first-letter:float-left first-letter:text-[2.9rem] first-letter:leading-[0.86] first-letter:font-black first-letter:text-primary">
+              <p className="text-[1.02rem] leading-[1.75] whitespace-pre-line text-foreground/90">
                 {p.intro}
               </p>
             </section>
