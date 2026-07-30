@@ -105,10 +105,10 @@ function HomePage() {
 
       {/* 메인 카드 */}
       {candidate && flow.myAnswer !== "pass" ? (
-        <div className="mt-7 overflow-hidden rounded-2xl bg-foreground text-background">
-          <div className="px-6 pt-6">
+        <div className="mt-7 overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-sm">
+          <div className="bg-gradient-to-br from-accent/50 via-card to-card px-6 pt-6">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-[0.6rem] font-semibold tracking-[0.16em] uppercase opacity-70">
+              <span className="text-[0.6rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
                 This intro
               </span>
               <span className="rounded-full bg-primary px-3 py-1 text-[0.65rem] font-semibold text-primary-foreground">
@@ -117,15 +117,15 @@ function HomePage() {
             </div>
             <p className="headline mt-5 text-[1.7rem]">
               {candidate.name}
-              <span className="ml-2 text-[1rem] opacity-60">만 {candidate.age}</span>
+              <span className="ml-2 text-[1rem] text-muted-foreground">만 {candidate.age}</span>
             </p>
-            <p className="mt-1 text-xs opacity-70">{candidate.job}</p>
-            <p className="mt-4 text-[0.95rem] leading-snug">“{candidate.headline}”</p>
+            <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
+            <p className="mt-4 text-[0.95rem] leading-snug text-foreground/90">“{candidate.headline}”</p>
             <div className="mt-4 flex flex-wrap gap-1.5 pb-6">
               {candidate.interests.slice(0, 4).map((i) => (
                 <span
                   key={i}
-                  className="rounded-full border border-background/30 px-3 py-1 text-[0.7rem]"
+                  className="rounded-full border border-border bg-background/60 px-3 py-1 text-[0.7rem] text-muted-foreground"
                 >
                   {i}
                 </span>
