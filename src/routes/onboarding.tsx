@@ -8,7 +8,7 @@ import { INTERVIEW_QUESTIONS, buildDraftIntro } from "@/components/onboarding/in
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { BRAND, FIRST_MEETING_PROTOCOL, HUBS, isCompanyEmail } from "@/lib/brand";
+import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
