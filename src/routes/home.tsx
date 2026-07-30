@@ -48,21 +48,23 @@ function HomePage() {
 
   return (
     <AppScreen>
-      <p className="mt-4 text-sm text-muted-foreground">
+      <p className="mt-4 text-[0.62rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
         {hub?.label ?? "강남·역삼권"}
       </p>
-      <h1 className="mt-1 text-2xl leading-snug font-semibold tracking-tight">
+      <h1 className="headline mt-2 text-[1.9rem]">
         {me?.basics.name ? `${me.basics.name}님,` : "안녕하세요,"}
         <br />
-        {flow.meetupAt
-          ? "만남이 잡혔어요."
-          : flow.chatOpen
-            ? "대화가 열렸어요."
-            : flow.myAnswer === "pass"
-              ? "다음 소개를 준비하고 있어요."
-              : candidate
-                ? "오늘 소개가 도착했어요."
-                : "곧 소개를 보내드릴게요."}
+        <span className="text-primary">
+          {flow.meetupAt
+            ? "만남이 잡혔어요."
+            : flow.chatOpen
+              ? "대화가 열렸어요."
+              : flow.myAnswer === "pass"
+                ? "다음 소개 준비 중."
+                : candidate
+                  ? "오늘 소개가 도착했어요."
+                  : "곧 소개를 보내드릴게요."}
+        </span>
       </h1>
 
       <div className="mt-5">
@@ -85,14 +87,14 @@ function HomePage() {
           <li key={s.id} className="flex-1">
             <div
               className={cn(
-                "h-1 rounded-full transition-colors",
-                i <= doneIndex ? "bg-primary" : "bg-muted",
+                "h-1.5 rounded-full transition-colors",
+                i <= doneIndex ? "bg-primary" : "bg-foreground/10",
               )}
             />
             <p
               className={cn(
                 "mt-2 text-[0.65rem]",
-                i <= doneIndex ? "font-medium text-primary-strong" : "text-muted-foreground",
+                i <= doneIndex ? "font-semibold text-foreground" : "text-muted-foreground",
               )}
             >
               {s.label}
@@ -103,42 +105,51 @@ function HomePage() {
 
       {/* 메인 카드 */}
       {candidate && flow.myAnswer !== "pass" ? (
-        <div className="mt-7 overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-          <div className="bg-gradient-brand px-6 py-5">
-            <p className="text-xs font-medium text-primary-foreground/80">이번 소개</p>
-            <p className="mt-1 text-lg font-semibold text-primary-foreground">
-              {candidate.name} · 만 {candidate.age}
+        <div className="mt-7 overflow-hidden rounded-[2rem] bg-foreground text-background">
+          <div className="px-6 pt-6">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[0.6rem] font-semibold tracking-[0.16em] uppercase opacity-70">
+                This intro
+              </span>
+              <span className="rounded-full bg-primary px-3 py-1 text-[0.65rem] font-semibold text-primary-foreground">
+                {candidate.area}
+              </span>
+            </div>
+            <p className="headline mt-5 text-[1.7rem]">
+              {candidate.name}
+              <span className="ml-2 text-[1rem] opacity-60">만 {candidate.age}</span>
             </p>
-            <p className="mt-0.5 text-xs text-primary-foreground/80">
-              {candidate.job} · {candidate.area}
-            </p>
-          </div>
-          <div className="px-6 py-5">
-            <p className="font-serif text-base leading-snug">“{candidate.headline}”</p>
-            <div className="mt-4 flex flex-wrap gap-1.5">
+            <p className="mt-1 text-xs opacity-70">{candidate.job}</p>
+            <p className="mt-4 text-[0.95rem] leading-snug">“{candidate.headline}”</p>
+            <div className="mt-4 flex flex-wrap gap-1.5 pb-6">
               {candidate.interests.slice(0, 4).map((i) => (
-                <span key={i} className="rounded-full bg-muted px-3 py-1 text-xs">
+                <span
+                  key={i}
+                  className="rounded-full border border-background/30 px-3 py-1 text-[0.7rem]"
+                >
                   {i}
                 </span>
               ))}
             </div>
-            <Button asChild className="mt-5 w-full" size="lg">
-              <Link to="/intro">
-                {flow.chatOpen ? "프로필 다시 보기" : "프로필 열어보기"}
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-            </Button>
           </div>
+          <Link
+            to="/intro"
+            className="headline flex items-center justify-center gap-2 bg-primary py-5 text-base text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            {flow.chatOpen ? "프로필 다시 보기" : "프로필 열어보기"}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
         </div>
       ) : (
-        <div className="mt-7 rounded-2xl border border-dashed border-border bg-card/60 px-6 py-10 text-center">
-          <Sparkles className="mx-auto size-5 text-primary-strong" aria-hidden="true" />
-          <p className="mt-3 text-sm font-medium">준비 중인 소개가 있습니다</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+        <div className="mt-7 rounded-[2rem] border-2 border-dashed border-foreground/20 px-6 py-10 text-center">
+          <Sparkles className="mx-auto size-5 text-primary" aria-hidden="true" />
+          <p className="headline mt-3 text-base">준비 중인 소개가 있습니다</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             같은 퇴근길에서 겹치는 한 사람만 골라 보내드립니다. 보통 2~3일 안에 도착해요.
           </p>
         </div>
       )}
+
 
       {/* 다음 할 일 */}
       <section className="mt-8">
