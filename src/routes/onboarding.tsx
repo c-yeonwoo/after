@@ -87,7 +87,7 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3}>
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
             다음
           </Button>
         </div>
@@ -120,7 +120,7 @@ function Onboarding() {
           <Button variant="ghost" onClick={() => setStep(1)}>
             이전
           </Button>
-          <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4}>
+          <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4)}>
             다음
           </Button>
         </div>
@@ -194,11 +194,11 @@ function Onboarding() {
         ) : null}
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(3}>
+          <Button variant="ghost" onClick={() => setStep(3)}>
             이전
           </Button>
           {codeSent ? (
-            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(5}>
+            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(5)}>
               인증하고 계속
             </Button>
           ) : (
@@ -254,10 +254,10 @@ function Onboarding() {
           최소 8자 ({profile.headline.trim().length}자)
         </p>
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(4}>
+          <Button variant="ghost" onClick={() => setStep(4)}>
             이전
           </Button>
-          <Button className="flex-1" size="lg" disabled={!ok} onClick={() => setStep(6}>
+          <Button className="flex-1" size="lg" disabled={!ok} onClick={() => setStep(6)}>
             다음
           </Button>
         </div>
@@ -300,7 +300,7 @@ function Onboarding() {
           {count} / {MAX_INTERESTS} 선택
         </p>
         <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(5}>
+          <Button variant="ghost" onClick={() => setStep(5)}>
             이전
           </Button>
           <Button
@@ -309,7 +309,7 @@ function Onboarding() {
             disabled={!ok}
             onClick={() => {
               setDetailIndex(0);
-              setStep(7;
+              setStep(7);
             }}
           >
             다음
@@ -323,7 +323,7 @@ function Onboarding() {
   if (step === 7) {
     const current = selectedInterests[detailIndex];
     if (!current) {
-      setStep(6;
+      setStep(6);
       return null;
     }
     const value = profile.details[current.id] ?? "";
@@ -359,7 +359,7 @@ function Onboarding() {
         <div className="mt-8 flex gap-2">
           <Button
             variant="ghost"
-            onClick={() => (detailIndex === 0 ? setStep(6 : setDetailIndex(detailIndex - 1))}
+            onClick={() => (detailIndex === 0 ? setStep(6) : setDetailIndex(detailIndex - 1))}
           >
             이전
           </Button>
@@ -367,7 +367,7 @@ function Onboarding() {
             className="flex-1"
             size="lg"
             disabled={!ok}
-            onClick={() => (last ? setStep(8 : setDetailIndex(detailIndex + 1))}
+            onClick={() => (last ? setStep(8) : setDetailIndex(detailIndex + 1))}
           >
             {last ? "다음" : "계속"}
           </Button>
@@ -434,7 +434,7 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(7}>
+          <Button variant="ghost" onClick={() => setStep(7)}>
             이전
           </Button>
           <Button
@@ -443,7 +443,7 @@ function Onboarding() {
             disabled={!ok}
             onClick={() => {
               setIntro(draft);
-              setStep(9;
+              setStep(9);
             }}
           >
             프로필 만들기
@@ -500,7 +500,7 @@ function Onboarding() {
       </p>
 
       <div className="mt-8 flex gap-2">
-        <Button variant="ghost" onClick={() => setStep(8}>
+        <Button variant="ghost" onClick={() => setStep(8)}>
           이전
         </Button>
         <Button
