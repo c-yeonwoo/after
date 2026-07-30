@@ -578,7 +578,11 @@ function Onboarding() {
 
   return (
     <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {basics.photo ? (
+          <img src={basics.photo} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
+        ) : null}
+        <div className="p-5">
         <p className="text-base font-semibold">
           {basics.name}
           {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
@@ -610,6 +614,7 @@ function Onboarding() {
               {t}
             </span>
           ))}
+        </div>
         </div>
       </div>
 
