@@ -452,7 +452,7 @@ function Onboarding() {
   // (한 줄 소개는 마지막 확인 화면에서 답변 기반으로 제안합니다)
 
 
-  // 5 — 씨앗(키워드) → 가지(후속 질문) → 잎(답변)
+  // 5 — 요즘 시간 쓰는 것들 (키워드 + 선택 후속 답변)
   if (step === 6) {
     const seeds = profile.interests.map((v) => v.trim()).filter(Boolean);
     const filled = seeds.length;
@@ -474,13 +474,13 @@ function Onboarding() {
         step={5}
         total={TOTAL}
         eyebrow="프로필"
-        title="요즘 머릿속에 있는 것들"
-        description={`키워드를 ${MIN_INTERESTS}~${MAX_INTERESTS}개 심으면, 적은 것에 대해서만 하나씩 되묻습니다.`}
+        title="요즘 시간 쓰는 것들"
+        description={`${MIN_INTERESTS}~${MAX_INTERESTS}개를 적어주세요. 적은 것에 대해서만 하나씩 되묻습니다.`}
       >
         <div className="flex items-center gap-2">
           <Input
             value={seedInput}
-            aria-label="키워드 심기"
+            aria-label="요즘 시간 쓰는 것 추가"
             placeholder={INTEREST_PLACEHOLDERS[filled] ?? "직접 적기"}
             disabled={!canAdd}
             onChange={(e) => setSeedInput(e.target.value)}
@@ -491,23 +491,38 @@ function Onboarding() {
                 addSeed();
               }
             }}
-
           />
           <Button variant="outline" disabled={!seedInput.trim() || !canAdd} onClick={addSeed}>
-            심기
+            추가
           </Button>
         </div>
 
         {seeds.length ? (
-          <SeedTree
-            className="mt-5"
-            nodes={seeds.map((label) => ({ label, leaf: profile.details[label] }))}
-            activeIndex={activeSeed}
-            onSelect={setActiveSeed}
-          />
+          <div className="mt-4 flex flex-wrap gap-2">
+            {seeds.map((label, i) => {
+              const selected = i === activeSeed;
+              const hasLeaf = Boolean(profile.details[label]?.trim());
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setActiveSeed(i)}
+                  className={`min-h-11 rounded-full border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                    selected
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {label}
+                  {hasLeaf ? <span className="ml-1.5 opacity-70">·</span> : null}
+                </button>
+              );
+            })}
+          </div>
         ) : (
-          <p className="mt-5 text-sm text-muted-foreground">
-            첫 키워드를 심으면 여기에 가지가 자랍니다.
+          <p className="mt-4 text-sm text-muted-foreground">
+            하나 적으면 여기에 모입니다.
           </p>
         )}
 
@@ -535,14 +550,15 @@ function Onboarding() {
                 setActiveSeed(0);
               }}
             >
-              이 키워드 지우기
+              이 항목 지우기
             </button>
           </div>
         ) : null}
 
         <p aria-live="polite" className="mt-4 text-sm text-muted-foreground">
-          키워드 {filled} / {MAX_INTERESTS} · 잎 {grown}개
+          {filled} / {MAX_INTERESTS} · 답변 {grown}개
         </p>
+
         <div className="mt-6 flex gap-2">
           <Button variant="ghost" onClick={() => setStep(editing ? 2 : 4)}>
             이전
