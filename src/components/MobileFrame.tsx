@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 export function MobileFrame({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen justify-center bg-muted/40">
-      <div className="relative w-full max-w-[430px] bg-background shadow-[0_0_60px_-20px_rgba(0,0,0,0.6)]">
+      <div className="relative w-full max-w-[430px] bg-background shadow-frame">
         {children}
       </div>
     </div>
