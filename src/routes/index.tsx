@@ -38,14 +38,21 @@ function Landing() {
 
   return (
     <div className="min-h-dvh bg-background pb-24">
-      <header className="sticky top-0 z-20 px-4 pt-3 pb-2">
-        <div className="flex items-center justify-between rounded-full border border-border/60 bg-background/70 py-2 pr-2 pl-4 shadow-[0_6px_24px_-16px_oklch(0_0_0/0.5)] backdrop-blur-xl">
-          <Logo size="sm" />
+      <header
+        className="sticky top-0 z-20 px-3 pb-2 sm:px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 0.75rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 0.75rem)",
+        }}
+      >
+        <div className="flex min-w-0 items-center justify-between gap-2 rounded-full border border-border/60 bg-background/70 py-2 pr-2 pl-3.5 shadow-[0_6px_24px_-16px_oklch(0_0_0/0.5)] backdrop-blur-xl sm:pl-4">
+          <Logo size="sm" className="min-w-0 shrink" />
           <Button
             asChild
             size="sm"
             variant="ghost"
-            className="h-8 rounded-full px-3 text-xs text-primary-strong hover:bg-primary/10"
+            className="h-8 shrink-0 rounded-full px-3 text-xs text-primary-strong hover:bg-primary/10"
           >
             <Link to="/onboarding">시작</Link>
           </Button>
@@ -120,7 +127,10 @@ function Landing() {
       </footer>
 
       {/* 모바일 고정 CTA */}
-      <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-5 py-3 backdrop-blur">
+      <div
+        className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-5 pt-3 backdrop-blur"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+      >
         <Button asChild size="lg" className="w-full">
           <Link to="/onboarding">직장 인증하고 시작하기</Link>
         </Button>

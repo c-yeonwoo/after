@@ -39,11 +39,11 @@ export function Logo({
   size?: "sm" | "md";
 }) {
   return (
-    <span className={cn("flex items-center gap-2", className)}>
-      <LogoMark className={size === "sm" ? "size-6" : "size-7"} />
+    <span className={cn("flex min-w-0 items-center gap-2", className)}>
+      <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
       <span
         className={cn(
-          "font-serif leading-none tracking-[-0.01em]",
+          "truncate font-serif leading-none tracking-[-0.01em]",
           size === "sm" ? "text-[1.05rem]" : "text-[1.2rem]",
         )}
       >

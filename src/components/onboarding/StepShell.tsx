@@ -21,10 +21,17 @@ export function StepShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-20 bg-background/80 px-4 pt-3 pb-2 backdrop-blur-xl">
-        <div className="flex items-center justify-between">
-          <Logo size="sm" />
-          <span className="rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
+      <header
+        className="sticky top-0 z-20 bg-background/80 pb-2 backdrop-blur-xl"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 1rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 1rem)",
+        }}
+      >
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <Logo size="sm" className="min-w-0 shrink" />
+          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
             {step} / {total}
           </span>
         </div>
@@ -55,7 +62,12 @@ export function StepShell({
 
       {footer ? (
         <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
-          <div className="mx-auto px-5 py-4">{footer}</div>
+          <div
+            className="mx-auto px-5 pt-4"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+          >
+            {footer}
+          </div>
         </footer>
       ) : null}
     </div>
