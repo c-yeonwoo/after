@@ -289,7 +289,7 @@
 
 /* 벤토 카드 기본형 */
 @utility bento {
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-surface);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
