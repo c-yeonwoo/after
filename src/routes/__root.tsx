@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { MobileFrame } from "@/components/MobileFrame";
+
 
 
 function NotFoundComponent() {
@@ -136,9 +138,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <MobileFrame>
+        <Outlet />
+      </MobileFrame>
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
+
 }
 
