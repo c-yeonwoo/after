@@ -466,31 +466,32 @@ function Onboarding() {
       setStep(6);
       return null;
     }
-    const value = profile.details[current.id] ?? "";
+    const question = followUpFor(current);
+    const value = profile.details[current] ?? "";
     const ok = value.trim().length >= 10;
     const last = detailIndex === selectedInterests.length - 1;
     return (
       <StepShell
         step={7}
         total={TOTAL}
-        eyebrow={`${current.label} · ${detailIndex + 1}/${selectedInterests.length}`}
-        title={current.followUp}
+        eyebrow={`${current} · ${detailIndex + 1}/${selectedInterests.length}`}
+        title={question}
         description="한두 문장이면 충분합니다."
       >
         <Textarea
-          key={current.id}
-          id={`detail-${current.id}`}
+          key={current}
+          id={`detail-${detailIndex}`}
           rows={5}
           className="mt-1"
-          placeholder={current.placeholder}
+          placeholder="예: 일주일에 두세 번, 기록보다 그날 컨디션대로."
           value={value}
-          onChange={(e) => patch({ details: { ...profile.details, [current.id]: e.target.value } })}
+          onChange={(e) => patch({ details: { ...profile.details, [current]: e.target.value } })}
           aria-invalid={value.length > 0 && !ok}
-          aria-describedby={`detail-${current.id}-help`}
-          aria-label={current.followUp}
+          aria-describedby={`detail-${detailIndex}-help`}
+          aria-label={question}
         />
         <p
-          id={`detail-${current.id}-help`}
+          id={`detail-${detailIndex}-help`}
           aria-live="polite"
           className={cn("mt-2 text-sm", value.length > 0 && !ok ? "font-medium text-destructive" : "text-muted-foreground")}
         >
