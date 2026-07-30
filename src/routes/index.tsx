@@ -121,13 +121,12 @@ function Landing() {
       {origin ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-50"
+          className="pointer-events-none fixed inset-0 z-50 bg-primary"
           style={{
-            background: "hsl(var(--primary))",
-            backgroundColor: "var(--primary)",
             clipPath: `circle(${revealed ? "150%" : "0%"} at ${origin.x}px ${origin.y}px)`,
             transition: "clip-path 620ms cubic-bezier(0.65, 0, 0.35, 1)",
           }}
+
         />
       ) : null}
     </div>
