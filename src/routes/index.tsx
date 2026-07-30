@@ -1,18 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  BadgeCheck,
-  CalendarCheck,
-  MessagesSquare,
-  Sparkles,
-  ThumbsUp,
-  UserRoundSearch,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
 
-import { BRAND, FEATURES, HUBS } from "@/lib/brand";
+import { BRAND, HUBS } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,86 +10,18 @@ export const Route = createFileRoute("/")({
       { name: "description", content: BRAND.description },
       { property: "og:title", content: `${BRAND.name} — 강남·역삼 직장인 1:1 소개 서비스` },
       { property: "og:description", content: BRAND.tagline },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Landing,
 });
 
-const FEATURE_ICONS: Record<string, LucideIcon> = {
-  verify: BadgeCheck,
-  profile: Sparkles,
-  match: UserRoundSearch,
-  chat: MessagesSquare,
-  meet: CalendarCheck,
-  feedback: ThumbsUp,
-};
-
-type Tone = "ink" | "coral" | "apricot" | "outline";
-
-const TONE_CLASS: Record<Tone, string> = {
-  ink: "bg-foreground text-background",
-  coral: "bg-primary text-primary-foreground",
-  apricot: "bg-accent text-accent-foreground",
-  outline: "border-2 border-foreground bg-background text-foreground",
-};
-
-const RING_CLASS: Record<Tone, string> = {
-  ink: "border border-background/60",
-  coral: "border border-primary-foreground/60",
-  apricot: "border border-foreground/40",
-  outline: "bg-foreground text-background",
-};
-
-function feature(id: string) {
-  return FEATURES.find((f) => f.id === id)!;
-}
-
-function BentoCard({
-  id,
-  tone,
-  className,
-  title,
-  body,
-  eyebrow,
-}: {
-  id: string;
-  tone: Tone;
-  className?: string;
-  title: ReactNode;
-  body?: string;
-  eyebrow?: string;
-}) {
-  const Icon = FEATURE_ICONS[id] ?? Sparkles;
-  return (
-    <div
-      className={cn(
-        "bento animate-fade-in transition-transform duration-200 active:scale-[0.98]",
-        TONE_CLASS[tone],
-        className,
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span
-          className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-full",
-            RING_CLASS[tone],
-          )}
-        >
-          <Icon className="size-4" aria-hidden="true" strokeWidth={2.4} />
-        </span>
-        {eyebrow ? (
-          <span className="text-[0.6rem] font-semibold tracking-[0.16em] uppercase opacity-80">
-            {eyebrow}
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-8">
-        <h3 className="headline text-lg">{title}</h3>
-        {body ? <p className="mt-1.5 text-[0.78rem] leading-snug opacity-80">{body}</p> : null}
-      </div>
-    </div>
-  );
-}
+const POINTS = [
+  { n: "01", title: "회사 이메일로 인증된 사람만", body: "퇴근 후 만나기 좋은 거리 안에서." },
+  { n: "02", title: "한 번에 한 명만 소개", body: "고르는 피로 없이, 한 사람에 집중." },
+  { n: "03", title: "약속까지 대신 조율", body: "채팅이 열리고 날짜와 장소를 정리해 드려요." },
+];
 
 function Landing() {
   const hub = HUBS[0];
@@ -123,101 +44,44 @@ function Landing() {
       </header>
 
       <main className="flex-1 px-6">
-        {/* Hero */}
-        <section className="pt-6 pb-7">
+        <section className="pt-8 pb-10">
           <p className="inline-flex items-center gap-2 rounded-full border border-foreground px-3 py-1 text-[0.68rem] font-semibold">
             <span className="size-1.5 rounded-full bg-primary" />
             지금 열려 있는 지역 · {hub.label}
           </p>
-          <h1 className="headline mt-6 text-[2.6rem] uppercase">
+          <h1 className="headline mt-7 text-[2.7rem] leading-[0.95] uppercase">
             After Work
             <br />
             <span className="text-primary">Matching</span>
           </h1>
-          <p className="mt-5 text-[1.05rem] leading-tight font-medium">
+          <p className="mt-6 text-[1.08rem] leading-snug font-medium">
             퇴근하고 만나기 좋은 거리에,
             <br />
             좋은 사람 한 명.
           </p>
-          <p className="mt-4 max-w-[19rem] text-[0.82rem] leading-relaxed text-muted-foreground">
-            {BRAND.description}
-          </p>
         </section>
 
-        {/* Bento */}
-        <section className="grid grid-cols-2 gap-3" aria-label="서비스가 하는 일">
-          <BentoCard
-            id="verify"
-            tone="coral"
-            eyebrow="Verified only"
-            className="col-span-2 min-h-[11rem]"
-            title="직장 인증"
-            body={feature("verify").body}
-          />
-          <BentoCard
-            id="profile"
-            tone="apricot"
-            className="aspect-square"
-            title={
-              <>
-                AI 인터뷰
-                <br />
-                프로필
-              </>
-            }
-          />
-          <BentoCard
-            id="match"
-            tone="ink"
-            className="aspect-square"
-            title={
-              <>
-                1:1
-                <br />
-                매칭 주선
-              </>
-            }
-          />
-          <BentoCard
-            id="chat"
-            tone="outline"
-            className="aspect-square"
-            title={
-              <>
-                채팅
-                <br />
-                자동 오픈
-              </>
-            }
-          />
-          <BentoCard
-            id="meet"
-            tone="coral"
-            className="aspect-square"
-            title={
-              <>
-                만남
-                <br />
-                확실 보장
-              </>
-            }
-          />
-          <BentoCard
-            id="feedback"
-            tone="apricot"
-            className="col-span-2 min-h-[8.5rem]"
-            eyebrow="Optional"
-            title="만남 후 피드백"
-            body={feature("feedback").body}
-          />
+        <section className="border-t border-border/70" aria-label="서비스 소개">
+          {POINTS.map((p) => (
+            <div key={p.n} className="flex gap-4 border-b border-border/70 py-5">
+              <span className="mt-0.5 text-[0.68rem] font-semibold tracking-[0.14em] text-primary">
+                {p.n}
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-[0.97rem] font-semibold">{p.title}</h2>
+                <p className="mt-1 text-[0.82rem] leading-relaxed text-muted-foreground">
+                  {p.body}
+                </p>
+              </div>
+            </div>
+          ))}
         </section>
 
-        <p className="mt-8 text-[0.7rem] leading-relaxed text-muted-foreground">
+        <p className="mt-7 text-[0.7rem] leading-relaxed text-muted-foreground">
           {BRAND.name} · {hub.label} 단일 지역 운영 · 그룹 미팅·전국 매칭은 제공하지 않습니다.
         </p>
       </main>
 
-      {/* 고정 CTA */}
       <div
         className="sticky bottom-0 z-10 mt-8 bg-background/95 px-6 pt-4 backdrop-blur"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
@@ -235,3 +99,4 @@ function Landing() {
     </div>
   );
 }
+
