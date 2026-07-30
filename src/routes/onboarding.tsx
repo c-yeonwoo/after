@@ -588,7 +588,23 @@ function Onboarding() {
   return (
     <StepShell step={9} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
       <div className="rounded-2xl border border-border bg-card p-5">
-        <p className="text-xs font-semibold tracking-wide text-primary-strong">관심사</p>
+        <p className="text-base font-semibold">
+          {basics.name}
+          {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {[
+            basics.job,
+            basics.mbti,
+            SMOKING_OPTIONS.find((o) => o.id === basics.smoking)?.label,
+            `음주 ${DRINKING_OPTIONS.find((o) => o.id === basics.drinking)?.label ?? ""}`.trim(),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+
+        <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">관심사</p>
+
         <div className="mt-2 flex flex-wrap gap-1.5">
           {selectedInterests.map((i) => (
             <span key={i.id} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
