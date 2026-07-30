@@ -64,23 +64,22 @@ function Onboarding() {
         step={1}
         total={TOTAL}
         eyebrow="가입"
-        title="어떤 성별로 참여하세요?"
-        description="이 서비스는 여성이 먼저 호감을 남기고, 남성이 그 안에서 한 명씩 소개받는 구조입니다. 역할에 따라 화면이 달라집니다."
+        title="성별을 알려주세요"
+        description="프로필과 매칭에 사용되며, 가입 후에는 바꿀 수 없습니다."
       >
         <div className="grid gap-3">
           <ChoiceCard
             selected={gender === "female"}
             onClick={() => setGender("female")}
             title="여성"
-            body="같은 퇴근존 남성 프로필을 무료로 호·불 평가하고 크레딧을 쌓습니다."
           />
           <ChoiceCard
             selected={gender === "male"}
             onClick={() => setGender("male")}
             title="남성"
-            body="나에게 호감을 준 분들 중에서만, 소개 티켓으로 한 명씩 프로필을 엽니다."
           />
         </div>
+
         <div className="mt-8">
           <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
             다음
