@@ -46,9 +46,8 @@ function IntroPage() {
 
   return (
     <AppScreen title="이번 소개">
-      <p className="mb-5 rounded-xl bg-muted/70 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-        서로 좋다고 해야 대화가 열립니다. 상대에게는 내 선택이 바로 보이지 않습니다.
-      </p>
+
+
 
       <ProfileDetail
         p={{
