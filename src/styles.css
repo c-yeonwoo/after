@@ -160,6 +160,13 @@
 
 
 .dark {
+  --ink: oklch(0.984 0.003 247.858);
+  --ink-muted: oklch(0.704 0.04 256.788);
+  --surface: oklch(0.208 0.042 265.755);
+  --surface-subtle: oklch(0.279 0.041 260.031);
+  --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 70%);
+  --shadow-card: 0 8px 24px -16px oklch(0 0 0 / 60%);
+  --shadow-brand: 0 10px 30px -14px oklch(0.7 0.13 190 / 45%);
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);
