@@ -684,7 +684,7 @@ function Onboarding() {
         <Button
           className="flex-1"
           size="lg"
-          disabled={intro.trim().length < 20}
+          disabled={intro.trim().length < 20 || profile.headline.trim().length < 5}
           onClick={() => {
             saveMe({
               gender: gender ?? "female",
