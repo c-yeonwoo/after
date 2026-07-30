@@ -94,8 +94,38 @@
  */
 :root {
   --radius: 0.9rem;
+
+  /* ── 브랜드 원천 값 (single source of truth) ── */
+  --brand-50: oklch(0.975 0.018 190);
+  --brand-100: oklch(0.945 0.038 190);
+  --brand-200: oklch(0.9 0.065 190);
+  --brand-300: oklch(0.84 0.095 190);
+  --brand-400: oklch(0.77 0.115 190);
+  --brand-500: oklch(0.7 0.13 190);
+  --brand-600: oklch(0.6 0.12 192);
+  --brand-700: oklch(0.48 0.1 194);
+
+  --coral-100: oklch(0.945 0.03 30);
+  --coral-300: oklch(0.9 0.055 30);
+  --coral-400: oklch(0.87 0.075 30);
+  --coral-600: oklch(0.66 0.13 30);
+
+  --ink: oklch(0.26 0.03 240);
+  --ink-muted: oklch(0.53 0.03 235);
+  --surface: oklch(1 0 0);
+  --surface-subtle: oklch(0.955 0.014 220);
+  --success: oklch(0.72 0.13 155);
+  --warning: oklch(0.8 0.13 75);
+
+  --shadow-frame: 0 0 60px -20px oklch(0.26 0.03 240 / 45%);
+  --shadow-card: 0 8px 24px -16px oklch(0.26 0.03 240 / 35%);
+  --shadow-brand: 0 10px 30px -14px oklch(0.7 0.13 190 / 60%);
+  --gradient-brand: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  --gradient-warm: linear-gradient(135deg, var(--coral-300), var(--brand-300));
+
+  /* ── 시맨틱 토큰 (브랜드 값에서 파생) ── */
   --background: oklch(0.985 0.008 200);
-  --foreground: oklch(0.26 0.03 240);
+  --foreground: var(--ink);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.26 0.03 240);
   --popover: oklch(1 0 0);
