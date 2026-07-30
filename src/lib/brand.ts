@@ -1,10 +1,11 @@
 /**
  * 브랜드 상수 — 서비스명 변경 시 이 파일만 수정하면 됩니다.
- * 아모르 세라(Amor Sera): 이탈리아어 amor(사랑) + sera(저녁) = "저녁의 사랑".
+ * 세렌디피티(Serendipity): 우연히 찾아오는 뜻밖의 좋은 만남.
  */
 export const BRAND = {
-  name: "아모르 세라",
-  nameEn: "Amor Sera",
+  name: "세렌디피티",
+  nameEn: "Serendipity",
+
   tagline: "같은 퇴근길에서, 호감 있는 한 사람과, 카페 한 잔.",
   description:
     "테헤란로·역삼권 직장인을 위한 1:1 프라이빗 매칭. 스와이프 없이, 이미 호감이 오간 한 사람만 순서대로 만납니다.",
