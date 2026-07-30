@@ -21,12 +21,11 @@ export const DRINKING_OPTIONS = [
 ] as const;
 
 export const RELIGION_OPTIONS = [
-  { id: "none", label: "없음" },
+  { id: "none", label: "무교" },
   { id: "christian", label: "기독교" },
   { id: "catholic", label: "천주교" },
   { id: "buddhist", label: "불교" },
   { id: "other", label: "기타" },
-  { id: "secret", label: "밝히지 않음" },
 ] as const;
 
 export type Basics = {
