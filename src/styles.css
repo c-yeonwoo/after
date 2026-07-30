@@ -101,7 +101,8 @@
  * 오프화이트 페이퍼 배경 + 잉크 블랙 + 코럴 레드 액센트 + 소프트 애프리콧.
  */
 :root {
-  --radius: 1.5rem;
+  /* 라운드 스케일 기준값 — sm .5 / md .625 / lg .75 / xl 1 / 2xl 1.25 / 3xl 1.5rem */
+  --radius: 0.75rem;
 
   /* ── 브랜드 원천 값 (single source of truth) — 코럴 레드 ── */
   --brand-50: oklch(0.972 0.012 34);
@@ -277,7 +278,7 @@
 
 /* 벤토 카드 기본형 */
 @utility bento {
-  border-radius: 2rem;
+  border-radius: var(--radius-2xl);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;

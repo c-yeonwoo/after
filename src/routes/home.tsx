@@ -105,7 +105,7 @@ function HomePage() {
 
       {/* 메인 카드 */}
       {candidate && flow.myAnswer !== "pass" ? (
-        <div className="mt-7 overflow-hidden rounded-[2rem] bg-foreground text-background">
+        <div className="mt-7 overflow-hidden rounded-2xl bg-foreground text-background">
           <div className="px-6 pt-6">
             <div className="flex items-start justify-between gap-2">
               <span className="text-[0.6rem] font-semibold tracking-[0.16em] uppercase opacity-70">
@@ -141,7 +141,7 @@ function HomePage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-7 rounded-[2rem] border-2 border-dashed border-foreground/20 px-6 py-10 text-center">
+        <div className="mt-7 rounded-2xl border-2 border-dashed border-foreground/20 px-6 py-10 text-center">
           <Sparkles className="mx-auto size-5 text-primary" aria-hidden="true" />
           <p className="headline mt-3 text-base">준비 중인 소개가 있습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
