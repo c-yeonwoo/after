@@ -625,6 +625,7 @@ function Onboarding() {
             basics.mbti,
             SMOKING_OPTIONS.find((o) => o.id === basics.smoking)?.label,
             `음주 ${DRINKING_OPTIONS.find((o) => o.id === basics.drinking)?.label ?? ""}`.trim(),
+            RELIGION_OPTIONS.find((o) => o.id === basics.religion)?.label,
           ]
             .filter(Boolean)
             .join(" · ")}
