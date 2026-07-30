@@ -10,7 +10,7 @@ import {
   SMOKING_OPTIONS,
   ageFrom,
 } from "@/components/onboarding/basics";
-import { ALL_INTERESTS } from "@/components/onboarding/profile";
+import { followUpFor } from "@/components/onboarding/profile";
 import { BRAND, HUBS } from "@/lib/brand";
 import { resetAll, useMe } from "@/lib/store";
 
