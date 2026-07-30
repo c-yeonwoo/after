@@ -423,51 +423,8 @@ function Onboarding() {
     );
   }
 
-  // 4 — 한 줄 소개
-  if (step === 5) {
-    const ok = profile.headline.trim().length >= 8;
-    return (
-      <StepShell
-        step={5}
-        total={TOTAL}
-        eyebrow="프로필"
-        title="나를 한 문장으로 소개한다면"
-        description="직업이나 스펙 말고, 지금의 나를 설명하는 한 줄."
-      >
-        <label className="text-sm font-semibold text-foreground" htmlFor="headline">
-          한 줄 소개
-        </label>
-        <Textarea
-          id="headline"
-          rows={3}
-          className="mt-2"
-          placeholder="예: 평일엔 조용히 일하고, 주말엔 새로운 동네를 걷는 사람."
-          value={profile.headline}
-          onChange={(e) => patch({ headline: e.target.value })}
-          aria-invalid={profile.headline.length > 0 && !ok}
-          aria-describedby="headline-help"
-        />
-        <p
-          id="headline-help"
-          aria-live="polite"
-          className={cn(
-            "mt-2 text-sm",
-            profile.headline.length > 0 && !ok ? "font-medium text-destructive" : "text-muted-foreground",
-          )}
-        >
-          최소 8자 ({profile.headline.trim().length}자)
-        </p>
-        <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(4)}>
-            이전
-          </Button>
-          <Button className="flex-1" size="lg" disabled={!ok} onClick={() => setStep(6)}>
-            다음
-          </Button>
-        </div>
-      </StepShell>
-    );
-  }
+  // (한 줄 소개는 마지막 확인 화면에서 답변 기반으로 제안합니다)
+
 
   // 5 — 관심사 직접 입력 (이후 질문이 여기에 따라 달라짐)
   if (step === 6) {
