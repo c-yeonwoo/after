@@ -222,3 +222,18 @@
   }
 
 }
+
+/* 브랜드 그라디언트 유틸리티 — 하드코딩 대신 사용 */
+@utility bg-gradient-brand {
+  background-image: var(--gradient-brand);
+}
+
+@utility bg-gradient-warm {
+  background-image: var(--gradient-warm);
+}
+
+@utility text-gradient-brand {
+  background-image: var(--gradient-brand);
+  background-clip: text;
+  color: transparent;
+}
