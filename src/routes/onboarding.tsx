@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
+import { saveMe } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
