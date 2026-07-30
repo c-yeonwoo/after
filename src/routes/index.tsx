@@ -106,7 +106,7 @@ function Landing() {
   const hub = HUBS[0];
 
   return (
-    <div className="min-h-dvh bg-background pb-4">
+    <div className="flex min-h-dvh flex-col bg-background pb-4">
       <header
         className="sticky top-0 z-20 bg-background/85 px-6 pb-3 backdrop-blur-xl"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.9rem)" }}
@@ -122,7 +122,7 @@ function Landing() {
         </div>
       </header>
 
-      <main className="px-6">
+      <main className="flex-1 px-6">
         {/* Hero */}
         <section className="pt-6 pb-7">
           <p className="inline-flex items-center gap-2 rounded-full border border-foreground px-3 py-1 text-[0.68rem] font-semibold">

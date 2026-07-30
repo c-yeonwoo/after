@@ -269,7 +269,8 @@
 /* 헤드라인 — Archivo Black, 타이트한 자간/행간 */
 @utility headline {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 700;
+  font-synthesis-weight: none;
   letter-spacing: -0.03em;
   line-height: 0.98;
 }
