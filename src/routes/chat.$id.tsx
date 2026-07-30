@@ -71,44 +71,7 @@ function ChatRoom() {
     >
       <div className="pb-32">
         {/* 만남 카드 */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-          <div className="flex items-center gap-2">
-            <CalendarCheck className="size-4 text-primary-strong" aria-hidden="true" />
-            <p className="text-sm font-semibold">{meetupDate ? "만남 확정" : "만날 날 정하기"}</p>
-          </div>
-          {meetupDate ? (
-            <>
-              <p className="mt-2 text-sm text-foreground">
-                {meetupDate.toLocaleDateString("ko-KR", {
-                  month: "long",
-                  day: "numeric",
-                  weekday: "short",
-                })}{" "}
-                저녁 · {candidate.area} 일대
-              </p>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                전날 00시에 사적인 이야기까지 나눌 수 있는 대화가 열립니다. 무엇을 할지는 두 분이 정하세요.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                날짜만 정하면 나머지는 저희가 챙깁니다. 장소는 두 분 퇴근길이 겹치는 {candidate.area} 근처로 제안드려요.
-              </p>
-              <Button
-                className="mt-4 w-full"
-                onClick={() => {
-                  const d = new Date();
-                  d.setDate(d.getDate() + 5);
-                  saveFlow({ meetupAt: d.toISOString() });
-                  toast.success("만남이 확정되었습니다.");
-                }}
-              >
-                이번 주 안으로 확정하기
-              </Button>
-            </>
-          )}
-        </div>
+        <MeetPlanner area={candidate.area} />
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           이번 만남에서 나누고 싶은 이야기: {candidate.topics.join(" · ")}
