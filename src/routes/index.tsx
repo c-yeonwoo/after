@@ -84,19 +84,35 @@ function Landing() {
 
       <div
         className="sticky bottom-0 z-10 mt-8 bg-background/95 px-6 pt-4 backdrop-blur"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.25rem)" }}
       >
-        <Link
-          to="/onboarding"
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={start}
           className="headline flex w-full items-center justify-center rounded-full bg-foreground py-5 text-base text-background transition-colors duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           직장 인증하고 시작하기
-        </Link>
+        </button>
         <p className="mt-3 text-center text-[0.62rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
           Verification takes 1 minute
         </p>
       </div>
+
+      {origin ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50"
+          style={{
+            background: "hsl(var(--primary))",
+            backgroundColor: "var(--primary)",
+            clipPath: `circle(${revealed ? "150%" : "0%"} at ${origin.x}px ${origin.y}px)`,
+            transition: "clip-path 620ms cubic-bezier(0.65, 0, 0.35, 1)",
+          }}
+        />
+      ) : null}
     </div>
   );
 }
+
 
