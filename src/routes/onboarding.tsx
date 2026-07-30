@@ -647,15 +647,13 @@ function Onboarding() {
             .join(" · ")}
         </p>
 
-        <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">관심사</p>
+        <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">요즘 머릿속</p>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {selectedInterests.map((i) => (
-            <span key={i} className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
-              {i}
-            </span>
-          ))}
-        </div>
+        <SeedTree
+          className="mt-3"
+          nodes={selectedInterests.map((label) => ({ label, leaf: profile.details[label] }))}
+        />
+
         <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">이번 만남에서 나누고 싶은 이야기</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {topics.map((t) => (
