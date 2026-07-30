@@ -79,17 +79,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "퇴근길 — 테헤란로 직장인 1:1 프라이빗 매칭" },
+      { title: "아모르 세라 — 테헤란로 직장인 1:1 프라이빗 매칭" },
       {
         name: "description",
         content:
           "같은 퇴근길에서, 호감 있는 한 사람과, 카페 한 잔. 스와이프 없는 1:1 프라이빗 매칭.",
       },
-      { property: "og:title", content: "퇴근길 — 테헤란로 직장인 1:1 프라이빗 매칭" },
+      { property: "og:title", content: "아모르 세라 — 테헤란로 직장인 1:1 프라이빗 매칭" },
       {
         property: "og:description",
         content: "같은 퇴근길에서, 호감 있는 한 사람과, 카페 한 잔.",
       },
+      { property: "og:site_name", content: "Amor Sera" },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
