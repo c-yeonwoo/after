@@ -20,7 +20,6 @@ import {
   TOPIC_TAGS,
   buildIntro,
   emptyProfile,
-  followUpFor,
   type ProfileDraft,
 } from "@/components/onboarding/profile";
 import { Button } from "@/components/ui/button";
@@ -538,7 +537,7 @@ function Onboarding() {
   const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
 
   return (
-    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="답변으로 만든 초안입니다.">
+    <StepShell step={8} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
       <div className="rounded-2xl border border-border bg-card p-5">
         <p className="text-base font-semibold">
           {basics.name}
