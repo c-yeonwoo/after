@@ -49,7 +49,7 @@ function HomePage() {
   return (
     <AppScreen>
       <p className="mt-4 text-sm text-muted-foreground">
-        {hub?.label ?? "테헤란로·역삼권"}
+        {hub?.label ?? "강남·역삼권"}
       </p>
       <h1 className="mt-1 text-2xl leading-snug font-semibold tracking-tight">
         {me?.basics.name ? `${me.basics.name}님,` : "안녕하세요,"}

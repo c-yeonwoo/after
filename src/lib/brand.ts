@@ -8,22 +8,28 @@ export const BRAND = {
 
   tagline: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",
   description:
-    "직장 인증을 마친 테헤란로·역삼권 직장인끼리, 오가는 길이 겹치는 한 사람을 소개받습니다. 저녁 한 끼든 가벼운 한 잔이든, 무엇을 할지는 두 분이 정하세요.",
+    "직장 인증을 마친 강남·역삼권 직장인끼리, 오가는 길이 겹치는 한 사람을 소개받습니다. 저녁 한 끼든 가벼운 한 잔이든, 무엇을 할지는 두 분이 정하세요.",
 } as const;
 
 
 
 export const HUBS = [
   {
-    id: "teheran",
-    label: "테헤란로·역삼권",
-    detail: "역삼 · 선릉 · 삼성 · 강남",
+    id: "gangnam",
+    label: "강남·역삼권",
+    detail: "강남 · 역삼 · 선릉 · 삼성",
     available: true,
   },
   {
     id: "pangyo",
-    label: "판교·정자권",
+    label: "판교권",
     detail: "판교 · 정자 · 서현",
+    available: false,
+  },
+  {
+    id: "jongno",
+    label: "종로권",
+    detail: "종로 · 광화문 · 을지로",
     available: false,
   },
   {
