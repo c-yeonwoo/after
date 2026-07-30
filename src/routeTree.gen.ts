@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as IntroRouteImport } from './routes/intro'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 
@@ -22,6 +23,11 @@ const IndexRoute = IndexRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntroRoute = IntroRouteImport.update({
+  id: '/intro',
+  path: '/intro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeRoute = MeRouteImport.update({
@@ -38,12 +44,14 @@ const OnboardingRoute = OnboardingRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/home': typeof HomeRoute
+  '/intro': typeof IntroRoute
   '/me': typeof MeRoute
   '/onboarding': typeof OnboardingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/home': typeof HomeRoute
+  '/intro': typeof IntroRoute
   '/me': typeof MeRoute
   '/onboarding': typeof OnboardingRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/home': typeof HomeRoute
+  '/intro': typeof IntroRoute
   '/me': typeof MeRoute
   '/onboarding': typeof OnboardingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/home' | '/me' | '/onboarding'
+  fullPaths: '/' | '/home' | '/intro' | '/me' | '/onboarding'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/home' | '/me' | '/onboarding'
-  id: '__root__' | '/' | '/home' | '/me' | '/onboarding'
+  to: '/' | '/home' | '/intro' | '/me' | '/onboarding'
+  id: '__root__' | '/' | '/home' | '/intro' | '/me' | '/onboarding'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HomeRoute: typeof HomeRoute
+  IntroRoute: typeof IntroRoute
   MeRoute: typeof MeRoute
   OnboardingRoute: typeof OnboardingRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intro': {
+      id: '/intro'
+      path: '/intro'
+      fullPath: '/intro'
+      preLoaderRoute: typeof IntroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/me': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HomeRoute: HomeRoute,
+  IntroRoute: IntroRoute,
   MeRoute: MeRoute,
   OnboardingRoute: OnboardingRoute,
 }
