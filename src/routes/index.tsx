@@ -25,6 +25,23 @@ const POINTS = [
 
 function Landing() {
   const hub = HUBS[0];
+  const navigate = useNavigate();
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [revealed, setRevealed] = useState(false);
+
+  function start() {
+    if (origin) return;
+    const r = btnRef.current?.getBoundingClientRect();
+    setOrigin(
+      r
+        ? { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+        : { x: window.innerWidth / 2, y: window.innerHeight - 80 },
+    );
+    requestAnimationFrame(() => setRevealed(true));
+    window.setTimeout(() => navigate({ to: "/onboarding" }), 560);
+  }
+
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-4">
