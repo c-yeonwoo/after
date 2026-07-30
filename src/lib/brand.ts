@@ -57,18 +57,37 @@ export function isCompanyEmail(email: string) {
   return !PERSONAL_EMAIL_DOMAINS.includes(domain);
 }
 
-/** 1차 만남 프로토콜 — 온보딩·매칭 UI에 반복 노출되는 규칙 */
-export const FIRST_MEETING_PROTOCOL = [
+/** 서비스가 제공하는 것 — 랜딩·온보딩에 공통 노출 */
+export const FEATURES = [
   {
-    title: "1차는 카페",
-    body: "퇴근길 카페 한 잔, 45~60분. 부담 없이 결이 맞는지만 확인합니다.",
+    id: "verify",
+    title: "직장 인증 · 가까운 거리",
+    body: "회사 이메일로 재직을 확인하고, 퇴근하고 만나기 좋은 거리 안에서만 소개합니다.",
   },
   {
-    title: "술은 양쪽이 원할 때만",
-    body: "두 사람 모두 술을 선호로 표시한 경우에만 술자리가 열립니다.",
+    id: "profile",
+    title: "AI 인터뷰 프로필",
+    body: "몇 가지 질문에 답하면 사진과 스펙 대신, 대화 결이 드러나는 소개글을 만들어 드립니다.",
   },
   {
-    title: "1차 식사는 없습니다",
-    body: "밥·풀코스 데이트는 1차에서 금지. 시간과 비용의 비대칭을 만들지 않습니다.",
+    id: "match",
+    title: "매칭 주선",
+    body: "훑어보는 피드는 없습니다. 서로 맞을 만한 한 사람씩만 순서대로 소개합니다.",
+  },
+  {
+    id: "chat",
+    title: "채팅 오픈",
+    body: "양쪽이 좋다고 하면 대화가 열립니다. 약속을 잡는 데 필요한 만큼만.",
+  },
+  {
+    id: "meet",
+    title: "만남 보장",
+    body: "채팅만 하다 흐지부지되지 않도록, 실제로 만나는 데까지 서비스가 챙깁니다.",
+  },
+  {
+    id: "feedback",
+    title: "만남 후 피드백 (선택)",
+    body: "남기면 다음 소개가 더 정확해집니다. 상대에게는 공개되지 않습니다.",
   },
 ] as const;
+
