@@ -37,6 +37,9 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  /* 작은 텍스트/아이콘용 고대비 브랜드 컬러 (WCAG AA) */
+  --color-primary-strong: var(--primary-strong);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -110,12 +113,14 @@
   --coral-400: oklch(0.87 0.075 30);
   --coral-600: oklch(0.66 0.13 30);
 
-  --ink: oklch(0.26 0.03 240);
-  --ink-muted: oklch(0.53 0.03 235);
+  --ink: oklch(0.24 0.03 240);
+  /* WCAG AA(4.5:1) 이상 확보를 위해 보조 텍스트를 어둡게 조정 */
+  --ink-muted: oklch(0.46 0.03 235);
   --surface: oklch(1 0 0);
   --surface-subtle: oklch(0.955 0.014 220);
-  --success: oklch(0.72 0.13 155);
-  --warning: oklch(0.8 0.13 75);
+  --success: oklch(0.58 0.13 155);
+  --warning: oklch(0.62 0.13 75);
+
 
   --shadow-frame: 0 0 60px -20px oklch(0.26 0.03 240 / 45%);
   --shadow-card: 0 8px 24px -16px oklch(0.26 0.03 240 / 35%);
@@ -131,6 +136,8 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
   --primary: var(--brand-500);
+  --primary-strong: var(--brand-700);
+
   --primary-foreground: oklch(0.21 0.04 220);
   --secondary: oklch(0.955 0.018 200);
   --secondary-foreground: oklch(0.3 0.035 230);
@@ -138,11 +145,12 @@
   --muted-foreground: var(--ink-muted);
   --accent: var(--coral-400);
   --accent-foreground: oklch(0.3 0.06 30);
-  --destructive: oklch(0.62 0.19 22);
-  --destructive-foreground: oklch(0.98 0.01 90);
-  --border: oklch(0.26 0.03 240 / 12%);
-  --input: oklch(0.26 0.03 240 / 16%);
-  --ring: var(--brand-500);
+  --destructive: oklch(0.53 0.2 25);
+  --destructive-foreground: oklch(0.99 0.005 90);
+  --border: oklch(0.26 0.03 240 / 16%);
+  --input: oklch(0.26 0.03 240 / 30%);
+  --ring: var(--brand-600);
+
   --chart-1: var(--brand-500);
   --chart-2: var(--coral-600);
   --chart-3: oklch(0.72 0.11 300);
@@ -174,6 +182,8 @@
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
   --primary: oklch(0.929 0.013 255.508);
+  --primary-strong: var(--brand-300);
+
   --primary-foreground: oklch(0.208 0.042 265.755);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
@@ -221,7 +231,13 @@
     letter-spacing: -0.03em;
   }
 
+  /* 키보드 포커스는 어떤 요소에서도 항상 뚜렷하게 보이도록 */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
 }
+
 
 /* 브랜드 그라디언트 유틸리티 — 하드코딩 대신 사용 */
 @utility bg-gradient-brand {

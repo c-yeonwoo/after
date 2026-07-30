@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Check, Coffee, Wine } from "lucide-react";
+import { AlertCircle, Check, Coffee, Wine } from "lucide-react";
 import { toast } from "sonner";
 
 import { StepShell } from "@/components/onboarding/StepShell";
@@ -132,43 +132,70 @@ function Onboarding() {
         title="회사 이메일로 재직을 확인합니다"
         description="인증 코드 확인 외에 이메일 주소는 프로필에 노출되지 않습니다. 개인 메일(gmail, naver 등)은 사용할 수 없습니다."
       >
-        <label className="text-sm text-muted-foreground" htmlFor="work-email">
+        <label className="text-sm font-semibold text-foreground" htmlFor="work-email">
           회사 이메일
         </label>
         <Input
           id="work-email"
           type="email"
           inputMode="email"
+          autoComplete="email"
           placeholder="name@company.co.kr"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          aria-invalid={email.length > 3 && !emailValid}
+          aria-describedby={email.length > 3 && !emailValid ? "work-email-error" : "work-email-hint"}
           className="mt-2"
         />
         {email.length > 3 && !emailValid ? (
-          <p className="mt-2 text-xs text-destructive">
-            회사 도메인 이메일만 인증할 수 있습니다.
+          <p
+            id="work-email-error"
+            role="alert"
+            className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>회사 도메인 이메일만 인증할 수 있습니다. (예: name@company.co.kr)</span>
           </p>
-        ) : null}
+        ) : (
+          <p id="work-email-hint" className="mt-2 text-sm text-muted-foreground">
+            개인 메일(gmail, naver 등)은 사용할 수 없습니다.
+          </p>
+        )}
 
         {codeSent ? (
           <div className="mt-6">
-            <label className="text-sm text-muted-foreground" htmlFor="code">
+            <label className="text-sm font-semibold text-foreground" htmlFor="code">
               인증 코드 6자리
             </label>
             <Input
               id="code"
               inputMode="numeric"
+              autoComplete="one-time-code"
               maxLength={6}
               placeholder="000000"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              aria-invalid={code.length > 0 && code.length !== 6}
+              aria-describedby={code.length > 0 && code.length !== 6 ? "code-error" : "code-hint"}
               className="mt-2 tracking-[0.4em]"
             />
-            <p className="mt-2 text-xs text-muted-foreground">
-              지금은 화면 흐름만 연결된 상태입니다. 실제 코드 발송은 다음 단계에서 붙습니다.
-            </p>
+            {code.length > 0 && code.length !== 6 ? (
+              <p
+                id="code-error"
+                role="alert"
+                className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
+              >
+                <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <span>숫자 6자리를 모두 입력해 주세요. (현재 {code.length}자리)</span>
+              </p>
+            ) : (
+              <p id="code-hint" className="mt-2 text-sm text-muted-foreground">
+                지금은 화면 흐름만 연결된 상태입니다. 실제 코드 발송은 다음 단계에서 붙습니다.
+              </p>
+            )}
           </div>
         ) : null}
+
 
         <div className="mt-8 flex gap-2">
           <Button variant="ghost" onClick={() => setStep(2)}>
@@ -210,14 +237,38 @@ function Onboarding() {
         title={question.prompt}
         description="스펙 나열 대신, 결과 가치관으로 소개합니다. 두세 문장이면 충분합니다."
       >
+        <label className="text-sm font-semibold text-foreground" htmlFor={`answer-${question.id}`}>
+          답변
+        </label>
         <Textarea
           key={question.id}
+          id={`answer-${question.id}`}
           rows={5}
+          className="mt-2"
           placeholder={question.placeholder}
           value={answers[question.id] ?? ""}
           onChange={(e) => setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))}
+          aria-invalid={(answers[question.id] ?? "").length > 0 && !answered}
+          aria-describedby={`answer-${question.id}-help`}
         />
-        <p className="mt-2 text-xs text-muted-foreground">최소 10자 이상 입력해 주세요.</p>
+        <p
+          id={`answer-${question.id}-help`}
+          aria-live="polite"
+          className={cn(
+            "mt-2 flex items-start gap-1.5 text-sm",
+            (answers[question.id] ?? "").length > 0 && !answered
+              ? "font-medium text-destructive"
+              : "text-muted-foreground",
+          )}
+        >
+          {(answers[question.id] ?? "").length > 0 && !answered ? (
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          ) : null}
+          <span>
+            최소 10자 이상 입력해 주세요. (현재 {(answers[question.id] ?? "").trim().length}자)
+          </span>
+        </p>
+
         <div className="mt-8 flex gap-2">
           <Button
             variant="ghost"
@@ -248,7 +299,34 @@ function Onboarding() {
       title="이렇게 소개해도 될까요?"
       description="인터뷰 답변으로 만든 초안입니다. 직접 다듬은 뒤 확정하세요."
     >
-      <Textarea rows={7} value={intro} onChange={(e) => setIntro(e.target.value)} />
+      <label className="text-sm font-semibold text-foreground" htmlFor="intro">
+        내 소개 초안
+      </label>
+      <Textarea
+        id="intro"
+        rows={7}
+        className="mt-2"
+        value={intro}
+        onChange={(e) => setIntro(e.target.value)}
+        aria-invalid={intro.trim().length > 0 && intro.trim().length < 20}
+        aria-describedby="intro-help"
+      />
+      <p
+        id="intro-help"
+        aria-live="polite"
+        className={cn(
+          "mt-2 flex items-start gap-1.5 text-sm",
+          intro.trim().length > 0 && intro.trim().length < 20
+            ? "font-medium text-destructive"
+            : "text-muted-foreground",
+        )}
+      >
+        {intro.trim().length > 0 && intro.trim().length < 20 ? (
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        ) : null}
+        <span>최소 20자 이상 입력해 주세요. (현재 {intro.trim().length}자)</span>
+      </p>
+
 
       <div className="mt-8">
         <p className="text-sm font-bold">1차 만남 선호</p>
@@ -321,18 +399,27 @@ function ChoiceCard({
     <button
       type="button"
       disabled={disabled}
+      aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        "rounded-xl border border-border bg-card p-5 text-left transition-colors",
-        selected && "border-primary bg-primary/8",
-        disabled ? "cursor-not-allowed opacity-45" : "hover:border-primary/50",
+        "min-h-11 rounded-xl border border-border bg-card p-5 text-left transition-colors",
+        "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+        selected && "border-primary-strong bg-primary/10 ring-1 ring-primary-strong",
+        disabled ? "cursor-not-allowed opacity-60" : "hover:border-primary-strong/60",
       )}
     >
       <div className="flex items-center gap-2">
-        {icon ? <span className="text-primary">{icon}</span> : null}
+        {icon ? <span className="text-primary-strong">{icon}</span> : null}
         <p className="font-bold">{title}</p>
+        {selected ? (
+          <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-primary-strong">
+            <Check className="size-4" aria-hidden="true" />
+            선택됨
+          </span>
+        ) : null}
       </div>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </button>
+
   );
 }
