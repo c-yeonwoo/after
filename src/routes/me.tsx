@@ -60,7 +60,12 @@ function MePage() {
     interests: me.profile.interests.map((v) => v.trim()).filter(Boolean),
     matchTags: me.profile.matchTags,
     topics: me.profile.topics,
-    answers: [],
+    answers: me.profile.interests
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .map((label) => ({ q: followUpFor(label), a: (me.profile.details[label] ?? "").trim() }))
+      .filter((x) => x.a),
+
   };
 
   return (
