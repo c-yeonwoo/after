@@ -27,6 +27,8 @@ export const Route = createFileRoute("/intro")({
 
 function IntroPage() {
   const { flow } = useFlow();
+  const { me } = useMe();
+  const isMale = me?.gender === "male";
   const navigate = useNavigate();
   const candidate = flow.introId ? getCandidate(flow.introId) : null;
 
