@@ -111,6 +111,9 @@
 :root {
   /* 라운드 스케일 기준값 — sm .5 / md .625 / lg .75 / xl 1 / 2xl 1.25 / 3xl 1.5rem */
   --radius: 0.75rem;
+  /* 입력폼은 한 단계 더 각지게 */
+  --radius-field-value: 0.5rem;
+
 
   /* ── 브랜드 원천 값 (single source of truth) — 코럴 레드 ── */
   --brand-50: oklch(0.972 0.012 34);
