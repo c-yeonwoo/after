@@ -111,3 +111,28 @@ export function buildIntro(p: ProfileDraft) {
   }
   return lines.join("\n\n");
 }
+
+/**
+ * 씨앗(키워드) → 가지(후속 질문).
+ * 적은 키워드의 결에 맞춰 질문 하나만 되묻습니다. (이후 AI 생성으로 교체)
+ */
+const FOLLOW_UP_RULES: { match: RegExp; q: (label: string) => string }[] = [
+  { match: /러닝|달리기|헬스|운동|클라이밍|요가|수영|자전거|테니스|골프|필라테스/, q: (l) => `${l}, 하고 나면 뭐가 제일 달라지나요?` },
+  { match: /영화|드라마|시리즈|넷플|극장/, q: (l) => `최근 ${l} 중에 오래 남은 한 편은?` },
+  { match: /책|독서|소설|에세이/, q: (l) => `요즘 ${l}에서 밑줄 친 문장이 있다면?` },
+  { match: /음악|기타|피아노|밴드|공연|페스티벌|노래/, q: (l) => `${l}, 요즘 반복해서 듣는 건 뭔가요?` },
+  { match: /커피|핸드드립|카페|차|와인|위스키|맥주|술/, q: (l) => `${l}, 어떤 순간에 제일 생각나요?` },
+  { match: /요리|베이킹|맛집|음식|빵/, q: (l) => `${l} 중에 남에게 꼭 권하고 싶은 하나는?` },
+  { match: /여행|캠핑|등산|산책|드라이브|바다/, q: (l) => `${l}, 다음에 가려고 찜해둔 곳은?` },
+  { match: /사진|그림|드로잉|전시|미술|글쓰기|디자인/, q: (l) => `${l}으로 남기고 싶은 게 뭔가요?` },
+  { match: /게임|보드게임/, q: (l) => `${l}, 같이 하면 재밌는 사람은 어떤 스타일인가요?` },
+  { match: /고양이|강아지|반려/, q: (l) => `${l} 이야기 하나만 자랑해 주세요.` },
+  { match: /공부|자격증|영어|스터디|사이드|프로젝트|개발|투자/, q: (l) => `${l}, 지금 붙잡고 있는 목표는?` },
+];
+
+export function followUpFor(label: string): string {
+  const clean = label.trim();
+  if (!clean) return "";
+  const hit = FOLLOW_UP_RULES.find((r) => r.match.test(clean));
+  return hit ? hit.q(clean) : `${clean}에 시간을 쓰게 된 계기가 있나요?`;
+}
