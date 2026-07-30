@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatsRouteImport } from './routes/chats'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as MeRouteImport } from './routes/me'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const ChatsRoute = ChatsRouteImport.update({
   id: '/chats',
   path: '/chats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -56,6 +62,7 @@ const ChatIdRoute = ChatIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chats': typeof ChatsRoute
+  '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/me': typeof MeRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chats': typeof ChatsRoute
+  '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/me': typeof MeRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chats': typeof ChatsRoute
+  '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/me': typeof MeRoute
@@ -84,13 +93,29 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/chats' | '/home' | '/intro' | '/me' | '/onboarding' | '/chat/$id'
+    | '/'
+    | '/chats'
+    | '/feedback'
+    | '/home'
+    | '/intro'
+    | '/me'
+    | '/onboarding'
+    | '/chat/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chats' | '/home' | '/intro' | '/me' | '/onboarding' | '/chat/$id'
+  to:
+    | '/'
+    | '/chats'
+    | '/feedback'
+    | '/home'
+    | '/intro'
+    | '/me'
+    | '/onboarding'
+    | '/chat/$id'
   id:
     | '__root__'
     | '/'
     | '/chats'
+    | '/feedback'
     | '/home'
     | '/intro'
     | '/me'
@@ -101,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatsRoute: typeof ChatsRoute
+  FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
   IntroRoute: typeof IntroRoute
   MeRoute: typeof MeRoute
@@ -122,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/chats'
       fullPath: '/chats'
       preLoaderRoute: typeof ChatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -165,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatsRoute: ChatsRoute,
+  FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,
   IntroRoute: IntroRoute,
   MeRoute: MeRoute,
