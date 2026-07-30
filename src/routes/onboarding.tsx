@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Check, Coffee, Wine } from "lucide-react";
+import { AlertCircle, Check, Coffee, Wine } from "lucide-react";
 import { toast } from "sonner";
 
 import { StepShell } from "@/components/onboarding/StepShell";
