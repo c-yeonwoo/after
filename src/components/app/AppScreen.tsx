@@ -54,7 +54,7 @@ export function AppScreen({
 
       {hideTabs ? null : (
         <nav
-          className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-border/70 bg-background/90 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t-2 border-foreground/10 bg-background/95 backdrop-blur-xl"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.4rem)" }}
           aria-label="주요 메뉴"
         >
@@ -68,12 +68,12 @@ export function AppScreen({
                     to={t.to}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex min-h-14 flex-col items-center justify-center gap-1 pt-2 text-[0.7rem] font-medium transition-colors",
+                      "flex min-h-14 flex-col items-center justify-center gap-1 pt-2 text-[0.68rem] font-semibold transition-colors",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      active ? "text-primary-strong" : "text-muted-foreground",
+                      active ? "text-primary" : "text-muted-foreground",
                     )}
                   >
-                    <Icon className="size-5" aria-hidden="true" strokeWidth={active ? 2.4 : 1.8} />
+                    <Icon className="size-5" aria-hidden="true" strokeWidth={active ? 2.6 : 1.9} />
                     {t.label}
                   </Link>
                 </li>
@@ -81,6 +81,7 @@ export function AppScreen({
             })}
           </ul>
         </nav>
+
       )}
     </div>
   );
