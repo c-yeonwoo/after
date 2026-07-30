@@ -126,36 +126,36 @@
   /* ── 시맨틱 토큰 (브랜드 값에서 파생) ── */
   --background: oklch(0.985 0.008 200);
   --foreground: var(--ink);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.26 0.03 240);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.26 0.03 240);
-  --primary: oklch(0.7 0.13 190);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand-500);
   --primary-foreground: oklch(0.21 0.04 220);
   --secondary: oklch(0.955 0.018 200);
   --secondary-foreground: oklch(0.3 0.035 230);
-  --muted: oklch(0.955 0.014 220);
-  --muted-foreground: oklch(0.53 0.03 235);
-  --accent: oklch(0.87 0.075 30);
+  --muted: var(--surface-subtle);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--coral-400);
   --accent-foreground: oklch(0.3 0.06 30);
   --destructive: oklch(0.62 0.19 22);
   --destructive-foreground: oklch(0.98 0.01 90);
   --border: oklch(0.26 0.03 240 / 12%);
   --input: oklch(0.26 0.03 240 / 16%);
-  --ring: oklch(0.7 0.13 190);
-  --chart-1: oklch(0.7 0.13 190);
-  --chart-2: oklch(0.75 0.13 35);
+  --ring: var(--brand-500);
+  --chart-1: var(--brand-500);
+  --chart-2: var(--coral-600);
   --chart-3: oklch(0.72 0.11 300);
-  --chart-4: oklch(0.78 0.12 145);
+  --chart-4: var(--success);
   --chart-5: oklch(0.62 0.09 245);
   --sidebar: oklch(0.975 0.012 200);
-  --sidebar-foreground: oklch(0.26 0.03 240);
-  --sidebar-primary: oklch(0.7 0.13 190);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand-500);
   --sidebar-primary-foreground: oklch(0.21 0.04 220);
   --sidebar-accent: oklch(0.94 0.02 200);
   --sidebar-accent-foreground: oklch(0.3 0.035 230);
   --sidebar-border: oklch(0.26 0.03 240 / 12%);
-  --sidebar-ring: oklch(0.7 0.13 190);
+  --sidebar-ring: var(--brand-500);
 }
 
 
