@@ -5,14 +5,14 @@ export const GUIDE_NAME = "세라";
 
 export function GuideNote({ children }: { children: ReactNode }) {
   return (
-    <div className="flex gap-2.5 rounded-xl border border-border/70 bg-muted/50 px-4 py-3">
+    <div className="flex items-center gap-2.5 rounded-xl border border-border/70 bg-muted/50 px-4 py-3">
       <span
         aria-hidden="true"
-        className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[0.65rem] font-semibold text-primary-foreground"
+        className="flex size-6 shrink-0 items-center justify-center self-start rounded-full bg-primary text-[0.65rem] leading-none font-semibold text-primary-foreground"
       >
         S
       </span>
-      <p className="min-w-0 text-xs leading-relaxed text-muted-foreground">
+      <p className="min-w-0 flex-1 self-center text-xs leading-relaxed text-muted-foreground">
         <span className="font-medium text-primary-strong">{GUIDE_NAME}</span>
         <span className="mx-1.5 text-border">·</span>
         {children}
