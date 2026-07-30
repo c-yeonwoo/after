@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import type { Basics } from "@/components/onboarding/basics";
 import type { ProfileDraft } from "@/components/onboarding/profile";
+import type { MeetPrefs } from "@/lib/meet";
 
 export type MeRecord = {
   gender: "female" | "male";
@@ -25,18 +26,33 @@ export type FlowState = {
   introId: string | null;
   /** 내가 이 소개에 응답한 결과 */
   myAnswer: "yes" | "pass" | null;
-  /** 상대 응답 (데모: 내가 yes 하면 매칭 성사) */
+  /** 보유 만남 티켓 (남성) */
+  tickets: number;
+  /** 만남 티켓 사용 시각 (남성) */
+  ticketUsedAt: string | null;
+  /** 컨시어지가 상대에게 만남 선호를 물은 시각 */
+  prefsAskedAt: string | null;
+  /** 만남 선호 답변 (여성이 작성 → 남성에게 전달) */
+  prefs: MeetPrefs | null;
+  /** 대화 오픈 여부 */
   chatOpen: boolean;
   /** 확정된 만남 일시 (ISO) */
   meetupAt: string | null;
+  /** 확정된 장소 id */
+  venueId: string | null;
   messages: { id: string; from: "me" | "them"; text: string; at: string }[];
 };
 
 export const emptyFlow: FlowState = {
   introId: "hana",
   myAnswer: null,
+  tickets: 0,
+  ticketUsedAt: null,
+  prefsAskedAt: null,
+  prefs: null,
   chatOpen: false,
   meetupAt: null,
+  venueId: null,
   messages: [],
 };
 

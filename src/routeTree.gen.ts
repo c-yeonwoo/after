@@ -16,6 +16,8 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PrefsRouteImport } from './routes/prefs'
+import { Route as TicketRouteImport } from './routes/ticket'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +55,16 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrefsRoute = PrefsRouteImport.update({
+  id: '/prefs',
+  path: '/prefs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TicketRoute = TicketRouteImport.update({
+  id: '/ticket',
+  path: '/ticket',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatIdRoute = ChatIdRouteImport.update({
   id: '/chat/$id',
   path: '/chat/$id',
@@ -67,6 +79,8 @@ export interface FileRoutesByFullPath {
   '/intro': typeof IntroRoute
   '/me': typeof MeRoute
   '/onboarding': typeof OnboardingRoute
+  '/prefs': typeof PrefsRoute
+  '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +91,8 @@ export interface FileRoutesByTo {
   '/intro': typeof IntroRoute
   '/me': typeof MeRoute
   '/onboarding': typeof OnboardingRoute
+  '/prefs': typeof PrefsRoute
+  '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRoutesById {
@@ -88,6 +104,8 @@ export interface FileRoutesById {
   '/intro': typeof IntroRoute
   '/me': typeof MeRoute
   '/onboarding': typeof OnboardingRoute
+  '/prefs': typeof PrefsRoute
+  '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
     | '/intro'
     | '/me'
     | '/onboarding'
+    | '/prefs'
+    | '/ticket'
     | '/chat/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +130,8 @@ export interface FileRouteTypes {
     | '/intro'
     | '/me'
     | '/onboarding'
+    | '/prefs'
+    | '/ticket'
     | '/chat/$id'
   id:
     | '__root__'
@@ -120,6 +142,8 @@ export interface FileRouteTypes {
     | '/intro'
     | '/me'
     | '/onboarding'
+    | '/prefs'
+    | '/ticket'
     | '/chat/$id'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +155,8 @@ export interface RootRouteChildren {
   IntroRoute: typeof IntroRoute
   MeRoute: typeof MeRoute
   OnboardingRoute: typeof OnboardingRoute
+  PrefsRoute: typeof PrefsRoute
+  TicketRoute: typeof TicketRoute
   ChatIdRoute: typeof ChatIdRoute
 }
 
@@ -185,6 +211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prefs': {
+      id: '/prefs'
+      path: '/prefs'
+      fullPath: '/prefs'
+      preLoaderRoute: typeof PrefsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ticket': {
+      id: '/ticket'
+      path: '/ticket'
+      fullPath: '/ticket'
+      preLoaderRoute: typeof TicketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat/$id': {
       id: '/chat/$id'
       path: '/chat/$id'
@@ -203,6 +243,8 @@ const rootRouteChildren: RootRouteChildren = {
   IntroRoute: IntroRoute,
   MeRoute: MeRoute,
   OnboardingRoute: OnboardingRoute,
+  PrefsRoute: PrefsRoute,
+  TicketRoute: TicketRoute,
   ChatIdRoute: ChatIdRoute,
 }
 export const routeTree = rootRouteImport
