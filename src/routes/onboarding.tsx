@@ -78,10 +78,7 @@ function Onboarding() {
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
   const selectedInterests = useMemo(
-    () =>
-      profile.interests
-        .map((id) => ALL_INTERESTS.find((i) => i.id === id))
-        .filter((i): i is NonNullable<typeof i> => Boolean(i)),
+    () => profile.interests.map((v) => v.trim()).filter(Boolean),
     [profile.interests],
   );
 
