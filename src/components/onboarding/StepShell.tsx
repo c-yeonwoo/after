@@ -37,7 +37,7 @@ export function StepShell({
       </header>
 
       <main className="mx-auto w-full flex-1 px-5 py-10">
-        <p className="text-xs tracking-wide text-primary">{eyebrow}</p>
+        <p className="text-sm font-semibold tracking-wide text-primary-strong">{eyebrow}</p>
         <h1 className="mt-3 text-2xl leading-snug font-bold">{title}</h1>
         {description ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
