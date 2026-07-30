@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
-import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { MeetPlanner } from "@/components/app/MeetPlanner";
