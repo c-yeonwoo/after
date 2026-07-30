@@ -21,6 +21,8 @@ export const DRINKING_OPTIONS = [
 
 export type Basics = {
   name: string;
+  /** 프로필 사진 1장 (data URL) */
+  photo: string;
   birth: string; // YYYY-MM-DD
   job: string;
   mbti: string;
@@ -30,6 +32,7 @@ export type Basics = {
 
 export const emptyBasics: Basics = {
   name: "",
+  photo: "",
   birth: "",
   job: "",
   mbti: "",

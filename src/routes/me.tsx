@@ -52,6 +52,7 @@ function MePage() {
     smoking: SMOKING_OPTIONS.find((o) => o.id === me.basics.smoking)?.label,
     drinking: DRINKING_OPTIONS.find((o) => o.id === me.basics.drinking)?.label,
     area: HUBS.find((h) => h.id === me.hubId)?.label,
+    photo: me.basics.photo || undefined,
     headline: me.profile.headline,
     intro: me.intro,
     interests: me.profile.interests.map((v) => v.trim()).filter(Boolean),

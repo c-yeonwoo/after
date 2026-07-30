@@ -59,7 +59,7 @@ function IntroPage() {
           smoking: candidate.smoking,
           drinking: candidate.drinking,
           area: candidate.area,
-          distance: candidate.distance,
+          photo: candidate.photo,
           headline: candidate.headline,
           intro: candidate.intro,
           interests: candidate.interests,
