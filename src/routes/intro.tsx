@@ -80,23 +80,35 @@ function IntroPage() {
 
       {answered ? (
         <div className="mt-8 rounded-xl border border-border bg-card px-4 py-4 text-sm">
-          <p className="font-medium text-primary-strong">좋다고 답했습니다</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {flow.chatOpen ? "대화가 열렸어요. 대화 탭에서 이어가세요." : "상대의 답을 기다리는 중입니다."}
+          <p className="font-medium text-primary-strong">
+            {flow.chatOpen
+              ? "대화가 열렸습니다"
+              : isMale
+                ? "상대의 답변을 기다리는 중입니다"
+                : "컨시어지에게 전달했습니다"}
           </p>
-          {flow.chatOpen ? (
-            <Button
-              className="mt-4 w-full"
-              size="lg"
-              onClick={() => navigate({ to: "/chat/$id", params: { id: candidate.id } })}
-            >
-              대화 이어가기
-            </Button>
-          ) : null}
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {flow.chatOpen
+              ? "날짜와 장소만 정하면 됩니다."
+              : isMale
+                ? "가능한 날과 취향을 여쭤봤어요. 답이 오면 대화가 열립니다."
+                : "상대가 날짜와 장소를 제안하면 대화가 이어집니다."}
+          </p>
+          <Button
+            className="mt-4 w-full"
+            size="lg"
+            onClick={() =>
+              flow.chatOpen
+                ? navigate({ to: "/chat/$id", params: { id: candidate.id } })
+                : navigate({ to: isMale ? "/ticket" : "/prefs" })
+            }
+          >
+            {flow.chatOpen ? "대화 이어가기" : isMale ? "진행 상황 보기" : "선호 답변 보내기"}
+          </Button>
         </div>
       ) : (
         <div
-          className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-border/70 bg-background/95 px-5 pt-3 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-border/70 bg-background/95 px-6 pt-3 backdrop-blur-xl"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
         >
           <div className="flex gap-2">
@@ -113,18 +125,24 @@ function IntroPage() {
               <X className="size-4" aria-hidden="true" />
               다음에
             </Button>
-            <Button
-              size="lg"
-              className="flex-1"
-              onClick={() => {
-                saveFlow({ myAnswer: "yes", chatOpen: true });
-                toast.success("서로 좋다고 했어요. 대화가 열렸습니다.");
-                navigate({ to: "/chat/$id", params: { id: candidate.id } });
-              }}
-            >
-              <Heart className="size-4" aria-hidden="true" />
-              좋아요
-            </Button>
+            {isMale ? (
+              <Button size="lg" className="flex-1" onClick={() => navigate({ to: "/ticket" })}>
+                <Ticket className="size-4" aria-hidden="true" />
+                만남 티켓 쓰기
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="flex-1"
+                onClick={() => {
+                  saveFlow({ myAnswer: "yes" });
+                  navigate({ to: "/prefs" });
+                }}
+              >
+                <Heart className="size-4" aria-hidden="true" />
+                좋아요
+              </Button>
+            )}
           </div>
         </div>
       )}
