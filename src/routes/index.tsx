@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+
 
 import { BRAND, HUBS } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
@@ -25,6 +27,23 @@ const POINTS = [
 
 function Landing() {
   const hub = HUBS[0];
+  const navigate = useNavigate();
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [revealed, setRevealed] = useState(false);
+
+  function start() {
+    if (origin) return;
+    const r = btnRef.current?.getBoundingClientRect();
+    setOrigin(
+      r
+        ? { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+        : { x: window.innerWidth / 2, y: window.innerHeight - 80 },
+    );
+    requestAnimationFrame(() => setRevealed(true));
+    window.setTimeout(() => navigate({ to: "/onboarding" }), 560);
+  }
+
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-4">
@@ -84,19 +103,34 @@ function Landing() {
 
       <div
         className="sticky bottom-0 z-10 mt-8 bg-background/95 px-6 pt-4 backdrop-blur"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.25rem)" }}
       >
-        <Link
-          to="/onboarding"
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={start}
           className="headline flex w-full items-center justify-center rounded-full bg-foreground py-5 text-base text-background transition-colors duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           직장 인증하고 시작하기
-        </Link>
+        </button>
         <p className="mt-3 text-center text-[0.62rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
           Verification takes 1 minute
         </p>
       </div>
+
+      {origin ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50 bg-primary"
+          style={{
+            clipPath: `circle(${revealed ? "150%" : "0%"} at ${origin.x}px ${origin.y}px)`,
+            transition: "clip-path 620ms cubic-bezier(0.65, 0, 0.35, 1)",
+          }}
+
+        />
+      ) : null}
     </div>
   );
 }
+
 
