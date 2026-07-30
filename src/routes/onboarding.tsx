@@ -7,8 +7,10 @@ import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
-  MBTI_OPTIONS,
+  MBTI_AXES,
+  RELIGION_OPTIONS,
   SMOKING_OPTIONS,
+
   ageFrom,
   basicsValid,
   emptyBasics,
