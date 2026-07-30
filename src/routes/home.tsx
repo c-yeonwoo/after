@@ -153,7 +153,9 @@ function HomePage() {
 
       {/* 다음 할 일 */}
       <section className="mt-8">
-        <h2 className="text-xs font-semibold tracking-wide text-primary-strong">다음 단계</h2>
+        <h2 className="text-[0.62rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
+          다음 단계
+        </h2>
         <ul className="mt-3 space-y-2">
           <NextItem
             done={Boolean(flow.myAnswer)}
