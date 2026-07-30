@@ -486,10 +486,12 @@ function Onboarding() {
             onChange={(e) => setSeedInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
+                if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                 e.preventDefault();
                 addSeed();
               }
             }}
+
           />
           <Button variant="outline" disabled={!seedInput.trim() || !canAdd} onClick={addSeed}>
             심기
