@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,10 +31,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
-import { saveMe } from "@/lib/store";
+import { loadMe, saveMe } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
+  validateSearch: (search: Record<string, unknown>): { edit?: true } =>
+    search.edit === "1" || search.edit === true ? { edit: true } : {},
   head: () => ({
     meta: [
       { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
@@ -66,7 +68,9 @@ function toggle(list: string[], id: string, max?: number) {
 
 function Onboarding() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const { edit } = Route.useSearch();
+  const editing = Boolean(edit);
+  const [step, setStep] = useState(editing ? 2 : 1);
   const [gender, setGender] = useState<Gender | null>(null);
   const [hubId, setHubId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -79,6 +83,23 @@ function Onboarding() {
   const [seedInput, setSeedInput] = useState("");
   const [activeSeed, setActiveSeed] = useState(0);
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
+
+  // 수정 진입: 저장된 프로필을 불러와 인터뷰를 처음부터 다시 하지 않도록 합니다.
+  useEffect(() => {
+    if (!editing) return;
+    const me = loadMe();
+    if (!me) {
+      setStep(1);
+      return;
+    }
+    setGender(me.gender);
+    setHubId(me.hubId);
+    setEmail(me.email);
+    setBasics(me.basics);
+    setProfile(me.profile);
+    setIntro(me.intro);
+    setMbtiParts(me.basics.mbti ? me.basics.mbti.split("") : ["", "", "", ""]);
+  }, [editing]);
 
 
 
@@ -293,10 +314,10 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(1)}>
-            이전
+          <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(1))}>
+            {editing ? "취소" : "이전"}
           </Button>
-          <Button className="flex-1" size="lg" disabled={!basicsValid(basics)} onClick={() => setStep(3)}>
+          <Button className="flex-1" size="lg" disabled={!basicsValid(basics)} onClick={() => setStep(editing ? 6 : 3)}>
             다음
           </Button>
         </div>
@@ -521,7 +542,7 @@ function Onboarding() {
           키워드 {filled} / {MAX_INTERESTS} · 잎 {grown}개
         </p>
         <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(4)}>
+          <Button variant="ghost" onClick={() => setStep(editing ? 2 : 4)}>
             이전
           </Button>
           <Button
