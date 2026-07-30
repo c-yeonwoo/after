@@ -13,20 +13,20 @@ export function LogoMark({ className }: { className?: string }) {
       className={cn("size-7", className)}
     >
       <path
-        d="M6.5 21.5c4.5 0 8-3.5 8-8s3.5-8 8-8"
+        d="M6 21.5c4.6 0 8-3.6 8-8s3.4-8 8-8"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="2.6"
         strokeLinecap="round"
         className="text-primary"
       />
       <path
-        d="M6.5 10.5c4.5 0 8 3.5 8 8s3.5 8 8 8"
+        d="M6 10.5c4.6 0 8 3.6 8 8s3.4 8 8 8"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="2.6"
         strokeLinecap="round"
         className="text-coral-500"
       />
-      <circle cx="14.5" cy="16" r="2.4" fill="currentColor" className="text-primary" />
+      <circle cx="14" cy="16" r="2.9" fill="currentColor" className="text-primary" />
     </svg>
   );
 }
@@ -43,9 +43,12 @@ export function Logo({
       <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
       <span
         className={cn(
-          "truncate font-serif leading-none tracking-[-0.01em]",
-          size === "sm" ? "text-[1.05rem]" : "text-[1.2rem]",
+          "truncate font-display leading-none",
+          size === "sm"
+            ? "text-[0.98rem] tracking-[0.01em]"
+            : "text-[1.12rem] tracking-[0.012em]",
         )}
+        style={{ fontStretch: "122%", fontWeight: 620 }}
       >
         Serendipity
       </span>
