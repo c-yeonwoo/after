@@ -8,7 +8,7 @@ import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { getCandidate } from "@/lib/candidates";
-import { saveFlow, useFlow } from "@/lib/store";
+import { saveFlow, useFlow, useMe } from "@/lib/store";
 
 export const Route = createFileRoute("/intro")({
   head: () => ({
