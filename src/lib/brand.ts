@@ -1,10 +1,10 @@
 /**
  * 브랜드 상수 — 서비스명 변경 시 이 파일만 수정하면 됩니다.
- * 세렌디피티(Serendipity): 우연히 찾아오는 뜻밖의 좋은 만남.
+ * 애프터(After): 퇴근 후, 하루의 다음 장면에서 만나는 사람.
  */
 export const BRAND = {
-  name: "세렌디피티",
-  nameEn: "Serendipity",
+  name: "애프터",
+  nameEn: "After",
 
   tagline: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",
   description:
