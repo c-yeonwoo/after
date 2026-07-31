@@ -18,8 +18,8 @@ export type MeRecord = {
   createdAt: string;
 };
 
-const KEY = "serendipity:me";
-const STATE_KEY = "serendipity:flow";
+const KEY = "after:me";
+const STATE_KEY = "after:flow";
 
 export type FlowState = {
   /** 현재 소개된 상대 id */
@@ -69,7 +69,7 @@ function read<T>(key: string, fallback: T): T {
 function write(key: string, value: unknown) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
-  window.dispatchEvent(new Event("serendipity:store"));
+  window.dispatchEvent(new Event("after:store"));
 }
 
 export function saveMe(me: Omit<MeRecord, "createdAt">) {
@@ -94,7 +94,7 @@ export function resetAll() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(KEY);
   window.localStorage.removeItem(STATE_KEY);
-  window.dispatchEvent(new Event("serendipity:store"));
+  window.dispatchEvent(new Event("after:store"));
 }
 
 /** 하이드레이션 안전: 첫 렌더는 null, 마운트 후 실제 값 */
@@ -106,10 +106,10 @@ export function useMe() {
     const sync = () => setMe(loadMe());
     sync();
     setReady(true);
-    window.addEventListener("serendipity:store", sync);
+    window.addEventListener("after:store", sync);
     window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener("serendipity:store", sync);
+      window.removeEventListener("after:store", sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -125,10 +125,10 @@ export function useFlow() {
     const sync = () => setFlow(read(STATE_KEY, emptyFlow));
     sync();
     setReady(true);
-    window.addEventListener("serendipity:store", sync);
+    window.addEventListener("after:store", sync);
     window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener("serendipity:store", sync);
+      window.removeEventListener("after:store", sync);
       window.removeEventListener("storage", sync);
     };
   }, []);

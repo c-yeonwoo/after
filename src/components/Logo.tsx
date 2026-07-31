@@ -35,7 +35,7 @@ export function Logo({
           size === "sm" ? "text-[1.1rem]" : "text-[1.3rem]",
         )}
       >
-        serendipity
+        after
       </span>
 
     </span>
