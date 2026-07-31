@@ -5,18 +5,24 @@ export const GUIDE_NAME = "세라";
 
 export function GuideNote({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-border/70 bg-muted/50 px-4 py-3">
+    <div className="relative flex gap-3 overflow-hidden rounded-surface border border-primary/25 bg-primary/8 px-4 py-3.5 shadow-sm">
+      <span
+        className="absolute inset-y-0 left-0 w-1 bg-primary"
+        aria-hidden="true"
+      />
       <span
         aria-hidden="true"
-        className="flex size-6 shrink-0 items-center justify-center self-start rounded-full bg-primary text-[0.65rem] leading-none font-semibold text-primary-foreground"
+        className="ml-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-[0.8rem] leading-none font-bold text-primary-foreground shadow-sm"
       >
         S
       </span>
-      <p className="min-w-0 flex-1 self-center text-xs leading-relaxed text-muted-foreground">
-        <span className="font-medium text-primary-strong">{GUIDE_NAME}</span>
-        <span className="mx-1.5 text-border">·</span>
-        {children}
-      </p>
+      <div className="min-w-0 flex-1">
+        <p className="text-[0.68rem] font-semibold tracking-[0.14em] text-primary-strong uppercase">
+          {GUIDE_NAME}
+        </p>
+        <p className="mt-1 text-[0.82rem] leading-relaxed text-foreground/85">{children}</p>
+      </div>
     </div>
   );
 }
+
