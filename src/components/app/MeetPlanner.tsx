@@ -37,7 +37,7 @@ export function MeetPlanner({ area }: { area: string }) {
           {venue ? `${venue.name} · ${venue.area}` : `${area} 일대`}
         </p>
         <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-          예약은 컨시어지가 잡아둡니다. 전날 자정에 사적인 이야기까지 나눌 수 있는 대화가 열립니다.
+          예약은 세라가 잡아둡니다. 전날 자정에 사적인 이야기까지 나눌 수 있는 대화가 열립니다.
         </p>
       </div>
     );
@@ -113,7 +113,7 @@ export function MeetPlanner({ area }: { area: string }) {
             disabled={!date || !venueId}
             onClick={() => {
               saveFlow({ meetupAt: date, venueId });
-              toast.success("만남이 확정되었습니다. 예약은 컨시어지가 잡아둘게요.");
+              toast.success("만남이 확정되었습니다. 예약은 세라가 잡아둘게요.");
             }}
           >
             이 날짜와 장소로 확정하기

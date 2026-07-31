@@ -30,7 +30,7 @@ export type FlowState = {
   tickets: number;
   /** 만남 티켓 사용 시각 (남성) */
   ticketUsedAt: string | null;
-  /** 컨시어지가 상대에게 만남 선호를 물은 시각 */
+  /** 세라가 상대에게 만남 선호를 물은 시각 */
   prefsAskedAt: string | null;
   /** 만남 선호 답변 (여성이 작성 → 남성에게 전달) */
   prefs: MeetPrefs | null;

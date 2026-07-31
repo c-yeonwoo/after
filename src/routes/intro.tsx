@@ -87,7 +87,7 @@ function IntroPage() {
               ? "대화가 열렸습니다"
               : isMale
                 ? "상대의 답변을 기다리는 중입니다"
-                : "컨시어지에게 전달했습니다"}
+                : "세라에게 전달했습니다"}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {flow.chatOpen
