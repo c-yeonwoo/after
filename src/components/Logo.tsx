@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * 세렌디피티 로고.
+ * 애프터 로고.
  * mark: 두 개의 부드러운 원이 겹쳐 하나의 따뜻한 렌즈 형태를 만드는 모양 (우연히 겹친 두 사람).
  */
 export function LogoMark({ className }: { className?: string }) {
@@ -35,7 +35,7 @@ export function Logo({
           size === "sm" ? "text-[1.1rem]" : "text-[1.3rem]",
         )}
       >
-        serendipity
+        after
       </span>
 
     </span>
