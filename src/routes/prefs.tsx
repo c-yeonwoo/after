@@ -68,7 +68,7 @@ function PrefsPage() {
     <AppScreen title="만남 선호" hideTabs>
       <div className="mt-3">
         <GuideNote>
-          두 분 모두 좋다고 하셨어요. 약속만 잡으면 됩니다. 가능한 날과 취향만 골라주세요.
+          두 분 모두 좋다고 하셨습니다. 가능한 날과 취향만 골라 주세요.
         </GuideNote>
       </div>
 
