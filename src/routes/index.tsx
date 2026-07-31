@@ -64,11 +64,7 @@ function Landing() {
 
       <main className="flex-1 px-6">
         <section className="pt-8 pb-10">
-          <p className="inline-flex items-center gap-2 rounded-full border border-foreground px-3 py-1 text-[0.68rem] font-semibold">
-            <span className="size-1.5 rounded-full bg-primary" />
-            지금 열려 있는 지역 · {hub.label}
-          </p>
-          <h1 className="headline mt-7 text-[2.7rem] leading-[0.95] uppercase">
+          <h1 className="headline text-[2.7rem] leading-[0.95] uppercase">
             After Work
             <br />
             <span className="text-primary">Matching</span>
@@ -78,7 +74,11 @@ function Landing() {
             <br />
             좋은 사람 한 명.
           </p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            현재 {hub.label}에서 운영합니다.
+          </p>
         </section>
+
 
         <section className="border-t border-border/70" aria-label="서비스 소개">
           {POINTS.map((p) => (
