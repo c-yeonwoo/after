@@ -51,7 +51,7 @@ function HomePage() {
       <p className="mt-4 text-[0.62rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
         {hub?.label ?? "강남·역삼권"}
       </p>
-      <h1 className="headline mt-2 text-[1.9rem]">
+      <h1 className="headline mt-2 text-[1.9rem] leading-[1.35]">
         {me?.basics.name ? `${me.basics.name}님,` : "안녕하세요,"}
         <br />
         <span className="text-primary">
