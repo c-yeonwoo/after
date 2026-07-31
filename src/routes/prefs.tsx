@@ -152,7 +152,7 @@ function PrefsPage() {
           else navigate({ to: "/chats" });
         }}
       >
-        컨시어지에게 보내기
+        세라에게 보내기
       </Button>
       <p className="mt-3 text-center text-xs text-muted-foreground">
         고른 내용은 상대에게 그대로 전달되고, 날짜와 장소는 상대가 먼저 제안합니다.

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/ticket")({
   head: () => ({
     meta: [
       { title: `만남 티켓 — ${BRAND.name}` },
-      { name: "description", content: "만남 티켓을 쓰면 컨시어지가 약속 조율을 시작합니다." },
+      { name: "description", content: "만남 티켓을 쓰면 세라가 약속 조율을 시작합니다." },
       { property: "og:title", content: `만남 티켓 — ${BRAND.name}` },
       { property: "og:description", content: "티켓 한 장으로 한 번의 만남을 준비합니다." },
     ],
@@ -44,7 +44,7 @@ function TicketPage() {
           <Ticket className="size-5 text-primary-foreground" aria-hidden="true" />
           <p className="mt-3 text-lg font-semibold text-primary-foreground">만남 티켓 1장</p>
           <p className="mt-1 text-xs text-primary-foreground/85">
-            한 번의 만남을 컨시어지가 처음부터 끝까지 조율합니다.
+            한 번의 만남을 세라가 처음부터 끝까지 조율합니다.
           </p>
         </div>
         <ul className="space-y-2.5 px-6 py-5 text-sm">
@@ -91,7 +91,7 @@ function TicketPage() {
                 ticketUsedAt: new Date().toISOString(),
                 prefsAskedAt: new Date().toISOString(),
               });
-              toast.success("티켓을 사용했습니다. 컨시어지가 상대에게 물어볼게요.");
+              toast.success("티켓을 사용했습니다. 세라가 상대에게 물어볼게요.");
             }}
           >
             {flow.tickets > 0 ? "티켓 사용하기" : "티켓 구매하고 사용하기"}
