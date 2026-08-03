@@ -4,7 +4,6 @@ import { ArrowRight, Clock } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
-import { ageFrom } from "@/components/onboarding/basics";
 import { BRAND } from "@/lib/brand";
 import { listMeetingsAwaitingMyPrefs, type MeetingRequest } from "@/lib/api";
 
@@ -100,9 +99,9 @@ function RequestsPage() {
                 <div className="px-5 pt-5 pb-4">
                   <p className="headline text-xl">
                     {candidate.name}
-                    {candidate.birth ? (
+                    {candidate.age !== null ? (
                       <span className="ml-1.5 text-base text-muted-foreground">
-                        {ageFrom(candidate.birth)}
+                        {candidate.age}
                       </span>
                     ) : null}
                   </p>

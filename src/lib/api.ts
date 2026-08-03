@@ -18,6 +18,15 @@ import type { Database } from "./database.types";
 
 export type Gender = Database["public"]["Enums"]["gender"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+/**
+ * 상대에게 보이는 프로필. `profiles` 테이블이 아니라 `public_profiles` 뷰에서 온다.
+ *
+ * S8 이전에는 상대도 `profiles` 를 그대로 읽었고, 그래서 여성이 권역 내 남성
+ * 전원의 `company_email` 과 정확한 `birth` 를 읽을 수 있었다(진단 SEC-1).
+ * RLS 는 "어느 행"만 판정하므로 컬럼을 가리려면 노출면 자체를 분리해야 한다.
+ * 나이는 서버가 계산한 `age` 로 온다 — 생일은 나가지 않는다.
+ */
+export type PublicProfile = Database["public"]["Views"]["public_profiles"]["Row"];
 export type Intro = Database["public"]["Tables"]["intros"]["Row"];
 export type Ticket = Database["public"]["Tables"]["tickets"]["Row"];
 export type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
@@ -272,7 +281,7 @@ export async function submitAffinity(toId: string, verdict: "like" | "pass") {
 }
 
 /** 여성이 평가할 남성 후보 목록 (같은 권역, 아직 평가하지 않은 사람만). RLS 가 자격은 이미 걸러준다. */
-export async function listAffinityCandidates(hubId: string): Promise<Profile[]> {
+export async function listAffinityCandidates(hubId: string): Promise<PublicProfile[]> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -285,24 +294,43 @@ export async function listAffinityCandidates(hubId: string): Promise<Profile[]> 
   if (evalErr) throw evalErr;
   const seen = (evaluated ?? []).map((a) => a.to_id);
 
-  let query = supabase.from("profiles").select("*").eq("gender", "male").eq("hub_id", hubId);
+  // 뷰가 이미 성별·권역·자격·배제를 판정한다. 여기서 gender 로 다시 거르지 않는다
+  // (뷰에 gender 컬럼이 없다 — 노출할 이유가 없어서 뺐다).
+  let query = supabase.from("public_profiles").select("*").eq("hub_id", hubId);
   if (seen.length) query = query.not("id", "in", `(${seen.join(",")})`);
 
   const { data, error } = await query;
   if (error) throw error;
-  return data;
+  // 뷰는 본인 행도 돌려준다(자기 프로필 확인용). 후보 목록에서는 빼야 한다.
+  return (data ?? []).filter((p) => p.id !== session.user.id);
 }
 
 /** 한 번에 한 명. 여성이 지금 평가할 다음 후보 (F3, "훑어보는 피드 없음"). */
-export async function myPendingCandidate(hubId: string): Promise<Profile | null> {
+export async function myPendingCandidate(hubId: string): Promise<PublicProfile | null> {
   const candidates = await listAffinityCandidates(hubId);
   return candidates[0] ?? null;
 }
 
-export async function getProfile(id: string): Promise<Profile | null> {
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+/** 상대 프로필 1건. 민감 컬럼이 없는 뷰에서 읽는다. */
+export async function getProfile(id: string): Promise<PublicProfile | null> {
+  const { data, error } = await supabase
+    .from("public_profiles")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+/** 여러 명을 한 번에. 목록 화면의 N+1 을 없앤다(진단 PERF-3). */
+export async function getProfiles(ids: string[]): Promise<Map<string, PublicProfile>> {
+  if (!ids.length) return new Map();
+  const { data, error } = await supabase
+    .from("public_profiles")
+    .select("*")
+    .in("id", [...new Set(ids)]);
+  if (error) throw error;
+  return new Map((data ?? []).flatMap((p) => (p.id ? [[p.id, p] as const] : [])));
 }
 
 // ─────────────────────── 소개 (F4) ───────────────────────
@@ -337,7 +365,7 @@ export async function getOpenIntro(): Promise<Intro | null> {
 /** 남성이 지금 보고 있는 소개 = 열린 intro + 상대(여성) 프로필. */
 export async function getOpenIntroWithCandidate(): Promise<{
   intro: Intro;
-  candidate: Profile;
+  candidate: PublicProfile;
 } | null> {
   const intro = await getOpenIntro();
   if (!intro) return null;
@@ -353,7 +381,7 @@ export async function getOpenIntroWithCandidate(): Promise<{
  */
 export async function ensureOpenIntro(): Promise<{
   intro: Intro;
-  candidate: Profile;
+  candidate: PublicProfile;
 } | null> {
   const existing = await getOpenIntroWithCandidate();
   if (existing) return existing;
@@ -380,6 +408,35 @@ export async function listMyTickets(): Promise<Ticket[]> {
     .from("tickets")
     .select("*")
     .order("issued_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export type TicketOrder = Database["public"]["Tables"]["ticket_orders"]["Row"];
+
+/**
+ * 티켓 구매 의사 접수.
+ *
+ * 결제 게이트웨이가 붙기 전까지 `pending` 주문이 곧 "사고 싶다"는 신호다.
+ * 예전에는 티켓이 0장이면 비활성 버튼("보유한 티켓이 없습니다")만 남아
+ * 사이클이 여기서 끊겼다(진단 UX-7) — 누를 수 있는 것이 없었다.
+ */
+export async function requestTicketOrder(): Promise<TicketOrder> {
+  const { data, error } = await supabase.rpc("create_ticket_order");
+  if (error) throw error;
+  await track("ticket_requested");
+  return data;
+}
+
+/** 아직 처리되지 않은 내 주문. 있으면 "접수됨" 상태로 보여준다. */
+export async function myPendingTicketOrder(): Promise<TicketOrder | null> {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*")
+    .eq("state", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -447,7 +504,7 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
 }
 
 /** 이 만남의 상대(= 나 아닌 당사자) 프로필. */
-export async function getMeetingCounterpart(meeting: Meeting): Promise<Profile | null> {
+export async function getMeetingCounterpart(meeting: Meeting): Promise<PublicProfile | null> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -465,7 +522,7 @@ export async function getMeetingCounterpart(meeting: Meeting): Promise<Profile |
   return getProfile(counterpartId);
 }
 
-export type MeetingRequest = { meeting: Meeting; candidate: Profile };
+export type MeetingRequest = { meeting: Meeting; candidate: PublicProfile };
 
 /**
  * 여성이 답을 보내야 하는 만남 요청 **전부**.
@@ -505,17 +562,22 @@ export async function listMeetingsAwaitingMyPrefs(): Promise<MeetingRequest[]> {
   if (!meetings?.length) return [];
 
   const maleByIntro = new Map(intros.map((i) => [i.id, i.male_id]));
-  const out: MeetingRequest[] = [];
-  for (const meeting of meetings) {
+  // 건별로 getProfile 을 돌면 N+1 이 된다(진단 PERF-3). 한 번에 모아 온다.
+  const profiles = await getProfiles(
+    meetings.flatMap((m) => {
+      const id = maleByIntro.get(m.intro_id);
+      return id ? [id] : [];
+    }),
+  );
+
+  return meetings.flatMap((meeting) => {
     const maleId = maleByIntro.get(meeting.intro_id);
-    if (!maleId) continue;
-    const candidate = await getProfile(maleId);
-    if (candidate) out.push({ meeting, candidate });
-  }
-  return out;
+    const candidate = maleId ? profiles.get(maleId) : undefined;
+    return candidate ? [{ meeting, candidate }] : [];
+  });
 }
 
-export type ActiveMeeting = { meeting: Meeting; counterpart: Profile };
+export type ActiveMeeting = { meeting: Meeting; counterpart: PublicProfile };
 
 /**
  * 진행 중인 내 만남 **전부** (대화가 열린 것 = 만남 확정 완료, S7).
@@ -553,15 +615,24 @@ export async function listMyActiveMeetings(): Promise<ActiveMeeting[]> {
   if (!meetings?.length) return [];
 
   const introById = new Map(intros.map((i) => [i.id, i]));
-  const out: ActiveMeeting[] = [];
-  for (const meeting of meetings) {
-    const intro = introById.get(meeting.intro_id);
-    if (!intro) continue;
-    const counterpartId = intro.male_id === session.user.id ? intro.female_id : intro.male_id;
-    const counterpart = await getProfile(counterpartId);
-    if (counterpart) out.push({ meeting, counterpart });
-  }
-  return out;
+  const counterpartOf = (introId: string) => {
+    const intro = introById.get(introId);
+    if (!intro) return null;
+    return intro.male_id === session.user.id ? intro.female_id : intro.male_id;
+  };
+
+  const profiles = await getProfiles(
+    meetings.flatMap((m) => {
+      const id = counterpartOf(m.intro_id);
+      return id ? [id] : [];
+    }),
+  );
+
+  return meetings.flatMap((meeting) => {
+    const id = counterpartOf(meeting.intro_id);
+    const counterpart = id ? profiles.get(id) : undefined;
+    return counterpart ? [{ meeting, counterpart }] : [];
+  });
 }
 
 // ─────────────────────── 채팅 (F7) ───────────────────────

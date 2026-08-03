@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Conversation } from "@/components/app/Conversation";
 import { BRAND } from "@/lib/brand";
-import { getMeeting, getMeetingCounterpart, type Meeting, type Profile } from "@/lib/api";
+import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
 
 export const Route = createFileRoute("/chat/$id")({
   head: () => ({
@@ -26,7 +26,7 @@ function ChatRoom() {
 
   const [loading, setLoading] = useState(true);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [counterpart, setCounterpart] = useState<Profile | null>(null);
+  const [counterpart, setCounterpart] = useState<PublicProfile | null>(null);
 
   useEffect(() => {
     let cancelled = false;
