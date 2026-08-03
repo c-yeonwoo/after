@@ -13,11 +13,18 @@ import { readFileSync } from "node:fs";
 const cssPath = new URL("../src/styles.css", import.meta.url);
 const css = readFileSync(cssPath, "utf8");
 
-// :root 블록만
-const root = css.slice(css.indexOf(":root {"), css.indexOf("\n.dark"));
-function tokenRaw(name) {
-  const m = root.match(new RegExp(`--${name}:\\s*([^;]+);`));
+// 테마별 블록. 다크는 라이트 토큰을 상속하므로(예: --brand-*) 못 찾으면
+// :root 로 떨어진다 — 실제 CSS 캐스케이드와 같은 순서다.
+const lightBlock = css.slice(css.indexOf(":root {"), css.indexOf("\n.dark"));
+const darkBlock = css.slice(css.indexOf(".dark {"), css.indexOf("\n@layer base"));
+
+let scope = lightBlock;
+function readFrom(block, name) {
+  const m = block.match(new RegExp(`--${name}:\\s*([^;]+);`));
   return m ? m[1].trim() : null;
+}
+function tokenRaw(name) {
+  return readFrom(scope, name) ?? (scope === lightBlock ? null : readFrom(lightBlock, name));
 }
 function resolve(v, depth = 0) {
   if (depth > 8 || !v) return v;
@@ -72,22 +79,6 @@ const cr = (a, b) => {
 };
 const over = (fg, bg, al) => fg.map((f, i) => f * al + bg[i] * (1 - al));
 
-const primary = toS(parseOklch(tokenRaw("primary")));
-const strong = toS(parseOklch(tokenRaw("primary-strong")));
-const primaryFg = toS(parseOklch(tokenRaw("primary-foreground")));
-const bg = toS(parseOklch(tokenRaw("background")));
-const card = toS(parseOklch(tokenRaw("card")));
-
-// gradient-brand 의 두 정지점
-const grad = root.match(/--gradient-brand:[^;]+;/)[0];
-const stops = [...grad.matchAll(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/g)].map((m) =>
-  toS([parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])]),
-);
-
-console.log(`--primary          ${hex(primary)}`);
-console.log(`--primary-strong   ${hex(strong)}`);
-console.log(`gradient stops     ${stops.map(hex).join(" → ")}\n`);
-
 let fails = 0;
 const chk = (label, val, need) => {
   const ok = val >= need;
@@ -95,33 +86,60 @@ const chk = (label, val, need) => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${label.padEnd(46)} ${val.toFixed(2)} (기준 ${need})`);
 };
 
-console.log("── 텍스트 역할 (AA 4.5) ──");
-chk("primary 텍스트 / 배경", cr(primary, bg), 4.5);
-chk("primary 텍스트 / 카드", cr(primary, card), 4.5);
-chk("primary-strong 텍스트 / 배경", cr(strong, bg), 4.5);
-chk("primary-strong 텍스트 / 카드", cr(strong, card), 4.5);
+function audit(themeName, block) {
+  scope = block;
+  console.log(`\n${"═".repeat(58)}\n  ${themeName}\n${"═".repeat(58)}`);
 
-console.log("\n── 필 역할 (버튼 위 흰 글씨, 4.5) ──");
-chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
-chk("primary-strong 필 + primary-foreground", cr(strong, primaryFg), 4.5);
+  const primary = toS(parseOklch(tokenRaw("primary")));
+  const strong = toS(parseOklch(tokenRaw("primary-strong")));
+  const primaryFg = toS(parseOklch(tokenRaw("primary-foreground")));
+  const bg = toS(parseOklch(tokenRaw("background")));
+  const card = toS(parseOklch(tokenRaw("card")));
 
-console.log("\n── 틴트 표면 (GuideNote bg-primary/8, 칩 /10) ──");
-chk("primary-strong / bg-primary\\8 (배경)", cr(strong, over(primary, bg, 0.08)), 4.5);
-chk("primary-strong / bg-primary\\8 (카드)", cr(strong, over(primary, card, 0.08)), 4.5);
-chk("primary-strong / bg-primary-strong\\10", cr(strong, over(strong, card, 0.1)), 4.5);
+  // gradient-brand 의 두 정지점
+  const grad = scope.match(/--gradient-brand:[^;]+;/)[0];
+  const stops = [...grad.matchAll(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/g)].map((m) =>
+    toS([parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])]),
+  );
 
-console.log("\n── 말풍선 (내 메시지, 4.5) ──");
-chk(
-  "bubble-mine-foreground / bubble-mine",
-  cr(toS(parseOklch(tokenRaw("bubble-mine-foreground"))), toS(parseOklch(tokenRaw("bubble-mine")))),
-  4.5,
-);
+  console.log(`--primary          ${hex(primary)}`);
+  console.log(`--primary-strong   ${hex(strong)}`);
+  console.log(`gradient stops     ${stops.map(hex).join(" → ")}\n`);
 
-console.log("\n── 그라디언트 위 흰 텍스트 (양 끝, 4.5) ──");
-stops.forEach((s, i) => chk(`gradient stop ${i + 1} (${hex(s)})`, cr(s, primaryFg), 4.5));
+  console.log("── 텍스트 역할 (AA 4.5) ──");
+  chk("primary 텍스트 / 배경", cr(primary, bg), 4.5);
+  chk("primary 텍스트 / 카드", cr(primary, card), 4.5);
+  chk("primary-strong 텍스트 / 배경", cr(strong, bg), 4.5);
+  chk("primary-strong 텍스트 / 카드", cr(strong, card), 4.5);
 
-console.log("\n── 포커스 링 (비텍스트 3.0) ──");
-chk("ring / 배경", cr(toS(parseOklch(tokenRaw("ring"))), bg), 3.0);
+  console.log("\n── 필 역할 (버튼 위 흰 글씨, 4.5) ──");
+  chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
+  chk("primary-strong 필 + primary-foreground", cr(strong, primaryFg), 4.5);
+
+  console.log("\n── 틴트 표면 (GuideNote bg-primary/8, 칩 /10) ──");
+  chk("primary-strong / bg-primary\\8 (배경)", cr(strong, over(primary, bg, 0.08)), 4.5);
+  chk("primary-strong / bg-primary\\8 (카드)", cr(strong, over(primary, card, 0.08)), 4.5);
+  chk("primary-strong / bg-primary-strong\\10", cr(strong, over(strong, card, 0.1)), 4.5);
+
+  console.log("\n── 말풍선 (내 메시지, 4.5) ──");
+  chk(
+    "bubble-mine-foreground / bubble-mine",
+    cr(
+      toS(parseOklch(tokenRaw("bubble-mine-foreground"))),
+      toS(parseOklch(tokenRaw("bubble-mine"))),
+    ),
+    4.5,
+  );
+
+  console.log("\n── 그라디언트 위 흰 텍스트 (양 끝, 4.5) ──");
+  stops.forEach((s, i) => chk(`gradient stop ${i + 1} (${hex(s)})`, cr(s, primaryFg), 4.5));
+
+  console.log("\n── 포커스 링 (비텍스트 3.0) ──");
+  chk("ring / 배경", cr(toS(parseOklch(tokenRaw("ring"))), bg), 3.0);
+}
+
+audit("라이트", lightBlock);
+audit("다크", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

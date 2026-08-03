@@ -6,8 +6,6 @@
  * Postgres + RLS 에 있고, 여기 있는 함수는 전부 SECURITY DEFINER 함수 호출이다 —
  * 티켓 차감·게이트·배제를 클라이언트가 직접 바꿀 방법이 없다.
  */
-import { useEffect, useState } from "react";
-
 import type { Basics } from "@/components/onboarding/basics";
 import type { ProfileDraft } from "@/components/onboarding/profile";
 import type { MeetPrefs } from "@/lib/meet";
@@ -180,45 +178,25 @@ export async function recordConsent(): Promise<Profile> {
   return data;
 }
 
-/** 하이드레이션 안전: 첫 렌더는 null, 세션 확인 후 실제 값. store.ts 의 useMe() 대체. */
-export function useMe() {
-  const [me, setMe] = useState<Profile | null>(null);
-  const [ready, setReady] = useState(false);
+/**
+ * 홈이 필요한 상태 전부. 조각조각 묻지 않는다(진단 PERF-3).
+ *
+ * 읽기 전용이라 소개 오픈은 포함하지 않는다 — has_open_intro 가 false 인
+ * 남성이면 호출자가 openIntro() 를 한 번 부르고 다시 읽는다.
+ */
+export type HomeState = {
+  me: Profile | null;
+  candidate: PublicProfile | null;
+  meeting: Meeting | null;
+  request_count: number;
+  pending_no_show: NoShowReport | null;
+  has_open_intro: boolean;
+};
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        if (!cancelled) {
-          setMe(null);
-          setReady(true);
-        }
-        return;
-      }
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .maybeSingle();
-      if (!cancelled) {
-        setMe(data);
-        setReady(true);
-      }
-    }
-
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
-  return { me, ready };
+export async function homeState(): Promise<HomeState> {
+  const { data, error } = await supabase.rpc("home_state");
+  if (error) throw error;
+  return data as unknown as HomeState;
 }
 
 // ─────────────────────── 온보딩 (프로필 저장) ───────────────────────

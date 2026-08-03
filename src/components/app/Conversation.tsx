@@ -9,11 +9,11 @@ import {
   isChannelOpenNow,
   listMessages,
   sendMessage,
-  useMe,
   type Meeting,
   type Message,
   type MsgChannel,
 } from "@/lib/api";
+import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 
 /**

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { BRAND, HUBS } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
-import { useMe } from "@/lib/api";
+import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/")({
   head: () => ({

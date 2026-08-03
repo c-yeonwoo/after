@@ -65,10 +65,15 @@ function TicketPage() {
   return (
     <AppScreen title="만남 티켓" hideTabs back="/intro">
       <div className="mt-3">
+        {/*
+          지불 직전이다. 가장 강한 근거를 맨 앞에 세운다 — 이 사람은 이미
+          회원님을 골랐고(open_intro 불변식 1), 답이 없으면 돈은 돌아온다.
+          예전엔 절차 설명("가능한 날과 취향을 먼저 여쭤봅니다")만 있었다.
+        */}
         <GuideNote introduce>
           {waiting
             ? "선호를 여쭤보았습니다. 답이 오면 대화를 열어드리겠습니다."
-            : "티켓을 사용하시면 제가 상대에게 가능한 날과 취향을 먼저 여쭤봅니다."}
+            : "이분은 이미 회원님을 좋다고 하셨어요. 티켓을 쓰시면 제가 가능한 날을 여쭤봅니다."}
         </GuideNote>
       </div>
 
@@ -82,7 +87,7 @@ function TicketPage() {
             </p>
           </div>
           <p className="mt-1 text-xs text-primary-foreground/85">
-            한 번의 만남을 세라가 조율을 도와드립니다.
+            이미 회원님을 고른 한 사람과의 만남 한 번.
           </p>
         </div>
         <ul className="space-y-2.5 px-6 py-5 text-sm">

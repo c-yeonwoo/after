@@ -7,13 +7,8 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BRAND, isCompanyEmail } from "@/lib/brand";
-import {
-  authErrorMessage,
-  devFetchLatestOtp,
-  requestEmailCode,
-  signInExisting,
-  useMe,
-} from "@/lib/api";
+import { authErrorMessage, devFetchLatestOtp, requestEmailCode, signInExisting } from "@/lib/api";
+import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/login")({
   head: () => ({

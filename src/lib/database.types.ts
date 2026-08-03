@@ -1065,6 +1065,7 @@ export type Database = {
       }
       expire_unanswered_meetings: { Args: never; Returns: number }
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
+      home_state: { Args: never; Returns: Json }
       is_channel_open: {
         Args: {
           p_channel: Database["public"]["Enums"]["msg_channel"]
