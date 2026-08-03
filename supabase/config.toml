@@ -107,7 +107,8 @@ enabled = true
 # Port to use for the email testing server web interface.
 port = 55324
 # Uncomment to expose additional ports for testing user applications that send emails.
-# smtp_port = 54325
+# 알림 워커(send-notifications)가 로컬에서 실제로 메일을 보내 Mailpit 으로 확인하려면 필요하다.
+smtp_port = 55325
 # pop3_port = 54326
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
