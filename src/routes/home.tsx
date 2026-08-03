@@ -8,13 +8,9 @@ import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { BRAND, HUBS } from "@/lib/brand";
 import {
-  ensureOpenIntro,
-  getMeetingByIntro,
-  listMeetingsAwaitingMyPrefs,
-  listMyActiveMeetings,
+  homeState,
   markMet,
-  myPendingCandidate,
-  myPendingNoShowReport,
+  openIntro,
   useMe,
   type Meeting,
   type NoShowReport,
@@ -85,38 +81,25 @@ function HomePage() {
     if (!ready || !me) return;
     let cancelled = false;
     (async () => {
-      if (me.gender === "male") {
-        const opened = await ensureOpenIntro();
-        if (cancelled) return;
-        setCandidate(opened?.candidate ?? null);
-        // 확정 전 만남도 홈이 알아야 한다 — listMyActiveMeetings 는 확정된 것만
-        // 돌려주므로(S7), 여기서 열린 소개의 만남을 직접 읽는다.
-        if (opened) {
-          const m = await getMeetingByIntro(opened.intro.id);
-          if (cancelled) return;
-          if (m && !m.cancelled_at) setMeeting(m);
-        }
-      } else {
-        const awaiting = await listMeetingsAwaitingMyPrefs();
-        if (cancelled) return;
-        setRequestCount(awaiting.length);
-        if (awaiting.length > 0) {
-          // 대표로 가장 오래 기다린 요청을 보여주고, 나머지는 목록에서 다룬다.
-          setCandidate(awaiting[0].candidate);
-          setMeeting(awaiting[0].meeting);
-        } else {
-          const next = await myPendingCandidate();
-          if (cancelled) return;
-          setCandidate(next);
+      let state = await homeState();
+      // 남성인데 열린 소개가 없으면 한 번 열고 다시 읽는다. 평소엔 1회,
+      // 새 소개가 필요한 순간에만 2회다. home_state() 는 읽기 전용이라
+      // 여기서 오픈을 대신하지 않는다.
+      if (!cancelled && me.gender === "male" && !state.has_open_intro && !state.meeting) {
+        try {
+          await openIntro();
+          state = await homeState();
+        } catch (err) {
+          // P0002 = 자격 있는 후보가 아직 없음. 정상 상태다.
+          if ((err as { code?: string })?.code !== "P0002") throw err;
         }
       }
-      const pendingReport = await myPendingNoShowReport();
-      if (!cancelled) setNoShow(pendingReport);
-      const active = await listMyActiveMeetings();
-      if (!cancelled) {
-        setMeeting((prev) => active[0]?.meeting ?? prev);
-        setLoading(false);
-      }
+      if (cancelled) return;
+      setCandidate(state.candidate);
+      setMeeting(state.meeting);
+      setRequestCount(state.request_count);
+      setNoShow(state.pending_no_show);
+      setLoading(false);
     })();
     return () => {
       cancelled = true;
