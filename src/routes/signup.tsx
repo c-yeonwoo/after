@@ -90,6 +90,8 @@ function Onboarding() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
+  const [resumed, setResumed] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
@@ -98,15 +100,31 @@ function Onboarding() {
   const [activeSeed, setActiveSeed] = useState(0);
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
 
-  // 수정 진입: 저장된 프로필을 불러와 인터뷰를 처음부터 다시 하지 않도록 합니다.
+  /**
+   * 저장된 프로필을 불러온다. 두 경로가 여기로 온다:
+   *   · 수정 진입 (`?edit=1`, "나" 탭에서)
+   *   · **가입 재개** — 인증까지 마치고 중간에 닫은 사람
+   *
+   * 재개가 예전에는 사실상 재시작이었다. onboarding_step 은 기록만 되고
+   * 읽는 곳이 `< 7` 불리언 판정뿐이라, 그 결과가 1단계·빈 폼이었다(진단 UX-2).
+   */
   useEffect(() => {
-    if (!editing) return;
     if (!ready) return;
     if (!me) {
-      navigate({ to: "/" });
+      // 수정 진입인데 세션이 없으면 나간다. 신규 가입은 아직 me 가 없는 게 정상이다.
+      if (editing) navigate({ to: "/" });
       return;
     }
+    if (resumed) return;
+    setResumed(true);
     setUserId(me.id);
+    if (!editing) {
+      // 이미 진행한 단계로 착지시킨다. 저장 시점과 같은 번호를 쓴다:
+      // 4=기본정보 저장됨 → 관심사, 5=관심사 저장됨 → 매치/토픽, 6 → 확인.
+      setStep(
+        me.onboarding_step >= 6 ? 9 : me.onboarding_step >= 5 ? 8 : me.onboarding_step >= 4 ? 6 : 2,
+      );
+    }
     setGender(me.gender);
     setHubId(me.hub_id);
     setEmail(me.company_email);
@@ -132,7 +150,7 @@ function Onboarding() {
     });
     setIntro(me.intro ?? me.headline ?? "");
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
-  }, [editing, ready, me, navigate]);
+  }, [editing, ready, me, navigate, resumed]);
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
@@ -165,7 +183,7 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
             다음
           </Button>
         </div>
@@ -185,7 +203,7 @@ function Onboarding() {
 
     return (
       <StepShell
-        step={2}
+        step={4}
         total={TOTAL}
         eyebrow="기본 정보"
         title="기본적인 것부터"
@@ -364,16 +382,39 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(1))}>
+          <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(4))}>
             {editing ? "취소" : "이전"}
           </Button>
           <Button
             className="flex-1"
             size="lg"
-            disabled={!basicsValid(basics)}
-            onClick={() => setStep(editing ? 6 : 3)}
+            disabled={!basicsValid(basics) || saving}
+            onClick={async () => {
+              // 인증이 앞으로 왔으므로 이 시점엔 이미 프로필 행이 있다 —
+              // 기본 정보를 바로 서버에 남긴다. 예전에는 completeOnboarding()
+              // 까지 가야 저장돼서, 관심사 단계에서 이탈하면 이름·생일까지
+              // 전부 다시 입력해야 했다(진단 UX-2).
+              if (userId) {
+                setSaving(true);
+                try {
+                  await saveOnboardingStep(userId, 4, {
+                    name: basics.name,
+                    birth: basics.birth,
+                    job: basics.job,
+                    mbti: basics.mbti,
+                    smoking: basics.smoking,
+                    drinking: basics.drinking,
+                    religion: basics.religion,
+                    photo_url: basics.photo || null,
+                  });
+                } finally {
+                  setSaving(false);
+                }
+              }
+              setStep(6);
+            }}
           >
-            다음
+            {saving ? "저장 중…" : "다음"}
           </Button>
         </div>
       </StepShell>
@@ -383,7 +424,7 @@ function Onboarding() {
   if (step === 3) {
     return (
       <StepShell
-        step={3}
+        step={2}
         total={TOTAL}
         eyebrow="활동 지역"
         title="주로 어디서 만나시겠어요?"
@@ -402,7 +443,7 @@ function Onboarding() {
           ))}
         </div>
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(2)}>
+          <Button variant="ghost" onClick={() => setStep(1)}>
             이전
           </Button>
           <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4)}>
@@ -416,7 +457,7 @@ function Onboarding() {
   if (step === 4) {
     return (
       <StepShell
-        step={4}
+        step={3}
         total={TOTAL}
         eyebrow="직장 인증"
         title="회사 이메일로 인증해 주세요"
@@ -553,7 +594,7 @@ function Onboarding() {
                   // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
                   await recordConsent();
                   setUserId(created.id);
-                  setStep(6);
+                  setStep(2);
                 } catch (err) {
                   setAuthError(authErrorMessage(err));
                 } finally {
@@ -707,7 +748,7 @@ function Onboarding() {
         </p>
 
         <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(editing ? 2 : 4)}>
+          <Button variant="ghost" onClick={() => setStep(2)}>
             이전
           </Button>
           <Button
