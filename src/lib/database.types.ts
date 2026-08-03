@@ -72,6 +72,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "affinities_from_id_fkey"
+            columns: ["from_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "affinities_to_id_fkey"
             columns: ["to_id"]
             isOneToOne: false
@@ -83,6 +90,13 @@ export type Database = {
             columns: ["to_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affinities_to_id_fkey"
+            columns: ["to_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -122,6 +136,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -167,6 +188,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedbacks_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -216,6 +244,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "intro_exclusions_user_hi_fkey"
+            columns: ["user_hi"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "intro_exclusions_user_lo_fkey"
             columns: ["user_lo"]
             isOneToOne: false
@@ -227,6 +262,13 @@ export type Database = {
             columns: ["user_lo"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_exclusions_user_lo_fkey"
+            columns: ["user_lo"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -272,6 +314,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "intros_female_id_fkey"
+            columns: ["female_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "intros_male_id_fkey"
             columns: ["male_id"]
             isOneToOne: false
@@ -283,6 +332,13 @@ export type Database = {
             columns: ["male_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intros_male_id_fkey"
+            columns: ["male_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -403,6 +459,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       no_show_reports: {
@@ -452,6 +515,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "no_show_reports_accused_id_fkey"
+            columns: ["accused_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "no_show_reports_meeting_id_fkey"
             columns: ["meeting_id"]
             isOneToOne: false
@@ -470,6 +540,13 @@ export type Database = {
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "no_show_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -610,6 +687,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ticket_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tickets: {
@@ -666,6 +750,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -768,6 +859,63 @@ export type Database = {
         }
         Relationships: []
       }
+      public_profiles: {
+        Row: {
+          age: number | null
+          details: Json | null
+          drinking: string | null
+          headline: string | null
+          hub_id: string | null
+          id: string | null
+          interests: string[] | null
+          intro: string | null
+          job: string | null
+          match_tags: string[] | null
+          mbti: string | null
+          name: string | null
+          photo_url: string | null
+          religion: string | null
+          smoking: string | null
+          topics: string[] | null
+        }
+        Insert: {
+          age?: never
+          details?: Json | null
+          drinking?: string | null
+          headline?: string | null
+          hub_id?: string | null
+          id?: string | null
+          interests?: string[] | null
+          intro?: string | null
+          job?: string | null
+          match_tags?: string[] | null
+          mbti?: string | null
+          name?: string | null
+          photo_url?: string | null
+          religion?: string | null
+          smoking?: string | null
+          topics?: string[] | null
+        }
+        Update: {
+          age?: never
+          details?: Json | null
+          drinking?: string | null
+          headline?: string | null
+          hub_id?: string | null
+          id?: string | null
+          interests?: string[] | null
+          intro?: string | null
+          job?: string | null
+          match_tags?: string[] | null
+          mbti?: string | null
+          name?: string | null
+          photo_url?: string | null
+          religion?: string | null
+          smoking?: string | null
+          topics?: string[] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_no_show_confirmed: {
@@ -850,6 +998,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_eligible_candidate: { Args: { p_id: string }; Returns: boolean }
       is_excluded: { Args: { a: string; b: string }; Returns: boolean }
       is_meeting_participant: {
         Args: { p_meeting_id: string }

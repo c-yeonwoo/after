@@ -4,7 +4,6 @@ import { ArrowRight, CalendarCheck } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { Conversation } from "@/components/app/Conversation";
-import { ageFrom } from "@/components/onboarding/basics";
 import { BRAND } from "@/lib/brand";
 import { listMyActiveMeetings, type ActiveMeeting } from "@/lib/api";
 
@@ -73,7 +72,7 @@ function ChatsPage() {
   if (items.length === 1) {
     const { meeting, counterpart } = items[0];
     const title = `${counterpart.name ?? "대화"}${
-      counterpart.birth ? ` ${ageFrom(counterpart.birth)}` : ""
+      counterpart.age !== null ? ` ${counterpart.age}` : ""
     }`;
     return (
       <AppScreen title={title} fill>
@@ -100,9 +99,9 @@ function ChatsPage() {
                 <div className="min-w-0">
                   <p className="headline truncate text-lg">
                     {counterpart.name}
-                    {counterpart.birth ? (
+                    {counterpart.age !== null ? (
                       <span className="ml-1.5 text-sm text-muted-foreground">
-                        {ageFrom(counterpart.birth)}
+                        {counterpart.age}
                       </span>
                     ) : null}
                   </p>

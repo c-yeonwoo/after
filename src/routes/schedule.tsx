@@ -5,9 +5,8 @@ import { toast } from "sonner";
 import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
 import { MeetPlanner } from "@/components/app/MeetPlanner";
-import { ageFrom } from "@/components/onboarding/basics";
 import { BRAND } from "@/lib/brand";
-import { getMeeting, getMeetingCounterpart, type Meeting, type Profile } from "@/lib/api";
+import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
 
 export const Route = createFileRoute("/schedule")({
   validateSearch: (search: Record<string, unknown>): { meetingId?: string } => ({
@@ -33,7 +32,7 @@ function SchedulePage() {
   const { meetingId } = Route.useSearch();
   const [loading, setLoading] = useState(true);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [counterpart, setCounterpart] = useState<Profile | null>(null);
+  const [counterpart, setCounterpart] = useState<PublicProfile | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,10 +90,8 @@ function SchedulePage() {
         <div className="mt-5 rounded-surface border border-border bg-card px-5 py-4">
           <p className="headline text-xl">
             {counterpart.name}
-            {counterpart.birth ? (
-              <span className="ml-1.5 text-base text-muted-foreground">
-                {ageFrom(counterpart.birth)}
-              </span>
+            {counterpart.age !== null ? (
+              <span className="ml-1.5 text-base text-muted-foreground">{counterpart.age}</span>
             ) : null}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{counterpart.job}</p>

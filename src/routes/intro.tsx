@@ -18,7 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  ageFrom,
   DRINKING_OPTIONS,
   RELIGION_OPTIONS,
   SMOKING_OPTIONS,
@@ -33,7 +32,7 @@ import {
   submitAffinity,
   useMe,
   type Meeting,
-  type Profile,
+  type PublicProfile,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/intro")({
@@ -57,7 +56,7 @@ function IntroPage() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [candidate, setCandidate] = useState<Profile | null>(null);
+  const [candidate, setCandidate] = useState<PublicProfile | null>(null);
   const [introId, setIntroId] = useState<string | null>(null);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [confirmPassOpen, setConfirmPassOpen] = useState(false);
@@ -115,9 +114,10 @@ function IntroPage() {
     );
   }
 
-  const age = candidate.birth ? ageFrom(candidate.birth) : null;
+  // 뷰가 이미 나이를 계산해서 준다 — 생일은 나가지 않는다(S8).
+  const age = candidate.age;
   const details = (candidate.details as Record<string, string> | null) ?? {};
-  const answers = candidate.interests
+  const answers = (candidate.interests ?? [])
     .map((v) => v.trim())
     .filter(Boolean)
     .map((label) => ({ q: followUpFor(label), a: (details[label] ?? "").trim() }))
@@ -148,9 +148,9 @@ function IntroPage() {
           photo: candidate.photo_url ?? undefined,
           headline: candidate.headline ?? "",
           intro: candidate.intro ?? "",
-          interests: candidate.interests,
-          matchTags: candidate.match_tags,
-          topics: candidate.topics,
+          interests: candidate.interests ?? [],
+          matchTags: candidate.match_tags ?? [],
+          topics: candidate.topics ?? [],
           answers,
         }}
       />
@@ -194,7 +194,7 @@ function IntroPage() {
                 }
                 setBusy(true);
                 try {
-                  await submitAffinity(candidate.id, "pass");
+                  await submitAffinity(candidate.id!, "pass");
                   await load();
                 } finally {
                   setBusy(false);
@@ -202,7 +202,13 @@ function IntroPage() {
               }}
             >
               <X className="size-4" aria-hidden="true" />
-              다음에
+              {/*
+                양쪽 다 되돌릴 수 없다. 남성은 pass_intro() → intro_exclusions 에
+                append-only 로 기록되고, 여성은 affinities 의 unique(from_id,to_id)
+                때문에 재평가가 막히며 그 상대의 소개는 영영 열리지 않는다.
+                "다음에"는 한국어로 "나중에 다시"라 결과와 정반대였다(진단 UX-4).
+              */}
+              {isMale ? "이 소개 넘기기" : "관심 없어요"}
             </Button>
             {isMale ? (
               <Button size="lg" className="flex-1" onClick={() => navigate({ to: "/ticket" })}>
@@ -217,7 +223,7 @@ function IntroPage() {
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    await submitAffinity(candidate.id, "like");
+                    await submitAffinity(candidate.id!, "like");
                     toast.success("호감을 전달했습니다.");
                     await load();
                   } finally {
@@ -230,6 +236,16 @@ function IntroPage() {
               </Button>
             )}
           </div>
+          {/*
+            여성은 평가 건수가 많아 매번 확인 다이얼로그를 띄우면 벌처럼 느껴진다.
+            대신 되돌릴 수 없다는 사실만 상시 노출한다 — 남성 쪽은 단발 결정이라
+            다이얼로그를 유지한다.
+          */}
+          {isMale ? null : (
+            <p className="mt-2 text-center text-2xs text-muted-foreground">
+              한 번 답하면 이분은 다시 소개되지 않습니다.
+            </p>
+          )}
         </div>
       )}
 
@@ -241,7 +257,8 @@ function IntroPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>이 소개를 넘기시겠어요?</AlertDialogTitle>
             <AlertDialogDescription>
-              넘기면 이분은 다시 소개되지 않습니다. 되돌릴 수 없습니다.
+              <b className="font-semibold text-foreground">두 분은 다시 만나지 않습니다.</b> 이분은
+              앞으로 소개되지 않고, 상대에게도 회원님이 소개되지 않습니다. 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
