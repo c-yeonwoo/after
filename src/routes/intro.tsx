@@ -81,7 +81,7 @@ function IntroPage() {
       // 예전에는 대기 중인 만남 요청이 있으면 그 요청자를 대신 띄웠는데,
       // 그러면 평가할 후보가 남아 있어도 평가를 계속할 수 없었다.
       // 요청은 성격이 다른 이벤트라 /requests 와 홈이 담당한다.
-      setCandidate(await myPendingCandidate(me.hub_id));
+      setCandidate(await myPendingCandidate());
       setMeeting(null);
     }
     setLoading(false);

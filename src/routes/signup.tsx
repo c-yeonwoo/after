@@ -39,6 +39,7 @@ import {
   useMe,
   verifyEmailCode,
 } from "@/lib/api";
+import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
@@ -90,6 +91,11 @@ function Onboarding() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
+  const [resumed, setResumed] = useState(false);
+  /** 방금 고른 파일의 blob URL. 업로드가 끝나기 전에도 보여주기 위한 것. */
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
@@ -98,15 +104,31 @@ function Onboarding() {
   const [activeSeed, setActiveSeed] = useState(0);
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
 
-  // 수정 진입: 저장된 프로필을 불러와 인터뷰를 처음부터 다시 하지 않도록 합니다.
+  /**
+   * 저장된 프로필을 불러온다. 두 경로가 여기로 온다:
+   *   · 수정 진입 (`?edit=1`, "나" 탭에서)
+   *   · **가입 재개** — 인증까지 마치고 중간에 닫은 사람
+   *
+   * 재개가 예전에는 사실상 재시작이었다. onboarding_step 은 기록만 되고
+   * 읽는 곳이 `< 7` 불리언 판정뿐이라, 그 결과가 1단계·빈 폼이었다(진단 UX-2).
+   */
   useEffect(() => {
-    if (!editing) return;
     if (!ready) return;
     if (!me) {
-      navigate({ to: "/" });
+      // 수정 진입인데 세션이 없으면 나간다. 신규 가입은 아직 me 가 없는 게 정상이다.
+      if (editing) navigate({ to: "/" });
       return;
     }
+    if (resumed) return;
+    setResumed(true);
     setUserId(me.id);
+    if (!editing) {
+      // 이미 진행한 단계로 착지시킨다. 저장 시점과 같은 번호를 쓴다:
+      // 4=기본정보 저장됨 → 관심사, 5=관심사 저장됨 → 매치/토픽, 6 → 확인.
+      setStep(
+        me.onboarding_step >= 6 ? 9 : me.onboarding_step >= 5 ? 8 : me.onboarding_step >= 4 ? 6 : 2,
+      );
+    }
     setGender(me.gender);
     setHubId(me.hub_id);
     setEmail(me.company_email);
@@ -132,7 +154,11 @@ function Onboarding() {
     });
     setIntro(me.intro ?? me.headline ?? "");
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
-  }, [editing, ready, me, navigate]);
+  }, [editing, ready, me, navigate, resumed]);
+
+  // 저장된 값은 Storage 경로라 그대로 <img src> 에 넣을 수 없다.
+  const savedPhoto = usePhotoUrl(basics.photo);
+  const shownPhoto = photoPreview ?? savedPhoto;
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
@@ -165,7 +191,7 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(2)}>
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
             다음
           </Button>
         </div>
@@ -185,7 +211,7 @@ function Onboarding() {
 
     return (
       <StepShell
-        step={2}
+        step={4}
         total={TOTAL}
         eyebrow="기본 정보"
         title="기본적인 것부터"
@@ -196,9 +222,9 @@ function Onboarding() {
             <p className="text-sm font-semibold text-foreground">프로필 사진 (1장)</p>
             <div className="mt-3 flex items-center gap-4">
               <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
-                {basics.photo ? (
+                {shownPhoto ? (
                   <img
-                    src={basics.photo}
+                    src={shownPhoto}
                     alt="선택한 프로필 사진 미리보기"
                     className="size-full object-cover"
                   />
@@ -213,18 +239,29 @@ function Onboarding() {
                   htmlFor="photo"
                   className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
                 >
-                  {basics.photo ? "사진 변경" : "사진 선택"}
+                  {photoBusy ? "올리는 중…" : basics.photo ? "사진 변경" : "사진 선택"}
                   <input
                     id="photo"
                     type="file"
                     accept="image/*"
                     className="sr-only"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = () => setB({ photo: String(reader.result) });
-                      reader.readAsDataURL(file);
+                      // 미리보기는 즉시(blob), 실제 값은 Storage 경로다.
+                      // 예전에는 base64 를 행에 넣어 모든 select 에 딸려 나왔다(UX-3).
+                      setPhotoPreview(URL.createObjectURL(file));
+                      setPhotoBusy(true);
+                      try {
+                        setB({ photo: await uploadProfilePhoto(file) });
+                      } catch (err) {
+                        setPhotoPreview(null);
+                        toast.error(
+                          err instanceof Error ? err.message : "사진을 올리지 못했습니다.",
+                        );
+                      } finally {
+                        setPhotoBusy(false);
+                      }
                     }}
                   />
                 </label>
@@ -364,16 +401,41 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(1))}>
+          <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(4))}>
             {editing ? "취소" : "이전"}
           </Button>
           <Button
             className="flex-1"
             size="lg"
-            disabled={!basicsValid(basics)}
-            onClick={() => setStep(editing ? 6 : 3)}
+            disabled={!basicsValid(basics) || saving}
+            onClick={async () => {
+              // 인증이 앞으로 왔으므로 이 시점엔 이미 프로필 행이 있다 —
+              // 기본 정보를 바로 서버에 남긴다. 예전에는 completeOnboarding()
+              // 까지 가야 저장돼서, 관심사 단계에서 이탈하면 이름·생일까지
+              // 전부 다시 입력해야 했다(진단 UX-2).
+              if (userId) {
+                setSaving(true);
+                try {
+                  // 수정 모드에서는 단계를 **내리지 않는다.** 완료된 프로필(7)에
+                  // 4 를 쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다.
+                  await saveOnboardingStep(userId, editing ? (me?.onboarding_step ?? 4) : 4, {
+                    name: basics.name,
+                    birth: basics.birth,
+                    job: basics.job,
+                    mbti: basics.mbti,
+                    smoking: basics.smoking,
+                    drinking: basics.drinking,
+                    religion: basics.religion,
+                    photo_url: basics.photo || null,
+                  });
+                } finally {
+                  setSaving(false);
+                }
+              }
+              setStep(6);
+            }}
           >
-            다음
+            {saving ? "저장 중…" : "다음"}
           </Button>
         </div>
       </StepShell>
@@ -383,7 +445,7 @@ function Onboarding() {
   if (step === 3) {
     return (
       <StepShell
-        step={3}
+        step={2}
         total={TOTAL}
         eyebrow="활동 지역"
         title="주로 어디서 만나시겠어요?"
@@ -402,7 +464,7 @@ function Onboarding() {
           ))}
         </div>
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(2)}>
+          <Button variant="ghost" onClick={() => setStep(1)}>
             이전
           </Button>
           <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4)}>
@@ -416,7 +478,7 @@ function Onboarding() {
   if (step === 4) {
     return (
       <StepShell
-        step={4}
+        step={3}
         total={TOTAL}
         eyebrow="직장 인증"
         title="회사 이메일로 인증해 주세요"
@@ -553,7 +615,7 @@ function Onboarding() {
                   // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
                   await recordConsent();
                   setUserId(created.id);
-                  setStep(6);
+                  setStep(2);
                 } catch (err) {
                   setAuthError(authErrorMessage(err));
                 } finally {
@@ -707,7 +769,7 @@ function Onboarding() {
         </p>
 
         <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(editing ? 2 : 4)}>
+          <Button variant="ghost" onClick={() => setStep(2)}>
             이전
           </Button>
           <Button
@@ -844,12 +906,8 @@ function Onboarding() {
       description="적은 내용으로 만든 초안입니다."
     >
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        {basics.photo ? (
-          <img
-            src={basics.photo}
-            alt="내 프로필 사진"
-            className="aspect-[4/5] w-full object-cover"
-          />
+        {shownPhoto ? (
+          <img src={shownPhoto} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
         ) : null}
         <div className="p-5">
           <p className="text-base font-semibold">
