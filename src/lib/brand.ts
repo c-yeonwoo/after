@@ -11,8 +11,6 @@ export const BRAND = {
     "직장 인증을 마친 강남·역삼권 직장인끼리, 오가는 길이 겹치는 한 사람을 소개받습니다. 저녁 한 끼든 가벼운 한 잔이든, 무엇을 할지는 두 분이 정하세요.",
 } as const;
 
-
-
 export const HUBS = [
   {
     id: "gangnam",
@@ -41,6 +39,14 @@ export const HUBS = [
 ] as const;
 
 export type HubId = (typeof HUBS)[number]["id"];
+
+/**
+ * 만남 티켓 가격 (D 확정: 30,000원).
+ * 서버 권위 값은 `ticket_orders.amount` CHECK 와 `create_ticket_order()` 에 있고,
+ * 이건 화면 표기 전용이다 — PRD F5 "화면에 가격을 명시한다".
+ */
+export const MEETING_TICKET_PRICE_KRW = 30000;
+export const MEETING_TICKET_PRICE_LABEL = `${MEETING_TICKET_PRICE_KRW.toLocaleString("ko-KR")}원`;
 
 /** 회사 이메일 인증에서 거부하는 개인 메일 도메인 */
 export const PERSONAL_EMAIL_DOMAINS = [
@@ -72,7 +78,8 @@ export const FEATURES = [
   },
   {
     id: "profile",
-    title: "AI 인터뷰 프로필",
+    // PRD 비목표: "AI" 표기를 쓰지 않는다 (F2 — 표기는 "인터뷰")
+    title: "인터뷰 프로필",
     body: "몇 가지 질문에 답하면 사진과 스펙 대신, 대화 결이 드러나는 소개글을 만들어 드립니다.",
   },
   {
@@ -87,8 +94,9 @@ export const FEATURES = [
   },
   {
     id: "meet",
-    title: "만남 보장",
-    body: "채팅만 하다 흐지부지되지 않도록, 실제로 만나는 데까지 서비스가 챙깁니다.",
+    // PRD F5·비목표: "만남 보장" 같은 절대어를 쓰지 않고 환불 규칙을 명시한다
+    title: "실제로 만나는 데까지",
+    body: "채팅만 하다 흐지부지되지 않도록 약속 조율을 돕습니다. 상대가 24시간 안에 응답하지 않으면 티켓은 자동으로 환불됩니다.",
   },
   {
     id: "feedback",
@@ -96,4 +104,3 @@ export const FEATURES = [
     body: "남기면 다음 소개가 더 정확해집니다. 상대에게는 공개되지 않습니다.",
   },
 ] as const;
-

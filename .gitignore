@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Supabase Edge Functions secrets (토스페이먼츠 시크릿 키 등)
+supabase/functions/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -30,3 +33,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code 로컬 설정 · 워크트리
+.claude/

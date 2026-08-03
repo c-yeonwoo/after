@@ -51,7 +51,6 @@ export const emptyBasics: Basics = {
   religion: "",
 };
 
-
 export function ageFrom(birth: string) {
   const d = new Date(birth);
   if (Number.isNaN(d.getTime())) return null;

@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 
 import { BRAND, HUBS } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
+import { useMe } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +28,12 @@ const POINTS = [
 function Landing() {
   const hub = HUBS[0];
   const navigate = useNavigate();
+  const { me, ready } = useMe();
+
+  // 이미 로그인한 사용자를 가입 유도 랜딩에 세워두지 않는다.
+  useEffect(() => {
+    if (ready && me) navigate({ to: "/home" });
+  }, [ready, me, navigate]);
   const btnRef = useRef<HTMLButtonElement>(null);
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -41,9 +47,8 @@ function Landing() {
         : { x: window.innerWidth / 2, y: window.innerHeight - 80 },
     );
     requestAnimationFrame(() => setRevealed(true));
-    window.setTimeout(() => navigate({ to: "/onboarding" }), 560);
+    window.setTimeout(() => navigate({ to: me ? "/home" : "/signup" }), 560);
   }
-
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-4">
@@ -53,50 +58,53 @@ function Landing() {
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
-          <Link
-            to="/onboarding"
-            className="shrink-0 rounded-full bg-foreground px-4 py-1.5 text-xs font-semibold text-background"
-          >
-            시작
-          </Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <Link
+              to="/login"
+              className="inline-flex min-h-11 items-center rounded-full px-3 text-xs font-semibold text-foreground underline underline-offset-4"
+            >
+              로그인
+            </Link>
+            <Link
+              to="/signup"
+              className="inline-flex min-h-11 items-center rounded-full bg-foreground px-4 text-xs font-semibold text-background"
+            >
+              시작
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="flex-1 px-6">
         <section className="pt-8 pb-10">
-          <h1 className="headline text-[2.7rem] leading-[0.95] uppercase">
+          <h1 className="wordmark text-5xl leading-[0.95] uppercase">
             After Work
             <br />
             <span className="text-primary">Matching</span>
           </h1>
-          <p className="mt-6 text-[1.08rem] leading-snug font-medium">
+          <p className="mt-6 text-lg leading-snug font-medium">
             퇴근하고 만나기 좋은 거리에,
             <br />
             좋은 사람 한 명.
           </p>
-          <p className="mt-3 text-xs text-muted-foreground">
-            현재 {hub.label}에서 운영합니다.
-          </p>
+          <p className="mt-3 text-xs text-muted-foreground">현재 {hub.label}에서 운영합니다.</p>
         </section>
-
 
         <section className="border-t border-border/70" aria-label="서비스 소개">
           {POINTS.map((p) => (
             <div key={p.n} className="flex gap-4 border-b border-border/70 py-5">
-              <span className="mt-0.5 text-[0.68rem] font-semibold tracking-[0.14em] text-primary">
+              <span className="mt-0.5 text-2xs font-semibold tracking-[0.14em] text-primary">
                 {p.n}
               </span>
               <div className="min-w-0">
-                <h2 className="text-[0.97rem] font-semibold">{p.title}</h2>
-                <p className="mt-1 text-[0.82rem] leading-relaxed text-muted-foreground">
-                  {p.body}
-                </p>
+                <h2 className="text-base font-semibold">{p.title}</h2>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
               </div>
             </div>
           ))}
         </section>
 
-        <p className="mt-7 text-[0.7rem] leading-relaxed text-muted-foreground">
+        <p className="mt-7 text-2xs leading-relaxed text-muted-foreground">
           {BRAND.name} · {hub.label} 단일 지역 운영 · 그룹 미팅·전국 매칭은 제공하지 않습니다.
         </p>
       </main>
@@ -113,8 +121,14 @@ function Landing() {
         >
           직장 인증하고 시작하기
         </button>
-        <p className="mt-3 text-center text-[0.62rem] font-semibold tracking-[0.16em] uppercase text-muted-foreground">
+        <p className="mt-3 text-center text-3xs font-semibold tracking-[0.16em] uppercase text-muted-foreground">
           Verification takes 1 minute
+        </p>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          이미 가입하셨나요?{" "}
+          <Link to="/login" className="font-semibold text-primary-strong underline">
+            로그인
+          </Link>
         </p>
       </div>
 
@@ -126,11 +140,8 @@ function Landing() {
             clipPath: `circle(${revealed ? "150%" : "0%"} at ${origin.x}px ${origin.y}px)`,
             transition: "clip-path 620ms cubic-bezier(0.65, 0, 0.35, 1)",
           }}
-
         />
       ) : null}
     </div>
   );
 }
-
-

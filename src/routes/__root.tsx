@@ -14,23 +14,19 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { MobileFrame } from "@/components/MobileFrame";
 
-
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">페이지를 찾을 수 없습니다</h2>
+        <p className="mt-2 text-sm text-muted-foreground">주소가 바뀌었거나 삭제된 페이지입니다.</p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            처음으로
           </Link>
         </div>
       </div>
@@ -49,10 +45,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          화면을 불러오지 못했습니다
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          잠시 문제가 생겼습니다. 다시 시도하거나 처음으로 돌아가 주세요.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -60,15 +56,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            다시 시도
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-control border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex min-h-11 items-center justify-center rounded-control border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            처음으로
           </a>
         </div>
       </div>
@@ -87,8 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "애프터 — 강남·역삼 직장인 1:1 매칭" },
       {
         name: "description",
-        content:
-          "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명. 스와이프 없는 1:1 소개 서비스.",
+        content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명. 스와이프 없는 1:1 소개 서비스.",
       },
       { property: "og:title", content: "애프터 — 강남·역삼 직장인 1:1 매칭" },
       {
@@ -112,13 +107,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
       },
+      // Archivo Black 만 남긴다 — 워드마크 전용.
+      // Instrument Serif 는 사용처가 0건이었고, Hind(5웨이트)는 한글 글리프가 없어
+      // 한 줄 안에서 서체가 갈라지는 원인이었다. 둘 다 제거해 요청 6개를 줄였다.
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Hind:wght@300;400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -132,7 +126,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // 한국어 제품이다. lang 은 스크린리더 발음뿐 아니라 CJK 줄바꿈 규칙과
+    // 폰트 선택에도 영향을 준다 — "en" 이면 한글 줄바꿈이 어색해진다.
+    <html lang="ko">
       <head>
         <HeadContent />
       </head>
@@ -156,6 +152,4 @@ function RootComponent() {
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
-
 }
-

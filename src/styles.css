@@ -19,10 +19,36 @@
  */
 
 @theme inline {
-  --font-sans: "Hind", "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Instrument Serif", "Pretendard Variable", Pretendard, ui-serif, Georgia, serif;
-  /* 헤드라인/워드마크 전용: 굵고 가로로 넓은 그로테스크 */
-  --font-display: "Archivo Black", "Pretendard Variable", Pretendard, ui-sans-serif, sans-serif;
+  /*
+   * 한국어 제품이므로 라틴·숫자·한글을 모두 한 서체로 렌더한다.
+   * 이전에는 Hind 가 맨 앞이었는데 Hind 에는 한글 글리프가 없어서,
+   * 한 줄 안에서 라틴/숫자만 Hind·한글은 Pretendard 로 갈라져 렌더됐다
+   * (실측: "MBTI ENFP" 73.74px = Hind, "한글만" 41.48px = Pretendard).
+   * Pretendard 는 Inter 계열 라틴을 한글과 함께 설계한 서체라 혼용이 자연스럽다.
+   */
+  --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+
+  /*
+   * 헤드라인 — 한글이 들어가므로 반드시 한글 지원 서체여야 한다.
+   * Archivo Black 은 라틴 전용 + 단일 굵기(400)라, 이걸 헤드라인에 쓰면
+   * 한글은 Pretendard 700·숫자는 Archivo Black 400 으로 갈라진다
+   * ("하나 31" 에서 실제로 그랬다).
+   */
+  --font-display: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+
+  /* 워드마크 전용 — 라틴만 쓰는 자리(로고 "after", 랜딩 히어로)에만 적용한다 */
+  --font-wordmark: "Archivo Black", ui-sans-serif, sans-serif;
+
+  /*
+   * 타입 스케일 — Tailwind 기본 스텝(xs .75 / sm .875 / base 1 / lg 1.125 …)은
+   * 그대로 쓰고, 그 아래 마이크로 단계만 추가한다. 기존 코드에 0.6~0.7rem 사이
+   * 임의값이 6종(0.6·0.62·0.65·0.66·0.68·0.7)이나 흩어져 있었는데 서로 구분이
+   * 안 되는 수치였다 — 두 단계로 정리한다.
+   */
+  --text-3xs: 0.625rem; /* 10px — 아이브로우, 대문자 라벨 */
+  --text-3xs--line-height: 1.4;
+  --text-2xs: 0.6875rem; /* 11px — 마이크로 캡션·칩 */
+  --text-2xs--line-height: 1.45;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -50,6 +76,9 @@
   --color-primary-foreground: var(--primary-foreground);
   /* 작은 텍스트/아이콘용 고대비 브랜드 컬러 (WCAG AA) */
   --color-primary-strong: var(--primary-strong);
+  /* 내가 보낸 말풍선 — 로그 전체를 덮으므로 강한 코럴(#c72b10)은 과했다 */
+  --color-bubble-mine: var(--bubble-mine);
+  --color-bubble-mine-foreground: var(--bubble-mine-foreground);
 
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -86,6 +115,7 @@
   --color-brand-500: var(--brand-500);
   --color-brand-600: var(--brand-600);
   --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
   --color-coral-100: var(--coral-100);
   --color-coral-300: var(--coral-300);
   --color-coral-400: var(--coral-400);
@@ -114,7 +144,6 @@
   /* 입력폼은 한 단계 더 각지게 */
   --radius-field-value: 0.5rem;
 
-
   /* ── 브랜드 원천 값 (single source of truth) — 코럴 레드 ── */
   --brand-50: oklch(0.972 0.012 34);
   --brand-100: oklch(0.945 0.028 34);
@@ -123,7 +152,10 @@
   --brand-400: oklch(0.782 0.135 33);
   --brand-500: oklch(0.712 0.185 32);
   --brand-600: oklch(0.657 0.216 32);
-  --brand-700: oklch(0.565 0.195 31);
+  /* brand-700 = D14 확정값 #c72b10. 이전 값(0.565 0.195 31)은 대비 미달이었다.
+     brand-800 은 primary-strong 용 — 틴트된 표면(bg-primary/8) 위에서도 통과해야 한다. */
+  --brand-700: oklch(0.54 0.195 32);
+  --brand-800: oklch(0.48 0.175 31);
 
   /* 코럴 / 애프리콧 액센트 */
   --coral-100: oklch(0.955 0.022 40);
@@ -135,30 +167,48 @@
 
   --ink: oklch(0.203 0 0);
   --ink-muted: oklch(0.475 0.008 60);
-  --surface: oklch(1 0 0);
-  --surface-subtle: oklch(0.928 0.006 95);
+  /*
+   * 종이 톤은 유지하되 색기운을 코럴(h=32) 쪽 웜으로 맞춘다.
+   * 이전 배경은 h=100(노랑-초록)이라 저채도에서도 "때 탄 흰색"으로 읽혔고,
+   * 브랜드 코럴과 다른 웜 계열이라 코럴을 탁하게 만들었다.
+   *
+   * 그리고 카드에서 **순백을 없앤다.** 화면에 #fff 가 있으면 눈이 그걸 기준으로
+   * 잡아 나머지 틴트를 전부 얼룩으로 읽는다 — 배경만 바꿔서는 해결되지 않는 부분이다.
+   */
+  --surface: oklch(0.995 0.003 55);
+  --surface-subtle: oklch(0.935 0.008 55);
   --success: oklch(0.56 0.11 155);
   --warning: oklch(0.72 0.13 68);
-
 
   --shadow-frame: 0 0 70px -24px oklch(0.203 0 0 / 35%);
   --shadow-card: 0 12px 32px -22px oklch(0.203 0 0 / 40%);
   --shadow-brand: 0 14px 34px -18px oklch(0.657 0.216 32 / 45%);
-  --gradient-brand: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  /* 위에 흰 텍스트를 얹는 그라디언트라 양 끝 모두 AA(4.5)를 통과해야 한다.
+     이전 시작점 brand-500 은 2.78 로 미달이었다 — L≈0.57 이 통과 경계. */
+  --gradient-brand: linear-gradient(135deg, oklch(0.57 0.21 34), oklch(0.46 0.17 27));
   --gradient-warm: linear-gradient(135deg, var(--apricot-300), var(--brand-400));
 
   /* ── 시맨틱 토큰 (브랜드 값에서 파생) ── */
-  --background: oklch(0.958 0.004 100);
+  --background: oklch(0.965 0.006 55);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: var(--brand-600);
-  --primary-strong: var(--brand-700);
+  /* D14: 필·텍스트 두 역할 모두 AA 통과 (5.19 / 4.93) */
+  --primary: var(--brand-700);
+  --primary-strong: var(--brand-800);
 
-  --primary-foreground: oklch(0.975 0.004 100);
-  --secondary: oklch(0.928 0.006 95);
+  --primary-foreground: oklch(0.985 0.004 55);
+
+  /*
+   * 말풍선. 상대는 카드(흰 계열)+그림자, 나는 코럴 틴트.
+   * 채도 높은 코럴로 채우면 대화 한 화면이 통째로 붉어져서 읽기 피곤하다 —
+   * 브랜드 색은 유지하되 톤만 낮춘다. 잉크 텍스트 대비 13.2 로 넉넉하다.
+   */
+  --bubble-mine: var(--brand-200);
+  --bubble-mine-foreground: var(--ink);
+  --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-subtle);
   --muted-foreground: var(--ink-muted);
@@ -168,24 +218,22 @@
   --destructive-foreground: oklch(0.99 0.004 90);
   --border: oklch(0.203 0 0 / 12%);
   --input: oklch(0.203 0 0 / 22%);
-  --ring: var(--brand-600);
+  --ring: var(--brand-700);
 
-  --chart-1: var(--brand-600);
+  --chart-1: var(--brand-700);
   --chart-2: var(--apricot-500);
   --chart-3: var(--ink);
   --chart-4: var(--success);
   --chart-5: var(--coral-400);
-  --sidebar: oklch(0.958 0.004 100);
+  --sidebar: var(--background);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--brand-600);
-  --sidebar-primary-foreground: oklch(0.975 0.004 100);
+  --sidebar-primary: var(--brand-700);
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: var(--apricot-300);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: oklch(0.203 0 0 / 10%);
-  --sidebar-ring: var(--brand-600);
+  --sidebar-ring: var(--brand-700);
 }
-
-
 
 .dark {
   --ink: oklch(0.984 0.003 247.858);
@@ -254,14 +302,12 @@
     text-wrap: balance;
   }
 
-
   /* 키보드 포커스는 어떤 요소에서도 항상 뚜렷하게 보이도록 */
   :focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
 }
-
 
 /* 브랜드 그라디언트 유틸리티 — 하드코딩 대신 사용 */
 @utility bg-gradient-brand {
@@ -278,12 +324,21 @@
   color: transparent;
 }
 
-/* 헤드라인 — Archivo Black, 타이트한 자간/행간 */
+/* 헤드라인 — Pretendard Bold, 타이트한 자간/행간. 한글·라틴·숫자가 한 서체로 나온다. */
 @utility headline {
   font-family: var(--font-display);
   font-weight: 700;
   font-synthesis-weight: none;
   letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+
+/* 워드마크 — Archivo Black. 라틴만 들어가는 자리에만 쓴다(한글 글리프가 없다). */
+@utility wordmark {
+  font-family: var(--font-wordmark);
+  font-weight: 400;
+  font-synthesis-weight: none;
+  letter-spacing: -0.02em;
   line-height: 0.98;
 }
 

@@ -14,9 +14,14 @@ import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PrefsRouteImport } from './routes/prefs'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RequestsRouteImport } from './routes/requests'
+import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketRouteImport } from './routes/ticket'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
 
@@ -45,19 +50,44 @@ const IntroRoute = IntroRouteImport.update({
   path: '/intro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrefsRoute = PrefsRouteImport.update({
   id: '/prefs',
   path: '/prefs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestsRoute = RequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TicketRoute = TicketRouteImport.update({
@@ -77,9 +107,14 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
+  '/login': typeof LoginRoute
   '/me': typeof MeRoute
-  '/onboarding': typeof OnboardingRoute
   '/prefs': typeof PrefsRoute
+  '/privacy': typeof PrivacyRoute
+  '/requests': typeof RequestsRoute
+  '/schedule': typeof ScheduleRoute
+  '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
 }
@@ -89,9 +124,14 @@ export interface FileRoutesByTo {
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
+  '/login': typeof LoginRoute
   '/me': typeof MeRoute
-  '/onboarding': typeof OnboardingRoute
   '/prefs': typeof PrefsRoute
+  '/privacy': typeof PrivacyRoute
+  '/requests': typeof RequestsRoute
+  '/schedule': typeof ScheduleRoute
+  '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
 }
@@ -102,9 +142,14 @@ export interface FileRoutesById {
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
+  '/login': typeof LoginRoute
   '/me': typeof MeRoute
-  '/onboarding': typeof OnboardingRoute
   '/prefs': typeof PrefsRoute
+  '/privacy': typeof PrivacyRoute
+  '/requests': typeof RequestsRoute
+  '/schedule': typeof ScheduleRoute
+  '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
 }
@@ -116,9 +161,14 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/home'
     | '/intro'
+    | '/login'
     | '/me'
-    | '/onboarding'
     | '/prefs'
+    | '/privacy'
+    | '/requests'
+    | '/schedule'
+    | '/signup'
+    | '/terms'
     | '/ticket'
     | '/chat/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -128,9 +178,14 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/home'
     | '/intro'
+    | '/login'
     | '/me'
-    | '/onboarding'
     | '/prefs'
+    | '/privacy'
+    | '/requests'
+    | '/schedule'
+    | '/signup'
+    | '/terms'
     | '/ticket'
     | '/chat/$id'
   id:
@@ -140,9 +195,14 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/home'
     | '/intro'
+    | '/login'
     | '/me'
-    | '/onboarding'
     | '/prefs'
+    | '/privacy'
+    | '/requests'
+    | '/schedule'
+    | '/signup'
+    | '/terms'
     | '/ticket'
     | '/chat/$id'
   fileRoutesById: FileRoutesById
@@ -153,9 +213,14 @@ export interface RootRouteChildren {
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
   IntroRoute: typeof IntroRoute
+  LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
-  OnboardingRoute: typeof OnboardingRoute
   PrefsRoute: typeof PrefsRoute
+  PrivacyRoute: typeof PrivacyRoute
+  RequestsRoute: typeof RequestsRoute
+  ScheduleRoute: typeof ScheduleRoute
+  SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
   TicketRoute: typeof TicketRoute
   ChatIdRoute: typeof ChatIdRoute
 }
@@ -197,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/me': {
       id: '/me'
       path: '/me'
@@ -204,18 +276,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/prefs': {
       id: '/prefs'
       path: '/prefs'
       fullPath: '/prefs'
       preLoaderRoute: typeof PrefsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/requests': {
+      id: '/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ticket': {
@@ -241,9 +341,14 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,
   IntroRoute: IntroRoute,
+  LoginRoute: LoginRoute,
   MeRoute: MeRoute,
-  OnboardingRoute: OnboardingRoute,
   PrefsRoute: PrefsRoute,
+  PrivacyRoute: PrivacyRoute,
+  RequestsRoute: RequestsRoute,
+  ScheduleRoute: ScheduleRoute,
+  SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
   TicketRoute: TicketRoute,
   ChatIdRoute: ChatIdRoute,
 }
