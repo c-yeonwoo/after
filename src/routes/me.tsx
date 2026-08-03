@@ -14,6 +14,8 @@ import { followUpFor } from "@/components/onboarding/profile";
 import { BRAND, HUBS } from "@/lib/brand";
 import { signOut } from "@/lib/api";
 import { useMe } from "@/lib/me";
+import { useTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/me")({
   head: () => ({
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/me")({
 });
 
 function MePage() {
+  const { choice, setChoice } = useTheme();
   const { me, ready } = useMe();
   const navigate = useNavigate();
 
@@ -93,6 +96,41 @@ function MePage() {
       </p>
 
       <ProfileDetail p={view} />
+
+      <section className="mt-10 border-t border-border pt-5">
+        <h2 className="text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+          화면
+        </h2>
+        {/*
+          기본은 "시스템"이다. 이 앱은 퇴근 후·밤에 열리는 일이 많아 OS 를
+          다크로 둔 사람이 그대로 다크를 보는 게 맞다.
+        */}
+        <div className="mt-3 grid grid-cols-3 gap-1.5" role="group" aria-label="화면 테마">
+          {(
+            [
+              { id: "system", label: "시스템" },
+              { id: "light", label: "밝게" },
+              { id: "dark", label: "어둡게" },
+            ] as const
+          ).map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              aria-pressed={choice === o.id}
+              onClick={() => setChoice(o.id)}
+              className={cn(
+                "min-h-11 rounded-control border text-sm transition-colors",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                choice === o.id
+                  ? "border-primary bg-primary/12 font-medium text-primary-strong"
+                  : "border-border bg-card text-foreground",
+              )}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/*
         약관·처리방침은 지금까지 가입 화면에서만 볼 수 있었다. 가입 뒤에도

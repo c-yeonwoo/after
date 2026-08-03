@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { MobileFrame } from "@/components/MobileFrame";
+import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 import { MeProvider } from "@/lib/me";
 
 function NotFoundComponent() {
@@ -131,6 +132,11 @@ function RootShell({ children }: { children: ReactNode }) {
     // 폰트 선택에도 영향을 준다 — "en" 이면 한글 줄바꿈이 어색해진다.
     <html lang="ko">
       <head>
+        {/*
+          첫 페인트 전에 .dark 를 붙인다. React 가 붙기를 기다리면 라이트로
+          한 번 그려진 뒤 다크로 바뀐다(FOUC). head 안 동기 실행이라야 한다.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -147,11 +153,13 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <MeProvider>
-        <MobileFrame>
-          <Outlet />
-        </MobileFrame>
-      </MeProvider>
+      <ThemeProvider>
+        <MeProvider>
+          <MobileFrame>
+            <Outlet />
+          </MobileFrame>
+        </MeProvider>
+      </ThemeProvider>
       <Toaster position="top-center" />
     </QueryClientProvider>
   );

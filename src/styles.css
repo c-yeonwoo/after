@@ -235,48 +235,88 @@
   --sidebar-ring: var(--brand-700);
 }
 
-.dark {
-  --ink: oklch(0.984 0.003 247.858);
-  --ink-muted: oklch(0.704 0.04 256.788);
-  --surface: oklch(0.208 0.042 265.755);
-  --surface-subtle: oklch(0.279 0.041 260.031);
-  --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 70%);
-  --shadow-card: 0 8px 24px -16px oklch(0 0 0 / 60%);
-  --shadow-brand: 0 10px 30px -14px oklch(0.7 0.13 190 / 45%);
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-strong: var(--brand-300);
+/*
+  다크 — 브랜드 hue 를 유지한 "따뜻한 잉크".
 
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  기존 .dark 는 shadcn 기본값(hue 247~265 청회색)이 그대로 남아 있었고
+  --primary 가 거의 흰 회색이었다. 켜는 순간 코럴이 사라진 다른 제품이 된다.
+  라이트가 웜 페이퍼(h≈55)니 다크도 같은 계열의 어두운 종이여야 한다.
+
+  밝기 관계가 뒤집히는 지점이 셋이다:
+   · primary — 어두운 배경에서는 brand-700 이 너무 어둡다. 밝은 코럴로 올리고,
+     그 위에 얹는 글자(primary-foreground)는 반대로 어둡게 간다.
+   · bubble-mine — 라이트의 연한 살구색은 다크에서 눈을 찌른다. 깊은 적갈색 +
+     밝은 글자로 뒤집는다.
+   · border/input — 잉크 알파가 아니라 흰색 알파여야 보인다.
+*/
+.dark {
+  --ink: oklch(0.955 0.006 55);
+  --ink-muted: oklch(0.735 0.012 50);
+
+  --surface: oklch(0.235 0.011 48);
+  --surface-subtle: oklch(0.285 0.012 48);
+
+  --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 80%);
+  --shadow-card: 0 8px 24px -16px oklch(0 0 0 / 70%);
+  --shadow-brand: 0 10px 30px -14px oklch(0.5 0.17 32 / 55%);
+
+  --background: oklch(0.175 0.009 48);
+  --foreground: var(--ink);
+
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+
+  /* 채움용 코럴. 위에 얹는 글자는 어둡다. */
+  --primary: oklch(0.7 0.17 33);
+  --primary-foreground: oklch(0.19 0.02 40);
+  /* 어두운 배경 위 텍스트용 — 더 밝아야 읽힌다. */
+  --primary-strong: oklch(0.8 0.13 34);
+
+  --secondary: var(--surface-subtle);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-subtle);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--surface-subtle);
+  --accent-foreground: var(--ink);
+
+  --destructive: oklch(0.68 0.19 25);
+  --destructive-foreground: oklch(0.19 0.02 40);
+
+  --success: oklch(0.74 0.13 155);
+  --warning: oklch(0.82 0.13 72);
+
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: var(--primary);
+
+  /* 내 말풍선 — 라이트와 명도 방향이 반대다. */
+  --bubble-mine: oklch(0.36 0.095 32);
+  --bubble-mine-foreground: oklch(0.965 0.008 45);
+
+  /*
+    다크에서 그라디언트를 어둡게 두면 그 위의 primary-foreground(어두운 글자)가
+    안 읽힌다 — 실측 2.82 / 1.59. 다크의 브랜드 채움이 밝은 코럴이므로
+    그라디언트도 같은 계열로 올린다. 그러면 토큰을 새로 만들지 않고
+    bg-gradient-brand + text-primary-foreground 짝이 양쪽 테마에서 성립한다.
+  */
+  --gradient-brand: linear-gradient(135deg, oklch(0.755 0.145 40), oklch(0.645 0.185 28));
+
+  --chart-1: oklch(0.7 0.17 33);
+  --chart-2: oklch(0.74 0.13 155);
+  --chart-3: oklch(0.82 0.13 72);
+  --chart-4: oklch(0.72 0.11 250);
+  --chart-5: oklch(0.78 0.14 330);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--surface-subtle);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(1 0 0 / 14%);
+  --sidebar-ring: var(--primary);
 }
 
 @layer base {
