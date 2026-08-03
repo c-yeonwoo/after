@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 
 export type ProfileView = {
@@ -97,6 +98,8 @@ function Tag({ children, tone = "muted" }: { children: ReactNode; tone?: "muted"
 }
 
 export function ProfileDetail({ p }: { p: ProfileView }) {
+  // 비공개 버킷이라 표시할 때마다 서명 URL 을 받는다(S11).
+  const photo = usePhotoUrl(p.photo);
   let n = 0;
   const next = () => ++n;
 
@@ -121,8 +124,8 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       {/* 히어로 카드 — 사진 전면 + 하단 딤 오버레이 */}
       <div className="overflow-hidden rounded-surface bg-card shadow-card">
         <div className="relative aspect-[4/5] w-full">
-          {p.photo ? (
-            <img src={p.photo} alt={`${p.name} 프로필 사진`} className="size-full object-cover" />
+          {photo ? (
+            <img src={photo} alt={`${p.name} 프로필 사진`} className="size-full object-cover" />
           ) : (
             <div className="grid size-full place-items-center bg-gradient-to-br from-primary/80 via-primary to-accent">
               <span className="headline text-7xl leading-none text-background/90">
@@ -161,8 +164,23 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         "만날 수 있는 사람인가"를 판단하는 실용 정보라 한 번의 탭을 요구할 이유가 없었다.
         한 줄 소개는 이미 히어로에 얹혀 있어서 "결"이 먼저 오는 순서는 유지된다.
       */}
+      {/*
+        소개글을 스펙 그리드 **위로** 올렸다.
+        3만원을 정당화할 내용(소개·요즘 시간 쓰는 것)이 전부 아래에 있는데
+        결정 버튼은 fixed 로 처음부터 떠 있어서, 구조가 빠른 거절에 최적화돼
+        있었다(진단 UX-5). 첫 화면에서 "어떤 사람인가"를 먼저 읽게 한다.
+      */}
+      {p.intro ? (
+        <section className="mt-6">
+          <SectionHead index={next()} title="소개" kicker="Profile" />
+          <p className="text-base leading-[1.75] whitespace-pre-line text-foreground/90">
+            {p.intro}
+          </p>
+        </section>
+      ) : null}
+
       {hasAnyFact ? (
-        <dl className="mt-5 grid grid-cols-3 gap-x-3 gap-y-4 border-y border-foreground/12 py-4">
+        <dl className="mt-8 grid grid-cols-3 gap-x-3 gap-y-4 border-y border-foreground/12 py-4">
           {facts.map((f) => (
             <div key={f.k}>
               <dt className="text-3xs tracking-[0.16em] text-ink-muted uppercase">{f.k}</dt>
@@ -180,17 +198,6 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       ) : null}
 
       <div className="mt-8 space-y-10">
-        {p.intro ? (
-          <Reveal>
-            <section>
-              <SectionHead index={next()} title="소개" kicker="Profile" />
-              <p className="text-base leading-[1.75] whitespace-pre-line text-foreground/90">
-                {p.intro}
-              </p>
-            </section>
-          </Reveal>
-        ) : null}
-
         {p.interests.length ? (
           <Reveal>
             <section>

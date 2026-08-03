@@ -39,6 +39,7 @@ import {
   useMe,
   verifyEmailCode,
 } from "@/lib/api";
+import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
@@ -92,6 +93,9 @@ function Onboarding() {
   const [saving, setSaving] = useState(false);
   /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
   const [resumed, setResumed] = useState(false);
+  /** 방금 고른 파일의 blob URL. 업로드가 끝나기 전에도 보여주기 위한 것. */
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
@@ -151,6 +155,10 @@ function Onboarding() {
     setIntro(me.intro ?? me.headline ?? "");
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
   }, [editing, ready, me, navigate, resumed]);
+
+  // 저장된 값은 Storage 경로라 그대로 <img src> 에 넣을 수 없다.
+  const savedPhoto = usePhotoUrl(basics.photo);
+  const shownPhoto = photoPreview ?? savedPhoto;
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
@@ -214,9 +222,9 @@ function Onboarding() {
             <p className="text-sm font-semibold text-foreground">프로필 사진 (1장)</p>
             <div className="mt-3 flex items-center gap-4">
               <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
-                {basics.photo ? (
+                {shownPhoto ? (
                   <img
-                    src={basics.photo}
+                    src={shownPhoto}
                     alt="선택한 프로필 사진 미리보기"
                     className="size-full object-cover"
                   />
@@ -231,18 +239,29 @@ function Onboarding() {
                   htmlFor="photo"
                   className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
                 >
-                  {basics.photo ? "사진 변경" : "사진 선택"}
+                  {photoBusy ? "올리는 중…" : basics.photo ? "사진 변경" : "사진 선택"}
                   <input
                     id="photo"
                     type="file"
                     accept="image/*"
                     className="sr-only"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = () => setB({ photo: String(reader.result) });
-                      reader.readAsDataURL(file);
+                      // 미리보기는 즉시(blob), 실제 값은 Storage 경로다.
+                      // 예전에는 base64 를 행에 넣어 모든 select 에 딸려 나왔다(UX-3).
+                      setPhotoPreview(URL.createObjectURL(file));
+                      setPhotoBusy(true);
+                      try {
+                        setB({ photo: await uploadProfilePhoto(file) });
+                      } catch (err) {
+                        setPhotoPreview(null);
+                        toast.error(
+                          err instanceof Error ? err.message : "사진을 올리지 못했습니다.",
+                        );
+                      } finally {
+                        setPhotoBusy(false);
+                      }
                     }}
                   />
                 </label>
@@ -397,7 +416,9 @@ function Onboarding() {
               if (userId) {
                 setSaving(true);
                 try {
-                  await saveOnboardingStep(userId, 4, {
+                  // 수정 모드에서는 단계를 **내리지 않는다.** 완료된 프로필(7)에
+                  // 4 를 쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다.
+                  await saveOnboardingStep(userId, editing ? (me?.onboarding_step ?? 4) : 4, {
                     name: basics.name,
                     birth: basics.birth,
                     job: basics.job,
@@ -885,12 +906,8 @@ function Onboarding() {
       description="적은 내용으로 만든 초안입니다."
     >
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        {basics.photo ? (
-          <img
-            src={basics.photo}
-            alt="내 프로필 사진"
-            className="aspect-[4/5] w-full object-cover"
-          />
+        {shownPhoto ? (
+          <img src={shownPhoto} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
         ) : null}
         <div className="p-5">
           <p className="text-base font-semibold">
