@@ -389,11 +389,53 @@ export type TicketOrder = Database["public"]["Tables"]["ticket_orders"]["Row"];
  * 예전에는 티켓이 0장이면 비활성 버튼("보유한 티켓이 없습니다")만 남아
  * 사이클이 여기서 끊겼다(진단 UX-7) — 누를 수 있는 것이 없었다.
  */
-export async function requestTicketOrder(): Promise<TicketOrder> {
-  const { data, error } = await supabase.rpc("create_ticket_order");
+export async function requestTicketOrder(quantity: 1 | 3 = 1): Promise<TicketOrder> {
+  const { data, error } = await supabase.rpc("create_ticket_order", { p_quantity: quantity });
   if (error) throw error;
-  await track("ticket_requested");
+  await track("ticket_requested", { quantity });
   return data;
+}
+
+/** 마이페이지 대시보드용 숫자. 행동으로 이어지거나 본인에게 의미 있는 것만 센다. */
+export type MyStats = {
+  unusedTickets: number;
+  metCount: number;
+  joinedAt: string;
+};
+
+export async function myStats(): Promise<MyStats | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const [{ data: profile }, tickets, { count: met }] = await Promise.all([
+    supabase.from("profiles").select("created_at").eq("id", session.user.id).maybeSingle(),
+    unusedTicketCount(),
+    // 내가 "만났다"고 답한 만남. completed_by 에 내가 들어 있어야 한다 —
+    // 상대만 답한 건 내 기록이 아니다.
+    supabase
+      .from("meetings")
+      .select("id", { count: "exact", head: true })
+      .not("completed_at", "is", null)
+      .contains("completed_by", [session.user.id]),
+  ]);
+
+  if (!profile) return null;
+  return { unusedTickets: tickets, metCount: met ?? 0, joinedAt: profile.created_at };
+}
+
+/** 후기 요청 메일 수신 여부. 만남 진행 알림은 끌 수 없다(상대의 환불 기한이 걸려 있다). */
+export async function setFeedbackEmails(on: boolean): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("로그인이 필요합니다.");
+  const { error } = await supabase
+    .from("profiles")
+    .update({ feedback_emails: on })
+    .eq("id", session.user.id);
+  if (error) throw error;
 }
 
 /** 아직 처리되지 않은 내 주문. 있으면 "접수됨" 상태로 보여준다. */

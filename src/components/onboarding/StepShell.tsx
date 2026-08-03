@@ -24,7 +24,7 @@ export function StepShell({
       <header
         className="sticky top-0 z-20 bg-background/80 pb-2 backdrop-blur-xl"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          paddingTop: "var(--safe-top)",
           paddingLeft: "max(env(safe-area-inset-left, 0px), 1rem)",
           paddingRight: "max(env(safe-area-inset-right, 0px), 1rem)",
         }}
@@ -63,7 +63,7 @@ export function StepShell({
         <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
           <div
             className="mx-auto px-5 pt-4"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+            style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}
           >
             {footer}
           </div>

@@ -627,6 +627,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
           hub_id: string
@@ -658,6 +659,7 @@ export type Database = {
           details?: Json
           drinking?: string | null
           email_verified_at?: string | null
+          feedback_emails?: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline?: string | null
           hub_id: string
@@ -689,6 +691,7 @@ export type Database = {
           details?: Json
           drinking?: string | null
           email_verified_at?: string | null
+          feedback_emails?: boolean
           gender?: Database["public"]["Enums"]["gender"]
           headline?: string | null
           hub_id?: string
@@ -718,6 +721,7 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           order_id: string
+          quantity: number
           state: string
           user_id: string
         }
@@ -726,6 +730,7 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           order_id: string
+          quantity?: number
           state?: string
           user_id: string
         }
@@ -734,6 +739,7 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           order_id?: string
+          quantity?: number
           state?: string
           user_id?: string
         }
@@ -1034,12 +1040,13 @@ export type Database = {
         }
       }
       create_ticket_order: {
-        Args: never
+        Args: { p_quantity?: number }
         Returns: {
           amount: number
           confirmed_at: string | null
           created_at: string
           order_id: string
+          quantity: number
           state: string
           user_id: string
         }
@@ -1065,6 +1072,7 @@ export type Database = {
       }
       expire_unanswered_meetings: { Args: never; Returns: number }
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
+      fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
       home_state: { Args: never; Returns: Json }
       is_channel_open: {
         Args: {
@@ -1188,6 +1196,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
           hub_id: string
@@ -1313,6 +1322,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
           hub_id: string
@@ -1341,6 +1351,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ticket_bundle_amount: { Args: { p_quantity: number }; Returns: number }
       use_meeting_ticket: {
         Args: { p_intro_id: string }
         Returns: {

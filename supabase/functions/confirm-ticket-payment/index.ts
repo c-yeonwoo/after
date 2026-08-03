@@ -97,13 +97,13 @@ Deno.serve(async (req) => {
   }
 
   if (order.state === "confirmed") {
-    // 멱등: 이미 확정된 주문이면 기존 티켓을 그대로 반환한다.
-    const { data: existingTicket } = await adminClient
+    // 멱등: 이미 확정된 주문이면 그 주문으로 나간 티켓들을 그대로 반환한다.
+    // 묶음(S13)부터는 payment_id 가 `{orderId}#1..N` 이라 like 로 모은다.
+    const { data: existing } = await adminClient
       .from("tickets")
       .select("*")
-      .eq("payment_id", orderId)
-      .maybeSingle();
-    return json({ ticket: existingTicket });
+      .like("payment_id", `${orderId}#%`);
+    return json({ tickets: existing ?? [] });
   }
 
   const tossRes = await fetch(`${TOSS_API_BASE_URL}/v1/payments/confirm`, {
@@ -121,19 +121,20 @@ Deno.serve(async (req) => {
     return json({ error: "payment confirmation failed", toss: tossBody }, 402);
   }
 
-  await adminClient
-    .from("ticket_orders")
-    .update({ state: "confirmed", confirmed_at: new Date().toISOString() })
-    .eq("order_id", orderId);
-
-  const { data: ticket, error: issueError } = await adminClient.rpc("issue_ticket", {
-    p_user_id: order.user_id,
-    p_payment_id: orderId,
-    p_price_krw: order.amount,
+  // 수량만큼 발급하고 주문을 confirmed 로 넘기는 것까지 한 함수가 한 트랜잭션에서
+  // 한다(S13). 예전에는 여기서 state 를 먼저 바꾸고 issue_ticket 을 따로 불러서,
+  // 그 사이에 죽으면 "결제는 확정인데 티켓은 없는" 주문이 남을 수 있었다.
+  const { data: issued, error: issueError } = await adminClient.rpc("fulfill_ticket_order", {
+    p_order_id: orderId,
   });
   if (issueError) {
     return json({ error: issueError.message }, 500);
   }
 
-  return json({ ticket });
+  const { data: tickets } = await adminClient
+    .from("tickets")
+    .select("*")
+    .like("payment_id", `${orderId}#%`);
+
+  return json({ issued, tickets: tickets ?? [] });
 });
