@@ -105,7 +105,7 @@ function HomePage() {
           setCandidate(awaiting[0].candidate);
           setMeeting(awaiting[0].meeting);
         } else {
-          const next = await myPendingCandidate(me.hub_id);
+          const next = await myPendingCandidate();
           if (cancelled) return;
           setCandidate(next);
         }

@@ -280,38 +280,28 @@ export async function submitAffinity(toId: string, verdict: "like" | "pass") {
   if (error) throw error;
 }
 
-/** 여성이 평가할 남성 후보 목록 (같은 권역, 아직 평가하지 않은 사람만). RLS 가 자격은 이미 걸러준다. */
-export async function listAffinityCandidates(hubId: string): Promise<PublicProfile[]> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) return [];
-
-  const { data: evaluated, error: evalErr } = await supabase
-    .from("affinities")
-    .select("to_id")
-    .eq("from_id", session.user.id);
-  if (evalErr) throw evalErr;
-  const seen = (evaluated ?? []).map((a) => a.to_id);
-
-  // 뷰가 이미 성별·권역·자격·배제를 판정한다. 여기서 gender 로 다시 거르지 않는다
-  // (뷰에 gender 컬럼이 없다 — 노출할 이유가 없어서 뺐다).
-  let query = supabase.from("public_profiles").select("*").eq("hub_id", hubId);
-  if (seen.length) query = query.not("id", "in", `(${seen.join(",")})`);
-
-  const { data, error } = await query;
+/**
+ * 여성이 지금 평가할 다음 남성 1명.
+ *
+ * 선정을 서버가 한다(S10). 예전에는 권역 남성 **전원**을 받아 클라이언트에서
+ * `[0]` 만 썼고, 이미 평가한 상대를 제외하려고 ID 전체를 URL 쿼리에 넣었다 —
+ * 평가 약 210건에서 HTTP 414 로 후보 조회가 영구히 죽었다(복구 경로 없음).
+ * 덤으로 "훑어보는 피드 없음"(F3)이 UI 에만 있고 데이터는 전부 브라우저에
+ * 내려와 있던 문제도 함께 없어진다.
+ */
+export async function myPendingCandidate(): Promise<PublicProfile | null> {
+  const { data, error } = await supabase.rpc("next_candidate");
   if (error) throw error;
-  // 뷰는 본인 행도 돌려준다(자기 프로필 확인용). 후보 목록에서는 빼야 한다.
-  return (data ?? []).filter((p) => p.id !== session.user.id);
+  return data?.[0] ?? null;
 }
 
-/** 한 번에 한 명. 여성이 지금 평가할 다음 후보 (F3, "훑어보는 피드 없음"). */
-export async function myPendingCandidate(hubId: string): Promise<PublicProfile | null> {
-  const candidates = await listAffinityCandidates(hubId);
-  return candidates[0] ?? null;
+/** 남은 후보 수. "이번이 마지막"인지 화면이 알 수 있어야 한다. */
+export async function remainingCandidates(): Promise<number> {
+  const { data, error } = await supabase.rpc("remaining_candidates");
+  if (error) throw error;
+  return data ?? 0;
 }
 
-/** 상대 프로필 1건. 민감 컬럼이 없는 뷰에서 읽는다. */
 export async function getProfile(id: string): Promise<PublicProfile | null> {
   const { data, error } = await supabase
     .from("public_profiles")

@@ -551,6 +551,71 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          last_error: string | null
+          meeting_id: string | null
+          payload: Json
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          last_error?: string | null
+          meeting_id?: string | null
+          payload?: Json
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          last_error?: string | null
+          meeting_id?: string | null
+          payload?: Json
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_state: Database["public"]["Enums"]["account_state"]
@@ -985,6 +1050,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      enqueue_feedback_due: { Args: never; Returns: number }
+      enqueue_meeting_notification: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["notification_kind"]
+          p_meeting_id: string
+          p_to_female: boolean
+        }
+        Returns: undefined
+      }
       exclude_pair: {
         Args: { a: string; b: string; p_reason: string }
         Returns: undefined
@@ -1052,6 +1126,33 @@ export type Database = {
       }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
+      next_candidate: {
+        Args: never
+        Returns: {
+          age: number | null
+          details: Json | null
+          drinking: string | null
+          headline: string | null
+          hub_id: string | null
+          id: string | null
+          interests: string[] | null
+          intro: string | null
+          job: string | null
+          match_tags: string[] | null
+          mbti: string | null
+          name: string | null
+          photo_url: string | null
+          religion: string | null
+          smoking: string | null
+          topics: string[] | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "public_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       open_intro: {
         Args: never
         Returns: {
@@ -1134,6 +1235,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remaining_candidates: { Args: never; Returns: number }
       report_no_show: {
         Args: { p_meeting_id: string }
         Returns: {
@@ -1271,6 +1373,11 @@ export type Database = {
       gender: "female" | "male"
       intro_outcome: "passed" | "ticket_used" | "expired" | "withdrawn"
       msg_channel: "coord" | "private"
+      notification_kind:
+        | "meeting_requested"
+        | "prefs_submitted"
+        | "meeting_confirmed"
+        | "feedback_due"
       report_state: "pending" | "confirmed" | "dismissed"
       ticket_state: "unused" | "used" | "refunded"
     }
@@ -1408,6 +1515,12 @@ export const Constants = {
       gender: ["female", "male"],
       intro_outcome: ["passed", "ticket_used", "expired", "withdrawn"],
       msg_channel: ["coord", "private"],
+      notification_kind: [
+        "meeting_requested",
+        "prefs_submitted",
+        "meeting_confirmed",
+        "feedback_due",
+      ],
       report_state: ["pending", "confirmed", "dismissed"],
       ticket_state: ["unused", "used", "refunded"],
     },

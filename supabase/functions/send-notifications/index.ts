@@ -96,7 +96,9 @@ Deno.serve(async (req) => {
 
   // feedback_due 는 payload 에 상대가 없다(cron 이 만든다) — 만남에서 역산한다.
   const meetingIds = [
-    ...new Set(rows.filter((r) => !r.payload?.counterpart_id && r.meeting_id).map((r) => r.meeting_id!)),
+    ...new Set(
+      rows.filter((r) => !r.payload?.counterpart_id && r.meeting_id).map((r) => r.meeting_id!),
+    ),
   ];
   const counterpartByMeeting = new Map<string, { male_id: string; female_id: string }>();
   if (meetingIds.length) {
@@ -109,7 +111,6 @@ Deno.serve(async (req) => {
       if (i) counterpartByMeeting.set(m.id as string, i);
     }
   }
-
 
   let sent = 0;
   let failed = 0;
@@ -158,7 +159,6 @@ Deno.serve(async (req) => {
       failed++;
     }
   }
-
 
   return json({ sent, failed, skipped });
 });

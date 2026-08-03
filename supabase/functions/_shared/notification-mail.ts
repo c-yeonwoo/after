@@ -9,10 +9,7 @@
 //     회사 메일함에 남고, 우리는 그 메일함을 통제하지 못한다.
 
 export type NotificationKind =
-  | "meeting_requested"
-  | "prefs_submitted"
-  | "meeting_confirmed"
-  | "feedback_due";
+  "meeting_requested" | "prefs_submitted" | "meeting_confirmed" | "feedback_due";
 
 export type MailContext = {
   /** 받는 사람 이름 */
