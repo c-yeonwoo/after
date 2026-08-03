@@ -11,11 +11,11 @@ import {
   homeState,
   markMet,
   openIntro,
-  useMe,
   type Meeting,
   type NoShowReport,
   type PublicProfile,
 } from "@/lib/api";
+import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/home")({
@@ -139,7 +139,9 @@ function HomePage() {
             ? isMale
               ? "오늘 소개가 도착했어요."
               : "평가할 프로필이 있어요."
-            : "곧 소개를 보내드릴게요.";
+            : isMale
+              ? "기다리는 단계예요."
+              : "지금은 쉬어가는 중이에요.";
 
   return (
     <AppScreen>
@@ -214,9 +216,13 @@ function HomePage() {
             </div>
           </>
         ) : (
+          // "보통 2~3일 안에 보내드립니다"라고 약속했었다. 근거가 코드에 없다 —
+          // open_intro() 는 상대의 like 가 생기는 **즉시** 열리거나, 없으면
+          // 영원히 열리지 않는다. 기간을 말하는 대신 조건을 말한다.
           <GuideNote introduce>
-            지금은 기다리는 단계입니다. 같은 퇴근길에서 겹치는 한 분을 골라 보통 2~3일 안에
-            보내드립니다.
+            {isMale
+              ? "소개는 상대가 먼저 회원님을 선택했을 때 열립니다. 선택이 들어오면 바로 알려드릴게요."
+              : "지금은 평가할 분이 없습니다. 새로 가입한 분이 생기면 이어서 보여드릴게요."}
           </GuideNote>
         )}
       </div>

@@ -12,7 +12,8 @@ import {
 } from "@/components/onboarding/basics";
 import { followUpFor } from "@/components/onboarding/profile";
 import { BRAND, HUBS } from "@/lib/brand";
-import { signOut, useMe } from "@/lib/api";
+import { signOut } from "@/lib/api";
+import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/me")({
   head: () => ({

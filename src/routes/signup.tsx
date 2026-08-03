@@ -36,9 +36,9 @@ import {
   requestEmailCode,
   recordConsent,
   saveOnboardingStep,
-  useMe,
   verifyEmailCode,
 } from "@/lib/api";
+import { useMe } from "@/lib/me";
 import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 

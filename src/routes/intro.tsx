@@ -29,11 +29,12 @@ import {
   getMeetingByIntro,
   myPendingCandidate,
   passIntro,
+  remainingCandidates,
   submitAffinity,
-  useMe,
   type Meeting,
   type PublicProfile,
 } from "@/lib/api";
+import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/intro")({
   head: () => ({
@@ -60,6 +61,8 @@ function IntroPage() {
   const [introId, setIntroId] = useState<string | null>(null);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [confirmPassOpen, setConfirmPassOpen] = useState(false);
+  /** 여성 평가 큐에 남은 사람 수. 소진이 다가오는 걸 미리 알 수 있어야 한다. */
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -81,7 +84,10 @@ function IntroPage() {
       // 예전에는 대기 중인 만남 요청이 있으면 그 요청자를 대신 띄웠는데,
       // 그러면 평가할 후보가 남아 있어도 평가를 계속할 수 없었다.
       // 요청은 성격이 다른 이벤트라 /requests 와 홈이 담당한다.
-      setCandidate(await myPendingCandidate());
+      // 후보와 남은 수를 함께 받는다 — 화면이 "이번이 마지막"을 말할 수 있어야 한다.
+      const [next, left] = await Promise.all([myPendingCandidate(), remainingCandidates()]);
+      setCandidate(next);
+      setRemaining(left);
       setMeeting(null);
     }
     setLoading(false);
@@ -105,9 +111,18 @@ function IntroPage() {
     return (
       <AppScreen title="이번 소개">
         <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
-          <p className="text-sm font-medium">지금은 열려 있는 소개가 없습니다</p>
+          {/*
+            성별로 원인이 다르므로 문장도 달라야 한다. 남성은 "아직 아무도
+            고르지 않았다"이고, 여성은 "평가할 사람을 다 봤다"다. 예전에는
+            둘 다 "다음 소개가 준비되면 알려드릴게요"였다.
+          */}
+          <p className="text-sm font-medium">
+            {isMale ? "아직 열린 소개가 없습니다" : "평가할 분을 모두 보셨습니다"}
+          </p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            다음 소개가 준비되면 알려드릴게요.
+            {isMale
+              ? "소개는 상대가 먼저 회원님을 선택했을 때 열립니다. 선택이 들어오면 바로 알려드릴게요."
+              : "새로 가입한 분이 생기면 이어서 보여드릴게요."}
           </p>
         </div>
       </AppScreen>
@@ -128,10 +143,20 @@ function IntroPage() {
   return (
     <AppScreen title="이번 소개">
       <div className="mb-4">
+        {/*
+          남성에게는 "이분이 먼저 골랐다"를 명시한다.
+          open_intro() 의 불변식 1 이 이걸 보장한다 — 남성은 자신에게 like 를 준
+          여성만 볼 수 있고, 없으면 P0002 로 아예 열리지 않는다. 그런데 이 사실이
+          UI 어디에도 없었다. 3만원을 정당화하는 가장 강한 근거인데 화면은
+          "오늘 소개할 한 분입니다"라고만 말했다.
+          여성에게는 성립하지 않는 문장이므로(평가 큐다) 갈라 쓴다.
+        */}
         <GuideNote>
           {maleAnswered
             ? "답을 받았습니다. 다음 단계는 제가 안내하겠습니다."
-            : "오늘 소개할 한 분입니다. 편하게 읽고 답해 주세요."}
+            : isMale
+              ? "이분이 먼저 회원님을 좋다고 하셨어요. 편하게 읽고 답해 주세요."
+              : "오늘 평가할 한 분입니다. 편하게 읽고 답해 주세요."}
         </GuideNote>
       </div>
 
@@ -243,7 +268,16 @@ function IntroPage() {
           */}
           {isMale ? null : (
             <p className="mt-2 text-center text-2xs text-muted-foreground">
-              한 번 답하면 이분은 다시 소개되지 않습니다.
+              {/*
+                남은 수를 말해 준다. remainingCandidates() 는 S10 에서 만들어 뒀는데
+                어느 화면도 쓰지 않고 있었다 — 소진이 임박한 걸 알 방법이 없었다.
+                되돌릴 수 없다는 고지는 그대로 유지한다.
+              */}
+              {remaining !== null && remaining <= 1
+                ? "지금 보시는 분이 마지막입니다. 한 번 답하면 다시 소개되지 않습니다."
+                : remaining !== null
+                  ? `한 번 답하면 다시 소개되지 않습니다. 이분 외 ${remaining - 1}명 남았어요.`
+                  : "한 번 답하면 이분은 다시 소개되지 않습니다."}
             </p>
           )}
         </div>
