@@ -31,7 +31,7 @@ export function StepShell({
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
-          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground tabular-nums">
+          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-2xs font-medium text-muted-foreground tabular-nums">
             {step} / {total}
           </span>
         </div>
@@ -49,7 +49,6 @@ export function StepShell({
           />
         </div>
       </header>
-
 
       <main className="mx-auto w-full flex-1 px-5 py-10">
         <p className="text-sm font-semibold tracking-wide text-primary-strong">{eyebrow}</p>

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Heart, Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -6,9 +7,34 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
-import { BRAND } from "@/lib/brand";
-import { getCandidate } from "@/lib/candidates";
-import { saveFlow, useFlow, useMe } from "@/lib/store";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  ageFrom,
+  DRINKING_OPTIONS,
+  RELIGION_OPTIONS,
+  SMOKING_OPTIONS,
+} from "@/components/onboarding/basics";
+import { followUpFor } from "@/components/onboarding/profile";
+import { BRAND, HUBS } from "@/lib/brand";
+import {
+  ensureOpenIntro,
+  getMeetingByIntro,
+  myPendingCandidate,
+  passIntro,
+  submitAffinity,
+  useMe,
+  type Meeting,
+  type Profile,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/intro")({
   head: () => ({
@@ -26,13 +52,57 @@ export const Route = createFileRoute("/intro")({
 });
 
 function IntroPage() {
-  const { flow } = useFlow();
   const { me } = useMe();
   const isMale = me?.gender === "male";
   const navigate = useNavigate();
-  const candidate = flow.introId ? getCandidate(flow.introId) : null;
 
-  if (!candidate || flow.myAnswer === "pass") {
+  const [loading, setLoading] = useState(true);
+  const [candidate, setCandidate] = useState<Profile | null>(null);
+  const [introId, setIntroId] = useState<string | null>(null);
+  const [meeting, setMeeting] = useState<Meeting | null>(null);
+  const [confirmPassOpen, setConfirmPassOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    if (!me) return;
+    if (isMale) {
+      const opened = await ensureOpenIntro();
+      if (!opened) {
+        setCandidate(null);
+        setIntroId(null);
+        setMeeting(null);
+        setLoading(false);
+        return;
+      }
+      setCandidate(opened.candidate);
+      setIntroId(opened.intro.id);
+      setMeeting(await getMeetingByIntro(opened.intro.id));
+    } else {
+      // 여성 소개 탭은 **평가 큐 전용**이다.
+      // 예전에는 대기 중인 만남 요청이 있으면 그 요청자를 대신 띄웠는데,
+      // 그러면 평가할 후보가 남아 있어도 평가를 계속할 수 없었다.
+      // 요청은 성격이 다른 이벤트라 /requests 와 홈이 담당한다.
+      setCandidate(await myPendingCandidate(me.hub_id));
+      setMeeting(null);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id, isMale]);
+
+  if (loading) {
+    return (
+      <AppScreen title="이번 소개">
+        <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+      </AppScreen>
+    );
+  }
+
+  if (!candidate) {
     return (
       <AppScreen title="이번 소개">
         <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
@@ -45,67 +115,64 @@ function IntroPage() {
     );
   }
 
-  const answered = Boolean(flow.myAnswer);
+  const age = candidate.birth ? ageFrom(candidate.birth) : null;
+  const details = (candidate.details as Record<string, string> | null) ?? {};
+  const answers = candidate.interests
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map((label) => ({ q: followUpFor(label), a: (details[label] ?? "").trim() }))
+    .filter((x) => x.a);
+
+  const maleAnswered = isMale && Boolean(meeting);
 
   return (
     <AppScreen title="이번 소개">
       <div className="mb-4">
         <GuideNote>
-          {answered
+          {maleAnswered
             ? "답을 받았습니다. 다음 단계는 제가 안내하겠습니다."
             : "오늘 소개할 한 분입니다. 편하게 읽고 답해 주세요."}
         </GuideNote>
       </div>
 
-
-
-
-
       <ProfileDetail
         p={{
-          name: candidate.name,
-          age: candidate.age,
-          job: candidate.job,
-          mbti: candidate.mbti,
-          smoking: candidate.smoking,
-          drinking: candidate.drinking,
-          area: candidate.area,
-          photo: candidate.photo,
-          headline: candidate.headline,
-          intro: candidate.intro,
+          name: candidate.name ?? "",
+          age,
+          job: candidate.job ?? "",
+          mbti: candidate.mbti ?? undefined,
+          smoking: SMOKING_OPTIONS.find((o) => o.id === candidate.smoking)?.label,
+          drinking: DRINKING_OPTIONS.find((o) => o.id === candidate.drinking)?.label,
+          religion: RELIGION_OPTIONS.find((o) => o.id === candidate.religion)?.label,
+          area: HUBS.find((h) => h.id === candidate.hub_id)?.label,
+          photo: candidate.photo_url ?? undefined,
+          headline: candidate.headline ?? "",
+          intro: candidate.intro ?? "",
           interests: candidate.interests,
-          matchTags: candidate.matchTags,
+          matchTags: candidate.match_tags,
           topics: candidate.topics,
-          answers: candidate.answers,
+          answers,
         }}
       />
 
-      {answered ? (
+      {maleAnswered ? (
         <div className="mt-8 rounded-xl border border-border bg-card px-4 py-4 text-sm">
           <p className="font-medium text-primary-strong">
-            {flow.chatOpen
-              ? "대화가 열렸습니다"
-              : isMale
-                ? "상대의 답변을 기다리는 중입니다"
-                : "세라에게 전달했습니다"}
+            {meeting?.prefs_submitted_at ? "대화가 열렸습니다" : "상대의 답변을 기다리는 중입니다"}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {flow.chatOpen
+            {meeting?.prefs_submitted_at
               ? "날짜와 장소만 정하면 됩니다."
-              : isMale
-                ? "가능한 날과 취향을 여쭤봤어요. 답이 오면 대화가 열립니다."
-                : "상대가 날짜와 장소를 제안하면 대화가 이어집니다."}
+              : "가능한 날과 취향을 여쭤봤어요. 답이 오면 대화가 열립니다."}
           </p>
           <Button
             className="mt-4 w-full"
             size="lg"
             onClick={() =>
-              flow.chatOpen
-                ? navigate({ to: "/chat/$id", params: { id: candidate.id } })
-                : navigate({ to: isMale ? "/ticket" : "/prefs" })
+              meeting?.prefs_submitted_at ? navigate({ to: "/chats" }) : navigate({ to: "/ticket" })
             }
           >
-            {flow.chatOpen ? "대화 이어가기" : isMale ? "진행 상황 보기" : "선호 답변 보내기"}
+            {meeting?.prefs_submitted_at ? "대화 이어가기" : "진행 상황 보기"}
           </Button>
         </div>
       ) : (
@@ -118,10 +185,20 @@ function IntroPage() {
               variant="outline"
               size="lg"
               className="flex-1"
-              onClick={() => {
-                saveFlow({ myAnswer: "pass", chatOpen: false });
-                toast("다음 소개를 준비할게요.");
-                navigate({ to: "/home" });
+              disabled={busy}
+              onClick={async () => {
+                if (isMale) {
+                  // 되돌릴 수 없는 배제(D3). 확인 없이 진행하지 않는다 — O15.
+                  setConfirmPassOpen(true);
+                  return;
+                }
+                setBusy(true);
+                try {
+                  await submitAffinity(candidate.id, "pass");
+                  await load();
+                } finally {
+                  setBusy(false);
+                }
               }}
             >
               <X className="size-4" aria-hidden="true" />
@@ -136,9 +213,16 @@ function IntroPage() {
               <Button
                 size="lg"
                 className="flex-1"
-                onClick={() => {
-                  saveFlow({ myAnswer: "yes" });
-                  navigate({ to: "/prefs" });
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await submitAffinity(candidate.id, "like");
+                    toast.success("호감을 전달했습니다.");
+                    await load();
+                  } finally {
+                    setBusy(false);
+                  }
                 }}
               >
                 <Heart className="size-4" aria-hidden="true" />
@@ -149,7 +233,40 @@ function IntroPage() {
         </div>
       )}
 
-      {!answered ? <div aria-hidden="true" className="h-20" /> : null}
+      {/* 하단 고정 버튼에 가리지 않도록 여백 */}
+      {maleAnswered ? null : <div aria-hidden="true" className="h-20" />}
+
+      <AlertDialog open={confirmPassOpen} onOpenChange={setConfirmPassOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>이 소개를 넘기시겠어요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              넘기면 이분은 다시 소개되지 않습니다. 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!introId) return;
+                setBusy(true);
+                try {
+                  await passIntro(introId);
+                  setConfirmPassOpen(false);
+                  toast("넘겼습니다. 다음 소개를 준비할게요.");
+                  navigate({ to: "/home" });
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              넘기기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppScreen>
   );
 }

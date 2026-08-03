@@ -71,11 +71,9 @@ function SectionHead({ index, title, kicker }: { index: number; title: string; k
       <span className="headline text-sm leading-none text-primary">
         {String(index).padStart(2, "0")}
       </span>
-      <h2 className="headline text-[1.05rem] leading-none tracking-tight text-foreground">
-        {title}
-      </h2>
+      <h2 className="headline text-lg leading-none tracking-tight text-foreground">{title}</h2>
       {kicker ? (
-        <span className="ml-auto text-[0.62rem] tracking-[0.18em] text-ink-muted uppercase">
+        <span className="ml-auto text-3xs tracking-[0.18em] text-ink-muted uppercase">
           {kicker}
         </span>
       ) : null}
@@ -87,7 +85,7 @@ function Tag({ children, tone = "muted" }: { children: ReactNode; tone?: "muted"
   return (
     <span
       className={cn(
-        "rounded-control px-3.5 py-2 text-[0.8rem] leading-none font-medium",
+        "rounded-control px-3.5 py-2 text-sm leading-none font-medium",
         tone === "accent"
           ? "bg-accent/45 text-accent-foreground"
           : "border border-foreground/12 bg-card text-foreground/85",
@@ -102,6 +100,11 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
   let n = 0;
   const next = () => ++n;
 
+  /*
+    기본 정보 3×2. MBTI·종교는 온보딩에서 선택 항목이라 비어 있을 수 있는데,
+    비었다고 칸을 빼면 5칸·4칸이 되어 그리드가 사람마다 달라진다.
+    항상 6칸을 유지하고 값이 없으면 "—" 로 표시한다.
+  */
   const facts = [
     { k: "직업", v: p.job },
     { k: "지역", v: p.area },
@@ -109,7 +112,9 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
     { k: "흡연", v: p.smoking },
     { k: "음주", v: p.drinking },
     { k: "종교", v: p.religion },
-  ].filter((f) => Boolean(f.v));
+  ].map((f) => ({ ...f, v: f.v?.trim() || null }));
+
+  const hasAnyFact = facts.some((f) => f.v);
 
   return (
     <div className="pb-4">
@@ -117,14 +122,10 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       <div className="overflow-hidden rounded-surface bg-card shadow-card">
         <div className="relative aspect-[4/5] w-full">
           {p.photo ? (
-            <img
-              src={p.photo}
-              alt={`${p.name} 프로필 사진`}
-              className="size-full object-cover"
-            />
+            <img src={p.photo} alt={`${p.name} 프로필 사진`} className="size-full object-cover" />
           ) : (
             <div className="grid size-full place-items-center bg-gradient-to-br from-primary/80 via-primary to-accent">
-              <span className="headline text-[5rem] leading-none text-background/90">
+              <span className="headline text-7xl leading-none text-background/90">
                 {p.name.slice(0, 1)}
               </span>
             </div>
@@ -137,46 +138,53 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
 
           <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
             {p.area ? (
-              <span className="inline-flex rounded-control bg-white/18 px-3 py-1 text-[0.66rem] font-semibold tracking-wide text-white backdrop-blur-md">
+              <span className="inline-flex rounded-control bg-white/18 px-3 py-1 text-2xs font-semibold tracking-wide text-white backdrop-blur-md">
                 {p.area}
               </span>
             ) : null}
-            <h2 className="headline mt-2.5 text-[2.1rem] leading-[1] text-white">
+            {/* 나이는 이름보다 한 단계 작게 — 이름이 정체, 나이는 부가 정보다.
+                홈 카드(text-2xl 이름 + text-base 나이)와 같은 위계를 쓴다. */}
+            <h2 className="headline mt-2.5 text-3xl leading-[1] text-white">
               {p.name}
-              {p.age ? <span className="text-white/55"> {p.age}</span> : null}
+              {p.age ? <span className="ml-1.5 text-lg text-white/60">{p.age}</span> : null}
             </h2>
             {p.headline ? (
-              <p className="mt-2 max-w-[20rem] text-[0.92rem] leading-snug text-white/85">
-                {p.headline}
-              </p>
+              <p className="mt-2 max-w-[20rem] text-sm leading-snug text-white/85">{p.headline}</p>
             ) : null}
           </div>
         </div>
       </div>
 
-      {/* 팩트 스트립 */}
-      {facts.length ? (
-        <Reveal>
-          <dl className="mt-5 grid grid-cols-3 gap-x-3 gap-y-4 border-y border-foreground/12 py-4">
-            {facts.map((f) => (
-              <div key={f.k}>
-                <dt className="text-[0.6rem] tracking-[0.16em] text-ink-muted uppercase">{f.k}</dt>
-                <dd className="mt-1 text-[0.85rem] leading-snug font-semibold text-foreground">
-                  {f.v}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Reveal>
+      {/*
+        기본 정보 — 사진 바로 아래. 접지 않는다.
+        PRD F4 는 원래 "스펙은 접어서 아래에" 였지만, 실제 화면에서 보니 직업·지역은
+        "만날 수 있는 사람인가"를 판단하는 실용 정보라 한 번의 탭을 요구할 이유가 없었다.
+        한 줄 소개는 이미 히어로에 얹혀 있어서 "결"이 먼저 오는 순서는 유지된다.
+      */}
+      {hasAnyFact ? (
+        <dl className="mt-5 grid grid-cols-3 gap-x-3 gap-y-4 border-y border-foreground/12 py-4">
+          {facts.map((f) => (
+            <div key={f.k}>
+              <dt className="text-3xs tracking-[0.16em] text-ink-muted uppercase">{f.k}</dt>
+              <dd
+                className={cn(
+                  "mt-1 text-sm leading-snug font-semibold",
+                  f.v ? "text-foreground" : "text-ink-muted",
+                )}
+              >
+                {f.v ?? "—"}
+              </dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
 
-      {/* 매거진 본문 */}
       <div className="mt-8 space-y-10">
         {p.intro ? (
           <Reveal>
             <section>
               <SectionHead index={next()} title="소개" kicker="Profile" />
-              <p className="text-[1.02rem] leading-[1.75] whitespace-pre-line text-foreground/90">
+              <p className="text-base leading-[1.75] whitespace-pre-line text-foreground/90">
                 {p.intro}
               </p>
             </section>
@@ -205,12 +213,10 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
               {p.answers.map((a, i) => (
                 <Reveal key={a.q} delay={i * 60}>
                   <article className="grid grid-cols-[2.1rem_1fr] gap-x-3">
-                    <span className="headline pt-0.5 text-[0.95rem] text-foreground/25">
-                      Q{i + 1}
-                    </span>
+                    <span className="headline pt-0.5 text-base text-foreground/25">Q{i + 1}</span>
                     <div>
-                      <h3 className="text-[1rem] leading-snug font-bold text-foreground">{a.q}</h3>
-                      <p className="mt-2 text-[0.93rem] leading-[1.7] whitespace-pre-line text-foreground/80">
+                      <h3 className="text-base leading-snug font-bold text-foreground">{a.q}</h3>
+                      <p className="mt-2 text-sm leading-[1.7] whitespace-pre-line text-foreground/80">
                         {a.a}
                       </p>
                     </div>

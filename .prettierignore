@@ -6,3 +6,6 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+
+# 생성 파일 — supabase gen types typescript --local 로 매번 덮어써진다
+src/lib/database.types.ts

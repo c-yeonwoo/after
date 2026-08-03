@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -10,7 +10,6 @@ import {
   MBTI_AXES,
   RELIGION_OPTIONS,
   SMOKING_OPTIONS,
-
   ageFrom,
   basicsValid,
   emptyBasics,
@@ -30,10 +29,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
-import { loadMe, saveMe } from "@/lib/store";
+import {
+  authErrorMessage,
+  completeOnboarding,
+  devFetchLatestOtp,
+  requestEmailCode,
+  recordConsent,
+  saveOnboardingStep,
+  useMe,
+  verifyEmailCode,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>): { edit?: true } =>
     search.edit === "1" || search.edit === true ? { edit: true } : {},
   head: () => ({
@@ -69,12 +77,19 @@ function Onboarding() {
   const navigate = useNavigate();
   const { edit } = Route.useSearch();
   const editing = Boolean(edit);
+  const { me, ready } = useMe();
   const [step, setStep] = useState(editing ? 2 : 1);
   const [gender, setGender] = useState<Gender | null>(null);
   const [hubId, setHubId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
@@ -86,21 +101,38 @@ function Onboarding() {
   // 수정 진입: 저장된 프로필을 불러와 인터뷰를 처음부터 다시 하지 않도록 합니다.
   useEffect(() => {
     if (!editing) return;
-    const me = loadMe();
+    if (!ready) return;
     if (!me) {
-      setStep(1);
+      navigate({ to: "/" });
       return;
     }
+    setUserId(me.id);
     setGender(me.gender);
-    setHubId(me.hubId);
-    setEmail(me.email);
-    setBasics(me.basics);
-    setProfile(me.profile);
-    setIntro(me.intro);
-    setMbtiParts(me.basics.mbti ? me.basics.mbti.split("") : ["", "", "", ""]);
-  }, [editing]);
-
-
+    setHubId(me.hub_id);
+    setEmail(me.company_email);
+    const nextBasics: Basics = {
+      name: me.name ?? "",
+      photo: me.photo_url ?? "",
+      birth: me.birth ?? "",
+      job: me.job ?? "",
+      mbti: me.mbti ?? "",
+      smoking: me.smoking ?? "",
+      drinking: me.drinking ?? "",
+      religion: me.religion ?? "",
+    };
+    setBasics(nextBasics);
+    setProfile({
+      headline: me.headline ?? "",
+      interests: me.interests,
+      details: (me.details as Record<string, string>) ?? {},
+      matchTags: me.match_tags,
+      matchNote: me.match_note ?? "",
+      topics: me.topics,
+      topicNote: me.topic_note ?? "",
+    });
+    setIntro(me.intro ?? me.headline ?? "");
+    setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
+  }, [editing, ready, me, navigate]);
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
@@ -117,9 +149,19 @@ function Onboarding() {
 
   if (step === 1) {
     return (
-      <StepShell step={1} total={TOTAL} eyebrow="가입" title="성별을 알려주세요" description="가입 후 변경할 수 없습니다.">
+      <StepShell
+        step={1}
+        total={TOTAL}
+        eyebrow="가입"
+        title="성별을 알려주세요"
+        description="가입 후 변경할 수 없습니다."
+      >
         <div className="grid gap-3">
-          <ChoiceCard selected={gender === "female"} onClick={() => setGender("female")} title="여성" />
+          <ChoiceCard
+            selected={gender === "female"}
+            onClick={() => setGender("female")}
+            title="여성"
+          />
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
@@ -155,7 +197,11 @@ function Onboarding() {
             <div className="mt-3 flex items-center gap-4">
               <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
                 {basics.photo ? (
-                  <img src={basics.photo} alt="선택한 프로필 사진 미리보기" className="size-full object-cover" />
+                  <img
+                    src={basics.photo}
+                    alt="선택한 프로필 사진 미리보기"
+                    className="size-full object-cover"
+                  />
                 ) : (
                   <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
                     미등록
@@ -165,7 +211,7 @@ function Onboarding() {
               <div className="min-w-0">
                 <label
                   htmlFor="photo"
-                  className="inline-flex min-h-10 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
+                  className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
                 >
                   {basics.photo ? "사진 변경" : "사진 선택"}
                   <input
@@ -190,7 +236,6 @@ function Onboarding() {
           </div>
 
           <div>
-
             <label className="text-sm font-semibold text-foreground" htmlFor="name">
               이름
             </label>
@@ -272,12 +317,15 @@ function Onboarding() {
             </p>
           </div>
 
-
           <div>
             <p className="text-sm font-semibold text-foreground">흡연</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {SMOKING_OPTIONS.map((o) => (
-                <Chip key={o.id} selected={basics.smoking === o.id} onClick={() => setB({ smoking: o.id })}>
+                <Chip
+                  key={o.id}
+                  selected={basics.smoking === o.id}
+                  onClick={() => setB({ smoking: o.id })}
+                >
                   {o.label}
                 </Chip>
               ))}
@@ -288,7 +336,11 @@ function Onboarding() {
             <p className="text-sm font-semibold text-foreground">음주</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {DRINKING_OPTIONS.map((o) => (
-                <Chip key={o.id} selected={basics.drinking === o.id} onClick={() => setB({ drinking: o.id })}>
+                <Chip
+                  key={o.id}
+                  selected={basics.drinking === o.id}
+                  onClick={() => setB({ drinking: o.id })}
+                >
                   {o.label}
                 </Chip>
               ))}
@@ -309,14 +361,18 @@ function Onboarding() {
               ))}
             </div>
           </div>
-
         </div>
 
         <div className="mt-8 flex gap-2">
           <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(1))}>
             {editing ? "취소" : "이전"}
           </Button>
-          <Button className="flex-1" size="lg" disabled={!basicsValid(basics)} onClick={() => setStep(editing ? 6 : 3)}>
+          <Button
+            className="flex-1"
+            size="lg"
+            disabled={!basicsValid(basics)}
+            onClick={() => setStep(editing ? 6 : 3)}
+          >
             다음
           </Button>
         </div>
@@ -378,11 +434,17 @@ function Onboarding() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           aria-invalid={email.length > 3 && !emailValid}
-          aria-describedby={email.length > 3 && !emailValid ? "work-email-error" : "work-email-hint"}
+          aria-describedby={
+            email.length > 3 && !emailValid ? "work-email-error" : "work-email-hint"
+          }
           className="mt-2"
         />
         {email.length > 3 && !emailValid ? (
-          <p id="work-email-error" role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive">
+          <p
+            id="work-email-error"
+            role="alert"
+            className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
+          >
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span>회사 도메인 이메일만 인증할 수 있습니다.</span>
           </p>
@@ -410,16 +472,62 @@ function Onboarding() {
               className="mt-2 tracking-[0.4em]"
             />
             {code.length > 0 && code.length !== 6 ? (
-              <p id="code-error" role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive">
+              <p
+                id="code-error"
+                role="alert"
+                className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
+              >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>숫자 6자리를 입력해 주세요.</span>
               </p>
             ) : (
               <p id="code-hint" className="mt-2 text-sm text-muted-foreground">
-                메일로 받은 6자리를 입력해 주세요.
+                {autoFilled
+                  ? "개발환경이라 방금 발송된 코드를 자동으로 채웠습니다."
+                  : "메일로 받은 6자리를 입력해 주세요."}
               </p>
             )}
           </div>
+        ) : null}
+
+        {authError ? (
+          <p
+            role="alert"
+            className="mt-4 flex items-start gap-1.5 text-sm font-medium text-destructive"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>{authError}</span>
+          </p>
+        ) : null}
+
+        {/* 계정이 실제로 만들어지는 지점이므로 동의를 여기서 받는다 (PRD 266). */}
+        {codeSent ? (
+          <label className="mt-7 flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 size-5 shrink-0 accent-primary"
+            />
+            <span className="text-sm leading-relaxed text-foreground/85">
+              <Link
+                to="/terms"
+                target="_blank"
+                className="font-semibold text-primary-strong underline"
+              >
+                이용약관
+              </Link>
+              과{" "}
+              <Link
+                to="/privacy"
+                target="_blank"
+                className="font-semibold text-primary-strong underline"
+              >
+                개인정보 처리방침
+              </Link>
+              에 동의합니다. (필수)
+            </span>
+          </label>
         ) : null}
 
         <div className="mt-8 flex gap-2">
@@ -427,20 +535,59 @@ function Onboarding() {
             이전
           </Button>
           {codeSent ? (
-            <Button className="flex-1" size="lg" disabled={code.length !== 6} onClick={() => setStep(6)}>
-              인증하고 계속
+            <Button
+              className="flex-1"
+              size="lg"
+              disabled={code.length !== 6 || !agreed || authBusy}
+              onClick={async () => {
+                setAuthError(null);
+                setAuthBusy(true);
+                try {
+                  const created = await verifyEmailCode(
+                    email,
+                    code,
+                    gender ?? "female",
+                    hubId ?? "gangnam",
+                  );
+                  // 동의는 서버에 시각·버전으로 남긴다. 이게 없으면
+                  // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
+                  await recordConsent();
+                  setUserId(created.id);
+                  setStep(6);
+                } catch (err) {
+                  setAuthError(authErrorMessage(err));
+                } finally {
+                  setAuthBusy(false);
+                }
+              }}
+            >
+              {authBusy ? "확인 중…" : "인증하고 계속"}
             </Button>
           ) : (
             <Button
               className="flex-1"
               size="lg"
-              disabled={!emailValid}
-              onClick={() => {
-                setCodeSent(true);
-                toast.success("인증 코드를 보냈습니다 (데모)");
+              disabled={!emailValid || authBusy}
+              onClick={async () => {
+                setAuthError(null);
+                setAuthBusy(true);
+                try {
+                  await requestEmailCode(email);
+                  setCodeSent(true);
+                  toast.success("인증 코드를 보냈습니다.");
+                  const dev = await devFetchLatestOtp(email);
+                  if (dev) {
+                    setCode(dev);
+                    setAutoFilled(true);
+                  }
+                } catch (err) {
+                  setAuthError(authErrorMessage(err));
+                } finally {
+                  setAuthBusy(false);
+                }
               }}
             >
-              인증 코드 받기
+              {authBusy ? "보내는 중…" : "인증 코드 받기"}
             </Button>
           )}
         </div>
@@ -449,7 +596,6 @@ function Onboarding() {
   }
 
   // (한 줄 소개는 마지막 확인 화면에서 답변 기반으로 제안합니다)
-
 
   // 5 — 요즘 시간 쓰는 것들 (키워드 + 선택 후속 답변)
   if (step === 6) {
@@ -520,9 +666,7 @@ function Onboarding() {
             })}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-muted-foreground">
-            하나 적으면 여기에 모입니다.
-          </p>
+          <p className="mt-4 text-sm text-muted-foreground">하나 적으면 여기에 모입니다.</p>
         )}
 
         {active ? (
@@ -569,21 +713,29 @@ function Onboarding() {
           <Button
             className="flex-1"
             size="lg"
-            disabled={!ok}
-            onClick={() => {
+            disabled={!ok || saving}
+            onClick={async () => {
               patch({ interests: seeds });
+              if (userId) {
+                setSaving(true);
+                try {
+                  await saveOnboardingStep(userId, 5, {
+                    interests: seeds,
+                    details: profile.details as never,
+                  });
+                } finally {
+                  setSaving(false);
+                }
+              }
               setStep(8);
             }}
           >
-            다음
+            {saving ? "저장 중…" : "다음"}
           </Button>
         </div>
       </StepShell>
     );
   }
-
-
-
 
   // 6 — 잘 맞는 사람 + 이번 만남 대화 주제
   if (step === 8) {
@@ -620,7 +772,9 @@ function Onboarding() {
         </div>
 
         <div className="mt-8">
-          <p className="text-sm font-semibold text-foreground">이번 만남에서 이야기하고 싶은 주제 (2개 이상)</p>
+          <p className="text-sm font-semibold text-foreground">
+            이번 만남에서 이야기하고 싶은 주제 (2개 이상)
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">상대에게도 그대로 보여집니다.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {TOPIC_TAGS.map((tag) => (
@@ -649,68 +803,99 @@ function Onboarding() {
           <Button
             className="flex-1"
             size="lg"
-            disabled={!ok}
-            onClick={() => {
+            disabled={!ok || saving}
+            onClick={async () => {
               setIntro(draft);
+              if (userId) {
+                setSaving(true);
+                try {
+                  await saveOnboardingStep(userId, 6, {
+                    match_tags: profile.matchTags,
+                    match_note: profile.matchNote || null,
+                    topics: profile.topics,
+                    topic_note: profile.topicNote || null,
+                  });
+                } finally {
+                  setSaving(false);
+                }
+              }
               setStep(9);
             }}
           >
-            프로필 만들기
+            {saving ? "저장 중…" : "프로필 만들기"}
           </Button>
         </div>
       </StepShell>
     );
   }
 
-  const topics = [...profile.topics, ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : [])];
+  const topics = [
+    ...profile.topics,
+    ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : []),
+  ];
   const headlineOptions = suggestHeadlines(profile, basics.job);
 
-
   return (
-    <StepShell step={7} total={TOTAL} eyebrow="프로필 확인" title="이렇게 소개해도 될까요?" description="적은 내용으로 만든 초안입니다.">
+    <StepShell
+      step={7}
+      total={TOTAL}
+      eyebrow="프로필 확인"
+      title="이렇게 소개해도 될까요?"
+      description="적은 내용으로 만든 초안입니다."
+    >
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {basics.photo ? (
-          <img src={basics.photo} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
+          <img
+            src={basics.photo}
+            alt="내 프로필 사진"
+            className="aspect-[4/5] w-full object-cover"
+          />
         ) : null}
         <div className="p-5">
-        <p className="text-base font-semibold">
-          {basics.name}
-          {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {[
-            basics.job,
-            basics.mbti,
-            SMOKING_OPTIONS.find((o) => o.id === basics.smoking)?.label,
-            `음주 ${DRINKING_OPTIONS.find((o) => o.id === basics.drinking)?.label ?? ""}`.trim(),
-            RELIGION_OPTIONS.find((o) => o.id === basics.religion)?.label,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
+          <p className="text-base font-semibold">
+            {basics.name}
+            {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {[
+              basics.job,
+              basics.mbti,
+              SMOKING_OPTIONS.find((o) => o.id === basics.smoking)?.label,
+              `음주 ${DRINKING_OPTIONS.find((o) => o.id === basics.drinking)?.label ?? ""}`.trim(),
+              RELIGION_OPTIONS.find((o) => o.id === basics.religion)?.label,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
 
-        <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">요즘 시간 쓰는 것들</p>
+          <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">
+            요즘 시간 쓰는 것들
+          </p>
 
-        <div className="mt-2 space-y-2">
-          {selectedInterests.map((label) => (
-            <div key={label} className="rounded-surface border border-border bg-muted/30 px-3 py-2">
-              <p className="text-sm font-semibold text-foreground">{label}</p>
-              {profile.details[label]?.trim() ? (
-                <p className="mt-1 text-sm text-muted-foreground">{profile.details[label]}</p>
-              ) : null}
-            </div>
-          ))}
-        </div>
+          <div className="mt-2 space-y-2">
+            {selectedInterests.map((label) => (
+              <div
+                key={label}
+                className="rounded-surface border border-border bg-muted/30 px-3 py-2"
+              >
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                {profile.details[label]?.trim() ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{profile.details[label]}</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
 
-
-        <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">이번 만남에서 나누고 싶은 이야기</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {topics.map((t) => (
-            <span key={t} className="rounded-full bg-accent/40 px-3 py-1 text-xs text-foreground">
-              {t}
-            </span>
-          ))}
-        </div>
+          <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">
+            이번 만남에서 나누고 싶은 이야기
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {topics.map((t) => (
+              <span key={t} className="rounded-full bg-accent/40 px-3 py-1 text-xs text-foreground">
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -734,7 +919,9 @@ function Onboarding() {
                 className={cn(
                   "w-full rounded-xl border border-border bg-card p-4 text-left text-sm leading-relaxed transition-colors",
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  selected ? "border-primary-strong bg-primary/10" : "hover:border-primary-strong/60",
+                  selected
+                    ? "border-primary-strong bg-primary/10"
+                    : "hover:border-primary-strong/60",
                 )}
               >
                 “{line}”
@@ -768,7 +955,9 @@ function Onboarding() {
         aria-live="polite"
         className={cn(
           "mt-2 text-sm",
-          intro.trim().length > 0 && intro.trim().length < 20 ? "font-medium text-destructive" : "text-muted-foreground",
+          intro.trim().length > 0 && intro.trim().length < 20
+            ? "font-medium text-destructive"
+            : "text-muted-foreground",
         )}
       >
         최소 20자 ({intro.trim().length}자)
@@ -781,21 +970,24 @@ function Onboarding() {
         <Button
           className="flex-1"
           size="lg"
-          disabled={intro.trim().length < 20 || profile.headline.trim().length < 5}
-          onClick={() => {
-            saveMe({
-              gender: gender ?? "female",
-              hubId: hubId ?? "gangnam",
-              email,
-              basics,
-              profile,
-              intro: intro.trim(),
-            });
-            toast.success("프로필이 저장되었습니다");
-            navigate({ to: "/me" });
+          disabled={
+            intro.trim().length < 20 || profile.headline.trim().length < 5 || saving || !userId
+          }
+          onClick={async () => {
+            if (!userId) return;
+            setSaving(true);
+            try {
+              await completeOnboarding(userId, basics, profile, intro.trim());
+              toast.success("프로필이 저장되었습니다");
+              navigate({ to: "/me" });
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
+            } finally {
+              setSaving(false);
+            }
           }}
         >
-          프로필 확정
+          {saving ? "저장 중…" : "프로필 확정"}
         </Button>
       </div>
     </StepShell>

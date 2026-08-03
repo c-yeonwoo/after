@@ -19,25 +19,13 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({
-  className,
-  size = "md",
-}: {
-  className?: string;
-  size?: "sm" | "md";
-}) {
+export function Logo({ className, size = "md" }: { className?: string; size?: "sm" | "md" }) {
   return (
     <span className={cn("flex min-w-0 items-center gap-2", className)}>
       <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
-      <span
-        className={cn(
-          "headline truncate tracking-[-0.02em] lowercase",
-          size === "sm" ? "text-[1.1rem]" : "text-[1.3rem]",
-        )}
-      >
+      <span className={cn("wordmark truncate lowercase", size === "sm" ? "text-lg" : "text-xl")}>
         after
       </span>
-
     </span>
   );
 }
