@@ -121,6 +121,16 @@ function LoginPage() {
                 setBusy(true);
                 try {
                   const result = await signInExisting(email, code);
+                  // 탈퇴·제명 계정은 OTP 자체는 통과한다(auth.users 가 남아 있다).
+                  // signInExisting 이 이미 로그아웃시켰으므로 여기선 알리기만 한다.
+                  if (result.kind === "closed") {
+                    setError(
+                      result.state === "withdrawn"
+                        ? "탈퇴한 계정입니다. 새로 가입해 주세요."
+                        : "이용이 중지된 계정입니다. 문의해 주세요.",
+                    );
+                    return;
+                  }
                   if (result.kind === "no-profile") {
                     toast("가입이 완료되지 않은 계정입니다. 이어서 진행해 주세요.");
                     navigate({ to: "/signup" });

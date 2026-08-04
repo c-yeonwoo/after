@@ -20,8 +20,13 @@ values
 
 -- ─────────────── 가격 ───────────────
 
-select is(ticket_bundle_amount(1::smallint), 30000, 'T1 1장 30,000원');
-select is(ticket_bundle_amount(3::smallint), 80000, 'T2 3장 80,000원');
+-- 구체적 금액은 그 값을 정한 마이그레이션의 테스트가 본다(S14). 여기서는
+-- **구조**만 본다 — 가격이 바뀔 때마다 옛 테스트가 깨지면 안 된다.
+select ok(ticket_bundle_amount(1::smallint) > 0, 'T1 1장 가격이 정의되어 있다');
+select ok(
+  ticket_bundle_amount(3::smallint) < ticket_bundle_amount(1::smallint) * 3,
+  'T2 3장은 1장×3 보다 싸다 (묶음 할인이 적용된다)'
+);
 select is(ticket_bundle_amount(2::smallint), null,  'T3 정의되지 않은 수량은 null');
 
 select throws_ok(

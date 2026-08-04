@@ -53,6 +53,25 @@ export function MeProvider({ children }: { children: ReactNode }) {
       .select("*")
       .eq("id", session.user.id)
       .maybeSingle();
+
+    /*
+      탈퇴·제명 계정을 me 로 넘기면 안 된다.
+
+      화면마다 막는 것으로는 부족하다 — 실제로 login.tsx 의
+      `if (ready && me) navigate("/home")` 가 경쟁에서 이겨, 탈퇴한 사람이
+      홈으로 들어간 뒤 로그아웃이 뒤늦게 돌아 /signup 으로 튕겼다.
+      신원을 나눠주는 이 지점에서 막으면 모든 화면이 한 번에 안전해진다.
+
+      signOut() 은 SIGNED_OUT 을 일으켜 load() 를 다시 돌리는데, 그때는
+      세션이 없어 위에서 반환하므로 반복되지 않는다.
+    */
+    if (data && data.account_state !== "active") {
+      await supabase.auth.signOut();
+      setMe(null);
+      setReady(true);
+      return;
+    }
+
     setMe(data);
     setReady(true);
   }, []);

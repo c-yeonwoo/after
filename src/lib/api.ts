@@ -106,6 +106,7 @@ export async function signInExisting(
   | { kind: "ok"; profile: Profile }
   | { kind: "incomplete"; profile: Profile }
   | { kind: "no-profile" }
+  | { kind: "closed"; state: "banned" | "withdrawn" }
 > {
   const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
   if (error) throw error;
@@ -119,6 +120,15 @@ export async function signInExisting(
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
 
   if (!profile) return { kind: "no-profile" };
+
+  // 탈퇴·제명 계정은 인증이 되더라도 들여보내지 않는다. auth.users 는 남아
+  // 있으므로 OTP 자체는 성공한다 — 그래서 이 판정이 없으면 탈퇴한 사람이
+  // 그대로 로그인됐다(신원은 이미 지워진 빈 프로필로).
+  if (profile.account_state !== "active") {
+    await supabase.auth.signOut();
+    return { kind: "closed", state: profile.account_state };
+  }
+
   await track("login");
   if (profile.onboarding_step < 7) return { kind: "incomplete", profile };
   return { kind: "ok", profile };
@@ -423,6 +433,36 @@ export async function myStats(): Promise<MyStats | null> {
 
   if (!profile) return null;
   return { unusedTickets: tickets, metCount: met ?? 0, joinedAt: profile.created_at };
+}
+
+/** 상품 목록. 가격은 서버가 정한다 — 클라이언트에 두면 서버와 어긋난다. */
+export type TicketBundle = { quantity: number; amount: number };
+
+export async function ticketBundles(): Promise<TicketBundle[]> {
+  const { data, error } = await supabase.rpc("ticket_bundles");
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 잠시 쉬기. 새 소개·평가 대상에서만 빠진다 — 진행 중인 요청·약속은 그대로다.
+ * 상대가 이미 티켓을 썼다면 그 사람의 돈이 걸려 있으므로 내가 쉬겠다고
+ * 그 약속을 깰 수는 없다.
+ */
+export async function setPaused(on: boolean): Promise<Profile> {
+  const { data, error } = await supabase.rpc("set_paused", { p_on: on });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * 탈퇴. 진행 중 약속을 취소하고 **상대 티켓을 환불한 뒤** 신원 정보를 지운다.
+ * 거래 기록은 남는다(보존 의무 + 환불 근거).
+ */
+export async function withdrawAccount(reason?: string): Promise<void> {
+  const { error } = await supabase.rpc("withdraw_account", { p_reason: reason });
+  if (error) throw error;
+  await supabase.auth.signOut();
 }
 
 /** 후기 요청 메일 수신 여부. 만남 진행 알림은 끌 수 없다(상대의 환불 기한이 걸려 있다). */
