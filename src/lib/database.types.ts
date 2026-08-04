@@ -640,6 +640,7 @@ export type Database = {
           mbti: string | null
           name: string | null
           onboarding_step: number
+          paused_at: string | null
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -672,6 +673,7 @@ export type Database = {
           mbti?: string | null
           name?: string | null
           onboarding_step?: number
+          paused_at?: string | null
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
@@ -704,6 +706,7 @@ export type Database = {
           mbti?: string | null
           name?: string | null
           onboarding_step?: number
+          paused_at?: string | null
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
@@ -845,6 +848,7 @@ export type Database = {
           details: Json | null
           drinking: string | null
           email_verified_at: string | null
+          feedback_emails: boolean | null
           gender: Database["public"]["Enums"]["gender"] | null
           headline: string | null
           hub_id: string | null
@@ -857,6 +861,7 @@ export type Database = {
           mbti: string | null
           name: string | null
           onboarding_step: number | null
+          paused_at: string | null
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -876,6 +881,7 @@ export type Database = {
           details?: Json | null
           drinking?: string | null
           email_verified_at?: string | null
+          feedback_emails?: boolean | null
           gender?: Database["public"]["Enums"]["gender"] | null
           headline?: string | null
           hub_id?: string | null
@@ -888,6 +894,7 @@ export type Database = {
           mbti?: string | null
           name?: string | null
           onboarding_step?: number | null
+          paused_at?: string | null
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
@@ -907,6 +914,7 @@ export type Database = {
           details?: Json | null
           drinking?: string | null
           email_verified_at?: string | null
+          feedback_emails?: boolean | null
           gender?: Database["public"]["Enums"]["gender"] | null
           headline?: string | null
           hub_id?: string | null
@@ -919,6 +927,7 @@ export type Database = {
           mbti?: string | null
           name?: string | null
           onboarding_step?: number | null
+          paused_at?: string | null
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
@@ -1209,6 +1218,7 @@ export type Database = {
           mbti: string | null
           name: string | null
           onboarding_step: number
+          paused_at: string | null
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -1284,6 +1294,48 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_paused: {
+        Args: { p_on: boolean }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string | null
+          job: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          onboarding_step: number
+          paused_at: string | null
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       submit_meeting_prefs: {
         Args: { p_meeting_id: string; p_prefs: Json }
         Returns: {
@@ -1335,6 +1387,7 @@ export type Database = {
           mbti: string | null
           name: string | null
           onboarding_step: number
+          paused_at: string | null
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -1352,6 +1405,13 @@ export type Database = {
         }
       }
       ticket_bundle_amount: { Args: { p_quantity: number }; Returns: number }
+      ticket_bundles: {
+        Args: never
+        Returns: {
+          amount: number
+          quantity: number
+        }[]
+      }
       use_meeting_ticket: {
         Args: { p_intro_id: string }
         Returns: {
@@ -1378,6 +1438,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      withdraw_account: { Args: { p_reason?: string }; Returns: undefined }
     }
     Enums: {
       account_state: "active" | "banned" | "withdrawn"

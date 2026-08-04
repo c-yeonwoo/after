@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
-import { BRAND, MEETING_TICKET_PRICE_KRW } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import {
   myPendingTicketOrder,
   requestTicketOrder,
+  ticketBundles,
   unusedTicketCount,
+  type TicketBundle,
   type TicketOrder,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -28,15 +30,6 @@ export const Route = createFileRoute("/store")({
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 
 /**
- * 상품 구성. 금액의 서버 권위는 ticket_bundle_amount() 이고 ticket_orders 의
- * CHECK 가 그걸 참조한다 — 여기 숫자는 표시용이라 서버와 어긋나면 주문이 거부된다.
- */
-const BUNDLES = [
-  { quantity: 1 as const, amount: MEETING_TICKET_PRICE_KRW },
-  { quantity: 3 as const, amount: 80_000 },
-];
-
-/**
  * 티켓 상점 — 구매 전용(S13).
  *
  * /ticket 과 역할이 다르다. /ticket 은 "지금 열린 이 소개에 티켓을 쓴다"이고
@@ -46,20 +39,27 @@ const BUNDLES = [
 function StorePage() {
   const [owned, setOwned] = useState<number | null>(null);
   const [order, setOrder] = useState<TicketOrder | null>(null);
+  /* 가격을 클라이언트에 두면 서버와 어긋난다 — 실제로 3장 가격을 바꾸며 겪었다. */
+  const [bundles, setBundles] = useState<TicketBundle[]>([]);
   const [picked, setPicked] = useState<1 | 3>(1);
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const [count, pending] = await Promise.all([unusedTicketCount(), myPendingTicketOrder()]);
+    const [count, pending, list] = await Promise.all([
+      unusedTicketCount(),
+      myPendingTicketOrder(),
+      ticketBundles(),
+    ]);
     setOwned(count);
     setOrder(pending);
+    setBundles(list);
   }
 
   useEffect(() => {
     load();
   }, []);
 
-  const single = BUNDLES[0].amount;
+  const single = bundles.find((b) => b.quantity === 1)?.amount ?? 0;
 
   return (
     <AppScreen title="티켓 상점" back="/me">
@@ -75,7 +75,7 @@ function StorePage() {
       </p>
 
       <ul className="mt-3 space-y-2.5">
-        {BUNDLES.map(({ quantity, amount }) => {
+        {bundles.map(({ quantity, amount }) => {
           const perUnit = Math.round(amount / quantity);
           const saved = single * quantity - amount;
           const on = picked === quantity;
@@ -84,7 +84,7 @@ function StorePage() {
               <button
                 type="button"
                 aria-pressed={on}
-                onClick={() => setPicked(quantity)}
+                onClick={() => setPicked(quantity === 3 ? 3 : 1)}
                 className={cn(
                   "flex w-full items-center gap-4 rounded-surface border-2 px-5 py-4 text-left transition-colors",
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
