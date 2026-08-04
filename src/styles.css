@@ -59,6 +59,20 @@
   --radius-4xl: calc(var(--radius) + 16px);
 
   /* 시맨틱 라운드 토큰 — 역할별로 하나씩만 쓴다 */
+  /*
+    화면 위·아래 안전 여백.
+
+    바닥값이 실기기의 상태바(44px)·홈 인디케이터(34px) 높이다. 이유가 둘이다:
+     · 노치가 없는 환경(브라우저 미리보기·구형 기기)에서 calc(inset + n) 만
+       쓰면 인셋이 0 이라 제목이 화면 끝에 붙는다. 실제로 12px 였다.
+     · 미리보기 프레임은 상태바를 흉내내지 않는다. 바닥값을 상태바 높이로
+       맞춰야 미리보기에서 본 여백이 기기에서 본 여백과 같아진다.
+
+    max() 라서 노치가 있을 때 여백이 두 번 더해지지도 않는다.
+  */
+  --safe-top: max(calc(env(safe-area-inset-top, 0px) + 0.5rem), 2.75rem);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 2.125rem);
+
   --radius-field: var(--radius-field-value); /* 입력폼(input/textarea/select) */
   --radius-control: 9999px; /* 버튼·칩 등 눌리는 컨트롤 */
   --radius-surface: var(--radius-2xl); /* 카드·모달·시트 */

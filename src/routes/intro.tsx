@@ -203,7 +203,7 @@ function IntroPage() {
       ) : (
         <div
           className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-border/70 bg-background/95 px-6 pt-3 backdrop-blur-xl"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
+          style={{ paddingBottom: "calc(var(--safe-bottom) + 4rem)" }}
         >
           <div className="flex gap-2">
             <Button

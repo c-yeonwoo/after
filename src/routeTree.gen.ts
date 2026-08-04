@@ -18,9 +18,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as PrefsRouteImport } from './routes/prefs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketRouteImport } from './routes/ticket'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
@@ -70,6 +73,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RequestsRoute = RequestsRouteImport.update({
   id: '/requests',
   path: '/requests',
@@ -80,9 +88,19 @@ const ScheduleRoute = ScheduleRouteImport.update({
   path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreRoute = StoreRouteImport.update({
+  id: '/store',
+  path: '/store',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -111,9 +129,12 @@ export interface FileRoutesByFullPath {
   '/me': typeof MeRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
+  '/profile': typeof ProfileRoute
   '/requests': typeof RequestsRoute
   '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
@@ -128,9 +149,12 @@ export interface FileRoutesByTo {
   '/me': typeof MeRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
+  '/profile': typeof ProfileRoute
   '/requests': typeof RequestsRoute
   '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
@@ -146,9 +170,12 @@ export interface FileRoutesById {
   '/me': typeof MeRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
+  '/profile': typeof ProfileRoute
   '/requests': typeof RequestsRoute
   '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/chat/$id': typeof ChatIdRoute
@@ -165,9 +192,12 @@ export interface FileRouteTypes {
     | '/me'
     | '/prefs'
     | '/privacy'
+    | '/profile'
     | '/requests'
     | '/schedule'
+    | '/settings'
     | '/signup'
+    | '/store'
     | '/terms'
     | '/ticket'
     | '/chat/$id'
@@ -182,9 +212,12 @@ export interface FileRouteTypes {
     | '/me'
     | '/prefs'
     | '/privacy'
+    | '/profile'
     | '/requests'
     | '/schedule'
+    | '/settings'
     | '/signup'
+    | '/store'
     | '/terms'
     | '/ticket'
     | '/chat/$id'
@@ -199,9 +232,12 @@ export interface FileRouteTypes {
     | '/me'
     | '/prefs'
     | '/privacy'
+    | '/profile'
     | '/requests'
     | '/schedule'
+    | '/settings'
     | '/signup'
+    | '/store'
     | '/terms'
     | '/ticket'
     | '/chat/$id'
@@ -217,9 +253,12 @@ export interface RootRouteChildren {
   MeRoute: typeof MeRoute
   PrefsRoute: typeof PrefsRoute
   PrivacyRoute: typeof PrivacyRoute
+  ProfileRoute: typeof ProfileRoute
   RequestsRoute: typeof RequestsRoute
   ScheduleRoute: typeof ScheduleRoute
+  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  StoreRoute: typeof StoreRoute
   TermsRoute: typeof TermsRoute
   TicketRoute: typeof TicketRoute
   ChatIdRoute: typeof ChatIdRoute
@@ -290,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/requests': {
       id: '/requests'
       path: '/requests'
@@ -304,11 +350,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store': {
+      id: '/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof StoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -345,9 +405,12 @@ const rootRouteChildren: RootRouteChildren = {
   MeRoute: MeRoute,
   PrefsRoute: PrefsRoute,
   PrivacyRoute: PrivacyRoute,
+  ProfileRoute: ProfileRoute,
   RequestsRoute: RequestsRoute,
   ScheduleRoute: ScheduleRoute,
+  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  StoreRoute: StoreRoute,
   TermsRoute: TermsRoute,
   TicketRoute: TicketRoute,
   ChatIdRoute: ChatIdRoute,

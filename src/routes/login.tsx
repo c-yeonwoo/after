@@ -42,10 +42,7 @@ function LoginPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background px-6">
-      <header
-        className="flex items-center"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}
-      >
+      <header className="flex items-center" style={{ paddingTop: "var(--safe-top)" }}>
         <Logo size="sm" />
       </header>
 
@@ -190,10 +187,7 @@ function LoginPage() {
         </div>
       </main>
 
-      <footer
-        className="pt-8"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
-      >
+      <footer className="pt-8" style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}>
         <p className="text-center text-sm text-muted-foreground">
           아직 가입하지 않으셨나요?{" "}
           <Link to="/signup" className="font-semibold text-primary-strong underline">

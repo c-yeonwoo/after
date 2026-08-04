@@ -54,7 +54,7 @@ function Landing() {
     <div className="flex min-h-dvh flex-col bg-background pb-4">
       <header
         className="sticky top-0 z-20 bg-background/85 px-6 pb-3 backdrop-blur-xl"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.9rem)" }}
+        style={{ paddingTop: "var(--safe-top)" }}
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
@@ -111,7 +111,7 @@ function Landing() {
 
       <div
         className="sticky bottom-0 z-10 mt-8 bg-background/95 px-6 pt-4 backdrop-blur"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.25rem)" }}
+        style={{ paddingBottom: "calc(var(--safe-bottom) + 1rem)" }}
       >
         <button
           ref={btnRef}

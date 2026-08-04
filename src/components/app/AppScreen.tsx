@@ -47,16 +47,12 @@ export function AppScreen({
   return (
     <div
       className={cn("flex flex-col bg-background", fill ? "h-dvh overflow-hidden" : "min-h-screen")}
-      style={
-        fill && !hideTabs
-          ? { paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4rem)" }
-          : undefined
-      }
+      style={fill && !hideTabs ? { paddingBottom: "calc(var(--safe-bottom) + 4rem)" } : undefined}
     >
       <header
         className="sticky top-0 z-20 bg-background/80 pb-3 backdrop-blur-xl"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          paddingTop: "var(--safe-top)",
           paddingLeft: "max(env(safe-area-inset-left, 0px), 1.5rem)",
           paddingRight: "max(env(safe-area-inset-right, 0px), 1.5rem)",
         }}
@@ -90,7 +86,7 @@ export function AppScreen({
       {hideTabs ? null : (
         <nav
           className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t-2 border-foreground/10 bg-background/95 backdrop-blur-xl"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.4rem)" }}
+          style={{ paddingBottom: "var(--safe-bottom)" }}
           aria-label="주요 메뉴"
         >
           <ul className="flex items-stretch">
