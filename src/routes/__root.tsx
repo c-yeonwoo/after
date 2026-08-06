@@ -116,7 +116,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      /*
+        SVG 를 먼저 둔다 — 지원 브라우저는 이걸 쓰고 어느 크기에서도 선명하다.
+        ico 는 그걸 못 읽는 브라우저용 폴백이라 뒤에 온다(16·32·48 3종 내장).
+        예전 ico 는 256px 한 장 20KB 였는데, 탭에서 쓰는 16px 로 축소될 때
+        브라우저 리샘플링에 맡겨져 뭉갰다.
+      */
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
 

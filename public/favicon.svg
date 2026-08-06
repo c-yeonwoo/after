@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="애프터">
+  <!--
+    앱 아이콘. 탭 배경이 밝든 어둡든 형태가 유지되도록 코럴 타일 위에 흰 마크를
+    올린다 — 마크만 두면 다크 탭바에서 코럴이 묻힌다.
+  -->
+  <rect width="64" height="64" rx="15" fill="#c72b10"/>
+  <g transform="translate(12 12) scale(1.25)">
+    <clipPath id="h"><rect x="0" y="0" width="32" height="20.6"/></clipPath>
+    <circle cx="12.8" cy="15.27" r="8.6" fill="#FFF3EE" clip-path="url(#h)"/>
+    <path d="M3.2 20.6h25.6" stroke="#FFF3EE" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+</svg>
