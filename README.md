@@ -21,7 +21,7 @@
 > **SSOT (제품):** [`docs/prd-after-mvp.md`](./docs/prd-after-mvp.md) — 이 문서가 아니다.  
 > _(구 경로 `docs/prd-office-town-private.md`는 존재하지 않는다. 아래 본문에 그 내용이 합쳐져 있다.)_
 
-> **코드:** 구현되어 있음 — Lovable · TanStack Start · React 19 · Tailwind 4 (`src/`).
+> **코드:** 구현되어 있음 — TanStack Start · React 19 · Tailwind 4 (`src/`).
 > 프로토타입 단계이며 DB·인증·결제는 없다. 상태는 `localStorage`(`src/lib/store.ts`).
 
 ---
@@ -679,15 +679,7 @@ MVP 및 초기 버전에서 **하지 않음**:
 
 | 별도 앱 | 순수 그룹 오피스타운은 Later/별브랜드 후보. 본 제품에 섞지 않음 |
 
-This project was built with [Lovable](https://lovable.dev).
 
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/73341615-955c-47ff-8876-3b9de3a18098).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
