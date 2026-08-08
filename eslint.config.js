@@ -20,6 +20,14 @@ export default tseslint.config(
       // 그 사본까지 검사해서 lint 가 빨갛게 뜬다(실제로 1,255건이 떴다).
       // .gitignore 에는 이미 있지만 eslint 는 그걸 읽지 않는다.
       ".claude/**",
+      /*
+        Capacitor 가 만드는 네이티브 프로젝트. `cap sync` 가 빌드된 웹 자산을
+        ios/App/App/public/ 으로 복사하기 때문에, 여기를 검사하면 **미니파이된
+        번들**에 prettier 규칙을 걸어 248건이 떴다(실제로 그렇게 떴다).
+        ios/.gitignore 에는 이미 있지만 eslint 는 그걸 읽지 않는다 —
+        위의 워크트리와 같은 함정이다.
+      */
+      "ios/**",
     ],
   },
   {

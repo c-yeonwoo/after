@@ -42,10 +42,7 @@ function LoginPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background px-6">
-      <header
-        className="flex shrink-0 items-center"
-        style={{ paddingTop: "var(--safe-top)" }}
-      >
+      <header className="flex shrink-0 items-center" style={{ paddingTop: "var(--safe-top)" }}>
         <Logo size="sm" />
       </header>
 
