@@ -6,9 +6,9 @@ import { LEGAL_TODO, POLICY_VERSION, type PolicySection } from "@/lib/policy";
 /** 약관·처리방침 공용 레이아웃. 두 문서의 구조가 같아 하나로 둔다. */
 export function PolicyPage({ title, sections }: { title: string; sections: PolicySection[] }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
       <header
-        className="sticky top-0 z-20 border-b border-border/70 bg-background/90 px-6 pb-3 backdrop-blur-xl"
+        className="z-20 shrink-0 border-b border-border/70 bg-background px-6 pb-3"
         style={{ paddingTop: "var(--safe-top)" }}
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -24,7 +24,10 @@ export function PolicyPage({ title, sections }: { title: string; sections: Polic
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-6 pb-16">
+      <main
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-6"
+        style={{ paddingBottom: "calc(var(--safe-bottom) + 1.5rem)" }}
+      >
         <p className="text-2xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
           버전 {POLICY_VERSION}
         </p>

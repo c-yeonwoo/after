@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/home")({
   head: () => ({
     meta: [
-      { title: `홈 — ${BRAND.name}` },
+      { title: `홈 — ${BRAND.short}` },
       { name: "description", content: "지금 해야 할 일 하나와 진행 상황을 확인합니다." },
-      { property: "og:title", content: `홈 — ${BRAND.name}` },
+      { property: "og:title", content: `홈 — ${BRAND.short}` },
       { property: "og:description", content: "소개 도착 · 채팅 오픈 · 만남 확정까지의 진행 상황." },
     ],
   }),
@@ -67,7 +67,7 @@ function HomePage() {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    if (ready && !me) navigate({ to: "/signup" });
+    if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
 
   // 하이드레이션 불일치를 피하려고 마운트 후에만 시각을 잡는다.

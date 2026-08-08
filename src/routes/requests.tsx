@@ -10,7 +10,7 @@ import { listMeetingsAwaitingMyPrefs, type MeetingRequest } from "@/lib/api";
 export const Route = createFileRoute("/requests")({
   head: () => ({
     meta: [
-      { title: `만남 요청 — ${BRAND.name}` },
+      { title: `만남 요청 — ${BRAND.short}` },
       { name: "description", content: "만남 티켓을 사용한 분들의 요청을 확인하고 답합니다." },
     ],
   }),

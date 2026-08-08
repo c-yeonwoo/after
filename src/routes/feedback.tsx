@@ -15,13 +15,13 @@ export const Route = createFileRoute("/feedback")({
   }),
   head: () => ({
     meta: [
-      { title: `만남 후 피드백 — ${BRAND.name}` },
+      { title: `만남 후 피드백 — ${BRAND.short}` },
       {
         name: "description",
         content:
           "만남이 어땠는지 남기면 다음 소개가 더 정확해집니다. 상대에게는 공개되지 않습니다.",
       },
-      { property: "og:title", content: `만남 후 피드백 — ${BRAND.name}` },
+      { property: "og:title", content: `만남 후 피드백 — ${BRAND.short}` },
       { property: "og:description", content: "선택 사항이며 상대에게 공개되지 않습니다." },
     ],
   }),

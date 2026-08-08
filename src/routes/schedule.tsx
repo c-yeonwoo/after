@@ -14,7 +14,7 @@ export const Route = createFileRoute("/schedule")({
   }),
   head: () => ({
     meta: [
-      { title: `날짜 정하기 — ${BRAND.name}` },
+      { title: `날짜 정하기 — ${BRAND.short}` },
       { name: "description", content: "상대가 보내온 가능한 날짜 중에서 하나를 고릅니다." },
     ],
   }),

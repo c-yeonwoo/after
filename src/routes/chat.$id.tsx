@@ -9,7 +9,7 @@ import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } f
 export const Route = createFileRoute("/chat/$id")({
   head: () => ({
     meta: [
-      { title: `대화 — ${BRAND.name}` },
+      { title: `대화 — ${BRAND.short}` },
       { name: "description", content: "약속을 잡는 데 필요한 만큼의 대화." },
     ],
   }),

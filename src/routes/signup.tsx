@@ -47,13 +47,13 @@ export const Route = createFileRoute("/signup")({
     search.edit === "1" || search.edit === true ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
+      { title: `가입 · 지역·직장 인증 — ${BRAND.short}` },
       {
         name: "description",
         content:
           "활동 지역 선택, 회사 이메일 직장 인증, 취향에 따라 달라지는 프로필 작성까지 몇 분이면 끝나는 가입 절차입니다.",
       },
-      { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.name}` },
+      { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.short}` },
       {
         property: "og:description",
         content: "활동 지역 선택 · 회사 이메일 인증 · 적응형 프로필 작성",

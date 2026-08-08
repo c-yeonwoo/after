@@ -11,7 +11,7 @@ import { usePhotoUrl } from "@/lib/photo";
 export const Route = createFileRoute("/me")({
   head: () => ({
     meta: [
-      { title: `나 — ${BRAND.name}` },
+      { title: `나 — ${BRAND.short}` },
       { name: "description", content: "내 프로필과 티켓, 설정을 한곳에서 관리합니다." },
     ],
   }),
@@ -46,7 +46,11 @@ function MePage() {
   const photo = usePhotoUrl(me?.photo_url);
 
   useEffect(() => {
-    if (ready && !me) navigate({ to: "/signup" });
+    // 랜딩으로 보낸다. /signup 으로 보내면 **로그아웃도 여기에 걸린다** —
+    // signOut() 직후 me 가 null 이 되는 순간 이 가드가 먼저 이겨서, 나가려던
+    // 사람이 "성별을 알려주세요(1/7)"에 떨어졌다(iOS 점검에서 발견).
+    // 랜딩은 로그인한 사람을 /home 으로 되돌려주므로 양쪽 다 안전하다.
+    if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
 
   useEffect(() => {

@@ -20,9 +20,9 @@ export function StepShell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
       <header
-        className="sticky top-0 z-20 bg-background/80 pb-2 backdrop-blur-xl"
+        className="z-20 shrink-0 bg-background pb-2"
         style={{
           paddingTop: "var(--safe-top)",
           paddingLeft: "max(env(safe-area-inset-left, 0px), 1rem)",
@@ -50,7 +50,7 @@ export function StepShell({
         </div>
       </header>
 
-      <main className="mx-auto w-full flex-1 px-5 py-10">
+      <main className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-10">
         <p className="text-sm font-semibold tracking-wide text-primary-strong">{eyebrow}</p>
         <h1 className="mt-3 text-2xl leading-snug font-semibold">{title}</h1>
         {description ? (
@@ -60,7 +60,7 @@ export function StepShell({
       </main>
 
       {footer ? (
-        <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
+        <footer className="shrink-0 border-t border-border bg-background">
           <div
             className="mx-auto px-5 pt-4"
             style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}
