@@ -64,6 +64,10 @@ function resendTransport(apiKey: string, from: string): MailTransport {
  * 찍히면 아웃박스가 거짓말을 하게 된다. 설정 누락은 에러로 드러낸다.
  */
 export function transportFromEnv(env: (k: string) => string | undefined): MailTransport {
+  // 발신 표시명은 사용자가 아는 이름(애프터)을 쓴다. 도메인이 aftersunset.kr
+  // 이라 표시명과 도메인이 같은 브랜드로 읽히고, 그게 기업 메일에서 신뢰를
+  // 얻는 조건이다 — 표시명과 도메인이 어긋나면 피싱 신호로 읽힌다.
+  // .local 기본값은 로컬 전용이다. 운영에서는 MAIL_FROM 을 반드시 넣는다.
   const from = env("MAIL_FROM") ?? "애프터 <no-reply@after.local>";
   const kind = env("MAIL_TRANSPORT") ?? (env("RESEND_API_KEY") ? "resend" : "mailpit");
 

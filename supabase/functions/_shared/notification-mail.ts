@@ -22,6 +22,8 @@ export type MailContext = {
 
 export type RenderedMail = { subject: string; text: string };
 
+// 메일 본문에서는 축약을 쓴다. 정식 명칭(애프터선셋)은 발신자 이름(MAIL_FROM)이
+// 이미 들고 있어서, 문장 안에서까지 6음절을 반복하면 장황해진다.
 const BRAND = "애프터";
 
 function greet(name: string | null) {

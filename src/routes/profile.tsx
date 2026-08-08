@@ -17,7 +17,7 @@ import { useMe } from "@/lib/me";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: `내 프로필 — ${BRAND.name}` },
+      { title: `내 프로필 — ${BRAND.short}` },
       { name: "description", content: "소개가 열린 상대에게 보이는 내 모습을 그대로 확인합니다." },
     ],
   }),
@@ -36,7 +36,7 @@ function ProfilePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (ready && !me) navigate({ to: "/signup" });
+    if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
 
   if (!me) {

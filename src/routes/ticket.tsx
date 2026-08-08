@@ -21,9 +21,9 @@ import {
 export const Route = createFileRoute("/ticket")({
   head: () => ({
     meta: [
-      { title: `만남 티켓 — ${BRAND.name}` },
+      { title: `만남 티켓 — ${BRAND.short}` },
       { name: "description", content: "만남 티켓을 쓰면 세라가 약속 조율을 시작합니다." },
-      { property: "og:title", content: `만남 티켓 — ${BRAND.name}` },
+      { property: "og:title", content: `만남 티켓 — ${BRAND.short}` },
       { property: "og:description", content: "티켓 한 장으로 한 번의 만남을 준비합니다." },
     ],
   }),

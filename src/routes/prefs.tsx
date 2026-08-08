@@ -28,9 +28,9 @@ export const Route = createFileRoute("/prefs")({
   }),
   head: () => ({
     meta: [
-      { title: `만남 선호 답하기 — ${BRAND.name}` },
+      { title: `만남 선호 답하기 — ${BRAND.short}` },
       { name: "description", content: "가능한 날짜와 편한 지역만 고르면 대화가 열립니다." },
-      { property: "og:title", content: `만남 선호 답하기 — ${BRAND.name}` },
+      { property: "og:title", content: `만남 선호 답하기 — ${BRAND.short}` },
       { property: "og:description", content: "짧게 몇 가지만 고르면 됩니다." },
     ],
   }),

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
-      { title: `티켓 상점 — ${BRAND.name}` },
+      { title: `티켓 상점 — ${BRAND.short}` },
       { name: "description", content: "만남 티켓을 구매합니다. 한 장이면 한 번의 만남." },
     ],
   }),

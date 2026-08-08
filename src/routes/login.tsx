@@ -13,7 +13,7 @@ import { useMe } from "@/lib/me";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: `로그인 — ${BRAND.name}` },
+      { title: `로그인 — ${BRAND.short}` },
       {
         name: "description",
         content: "가입한 회사 이메일로 인증 코드를 받아 다시 로그인합니다.",
@@ -41,12 +41,15 @@ function LoginPage() {
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background px-6">
-      <header className="flex items-center" style={{ paddingTop: "var(--safe-top)" }}>
+    <div className="flex h-full flex-col overflow-hidden bg-background px-6">
+      <header
+        className="flex shrink-0 items-center"
+        style={{ paddingTop: "var(--safe-top)" }}
+      >
         <Logo size="sm" />
       </header>
 
-      <main className="flex-1 pt-12">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-12">
         <h1 className="headline text-3xl">다시 오셨네요</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           가입할 때 인증한 회사 이메일로 코드를 보내드립니다. 비밀번호는 없습니다.
@@ -197,7 +200,10 @@ function LoginPage() {
         </div>
       </main>
 
-      <footer className="pt-8" style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}>
+      <footer
+        className="shrink-0 pt-8"
+        style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}
+      >
         <p className="text-center text-sm text-muted-foreground">
           아직 가입하지 않으셨나요?{" "}
           <Link to="/signup" className="font-semibold text-primary-strong underline">

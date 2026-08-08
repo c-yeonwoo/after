@@ -338,6 +338,39 @@
     border-color: var(--color-border);
   }
 
+  /*
+    문서는 스크롤하지 않는다. 스크롤은 각 화면의 본문이 맡는다.
+
+    문서가 스크롤되면 iOS 에서 두 가지가 깨진다.
+      1) 본문이 상태바·노치 아래로 지나가며 비친다(헤더가 반투명이라 더 도드라졌다).
+      2) 키보드가 뜰 때 WKWebView 가 입력창을 보이게 하려고 **문서 전체를 밀어
+         올린다.** 그래서 고정돼 있어야 할 헤더가 시계와 겹쳤다 — 채팅 화면에서
+         날짜 배너가 114pt 에서 46pt 로, 안전영역(59pt) 위까지 올라갔다.
+
+    문서에 스크롤할 여지를 없애면 둘 다 원인이 사라진다. 네이티브 앱이 상하단
+    바를 고정하고 가운데만 굴리는 것과 같은 구조다.
+  */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    /* 고무줄 바운스가 고정 바를 끌고 다니지 않게 한다 */
+    overscroll-behavior: none;
+  }
+
+  /*
+    네이티브에서 src/lib/keyboard.ts 가 실제 키보드 높이로 덮어쓴다.
+    웹에서는 계속 0 이라 이 값을 쓰는 계산식이 그냥 사라진다.
+
+    **:root 에만** 선언한다. 처음에 위의 `html, body` 묶음에 같이 넣었더니
+    body 가 제 몫으로 0px 을 다시 선언하는 꼴이 되어, keyboard.ts 가
+    documentElement 에 값을 꽂아도 body 에서 0 으로 덮여 자식에게 내려가지
+    않았다 — 상속이 한 칸에서 끊겼다.
+  */
+  :root {
+    --keyboard-height: 0px;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

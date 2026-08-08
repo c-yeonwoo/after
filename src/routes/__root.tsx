@@ -10,11 +10,11 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { MobileFrame } from "@/components/MobileFrame";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 import { MeProvider } from "@/lib/me";
+import { watchKeyboard } from "@/lib/keyboard";
 
 function NotFoundComponent() {
   return (
@@ -39,9 +39,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -92,7 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         property: "og:description",
         content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",
       },
-      { property: "og:site_name", content: "After" },
+      { property: "og:site_name", content: "After Sunset" },
 
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -157,6 +154,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // 네이티브에서만 붙는다. 키보드 높이를 --keyboard-height 로 내려보낸다.
+  useEffect(() => watchKeyboard(), []);
 
   return (
     <QueryClientProvider client={queryClient}>

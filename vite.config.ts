@@ -1,18 +1,126 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
-//     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
-//     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig, loadEnv, type PluginOption, type UserConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import tsConfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
-  },
-  vite: {
+/**
+ * 빌드 타깃이 둘이다.
+ *
+ *   npm run build      웹 — Nitro(Cloudflare Workers). SSR 로 HTML 을 런타임에 만든다.
+ *   npm run build:app  앱 — SPA 셸. Capacitor 가 번들할 정적 dist/ 를 만든다.
+ *
+ * 나눈 이유: Capacitor 는 webDir 의 정적 index.html 을 읽는데 Nitro 빌드는
+ * .output/ 에 진입점 HTML 이 없다(서버가 런타임에 만드니까). 그렇다고 웹까지
+ * SPA 로 내리면 랜딩의 SEO 를 버리게 된다 — 랜딩은 로그인 전 화면이라 SSR 이
+ * 실제로 값을 한다.
+ *
+ * 앱 쪽에서 SSR 을 잃는 대가는 작다. 로그인 뒤 화면은 전부 개인화된 데이터라
+ * 서버가 미리 그릴 것이 거의 없고, 셸은 __root 의 shellComponent(RootShell)가
+ * 담당한다.
+ *
+ * ── 이 파일의 유래 ──
+ *
+ * 원래 `@lovable.dev/vite-tanstack-config` 가 플러그인 구성을 통째로 들고 있었다.
+ * 그 래퍼를 걷어내면서 **우리에게 필요한 것만** 여기로 옮겼다. 래퍼가 함께 넣던
+ * Lovable 전용 플러그인(에디터 브리지, HMR 게이트, 샌드박스 감지, 빌드 진단,
+ * 에셋 프록시)은 우리 배포 경로에서 하는 일이 없어 가져오지 않았다.
+ */
+export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
+  const forApp = process.env.BUILD_TARGET === "app";
+  const isDevBuild = command === "build" && mode === "development";
+
+  /*
+    VITE_* 를 import.meta.env 에 **명시적으로** 주입한다.
+
+    Vite 가 클라이언트 번들에는 알아서 넣어 주지만, TanStack Start 의 서버 환경과
+    Nitro 빌드에는 자동으로 닿지 않는다. 이게 없으면 `VITE_SUPABASE_URL 가 설정되지
+    않았습니다`(src/lib/supabase.ts)로 런타임에 죽는다.
+  */
+  const envDefine = Object.fromEntries(
+    Object.entries(loadEnv(mode, process.cwd(), "VITE_")).map(([key, value]) => [
+      `import.meta.env.${key}`,
+      JSON.stringify(value),
+    ]),
+  );
+
+  const plugins: PluginOption[] = [
+    tailwindcss(),
+    tsConfigPaths(),
+    tanstackStart({
+      // 서버 전용 모듈이 클라이언트 번들로 새는 것을 빌드 단계에서 막는다.
+      importProtection: {
+        behavior: "error",
+        client: { files: ["**/server/**"], specifiers: ["server-only"] },
+      },
+      // TanStack Start 의 서버 엔트리를 src/server.ts(SSR 에러 래퍼)로 돌린다.
+      server: { entry: "server" },
+
+      // 셸 파일명을 index.html 로 바꾼다. 기본값 "/_shell" 은 웹 서버가 미지의
+      // 경로를 셸로 넘겨주는 구성을 전제한 이름인데, Capacitor 는 webDir 에서
+      // index.html 을 직접 연다 — 이름이 다르면 빈 화면이 뜬다.
+      ...(forApp ? { spa: { enabled: true, prerender: { outputPath: "/index" } } } : {}),
+    }),
+    viteReact(),
+  ];
+
+  /*
+    배포 플러그인은 웹 빌드에만 넣는다.
+
+    앱 빌드에서 켜 두면 출력이 .output/ 로 가는데 TanStack Start 의 프리렌더러는
+    dist/server/server.js 를 찾기 때문에 "Cannot find module .../dist/server/server.js"
+    로 프리렌더가 통째로 죽는다.
+  */
+  if (command === "build" && !forApp) {
+    const { nitro } = await import("nitro/vite");
+    plugins.push(nitro({ preset: "cloudflare-module" }));
+  }
+
+  return {
+    define: envDefine,
+
+    // 개발 모드 빌드(= build:app)에서는 프로덕션 최적화를 걸지 않는다.
+    ...(isDevBuild
+      ? {
+          environments: {
+            client: { define: { "process.env.NODE_ENV": JSON.stringify("development") } },
+          },
+          /*
+            keepNames 는 esbuild 옵션인데 Vite 의 ESBuildOptions 타입에는 없다
+            (통과만 시킨다). 컴포넌트·함수 이름이 살아 있어야 개발 빌드의
+            스택트레이스가 읽히므로 유지하고, 타입만 좁힌다.
+          */
+          esbuild: { keepNames: true } as UserConfig["esbuild"],
+        }
+      : {}),
+
+    css: { transformer: "lightningcss" as const },
+
+    resolve: {
+      // tsconfig 의 "@/*" 와 짝을 맞춘다. tsConfigPaths 가 있어도 SSR·Nitro 환경에서
+      // 해석이 갈리는 경우가 있어 명시해 둔다.
+      alias: { "@": `${process.cwd()}/src` },
+      // 같은 패키지가 두 벌 로드되면 React 훅과 QueryClient 컨텍스트가 깨진다.
+      dedupe: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@tanstack/react-query",
+        "@tanstack/query-core",
+      ],
+    },
+
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+      ],
+    },
+
     server: {
       proxy: {
         // 개발 편의: 로컬 Mailpit 의 메일함을 같은 오리진으로 노출한다.
@@ -24,9 +132,11 @@ export default defineConfig({
         "/__dev/mail": {
           target: "http://127.0.0.1:55324",
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/__dev\/mail/, ""),
+          rewrite: (path: string) => path.replace(/^\/__dev\/mail/, ""),
         },
       },
     },
-  },
+
+    plugins,
+  };
 });

@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: `환경설정 — ${BRAND.name}` },
+      { title: `환경설정 — ${BRAND.short}` },
       { name: "description", content: "화면 테마와 알림 수신을 설정합니다." },
     ],
   }),
@@ -44,7 +44,7 @@ function SettingsPage() {
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
 
   useEffect(() => {
-    if (ready && !me) navigate({ to: "/signup" });
+    if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
 
   if (!me) {

@@ -51,9 +51,9 @@ function Landing() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background pb-4">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
       <header
-        className="sticky top-0 z-20 bg-background/85 px-6 pb-3 backdrop-blur-xl"
+        className="z-20 shrink-0 bg-background px-6 pb-3"
         style={{ paddingTop: "var(--safe-top)" }}
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
@@ -75,7 +75,7 @@ function Landing() {
         </div>
       </header>
 
-      <main className="flex-1 px-6">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
         <section className="pt-8 pb-10">
           <h1 className="wordmark text-5xl leading-[0.95] uppercase">
             After Work
@@ -110,7 +110,7 @@ function Landing() {
       </main>
 
       <div
-        className="sticky bottom-0 z-10 mt-8 bg-background/95 px-6 pt-4 backdrop-blur"
+        className="z-10 shrink-0 bg-background px-6 pt-4"
         style={{ paddingBottom: "calc(var(--safe-bottom) + 1rem)" }}
       >
         <button
