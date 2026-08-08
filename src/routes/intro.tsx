@@ -150,81 +150,81 @@ function IntroPage() {
   */
   const actions = maleAnswered ? null : (
     <div className="flex flex-col gap-2">
-        <div className="flex gap-2">
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="lg"
+          className="flex-1"
+          disabled={busy}
+          onClick={async () => {
+            if (isMale) {
+              // 되돌릴 수 없는 배제(D3). 확인 없이 진행하지 않는다 — O15.
+              setConfirmPassOpen(true);
+              return;
+            }
+            setBusy(true);
+            try {
+              await submitAffinity(candidate.id!, "pass");
+              await load();
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <X className="size-4" aria-hidden="true" />
+          {/*
+              양쪽 다 되돌릴 수 없다. 남성은 pass_intro() → intro_exclusions 에
+              append-only 로 기록되고, 여성은 affinities 의 unique(from_id,to_id)
+              때문에 재평가가 막히며 그 상대의 소개는 영영 열리지 않는다.
+              "다음에"는 한국어로 "나중에 다시"라 결과와 정반대였다(진단 UX-4).
+            */}
+          {isMale ? "이 소개 넘기기" : "관심 없어요"}
+        </Button>
+        {isMale ? (
+          <Button size="lg" className="flex-1" onClick={() => navigate({ to: "/ticket" })}>
+            <Ticket className="size-4" aria-hidden="true" />
+            만남 티켓 쓰기
+          </Button>
+        ) : (
           <Button
-            variant="outline"
             size="lg"
             className="flex-1"
             disabled={busy}
             onClick={async () => {
-              if (isMale) {
-                // 되돌릴 수 없는 배제(D3). 확인 없이 진행하지 않는다 — O15.
-                setConfirmPassOpen(true);
-                return;
-              }
               setBusy(true);
               try {
-                await submitAffinity(candidate.id!, "pass");
+                await submitAffinity(candidate.id!, "like");
+                toast.success("호감을 전달했습니다.");
                 await load();
               } finally {
                 setBusy(false);
               }
             }}
           >
-            <X className="size-4" aria-hidden="true" />
-            {/*
-              양쪽 다 되돌릴 수 없다. 남성은 pass_intro() → intro_exclusions 에
-              append-only 로 기록되고, 여성은 affinities 의 unique(from_id,to_id)
-              때문에 재평가가 막히며 그 상대의 소개는 영영 열리지 않는다.
-              "다음에"는 한국어로 "나중에 다시"라 결과와 정반대였다(진단 UX-4).
-            */}
-            {isMale ? "이 소개 넘기기" : "관심 없어요"}
+            <Heart className="size-4" aria-hidden="true" />
+            좋아요
           </Button>
-          {isMale ? (
-            <Button size="lg" className="flex-1" onClick={() => navigate({ to: "/ticket" })}>
-              <Ticket className="size-4" aria-hidden="true" />
-              만남 티켓 쓰기
-            </Button>
-          ) : (
-            <Button
-              size="lg"
-              className="flex-1"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  await submitAffinity(candidate.id!, "like");
-                  toast.success("호감을 전달했습니다.");
-                  await load();
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <Heart className="size-4" aria-hidden="true" />
-              좋아요
-            </Button>
-          )}
-        </div>
-        {/*
+        )}
+      </div>
+      {/*
           여성은 평가 건수가 많아 매번 확인 다이얼로그를 띄우면 벌처럼 느껴진다.
           대신 되돌릴 수 없다는 사실만 상시 노출한다 — 남성 쪽은 단발 결정이라
           다이얼로그를 유지한다.
         */}
-        {isMale ? null : (
-          <p className="mt-2 text-center text-2xs text-muted-foreground">
-            {/*
+      {isMale ? null : (
+        <p className="mt-2 text-center text-2xs text-muted-foreground">
+          {/*
               남은 수를 말해 준다. remainingCandidates() 는 S10 에서 만들어 뒀는데
               어느 화면도 쓰지 않고 있었다 — 소진이 임박한 걸 알 방법이 없었다.
               되돌릴 수 없다는 고지는 그대로 유지한다.
             */}
-            {remaining !== null && remaining <= 1
-              ? "지금 보시는 분이 마지막입니다. 한 번 답하면 다시 소개되지 않습니다."
-              : remaining !== null
-                ? `한 번 답하면 다시 소개되지 않습니다. 이분 외 ${remaining - 1}명 남았어요.`
-                : "한 번 답하면 이분은 다시 소개되지 않습니다."}
-          </p>
-        )}
+          {remaining !== null && remaining <= 1
+            ? "지금 보시는 분이 마지막입니다. 한 번 답하면 다시 소개되지 않습니다."
+            : remaining !== null
+              ? `한 번 답하면 다시 소개되지 않습니다. 이분 외 ${remaining - 1}명 남았어요.`
+              : "한 번 답하면 이분은 다시 소개되지 않습니다."}
+        </p>
+      )}
     </div>
   );
 
@@ -289,7 +289,6 @@ function IntroPage() {
           </Button>
         </div>
       ) : null}
-
 
       <AlertDialog open={confirmPassOpen} onOpenChange={setConfirmPassOpen}>
         <AlertDialogContent>
