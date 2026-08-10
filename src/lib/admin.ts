@@ -112,6 +112,8 @@ export type MemberFilters = {
   gender?: Gender;
   state?: AccountState;
   hub?: string;
+  /** true = 쉬는 중만, false = 활동 중만, undefined = 전체 */
+  paused?: boolean;
   query?: string;
 };
 
@@ -120,6 +122,7 @@ export async function fetchMembers(f: MemberFilters = {}): Promise<AdminMember[]
     p_gender: f.gender ?? undefined,
     p_state: f.state ?? undefined,
     p_hub: f.hub ?? undefined,
+    p_paused: f.paused ?? undefined,
     p_query: f.query?.trim() ? f.query.trim() : undefined,
   });
   if (error) throw error;
