@@ -16,6 +16,7 @@ export default tseslint.config(
       // routeTree.gen.ts:  TanStack Router 파일 기반 라우팅
       "src/lib/database.types.ts",
       "src/routeTree.gen.ts",
+      "src/routeTree.app.gen.ts",
       // 워크트리는 레포 안에 소스 사본을 통째로 만든다. 지우기 전까지 eslint 가
       // 그 사본까지 검사해서 lint 가 빨갛게 뜬다(실제로 1,255건이 떴다).
       // .gitignore 에는 이미 있지만 eslint 는 그걸 읽지 않는다.

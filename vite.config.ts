@@ -60,6 +60,33 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
       // 경로를 셸로 넘겨주는 구성을 전제한 이름인데, Capacitor 는 webDir 에서
       // index.html 을 직접 연다 — 이름이 다르면 빈 화면이 뜬다.
       ...(forApp ? { spa: { enabled: true, prerender: { outputPath: "/index" } } } : {}),
+
+      /*
+        운영자 화면은 **앱 번들에 넣지 않는다.**
+
+        Capacitor 빌드는 웹 자산을 통째로 앱 안에 복사하므로, 여기에 어드민이
+        섞이면 번들이 커지고 심사에서 "숨은 기능"으로 오해받을 여지도 생긴다.
+        운영자는 웹으로만 들어온다.
+
+        라우트 파일명이 `admin.` 으로 시작하는 것을 앱 빌드에서 제외한다.
+        서버 권한은 어차피 RLS(is_admin())가 쥐고 있어서 이건 노출 축소이지
+        보안 장치가 아니다 — 보안은 DB 에 있다.
+
+        생성 경로를 갈라 두는 것이 중요하다. routeTree.gen.ts 는 **커밋되는
+        파일**이라, 앱 빌드가 그걸 덮어쓰면 admin 라우트가 사라진 버전이 남고
+        tsc 가 admin.tsx 에서 실패한다 — 어느 빌드를 마지막에 돌렸느냐에 따라
+        타입 검사 결과가 뒤집힌다. 앱 빌드는 자기 트리를 따로 만든다.
+      */
+      ...(forApp
+        ? {
+            router: {
+              routeFileIgnorePattern: "^admin\\.",
+              // srcDirectory 기준 상대 경로다(start-plugin-core/schema.js).
+              // "src/" 를 붙이면 src/src/... 로 해석돼 조용히 무시된다.
+              generatedRouteTree: "routeTree.app.gen.ts",
+            },
+          }
+        : {}),
     }),
     viteReact(),
   ];
@@ -99,7 +126,27 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
     resolve: {
       // tsconfig 의 "@/*" 와 짝을 맞춘다. tsConfigPaths 가 있어도 SSR·Nitro 환경에서
       // 해석이 갈리는 경우가 있어 명시해 둔다.
-      alias: { "@": `${process.cwd()}/src` },
+      /*
+        배열 형태를 쓴다 — 정규식 find 가 필요하기 때문이다.
+
+        앱 빌드는 admin 이 빠진 라우트 트리를 쓴다. router.tsx 가
+        "./routeTree.gen" 을 정적으로 import 하고 있어서 트리 파일만 따로 만들어
+        봐야 아무도 쓰지 않는다(실제로 앱 번들에 어드민이 그대로 들어갔다).
+        조건부 import 는 정적 분석 대상이라 못 쓰므로 여기서 갈아끼운다.
+      */
+      alias: [
+        ...(forApp
+          ? [
+              {
+                find: /^\.\/routeTree\.gen$/,
+                replacement: `${process.cwd()}/src/routeTree.app.gen.ts`,
+              },
+            ]
+          : []),
+        // tsconfig 의 "@/*" 와 짝을 맞춘다. tsConfigPaths 가 있어도 SSR·Nitro
+        // 환경에서 해석이 갈리는 경우가 있어 명시해 둔다.
+        { find: "@", replacement: `${process.cwd()}/src` },
+      ],
       // 같은 패키지가 두 벌 로드되면 React 훅과 QueryClient 컨텍스트가 깨진다.
       dedupe: [
         "react",

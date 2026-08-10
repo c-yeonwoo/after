@@ -34,6 +34,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          kind: string
+          note: string
+          target_ref: string | null
+          target_user: string | null
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          note: string
+          target_ref?: string | null
+          target_user?: string | null
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string
+          target_ref?: string | null
+          target_user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_target_user_fkey"
+            columns: ["target_user"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_target_user_fkey"
+            columns: ["target_user"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_target_user_fkey"
+            columns: ["target_user"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affinities: {
         Row: {
           created_at: string
@@ -95,6 +168,126 @@ export type Database = {
           {
             foreignKeyName: "affinities_to_id_fkey"
             columns: ["to_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_reports: {
+        Row: {
+          accused_id: string
+          created_at: string
+          detail: string
+          id: string
+          kind: Database["public"]["Enums"]["report_kind"]
+          meeting_id: string | null
+          message_id: string | null
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          state: Database["public"]["Enums"]["report_state"]
+        }
+        Insert: {
+          accused_id: string
+          created_at?: string
+          detail: string
+          id?: string
+          kind: Database["public"]["Enums"]["report_kind"]
+          meeting_id?: string | null
+          message_id?: string | null
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          state?: Database["public"]["Enums"]["report_state"]
+        }
+        Update: {
+          accused_id?: string
+          created_at?: string
+          detail?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["report_kind"]
+          meeting_id?: string | null
+          message_id?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          state?: Database["public"]["Enums"]["report_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_accused_id_fkey"
+            columns: ["accused_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_accused_id_fkey"
+            columns: ["accused_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_accused_id_fkey"
+            columns: ["accused_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
@@ -644,6 +837,7 @@ export type Database = {
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
+          role: string
           smoking: string | null
           terms_agreed_at: string | null
           topic_note: string | null
@@ -677,6 +871,7 @@ export type Database = {
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
+          role?: string
           smoking?: string | null
           terms_agreed_at?: string | null
           topic_note?: string | null
@@ -710,6 +905,7 @@ export type Database = {
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
+          role?: string
           smoking?: string | null
           terms_agreed_at?: string | null
           topic_note?: string | null
@@ -998,6 +1194,25 @@ export type Database = {
       }
     }
     Functions: {
+      admin_dashboard: { Args: never; Returns: Json }
+      admin_reports: {
+        Args: { p_state?: Database["public"]["Enums"]["report_state"] }
+        Returns: {
+          accused_id: string
+          accused_name: string
+          accused_state: Database["public"]["Enums"]["account_state"]
+          created_at: string
+          detail: string
+          id: string
+          kind: Database["public"]["Enums"]["report_kind"]
+          meeting_id: string
+          message_body: string
+          reporter_id: string
+          reporter_name: string
+          resolved_at: string
+          state: Database["public"]["Enums"]["report_state"]
+        }[]
+      }
       apply_no_show_confirmed: {
         Args: { p_report_id: string }
         Returns: {
@@ -1016,6 +1231,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      block_user: {
+        Args: { p_reason?: string; p_target: string }
+        Returns: undefined
       }
       confirm_meeting: {
         Args: {
@@ -1066,6 +1285,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      drain_notification_outbox: { Args: never; Returns: undefined }
       enqueue_feedback_due: { Args: never; Returns: number }
       enqueue_meeting_notification: {
         Args: {
@@ -1083,6 +1303,7 @@ export type Database = {
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
       fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
       home_state: { Args: never; Returns: Json }
+      is_admin: { Args: never; Returns: boolean }
       is_channel_open: {
         Args: {
           p_channel: Database["public"]["Enums"]["msg_channel"]
@@ -1222,6 +1443,7 @@ export type Database = {
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
+          role: string
           smoking: string | null
           terms_agreed_at: string | null
           topic_note: string | null
@@ -1256,6 +1478,33 @@ export type Database = {
         }
       }
       remaining_candidates: { Args: never; Returns: number }
+      report_content: {
+        Args: {
+          p_detail: string
+          p_kind: Database["public"]["Enums"]["report_kind"]
+          p_message_id?: string
+          p_target: string
+        }
+        Returns: {
+          accused_id: string
+          created_at: string
+          detail: string
+          id: string
+          kind: Database["public"]["Enums"]["report_kind"]
+          meeting_id: string | null
+          message_id: string | null
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          state: Database["public"]["Enums"]["report_state"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "content_reports"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       report_no_show: {
         Args: { p_meeting_id: string }
         Returns: {
@@ -1271,6 +1520,33 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "no_show_reports"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      resolve_content_report: {
+        Args: {
+          p_ban?: boolean
+          p_note: string
+          p_report_id: string
+          p_upheld: boolean
+        }
+        Returns: {
+          accused_id: string
+          created_at: string
+          detail: string
+          id: string
+          kind: Database["public"]["Enums"]["report_kind"]
+          meeting_id: string | null
+          message_id: string | null
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          state: Database["public"]["Enums"]["report_state"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "content_reports"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1323,6 +1599,7 @@ export type Database = {
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
+          role: string
           smoking: string | null
           terms_agreed_at: string | null
           topic_note: string | null
@@ -1335,6 +1612,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      sever_active_meeting: {
+        Args: { p_a: string; p_b: string; p_reason: string }
+        Returns: string
       }
       submit_meeting_prefs: {
         Args: { p_meeting_id: string; p_prefs: Json }
@@ -1391,6 +1672,7 @@ export type Database = {
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
+          role: string
           smoking: string | null
           terms_agreed_at: string | null
           topic_note: string | null
@@ -1451,6 +1733,7 @@ export type Database = {
         | "prefs_submitted"
         | "meeting_confirmed"
         | "feedback_due"
+      report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
       ticket_state: "unused" | "used" | "refunded"
     }
@@ -1594,6 +1877,7 @@ export const Constants = {
         "meeting_confirmed",
         "feedback_due",
       ],
+      report_kind: ["profile", "message"],
       report_state: ["pending", "confirmed", "dismissed"],
       ticket_state: ["unused", "used", "refunded"],
     },

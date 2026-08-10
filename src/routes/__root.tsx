@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useRouterState,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -155,6 +156,17 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  /*
+    운영자 화면은 모바일 프레임에 가두지 않는다.
+
+    MobileFrame 은 어떤 화면이든 430px 로 묶는데, 운영 화면은 표와 지표를
+    늘어놓는 자리라 그 폭에서 읽을 수가 없다. 실제로 max-w-5xl 을 줘도 프레임이
+    이겨서 무의미해졌다. 운영자는 데스크톱에서 본다.
+  */
+  const isAdminRoute = useRouterState({
+    select: (s) => s.location.pathname.startsWith("/admin"),
+  });
+
   // 네이티브에서만 붙는다. 키보드 높이를 --keyboard-height 로 내려보낸다.
   useEffect(() => watchKeyboard(), []);
 
@@ -163,9 +175,13 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <ThemeProvider>
         <MeProvider>
-          <MobileFrame>
+          {isAdminRoute ? (
             <Outlet />
-          </MobileFrame>
+          ) : (
+            <MobileFrame>
+              <Outlet />
+            </MobileFrame>
+          )}
         </MeProvider>
       </ThemeProvider>
       <Toaster position="top-center" />
