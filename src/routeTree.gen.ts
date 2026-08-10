@@ -27,7 +27,12 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketRouteImport } from './routes/ticket'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminMeetingsRouteImport } from './routes/admin.meetings'
+import { Route as AdminMembersRouteImport } from './routes/admin.members'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
+import { Route as AdminMembersIdRouteImport } from './routes/admin.members.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -119,15 +124,40 @@ const TicketRoute = TicketRouteImport.update({
   path: '/ticket',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMeetingsRoute = AdminMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMembersRoute = AdminMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ChatIdRoute = ChatIdRouteImport.update({
   id: '/chat/$id',
   path: '/chat/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminMembersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -144,11 +174,15 @@ export interface FileRoutesByFullPath {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/admin/meetings': typeof AdminMeetingsRoute
+  '/admin/members': typeof AdminMembersRouteWithChildren
+  '/admin/reports': typeof AdminReportsRoute
   '/chat/$id': typeof ChatIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/members/$id': typeof AdminMembersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/chats': typeof ChatsRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -165,12 +199,17 @@ export interface FileRoutesByTo {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/admin/meetings': typeof AdminMeetingsRoute
+  '/admin/members': typeof AdminMembersRouteWithChildren
+  '/admin/reports': typeof AdminReportsRoute
   '/chat/$id': typeof ChatIdRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/members/$id': typeof AdminMembersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -187,7 +226,12 @@ export interface FileRoutesById {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/admin/meetings': typeof AdminMeetingsRoute
+  '/admin/members': typeof AdminMembersRouteWithChildren
+  '/admin/reports': typeof AdminReportsRoute
   '/chat/$id': typeof ChatIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/members/$id': typeof AdminMembersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -210,11 +254,15 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/ticket'
+    | '/admin/meetings'
+    | '/admin/members'
+    | '/admin/reports'
     | '/chat/$id'
+    | '/admin/'
+    | '/admin/members/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/chats'
     | '/feedback'
     | '/home'
@@ -231,7 +279,12 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/ticket'
+    | '/admin/meetings'
+    | '/admin/members'
+    | '/admin/reports'
     | '/chat/$id'
+    | '/admin'
+    | '/admin/members/$id'
   id:
     | '__root__'
     | '/'
@@ -252,12 +305,17 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/ticket'
+    | '/admin/meetings'
+    | '/admin/members'
+    | '/admin/reports'
     | '/chat/$id'
+    | '/admin/'
+    | '/admin/members/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ChatsRoute: typeof ChatsRoute
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
@@ -405,6 +463,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TicketRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/meetings': {
+      id: '/admin/meetings'
+      path: '/meetings'
+      fullPath: '/admin/meetings'
+      preLoaderRoute: typeof AdminMeetingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/members': {
+      id: '/admin/members'
+      path: '/members'
+      fullPath: '/admin/members'
+      preLoaderRoute: typeof AdminMembersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/chat/$id': {
       id: '/chat/$id'
       path: '/chat/$id'
@@ -412,12 +498,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/members/$id': {
+      id: '/admin/members/$id'
+      path: '/$id'
+      fullPath: '/admin/members/$id'
+      preLoaderRoute: typeof AdminMembersIdRouteImport
+      parentRoute: typeof AdminMembersRoute
+    }
   }
 }
 
+interface AdminMembersRouteChildren {
+  AdminMembersIdRoute: typeof AdminMembersIdRoute
+}
+
+const AdminMembersRouteChildren: AdminMembersRouteChildren = {
+  AdminMembersIdRoute: AdminMembersIdRoute,
+}
+
+const AdminMembersRouteWithChildren = AdminMembersRoute._addFileChildren(
+  AdminMembersRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminMeetingsRoute: typeof AdminMeetingsRoute
+  AdminMembersRoute: typeof AdminMembersRouteWithChildren
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminMeetingsRoute: AdminMeetingsRoute,
+  AdminMembersRoute: AdminMembersRouteWithChildren,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   ChatsRoute: ChatsRoute,
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,

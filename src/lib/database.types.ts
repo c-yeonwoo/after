@@ -1194,7 +1194,78 @@ export type Database = {
       }
     }
     Functions: {
+      admin_cancel_meeting: {
+        Args: { p_meeting: string; p_note: string; p_refund?: boolean }
+        Returns: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          completed_by: string[]
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          intro_id: string
+          place_kind: string | null
+          place_name: string | null
+          prefs: Json | null
+          prefs_submitted_at: string | null
+          private_opens_at: string | null
+          scheduled_at: string | null
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_dashboard: { Args: never; Returns: Json }
+      admin_meetings: {
+        Args: { p_state?: string }
+        Returns: {
+          cancel_reason: string
+          cancelled_at: string
+          completed_at: string
+          confirmed_at: string
+          created_at: string
+          female_id: string
+          female_name: string
+          id: string
+          male_id: string
+          male_name: string
+          place_name: string
+          prefs_submitted_at: string
+          scheduled_at: string
+          ticket_id: string
+          ticket_state: Database["public"]["Enums"]["ticket_state"]
+        }[]
+      }
+      admin_member_detail: { Args: { p_user: string }; Returns: Json }
+      admin_members: {
+        Args: {
+          p_gender?: Database["public"]["Enums"]["gender"]
+          p_hub?: string
+          p_query?: string
+          p_state?: Database["public"]["Enums"]["account_state"]
+        }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          company_email: string
+          created_at: string
+          gender: Database["public"]["Enums"]["gender"]
+          has_active_meeting: boolean
+          hub_id: string
+          id: string
+          name: string
+          onboarding_step: number
+          paused_at: string
+          pending_reports_against: number
+          photo_url: string
+          role: string
+          unused_tickets: number
+        }[]
+      }
       admin_reports: {
         Args: { p_state?: Database["public"]["Enums"]["report_state"] }
         Returns: {
@@ -1213,6 +1284,53 @@ export type Database = {
           resolved_at: string
           state: Database["public"]["Enums"]["report_state"]
         }[]
+      }
+      admin_set_account_state: {
+        Args: {
+          p_note: string
+          p_state: Database["public"]["Enums"]["account_state"]
+          p_user: string
+        }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string | null
+          job: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          onboarding_step: number
+          paused_at: string | null
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       apply_no_show_confirmed: {
         Args: { p_report_id: string }

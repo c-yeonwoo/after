@@ -11,7 +11,67 @@ import type { Database } from "@/lib/database.types";
  */
 
 export type ReportState = Database["public"]["Enums"]["report_state"];
+export type Gender = Database["public"]["Enums"]["gender"];
+export type AccountState = Database["public"]["Enums"]["account_state"];
 export type AdminReport = Database["public"]["Functions"]["admin_reports"]["Returns"][number];
+export type AdminMember = Database["public"]["Functions"]["admin_members"]["Returns"][number];
+export type AdminMeeting = Database["public"]["Functions"]["admin_meetings"]["Returns"][number];
+
+/** 만남 목록 필터. 서버가 같은 문자열을 검증하니 여기서 벗어나면 22023 이다. */
+export type MeetingFilter = "active" | "confirmed" | "completed" | "cancelled";
+
+/*
+  회원 상세는 jsonb 한 덩이로 온다. 생성된 타입은 Json 이라 그대로는 못 쓴다 —
+  화면이 기대하는 모양을 여기 한 곳에 적어 둔다. 서버가 to_jsonb(profiles) 를
+  그대로 내보내므로 profile 은 Row 타입을 재사용한다.
+*/
+export type AdminMemberDetail = {
+  profile: Database["public"]["Tables"]["profiles"]["Row"];
+  tickets: {
+    id: string;
+    kind: string;
+    state: Database["public"]["Enums"]["ticket_state"];
+    price_krw: number;
+    issued_at: string;
+    used_at: string | null;
+    refunded_at: string | null;
+  }[];
+  meetings: {
+    id: string;
+    counterpart: string | null;
+    counterpart_id: string;
+    role: "male" | "female";
+    scheduled_at: string | null;
+    place_name: string | null;
+    confirmed_at: string | null;
+    completed_at: string | null;
+    cancelled_at: string | null;
+    cancel_reason: string | null;
+    created_at: string;
+  }[];
+  reports_against: {
+    id: string;
+    kind: Database["public"]["Enums"]["report_kind"];
+    state: ReportState;
+    detail: string;
+    created_at: string;
+    reporter_name: string | null;
+  }[];
+  reports_filed: {
+    id: string;
+    kind: Database["public"]["Enums"]["report_kind"];
+    state: ReportState;
+    detail: string;
+    created_at: string;
+    accused_name: string | null;
+  }[];
+  admin_actions: {
+    kind: string;
+    note: string;
+    created_at: string;
+    actor_name: string | null;
+  }[];
+};
 
 export type AdminDashboard = {
   members: { female: number; male: number; paused: number; banned: number };
@@ -46,10 +106,76 @@ export async function fetchReports(state?: ReportState): Promise<AdminReport[]> 
   return data ?? [];
 }
 
+// ─────────────────── 회원 ───────────────────
+
+export type MemberFilters = {
+  gender?: Gender;
+  state?: AccountState;
+  hub?: string;
+  query?: string;
+};
+
+export async function fetchMembers(f: MemberFilters = {}): Promise<AdminMember[]> {
+  const { data, error } = await supabase.rpc("admin_members", {
+    p_gender: f.gender ?? undefined,
+    p_state: f.state ?? undefined,
+    p_hub: f.hub ?? undefined,
+    p_query: f.query?.trim() ? f.query.trim() : undefined,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchMemberDetail(userId: string): Promise<AdminMemberDetail> {
+  const { data, error } = await supabase.rpc("admin_member_detail", { p_user: userId });
+  if (error) throw error;
+  return data as unknown as AdminMemberDetail;
+}
+
 /**
- * 이미 다른 운영자가 처리한 신고를 또 처리하려 했을 때 서버가 주는 코드.
- * 운영자 둘이 같은 목록을 보고 있으면 반드시 일어나는 정상적인 경합이라,
- * 장애가 아니라 "늦었다" 로 안내해야 한다.
+ * 정지·해제. 정지하면 서버가 진행 중 만남을 끊고, 티켓 주인이 위반자가 아니면
+ * 환불까지 한다 — 화면에서 따로 부를 것이 없다.
+ */
+export async function setAccountState(
+  userId: string,
+  state: AccountState,
+  note: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_set_account_state", {
+    p_user: userId,
+    p_state: state,
+    p_note: note,
+  });
+  if (error) throw error;
+}
+
+// ─────────────────── 만남 ───────────────────
+
+export async function fetchMeetings(state?: MeetingFilter): Promise<AdminMeeting[]> {
+  const { data, error } = await supabase.rpc("admin_meetings", {
+    p_state: state ?? undefined,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function cancelMeeting(
+  meetingId: string,
+  note: string,
+  refund: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_cancel_meeting", {
+    p_meeting: meetingId,
+    p_note: note,
+    p_refund: refund,
+  });
+  if (error) throw error;
+}
+
+/**
+ * 이미 처리된 대상을 또 건드렸을 때 서버가 주는 코드. 운영자 둘이 같은 목록을
+ * 보고 있으면 반드시 일어나는 정상적인 경합이라, 장애가 아니라 "늦었다" 로
+ * 안내해야 한다. 신고 처리와 만남 취소가 같은 규약을 쓴다.
  */
 export const ALREADY_RESOLVED = "PT409";
 
