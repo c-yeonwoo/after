@@ -25,8 +25,8 @@ values
 
 -- ─────────────── 가격 ───────────────
 
-select is(ticket_bundle_amount(1::smallint), 30000, 'T1 1장 30,000원');
-select is(ticket_bundle_amount(3::smallint), 85000, 'T2 3장 85,000원');
+select is(ticket_bundle_amount(1::smallint, 'meeting'), 30000, 'T1 1장 30,000원');
+select is(ticket_bundle_amount(3::smallint, 'meeting'), 85000, 'T2 3장 85,000원');
 
 select is(
   (select count(*)::int from ticket_bundles()),

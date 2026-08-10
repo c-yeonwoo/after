@@ -953,6 +953,7 @@ export type Database = {
           amount: number
           confirmed_at: string | null
           created_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity: number
           state: string
@@ -962,6 +963,7 @@ export type Database = {
           amount: number
           confirmed_at?: string | null
           created_at?: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity?: number
           state?: string
@@ -971,6 +973,7 @@ export type Database = {
           amount?: number
           confirmed_at?: string | null
           created_at?: string
+          kind?: Database["public"]["Enums"]["ticket_kind"]
           order_id?: string
           quantity?: number
           state?: string
@@ -1005,6 +1008,7 @@ export type Database = {
           id: string
           intro_id: string | null
           issued_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
           refunded_at: string | null
@@ -1016,6 +1020,7 @@ export type Database = {
           id?: string
           intro_id?: string | null
           issued_at?: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id?: string | null
           price_krw?: number
           refunded_at?: string | null
@@ -1027,6 +1032,7 @@ export type Database = {
           id?: string
           intro_id?: string | null
           issued_at?: string
+          kind?: Database["public"]["Enums"]["ticket_kind"]
           payment_id?: string | null
           price_krw?: number
           refunded_at?: string | null
@@ -1525,11 +1531,15 @@ export type Database = {
         }
       }
       create_ticket_order: {
-        Args: { p_quantity?: number }
+        Args: {
+          p_kind?: Database["public"]["Enums"]["ticket_kind"]
+          p_quantity?: number
+        }
         Returns: {
           amount: number
           confirmed_at: string | null
           created_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity: number
           state: string
@@ -1575,11 +1585,17 @@ export type Database = {
         Returns: boolean
       }
       issue_ticket: {
-        Args: { p_payment_id: string; p_price_krw?: number; p_user_id: string }
+        Args: {
+          p_kind?: Database["public"]["Enums"]["ticket_kind"]
+          p_payment_id: string
+          p_price_krw?: number
+          p_user_id: string
+        }
         Returns: {
           id: string
           intro_id: string | null
           issued_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
           refunded_at: string | null
@@ -1724,6 +1740,7 @@ export type Database = {
           id: string
           intro_id: string | null
           issued_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
           refunded_at: string | null
@@ -1955,9 +1972,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      ticket_bundle_amount: { Args: { p_quantity: number }; Returns: number }
+      ticket_bundle_amount: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["ticket_kind"]
+          p_quantity: number
+        }
+        Returns: number
+      }
       ticket_bundles: {
-        Args: never
+        Args: { p_kind?: Database["public"]["Enums"]["ticket_kind"] }
         Returns: {
           amount: number
           quantity: number
@@ -2005,6 +2028,7 @@ export type Database = {
       photo_state: "pending" | "approved" | "rejected"
       report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
+      ticket_kind: "intro" | "meeting"
       ticket_state: "unused" | "used" | "refunded"
     }
     CompositeTypes: {
@@ -2150,6 +2174,7 @@ export const Constants = {
       photo_state: ["pending", "approved", "rejected"],
       report_kind: ["profile", "message"],
       report_state: ["pending", "confirmed", "dismissed"],
+      ticket_kind: ["intro", "meeting"],
       ticket_state: ["unused", "used", "refunded"],
     },
   },
