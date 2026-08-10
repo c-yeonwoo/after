@@ -4,6 +4,7 @@ import { Heart, Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { SafetyMenu } from "@/components/app/SafetyMenu";
 import { GuideNote } from "@/components/app/GuideNote";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
@@ -229,7 +230,24 @@ function IntroPage() {
   );
 
   return (
-    <AppScreen title="이번 소개" footer={actions}>
+    <AppScreen
+      title="이번 소개"
+      footer={actions}
+      /*
+        소개받은 프로필 자체가 부적절할 수 있다. 만나기 전에도 신고할 수 있어야
+        한다 — 이 자리가 없으면 "만난 뒤에만 신고 가능"이 된다.
+      */
+      action={
+        candidate.id ? (
+          <SafetyMenu
+            targetId={candidate.id}
+            targetName={candidate.name ?? "이분"}
+            kind="profile"
+            onDone={() => load()}
+          />
+        ) : null
+      }
+    >
       <div className="mb-4">
         {/*
           남성에게는 "이분이 먼저 골랐다"를 명시한다.

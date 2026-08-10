@@ -798,3 +798,44 @@ export async function track(name: string, props: Record<string, unknown> = {}) {
     props: props as Database["public"]["Tables"]["events"]["Row"]["props"],
   });
 }
+
+// ─────────────────────── 신고 · 차단 (S16) ───────────────────────
+
+export type ContentReport = Database["public"]["Tables"]["content_reports"]["Row"];
+export type ReportKind = Database["public"]["Enums"]["report_kind"];
+
+/**
+ * 상대를 차단한다. **되돌릴 수 없다.**
+ *
+ * 서버에서 두 가지가 함께 일어난다 — 영구 배제(다시 소개되지 않음)와 진행 중인
+ * 만남 취소. 티켓은 환불되지 않는다. 끊는 비용은 끊는 쪽이 진다.
+ */
+export async function blockUser(targetId: string, reason?: string): Promise<void> {
+  const { error } = await supabase.rpc("block_user", {
+    p_target: targetId,
+    p_reason: reason ?? undefined,
+  });
+  if (error) throw error;
+}
+
+/**
+ * 콘텐츠를 신고한다. 차단 효과가 즉시 함께 난다.
+ *
+ * 환불은 여기서 일어나지 않는다 — 운영자가 인정했을 때만이다. 화면에서 환불을
+ * 약속하지 않도록 주의한다.
+ */
+export async function reportContent(
+  targetId: string,
+  kind: ReportKind,
+  detail: string,
+  messageId?: string,
+): Promise<ContentReport> {
+  const { data, error } = await supabase.rpc("report_content", {
+    p_target: targetId,
+    p_kind: kind,
+    p_detail: detail,
+    p_message_id: messageId ?? undefined,
+  });
+  if (error) throw error;
+  return data as ContentReport;
+}

@@ -4,6 +4,7 @@ import { ArrowRight, CalendarCheck } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { Conversation } from "@/components/app/Conversation";
+import { SafetyMenu } from "@/components/app/SafetyMenu";
 import { BRAND } from "@/lib/brand";
 import { listMyActiveMeetings, type ActiveMeeting } from "@/lib/api";
 
@@ -75,7 +76,18 @@ function ChatsPage() {
       counterpart.age !== null ? ` ${counterpart.age}` : ""
     }`;
     return (
-      <AppScreen title={title} fill>
+      <AppScreen
+        title={title}
+        fill
+        action={
+          <SafetyMenu
+            targetId={counterpart.id!}
+            targetName={counterpart.name ?? "상대"}
+            kind="profile"
+            onDone={() => setItems([])}
+          />
+        }
+      >
         <Conversation
           meeting={meeting}
           onMeetingChange={(m) => setItems([{ meeting: m, counterpart }])}

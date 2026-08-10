@@ -75,3 +75,39 @@ insert into profiles (
    array['최근에 바꾼 생각','쓸데없이 진지한 토론'],
    '{"서점 산책":"교보문고 강남점을 자주 갑니다."}'::jsonb)
 on conflict (id) do nothing;
+
+-- ─────────────────────── 운영자 (S16) ───────────────────────
+--
+-- 앱에는 운영자 승격 경로가 없다 — 첫 운영자는 반드시 SQL 로 심는다.
+-- 호스팅에서도 같은 방식이다:
+--   update profiles set role = 'admin' where company_email = '...';
+--
+-- 회원 프로필과 겸하지 않는다. 운영자가 자기 소개를 받으면 후보 풀과 지표가
+-- 지저분해진다. 그래서 onboarding_step 을 7 로 두되 paused_at 을 채워
+-- 후보 풀에서는 빠지게 한다.
+-- instance_id 를 빼면 GoTrue 가 사용자를 못 찾아 OTP 요청이 422
+-- otp_disabled 로 떨어진다(실제로 그렇게 막혔다). 위쪽 데모 계정들과 같은 값을 쓴다.
+-- instance_id · created_at · updated_at 을 빼면 GoTrue 가 행을 읽다 실패한다.
+-- 각각 422 otp_disabled, 500 "Database error finding user" 로 나타났다.
+-- 위쪽 데모 계정들이 넣는 값과 같은 형태여야 한다.
+insert into auth.users (instance_id, id, email, encrypted_password, email_confirmed_at, aud, role,
+                        confirmation_token, recovery_token, email_change,
+                        email_change_token_new, email_change_token_current,
+                        phone_change, phone_change_token, reauthentication_token,
+                        raw_app_meta_data, raw_user_meta_data,
+                        created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000'::uuid,
+        '00000000-0000-0000-0000-0000000000ad'::uuid, 'admin@demo.after', 'x', now(),
+        'authenticated', 'authenticated', '', '', '', '', '', '', '', '',
+        '{}'::jsonb, '{}'::jsonb,
+        now(), now())
+on conflict (id) do nothing;
+
+insert into profiles (
+  id, gender, hub_id, company_email, email_verified_at, onboarding_step,
+  terms_agreed_at, privacy_agreed_at, agreed_policy_version,
+  name, birth, job, role, paused_at
+) values
+  ('00000000-0000-0000-0000-0000000000ad', 'male', 'gangnam', 'admin@demo.after', now(), 7,
+   now(), now(), '2026-08-01', '운영자', '1990-01-01', '운영', 'admin', now())
+on conflict (id) do update set role = 'admin';

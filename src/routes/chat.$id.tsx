@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { Conversation } from "@/components/app/Conversation";
+import { SafetyMenu } from "@/components/app/SafetyMenu";
 import { BRAND } from "@/lib/brand";
 import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/chat/$id")({
 function ChatRoom() {
   // 라우트 파라미터는 상대 프로필 id 가 아니라 meeting id 다.
   const { id: meetingId } = Route.useParams();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -62,7 +64,26 @@ function ChatRoom() {
   }
 
   return (
-    <AppScreen title={counterpart?.name ?? "대화"} hideTabs back="/chats" fill>
+    <AppScreen
+      title={counterpart?.name ?? "대화"}
+      hideTabs
+      back="/chats"
+      fill
+      /*
+        신고·차단은 대화 안에 있어야 한다 — 불쾌한 일이 벌어지는 자리가 여기이고,
+        설정 화면까지 찾아 들어가게 하면 그 순간에 쓸 수 없다.
+      */
+      action={
+        counterpart?.id ? (
+          <SafetyMenu
+            targetId={counterpart.id}
+            targetName={counterpart.name ?? "상대"}
+            kind="profile"
+            onDone={() => navigate({ to: "/chats" })}
+          />
+        ) : null
+      }
+    >
       <Conversation meeting={meeting} onMeetingChange={setMeeting} />
     </AppScreen>
   );
