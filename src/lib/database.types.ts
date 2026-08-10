@@ -1209,6 +1209,7 @@ export type Database = {
           message_body: string
           reporter_id: string
           reporter_name: string
+          resolve_note: string
           resolved_at: string
           state: Database["public"]["Enums"]["report_state"]
         }[]
