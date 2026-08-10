@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 import {
+  ALREADY_RESOLVED,
   amIAdmin,
   fetchDashboard,
   fetchReports,
@@ -111,6 +112,18 @@ function AdminPage() {
                   {r.state === "confirmed" ? "인정" : "기각"}
                 </span>{" "}
                 · {r.reporter_name} → {r.accused_name} · {r.detail}
+                {/*
+                  처리 사유를 반드시 같이 보여준다. 서버가 note 를 not null 로
+                  강제하는 이유가 "왜 그렇게 처리했는지" 를 남기는 것인데, 그걸
+                  화면에 돌려주지 않으면 DB 를 열어야만 알 수 있다.
+
+                  생성된 타입은 RETURNS TABLE 컬럼을 전부 non-null 로 적지만
+                  미처리 건에는 실제로 null 이 온다 — message_body 와 같은
+                  이유로 값 검사를 한다.
+                */}
+                {r.resolve_note ? (
+                  <p className="mt-1 text-xs">처리 사유 · {r.resolve_note}</p>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -249,8 +262,18 @@ function ReportCard({ r, onResolved }: { r: AdminReport; onResolved: () => void 
       await resolveReport(r.id, upheld, note.trim(), upheld && ban);
       toast.success(upheld ? "인정 처리했습니다." : "기각했습니다.");
       onResolved();
-    } catch {
-      toast.error("처리하지 못했습니다.");
+    } catch (e) {
+      /*
+        경합은 장애가 아니다. 운영자 둘이 같은 목록을 열고 있으면 한쪽은 반드시
+        늦는다 — 그때 "처리하지 못했습니다" 는 자기 실수처럼 읽힌다. 이유를
+        말하고 목록을 다시 불러 최신 상태를 보여준다.
+      */
+      if ((e as { code?: string } | null)?.code === ALREADY_RESOLVED) {
+        toast.error("다른 운영자가 먼저 처리했습니다.");
+        onResolved();
+      } else {
+        toast.error("처리하지 못했습니다.");
+      }
     } finally {
       setBusy(false);
     }
@@ -299,11 +322,13 @@ function ReportCard({ r, onResolved }: { r: AdminReport; onResolved: () => void 
 
       <div className="mt-3 flex gap-2">
         {/*
-          인정하면 신고자 티켓이 환불된다(서버에서). 버튼 문구에 그걸 적어
-          운영자가 결과를 알고 누르게 한다.
+          인정하면 신고자 티켓이 환불된다(서버에서) — 단 **만남이 딸린 신고만**
+          이다. resolve_content_report 는 meeting_id 가 없으면 돌려줄 티켓을
+          찾지 않는다. 그런데도 문구에 환불을 적어두면 만남 없는 프로필 신고를
+          처리한 운영자가 환불된 줄 알게 된다. 실제로 일어나는 일만 적는다.
         */}
         <Button size="sm" disabled={busy} onClick={() => act(true)}>
-          인정 · 티켓 환불
+          {r.meeting_id ? "인정 · 티켓 환불" : "인정"}
         </Button>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => act(false)}>
           기각

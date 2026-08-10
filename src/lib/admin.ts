@@ -47,8 +47,17 @@ export async function fetchReports(state?: ReportState): Promise<AdminReport[]> 
 }
 
 /**
+ * 이미 다른 운영자가 처리한 신고를 또 처리하려 했을 때 서버가 주는 코드.
+ * 운영자 둘이 같은 목록을 보고 있으면 반드시 일어나는 정상적인 경합이라,
+ * 장애가 아니라 "늦었다" 로 안내해야 한다.
+ */
+export const ALREADY_RESOLVED = "PT409";
+
+/**
  * 신고 처리. `note` 는 서버에서 필수다 — 빈 문자열이면 22023 으로 거부된다.
  * 사유 없는 강제 조작이 admin_actions 에 남지 않게 하려는 것이다.
+ *
+ * 이미 처리된 건이면 {@link ALREADY_RESOLVED} 코드로 튕긴다.
  */
 export async function resolveReport(
   reportId: string,
