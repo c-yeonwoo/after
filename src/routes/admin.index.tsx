@@ -45,6 +45,17 @@ function DashboardTab() {
           to="/admin/reports"
           search={{ state: "pending" as const }}
         />
+        {/*
+          검수 대기는 "지금 아무에게도 보이지 않는 회원 수" 다. 검수 전 후보 풀에서
+          빼기로 했으므로(s18) 이 숫자가 쌓이면 그만큼 매칭이 멈춘다.
+        */}
+        <Stat
+          label="사진 검수 대기"
+          value={d.backlog.pending_photos}
+          alert={d.backlog.pending_photos > 0}
+          to="/admin/photos"
+          search={{ state: "pending" as const }}
+        />
         <Stat
           label="미처리 노쇼"
           value={d.backlog.pending_no_shows}

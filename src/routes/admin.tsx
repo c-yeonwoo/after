@@ -31,6 +31,7 @@ const TABS: { to: string; label: string; exact?: boolean }[] = [
   // 대시보드만 exact 다. 아니면 /admin/members 에서도 활성으로 잡힌다.
   { to: "/admin", label: "대시보드", exact: true },
   { to: "/admin/members", label: "회원" },
+  { to: "/admin/photos", label: "사진 검수" },
   { to: "/admin/reports", label: "신고" },
   { to: "/admin/meetings", label: "만남" },
 ];

@@ -79,6 +79,8 @@ export type AdminDashboard = {
   backlog: {
     pending_reports: number;
     pending_no_shows: number;
+    /** 검수 대기 사진 수 = 지금 아무에게도 보이지 않는 회원 수 */
+    pending_photos: number;
     unmatched_likes: number;
     oldest_like_hours: number | null;
   };
@@ -147,6 +149,31 @@ export async function setAccountState(
   const { error } = await supabase.rpc("admin_set_account_state", {
     p_user: userId,
     p_state: state,
+    p_note: note,
+  });
+  if (error) throw error;
+}
+
+// ─────────────────── 사진 검수 ───────────────────
+
+export type PhotoState = Database["public"]["Enums"]["photo_state"];
+export type PhotoReviewItem =
+  Database["public"]["Functions"]["admin_photo_queue"]["Returns"][number];
+
+export async function fetchPhotoQueue(state: PhotoState = "pending"): Promise<PhotoReviewItem[]> {
+  const { data, error } = await supabase.rpc("admin_photo_queue", { p_state: state });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 승인·반려. 반려 사유는 **사용자에게 보인다**(profiles.photo_reject_reason) —
+ * 그래서 서버가 사유를 필수로 받는다.
+ */
+export async function reviewPhoto(userId: string, approve: boolean, note: string): Promise<void> {
+  const { error } = await supabase.rpc("admin_review_photo", {
+    p_user: userId,
+    p_approve: approve,
     p_note: note,
   });
   if (error) throw error;
