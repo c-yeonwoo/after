@@ -22,6 +22,8 @@ import { BRAND } from "@/lib/brand";
 import { toProfileView } from "@/lib/profileView";
 import {
   ensureOpenIntro,
+  getOpenIntroWithCandidate,
+  homeState,
   getMeetingByIntro,
   myPendingCandidate,
   passIntro,
@@ -60,21 +62,33 @@ function IntroPage() {
   /** 여성 평가 큐에 남은 사람 수. 소진이 다가오는 걸 미리 알 수 있어야 한다. */
   const [remaining, setRemaining] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  /*
+    열람 게이트(v2). 진입만으로 소개 티켓이 빠지면 안 되므로, 열린 소개가 없을
+    때는 큐·티켓 상태만 읽어 두고 사용자가 누를 때 비로소 open_intro() 를 부른다.
+  */
+  const [gate, setGate] = useState<{ queued: number; tickets: number } | null>(null);
 
   async function load() {
     if (!me) return;
     if (isMale) {
-      const opened = await ensureOpenIntro();
-      if (!opened) {
+      /*
+        **여기서 open_intro() 를 부르지 않는다.** v2 부터 그 호출은 소개 티켓
+        1장을 차감하므로, 탭을 열기만 해도 5,000원이 빠지게 된다. 이미 열려 있는
+        소개만 읽고, 없으면 게이트를 띄워 사용자가 누를 때 연다.
+      */
+      const existing = await getOpenIntroWithCandidate();
+      if (existing) {
+        setGate(null);
+        setCandidate(existing.candidate);
+        setIntroId(existing.intro.id);
+        setMeeting(await getMeetingByIntro(existing.intro.id));
+      } else {
+        const h = await homeState();
+        setGate({ queued: h.queued_intros, tickets: h.intro_tickets });
         setCandidate(null);
         setIntroId(null);
         setMeeting(null);
-        setLoading(false);
-        return;
       }
-      setCandidate(opened.candidate);
-      setIntroId(opened.intro.id);
-      setMeeting(await getMeetingByIntro(opened.intro.id));
     } else {
       // 여성 소개 탭은 **평가 큐 전용**이다.
       // 예전에는 대기 중인 만남 요청이 있으면 그 요청자를 대신 띄웠는데,
@@ -106,21 +120,88 @@ function IntroPage() {
   if (!candidate) {
     return (
       <AppScreen title="이번 소개">
-        <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
-          {/*
-            성별로 원인이 다르므로 문장도 달라야 한다. 남성은 "아직 아무도
-            고르지 않았다"이고, 여성은 "평가할 사람을 다 봤다"다. 예전에는
-            둘 다 "다음 소개가 준비되면 알려드릴게요"였다.
-          */}
-          <p className="text-sm font-medium">
-            {isMale ? "아직 열린 소개가 없습니다" : "평가할 분을 모두 보셨습니다"}
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            {isMale
-              ? "소개는 상대가 먼저 회원님을 선택했을 때 열립니다. 선택이 들어오면 바로 알려드릴게요."
-              : "새로 가입한 분이 생기면 이어서 보여드릴게요."}
-          </p>
-        </div>
+        {/*
+          남성은 원인이 셋이라 문장도 셋이어야 한다(v2).
+
+            ① 큐에 카드가 있고 티켓도 있다 → 열 수 있다. 확인을 받고 차감한다.
+            ② 카드는 있는데 티켓이 없다     → 살 수 있다. 상점으로 보낸다.
+            ③ 카드가 없다                  → 운영자를 기다린다. 할 일이 없다.
+
+          하나로 뭉개면 티켓만 사면 볼 수 있는 사람에게 "기다려 주세요" 라고
+          말하거나, 큐가 빈 사람에게 결제를 권하게 된다.
+        */}
+        {isMale && gate ? (
+          gate.queued === 0 ? (
+            <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
+              <p className="text-sm font-medium">아직 도착한 소개가 없습니다</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                소개는 회원님을 먼저 좋다고 한 분들 중에서 골라 보내드립니다. 준비되면 바로
+                알려드릴게요.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-10 rounded-2xl border border-border bg-card px-6 py-8 text-center">
+              <p className="text-sm font-medium">소개 {gate.queued}건이 도착했습니다</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                한 번에 한 분씩 열어 보실 수 있습니다.
+              </p>
+
+              {gate.tickets > 0 ? (
+                <>
+                  <Button
+                    size="lg"
+                    className="mt-6 w-full"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        const r = await ensureOpenIntro();
+                        if (r.ok) {
+                          await load();
+                        } else if (r.reason === "no_intro_ticket") {
+                          toast.error("소개 티켓이 없습니다.");
+                          await load();
+                        } else {
+                          toast.error("지금은 열 수 있는 소개가 없습니다.");
+                          await load();
+                        }
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    <Ticket className="size-4" aria-hidden="true" />
+                    소개 티켓 1장 쓰고 열기
+                  </Button>
+                  {/* 소멸이라는 사실을 누르기 전에 말한다 — 열고 나서 알면 늦다. */}
+                  <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
+                    보유 {gate.tickets}장 · 열람에 1장이 사용되며 되돌릴 수 없습니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    className="mt-6 w-full"
+                    onClick={() => navigate({ to: "/store", search: { kind: "intro" as const } })}
+                  >
+                    소개 티켓 사기
+                  </Button>
+                  <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
+                    소개 프로필을 열려면 소개 티켓 1장이 필요합니다.
+                  </p>
+                </>
+              )}
+            </div>
+          )
+        ) : (
+          <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
+            <p className="text-sm font-medium">평가할 분을 모두 보셨습니다</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              새로 가입한 분이 생기면 이어서 보여드릴게요.
+            </p>
+          </div>
+        )}
       </AppScreen>
     );
   }

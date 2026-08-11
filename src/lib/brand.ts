@@ -65,6 +65,14 @@ export type HubId = (typeof HUBS)[number]["id"];
 export const MEETING_TICKET_PRICE_KRW = 30000;
 export const MEETING_TICKET_PRICE_LABEL = `${MEETING_TICKET_PRICE_KRW.toLocaleString("ko-KR")}원`;
 
+/**
+ * 소개 티켓 가격 (v2, 5,000원). 소개 프로필을 **열람**할 때 1장이 쓰이고
+ * 돌려받을 수 없다 — 만남 티켓과 성격이 다르므로 상수도 따로 둔다.
+ * 서버 권위 값은 ticket_bundle_amount(quantity, kind) 다.
+ */
+export const INTRO_TICKET_PRICE_KRW = 5000;
+export const INTRO_TICKET_PRICE_LABEL = `${INTRO_TICKET_PRICE_KRW.toLocaleString("ko-KR")}원`;
+
 /** 회사 이메일 인증에서 거부하는 개인 메일 도메인 */
 export const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
