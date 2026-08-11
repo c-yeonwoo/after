@@ -75,16 +75,33 @@ export type AdminMemberDetail = {
 
 export type AdminDashboard = {
   members: { female: number; male: number; paused: number; banned: number };
-  flow: { open_intros: number; active_meetings: number; confirmed: number; completed: number };
+  flow: {
+    open_intros: number;
+    active_meetings: number;
+    confirmed: number;
+    completed: number;
+    queued_cards: number;
+  };
   backlog: {
     pending_reports: number;
     pending_no_shows: number;
     /** 검수 대기 사진 수 = 지금 아무에게도 보이지 않는 회원 수 */
     pending_photos: number;
+    /** 아직 어느 큐에도 들어가지 않은 호감 = 큐레이션 대기 */
     unmatched_likes: number;
+    /** 큐가 비어 지금 아무것도 못 받는 활성 남성 */
+    starved_males: number;
     oldest_like_hours: number | null;
   };
-  quality: { intros_total: number; intros_passed: number; intros_used: number };
+  quality: {
+    intros_total: number;
+    intros_passed: number;
+    intros_used: number;
+    /** 큐레이션 노동이 회수되는 비율의 분모·분자 (문서 §5 단위 경제) */
+    cards_delivered: number;
+    cards_opened: number;
+    cards_expired: number;
+  };
 };
 
 /** 내가 운영자인가. 화면 분기용 — 최종 판정은 항상 서버다. */
@@ -152,6 +169,52 @@ export async function setAccountState(
     p_note: note,
   });
   if (error) throw error;
+}
+
+// ─────────────────── 큐레이션 ───────────────────
+
+export type CurationTarget =
+  Database["public"]["Functions"]["admin_curation_targets"]["Returns"][number];
+export type LikePoolItem = Database["public"]["Functions"]["admin_like_pool"]["Returns"][number];
+
+/** 작업 대상(남성) 목록. 큐가 빈 사람부터, 그중 오래 기다린 순. */
+export async function fetchCurationTargets(): Promise<CurationTarget[]> {
+  const { data, error } = await supabase.rpc("admin_curation_targets");
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** 이 남성을 좋다고 한, 아직 큐에 없는 여성들. */
+export async function fetchLikePool(maleId: string): Promise<LikePoolItem[]> {
+  const { data, error } = await supabase.rpc("admin_like_pool", { p_male: maleId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 현재 큐. **RPC 로 읽는다** — PostgREST 임베드로 profiles 를 조인하면 그쪽 RLS 에
+ * 막혀 이름이 null 로 온다(실제로 그렇게 짰다가 "(이름 없음)" 이 떴다).
+ */
+export type QueueCard = Database["public"]["Functions"]["admin_queue"]["Returns"][number];
+
+export async function fetchQueue(maleId: string): Promise<QueueCard[]> {
+  const { data, error } = await supabase.rpc("admin_queue", { p_male: maleId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 큐를 순서째 덮어쓴다. 부분 수정이 아니다 — 화면에서 순서를 마음껏 바꾸고
+ * 한 번에 저장한다. 서버가 호감 풀 밖의 사람을 거절하므로 불변식은 안전하다.
+ */
+export async function setQueue(maleId: string, femaleIds: string[], note: string): Promise<number> {
+  const { data, error } = await supabase.rpc("admin_set_queue", {
+    p_male: maleId,
+    p_female_ids: femaleIds,
+    p_note: note,
+  });
+  if (error) throw error;
+  return data ?? 0;
 }
 
 // ─────────────────── 사진 검수 ───────────────────

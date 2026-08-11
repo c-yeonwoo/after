@@ -80,6 +80,18 @@ values ('a0000000-0000-0000-0000-00000000000a','a0000000-0000-0000-0000-00000000
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-00000000000b","role":"authenticated"}';
+/*
+  v2(s20): 소개는 운영자 큐에서 나오고 열람에 **소개 티켓 1장**을 쓴다.
+  v1 은 호감만 있으면 open_intro() 가 열렸지만 이제 전제가 둘 더 붙는다.
+  curated_by 는 이 픽스처에 운영자가 없어 남성 자신으로 둔다(검사 대상이 아니다).
+*/
+-- intro_queue 는 authenticated 에 INSERT 권한이 없다(운영자 RPC 만 쓴다).
+-- 픽스처만 소유자 롤로 넣고 곧바로 원래 롤로 되돌린다.
+reset role;
+insert into intro_queue (male_id, female_id, position, curated_by, delivered_at, expires_at)
+values ('a0000000-0000-0000-0000-00000000000b', 'a0000000-0000-0000-0000-00000000000a', 1, 'a0000000-0000-0000-0000-00000000000b', now(), now() + interval '3 weeks');
+select issue_ticket('a0000000-0000-0000-0000-00000000000b', 'intro_s8_a', 5000, 'intro');
+set local role authenticated;
 select open_intro();
 
 select is(
@@ -112,6 +124,18 @@ values ('a0000000-0000-0000-0000-00000000000a','a0000000-0000-0000-0000-00000000
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-00000000000c","role":"authenticated"}';
+/*
+  v2(s20): 소개는 운영자 큐에서 나오고 열람에 **소개 티켓 1장**을 쓴다.
+  v1 은 호감만 있으면 open_intro() 가 열렸지만 이제 전제가 둘 더 붙는다.
+  curated_by 는 이 픽스처에 운영자가 없어 남성 자신으로 둔다(검사 대상이 아니다).
+*/
+-- intro_queue 는 authenticated 에 INSERT 권한이 없다(운영자 RPC 만 쓴다).
+-- 픽스처만 소유자 롤로 넣고 곧바로 원래 롤로 되돌린다.
+reset role;
+insert into intro_queue (male_id, female_id, position, curated_by, delivered_at, expires_at)
+values ('a0000000-0000-0000-0000-00000000000c', 'a0000000-0000-0000-0000-00000000000a', 1, 'a0000000-0000-0000-0000-00000000000c', now(), now() + interval '3 weeks');
+select issue_ticket('a0000000-0000-0000-0000-00000000000c', 'intro_s8_b', 5000, 'intro');
+set local role authenticated;
 select open_intro();
 
 reset role;
