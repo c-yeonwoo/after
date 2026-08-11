@@ -3,16 +3,10 @@ import { useEffect } from "react";
 import { Pencil } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
-import { ProfileDetail, type ProfileView } from "@/components/app/ProfileDetail";
-import {
-  DRINKING_OPTIONS,
-  RELIGION_OPTIONS,
-  SMOKING_OPTIONS,
-  ageFrom,
-} from "@/components/onboarding/basics";
-import { followUpFor } from "@/components/onboarding/profile";
-import { BRAND, HUBS } from "@/lib/brand";
+import { ProfileDetail } from "@/components/app/ProfileDetail";
+import { BRAND } from "@/lib/brand";
 import { useMe } from "@/lib/me";
+import { toProfileView } from "@/lib/profileView";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -47,28 +41,7 @@ function ProfilePage() {
     );
   }
 
-  const details = (me.details as Record<string, string> | null) ?? {};
-  const view: ProfileView = {
-    name: me.name ?? "",
-    age: me.birth ? ageFrom(me.birth) : null,
-    job: me.job ?? "",
-    mbti: me.mbti ?? undefined,
-    smoking: SMOKING_OPTIONS.find((o) => o.id === me.smoking)?.label,
-    drinking: DRINKING_OPTIONS.find((o) => o.id === me.drinking)?.label,
-    religion: RELIGION_OPTIONS.find((o) => o.id === me.religion)?.label,
-    area: HUBS.find((h) => h.id === me.hub_id)?.label,
-    photo: me.photo_url || undefined,
-    headline: me.headline ?? "",
-    intro: me.intro ?? "",
-    interests: me.interests.map((v) => v.trim()).filter(Boolean),
-    matchTags: me.match_tags,
-    topics: me.topics,
-    answers: me.interests
-      .map((v) => v.trim())
-      .filter(Boolean)
-      .map((label) => ({ q: followUpFor(label), a: (details[label] ?? "").trim() }))
-      .filter((x) => x.a),
-  };
+  const view = toProfileView(me);
 
   return (
     <AppScreen

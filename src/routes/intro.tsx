@@ -18,13 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DRINKING_OPTIONS,
-  RELIGION_OPTIONS,
-  SMOKING_OPTIONS,
-} from "@/components/onboarding/basics";
-import { followUpFor } from "@/components/onboarding/profile";
-import { BRAND, HUBS } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
+import { toProfileView } from "@/lib/profileView";
 import {
   ensureOpenIntro,
   getMeetingByIntro,
@@ -131,13 +126,7 @@ function IntroPage() {
   }
 
   // 뷰가 이미 나이를 계산해서 준다 — 생일은 나가지 않는다(S8).
-  const age = candidate.age;
-  const details = (candidate.details as Record<string, string> | null) ?? {};
-  const answers = (candidate.interests ?? [])
-    .map((v) => v.trim())
-    .filter(Boolean)
-    .map((label) => ({ q: followUpFor(label), a: (details[label] ?? "").trim() }))
-    .filter((x) => x.a);
+  const view = toProfileView(candidate);
 
   const maleAnswered = isMale && Boolean(meeting);
 
@@ -266,25 +255,7 @@ function IntroPage() {
         </GuideNote>
       </div>
 
-      <ProfileDetail
-        p={{
-          name: candidate.name ?? "",
-          age,
-          job: candidate.job ?? "",
-          mbti: candidate.mbti ?? undefined,
-          smoking: SMOKING_OPTIONS.find((o) => o.id === candidate.smoking)?.label,
-          drinking: DRINKING_OPTIONS.find((o) => o.id === candidate.drinking)?.label,
-          religion: RELIGION_OPTIONS.find((o) => o.id === candidate.religion)?.label,
-          area: HUBS.find((h) => h.id === candidate.hub_id)?.label,
-          photo: candidate.photo_url ?? undefined,
-          headline: candidate.headline ?? "",
-          intro: candidate.intro ?? "",
-          interests: candidate.interests ?? [],
-          matchTags: candidate.match_tags ?? [],
-          topics: candidate.topics ?? [],
-          answers,
-        }}
-      />
+      <ProfileDetail p={view} />
 
       {maleAnswered ? (
         <div className="mt-8 rounded-xl border border-border bg-card px-4 py-4 text-sm">

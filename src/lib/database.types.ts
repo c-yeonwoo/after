@@ -834,6 +834,10 @@ export type Database = {
           name: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -868,6 +872,10 @@ export type Database = {
           name?: string | null
           onboarding_step?: number
           paused_at?: string | null
+          photo_reject_reason?: string | null
+          photo_reviewed_at?: string | null
+          photo_reviewed_by?: string | null
+          photo_state?: Database["public"]["Enums"]["photo_state"]
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
@@ -902,6 +910,10 @@ export type Database = {
           name?: string | null
           onboarding_step?: number
           paused_at?: string | null
+          photo_reject_reason?: string | null
+          photo_reviewed_at?: string | null
+          photo_reviewed_by?: string | null
+          photo_state?: Database["public"]["Enums"]["photo_state"]
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
@@ -912,13 +924,36 @@ export type Database = {
           topics?: string[]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_photo_reviewed_by_fkey"
+            columns: ["photo_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_photo_reviewed_by_fkey"
+            columns: ["photo_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_photo_reviewed_by_fkey"
+            columns: ["photo_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_orders: {
         Row: {
           amount: number
           confirmed_at: string | null
           created_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity: number
           state: string
@@ -928,6 +963,7 @@ export type Database = {
           amount: number
           confirmed_at?: string | null
           created_at?: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity?: number
           state?: string
@@ -937,6 +973,7 @@ export type Database = {
           amount?: number
           confirmed_at?: string | null
           created_at?: string
+          kind?: Database["public"]["Enums"]["ticket_kind"]
           order_id?: string
           quantity?: number
           state?: string
@@ -971,6 +1008,7 @@ export type Database = {
           id: string
           intro_id: string | null
           issued_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
           refunded_at: string | null
@@ -982,6 +1020,7 @@ export type Database = {
           id?: string
           intro_id?: string | null
           issued_at?: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id?: string | null
           price_krw?: number
           refunded_at?: string | null
@@ -993,6 +1032,7 @@ export type Database = {
           id?: string
           intro_id?: string | null
           issued_at?: string
+          kind?: Database["public"]["Enums"]["ticket_kind"]
           payment_id?: string | null
           price_krw?: number
           refunded_at?: string | null
@@ -1058,9 +1098,14 @@ export type Database = {
           name: string | null
           onboarding_step: number | null
           paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"] | null
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
+          role: string | null
           smoking: string | null
           terms_agreed_at: string | null
           topic_note: string | null
@@ -1091,9 +1136,14 @@ export type Database = {
           name?: string | null
           onboarding_step?: number | null
           paused_at?: string | null
+          photo_reject_reason?: string | null
+          photo_reviewed_at?: string | null
+          photo_reviewed_by?: string | null
+          photo_state?: Database["public"]["Enums"]["photo_state"] | null
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
+          role?: string | null
           smoking?: string | null
           terms_agreed_at?: string | null
           topic_note?: string | null
@@ -1124,16 +1174,43 @@ export type Database = {
           name?: string | null
           onboarding_step?: number | null
           paused_at?: string | null
+          photo_reject_reason?: string | null
+          photo_reviewed_at?: string | null
+          photo_reviewed_by?: string | null
+          photo_state?: Database["public"]["Enums"]["photo_state"] | null
           photo_url?: string | null
           privacy_agreed_at?: string | null
           religion?: string | null
+          role?: string | null
           smoking?: string | null
           terms_agreed_at?: string | null
           topic_note?: string | null
           topics?: string[] | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_photo_reviewed_by_fkey"
+            columns: ["photo_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_photo_reviewed_by_fkey"
+            columns: ["photo_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_photo_reviewed_by_fkey"
+            columns: ["photo_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       public_profiles: {
         Row: {
@@ -1194,7 +1271,94 @@ export type Database = {
       }
     }
     Functions: {
+      admin_cancel_meeting: {
+        Args: { p_meeting: string; p_note: string; p_refund?: boolean }
+        Returns: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          completed_by: string[]
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          intro_id: string
+          place_kind: string | null
+          place_name: string | null
+          prefs: Json | null
+          prefs_submitted_at: string | null
+          private_opens_at: string | null
+          scheduled_at: string | null
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_dashboard: { Args: never; Returns: Json }
+      admin_meetings: {
+        Args: { p_state?: string }
+        Returns: {
+          cancel_reason: string
+          cancelled_at: string
+          completed_at: string
+          confirmed_at: string
+          created_at: string
+          female_id: string
+          female_name: string
+          id: string
+          male_id: string
+          male_name: string
+          place_name: string
+          prefs_submitted_at: string
+          scheduled_at: string
+          ticket_id: string
+          ticket_state: Database["public"]["Enums"]["ticket_state"]
+        }[]
+      }
+      admin_member_detail: { Args: { p_user: string }; Returns: Json }
+      admin_members: {
+        Args: {
+          p_gender?: Database["public"]["Enums"]["gender"]
+          p_hub?: string
+          p_paused?: boolean
+          p_query?: string
+          p_state?: Database["public"]["Enums"]["account_state"]
+        }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          company_email: string
+          created_at: string
+          gender: Database["public"]["Enums"]["gender"]
+          has_active_meeting: boolean
+          hub_id: string
+          id: string
+          name: string
+          onboarding_step: number
+          paused_at: string
+          pending_reports_against: number
+          photo_url: string
+          role: string
+          unused_tickets: number
+        }[]
+      }
+      admin_photo_queue: {
+        Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          gender: Database["public"]["Enums"]["gender"]
+          hub_id: string
+          id: string
+          name: string
+          onboarding_step: number
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string
+          reject_reason: string
+          updated_at: string
+        }[]
+      }
       admin_reports: {
         Args: { p_state?: Database["public"]["Enums"]["report_state"] }
         Returns: {
@@ -1213,6 +1377,104 @@ export type Database = {
           resolved_at: string
           state: Database["public"]["Enums"]["report_state"]
         }[]
+      }
+      admin_review_photo: {
+        Args: { p_approve: boolean; p_note: string; p_user: string }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string | null
+          job: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          onboarding_step: number
+          paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_set_account_state: {
+        Args: {
+          p_note: string
+          p_state: Database["public"]["Enums"]["account_state"]
+          p_user: string
+        }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string | null
+          job: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          onboarding_step: number
+          paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       apply_no_show_confirmed: {
         Args: { p_report_id: string }
@@ -1269,11 +1531,15 @@ export type Database = {
         }
       }
       create_ticket_order: {
-        Args: { p_quantity?: number }
+        Args: {
+          p_kind?: Database["public"]["Enums"]["ticket_kind"]
+          p_quantity?: number
+        }
         Returns: {
           amount: number
           confirmed_at: string | null
           created_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity: number
           state: string
@@ -1319,11 +1585,17 @@ export type Database = {
         Returns: boolean
       }
       issue_ticket: {
-        Args: { p_payment_id: string; p_price_krw?: number; p_user_id: string }
+        Args: {
+          p_kind?: Database["public"]["Enums"]["ticket_kind"]
+          p_payment_id: string
+          p_price_krw?: number
+          p_user_id: string
+        }
         Returns: {
           id: string
           intro_id: string | null
           issued_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
           refunded_at: string | null
@@ -1441,6 +1713,10 @@ export type Database = {
           name: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -1464,6 +1740,7 @@ export type Database = {
           id: string
           intro_id: string | null
           issued_at: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
           refunded_at: string | null
@@ -1597,6 +1874,10 @@ export type Database = {
           name: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -1670,6 +1951,10 @@ export type Database = {
           name: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
           religion: string | null
@@ -1687,9 +1972,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      ticket_bundle_amount: { Args: { p_quantity: number }; Returns: number }
+      ticket_bundle_amount: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["ticket_kind"]
+          p_quantity: number
+        }
+        Returns: number
+      }
       ticket_bundles: {
-        Args: never
+        Args: { p_kind?: Database["public"]["Enums"]["ticket_kind"] }
         Returns: {
           amount: number
           quantity: number
@@ -1734,8 +2025,10 @@ export type Database = {
         | "prefs_submitted"
         | "meeting_confirmed"
         | "feedback_due"
+      photo_state: "pending" | "approved" | "rejected"
       report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
+      ticket_kind: "intro" | "meeting"
       ticket_state: "unused" | "used" | "refunded"
     }
     CompositeTypes: {
@@ -1878,8 +2171,10 @@ export const Constants = {
         "meeting_confirmed",
         "feedback_due",
       ],
+      photo_state: ["pending", "approved", "rejected"],
       report_kind: ["profile", "message"],
       report_state: ["pending", "confirmed", "dismissed"],
+      ticket_kind: ["intro", "meeting"],
       ticket_state: ["unused", "used", "refunded"],
     },
   },

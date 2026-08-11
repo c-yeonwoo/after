@@ -148,7 +148,8 @@ select is(
 select throws_ok(
   format($$ select resolve_content_report(%L, false, '재처리 시도') $$,
          (select id from content_reports limit 1)),
-  'P0002', null,
+  -- s16c 에서 P0002 → PT409(HTTP 409)로 바꿨다. 경합은 장애가 아니라 "늦었다" 다.
+  'PT409', null,
   'T20 이미 처리된 신고는 다시 처리할 수 없다'
 );
 
