@@ -56,10 +56,13 @@ function DashboardTab() {
           to="/admin/photos"
           search={{ state: "pending" as const }}
         />
+        {/* s21 에서 판정 화면이 생겼다 — 그전까지는 셀 뿐 갈 곳이 없는 숫자였다. */}
         <Stat
           label="미처리 노쇼"
           value={d.backlog.pending_no_shows}
           alert={d.backlog.pending_no_shows > 0}
+          to="/admin/reports"
+          search={{ kind: "no_show" as const, state: "pending" as const }}
         />
         <Stat label="소개 안 된 호감" value={d.backlog.unmatched_likes} />
         <Stat
