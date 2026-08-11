@@ -36,6 +36,14 @@ insert into affinities (from_id, to_id, verdict) values
 select issue_ticket('cccc0002-0000-0000-0000-000000000002', 'pay_test_s4_0001', 30000);
 
 set local "request.jwt.claims" to '{"sub":"cccc0002-0000-0000-0000-000000000002","role":"authenticated"}';
+/*
+  v2(s20): 소개는 운영자 큐에서 나오고 열람에 **소개 티켓 1장**을 쓴다.
+  v1 은 호감만 있으면 open_intro() 가 열렸지만 이제 전제가 둘 더 붙는다.
+  curated_by 는 이 픽스처에 운영자가 없어 남성 자신으로 둔다(검사 대상이 아니다).
+*/
+insert into intro_queue (male_id, female_id, position, curated_by, delivered_at, expires_at)
+values ('cccc0002-0000-0000-0000-000000000002', 'cccc0001-0000-0000-0000-000000000001', 1, 'cccc0002-0000-0000-0000-000000000002', now(), now() + interval '3 weeks');
+select issue_ticket('cccc0002-0000-0000-0000-000000000002', 'intro_s4_a', 5000, 'intro');
 select open_intro();
 select use_meeting_ticket(
   (select id from intros where male_id = 'cccc0002-0000-0000-0000-000000000002')

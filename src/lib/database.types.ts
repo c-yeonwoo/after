@@ -466,6 +466,109 @@ export type Database = {
           },
         ]
       }
+      intro_queue: {
+        Row: {
+          created_at: string
+          curated_by: string
+          delivered_at: string | null
+          expires_at: string | null
+          female_id: string
+          id: string
+          male_id: string
+          note: string | null
+          opened_at: string | null
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          curated_by: string
+          delivered_at?: string | null
+          expires_at?: string | null
+          female_id: string
+          id?: string
+          male_id: string
+          note?: string | null
+          opened_at?: string | null
+          position: number
+        }
+        Update: {
+          created_at?: string
+          curated_by?: string
+          delivered_at?: string | null
+          expires_at?: string | null
+          female_id?: string
+          id?: string
+          male_id?: string
+          note?: string | null
+          opened_at?: string | null
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intro_queue_curated_by_fkey"
+            columns: ["curated_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_curated_by_fkey"
+            columns: ["curated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_curated_by_fkey"
+            columns: ["curated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_female_id_fkey"
+            columns: ["female_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_female_id_fkey"
+            columns: ["female_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_female_id_fkey"
+            columns: ["female_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_male_id_fkey"
+            columns: ["male_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_male_id_fkey"
+            columns: ["male_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_queue_male_id_fkey"
+            columns: ["male_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intros: {
         Row: {
           closed_at: string | null
@@ -1297,7 +1400,46 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_curation_targets: {
+        Args: never
+        Returns: {
+          delivered_count: number
+          has_open_intro: boolean
+          hub_id: string
+          id: string
+          name: string
+          oldest_like_hours: number
+          photo_url: string
+          pool_count: number
+          queued_count: number
+          receiving: boolean
+        }[]
+      }
       admin_dashboard: { Args: never; Returns: Json }
+      admin_like_pool: {
+        Args: { p_male: string }
+        Returns: {
+          birth: string
+          details: Json
+          drinking: string
+          headline: string
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string
+          job: string
+          liked_at: string
+          match_tags: string[]
+          mbti: string
+          name: string
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string
+          religion: string
+          smoking: string
+          topics: string[]
+          waiting_hours: number
+        }[]
+      }
       admin_meetings: {
         Args: { p_state?: string }
         Returns: {
@@ -1476,6 +1618,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_set_queue: {
+        Args: { p_female_ids: string[]; p_male: string; p_note: string }
+        Returns: number
+      }
       apply_no_show_confirmed: {
         Args: { p_report_id: string }
         Returns: {
@@ -1566,6 +1712,7 @@ export type Database = {
         Args: { a: string; b: string; p_reason: string }
         Returns: undefined
       }
+      expire_intro_queue: { Args: never; Returns: number }
       expire_unanswered_meetings: { Args: never; Returns: number }
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
       fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
@@ -1687,6 +1834,7 @@ export type Database = {
         Args: { p_confirmed: string; p_scheduled: string }
         Returns: string
       }
+      promote_intro_queue: { Args: { p_male: string }; Returns: number }
       record_consent: {
         Args: { p_policy_version: string }
         Returns: {

@@ -42,6 +42,14 @@ select issue_ticket('bbbb0001-0000-0000-0000-000000000001', 'pay_test_0001', 300
 
 -- M1 의 소개를 연다 (auth.uid() 는 GUC 를 읽으므로 superuser 로도 함수 경로를 그대로 탄다)
 set local "request.jwt.claims" to '{"sub":"bbbb0001-0000-0000-0000-000000000001","role":"authenticated"}';
+/*
+  v2(s20): 소개는 운영자 큐에서 나오고 열람에 **소개 티켓 1장**을 쓴다.
+  v1 은 호감만 있으면 open_intro() 가 열렸지만 이제 전제가 둘 더 붙는다.
+  curated_by 는 이 픽스처에 운영자가 없어 남성 자신으로 둔다(검사 대상이 아니다).
+*/
+insert into intro_queue (male_id, female_id, position, curated_by, delivered_at, expires_at)
+values ('bbbb0001-0000-0000-0000-000000000001', 'aaaa0001-0000-0000-0000-000000000001', 1, 'bbbb0001-0000-0000-0000-000000000001', now(), now() + interval '3 weeks');
+select issue_ticket('bbbb0001-0000-0000-0000-000000000001', 'intro_s1_a', 5000, 'intro');
 select open_intro();
 
 
@@ -74,6 +82,14 @@ reset role;
 -- (T1 의 소개 소유권 검사와 분리하기 위해 M2 자신의 소개를 만든다)
 
 set local "request.jwt.claims" to '{"sub":"bbbb0002-0000-0000-0000-000000000002","role":"authenticated"}';
+/*
+  v2(s20): 소개는 운영자 큐에서 나오고 열람에 **소개 티켓 1장**을 쓴다.
+  v1 은 호감만 있으면 open_intro() 가 열렸지만 이제 전제가 둘 더 붙는다.
+  curated_by 는 이 픽스처에 운영자가 없어 남성 자신으로 둔다(검사 대상이 아니다).
+*/
+insert into intro_queue (male_id, female_id, position, curated_by, delivered_at, expires_at)
+values ('bbbb0002-0000-0000-0000-000000000002', 'aaaa0001-0000-0000-0000-000000000001', 1, 'bbbb0002-0000-0000-0000-000000000002', now(), now() + interval '3 weeks');
+select issue_ticket('bbbb0002-0000-0000-0000-000000000002', 'intro_s1_b', 5000, 'intro');
 select open_intro();
 
 set local role authenticated;
