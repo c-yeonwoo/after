@@ -7,14 +7,7 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { BRAND, HUBS } from "@/lib/brand";
-import {
-  homeState,
-  markMet,
-  openIntro,
-  type Meeting,
-  type NoShowReport,
-  type PublicProfile,
-} from "@/lib/api";
+import { homeState, markMet, type Meeting, type NoShowReport, type PublicProfile } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +52,9 @@ function HomePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [candidate, setCandidate] = useState<PublicProfile | null>(null);
+  /** 큐에서 전송된 카드 수 · 소개 티켓 보유량(v2). 홈의 안내 근거다. */
+  const [queued, setQueued] = useState(0);
+  const [introTickets, setIntroTickets] = useState(0);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [noShow, setNoShow] = useState<NoShowReport | null>(null);
   // 여성은 동시에 여러 건을 받을 수 있다 — 개수를 세어 목록으로 보낸다.
@@ -81,24 +77,20 @@ function HomePage() {
     if (!ready || !me) return;
     let cancelled = false;
     (async () => {
-      let state = await homeState();
-      // 남성인데 열린 소개가 없으면 한 번 열고 다시 읽는다. 평소엔 1회,
-      // 새 소개가 필요한 순간에만 2회다. home_state() 는 읽기 전용이라
-      // 여기서 오픈을 대신하지 않는다.
-      if (!cancelled && me.gender === "male" && !state.has_open_intro && !state.meeting) {
-        try {
-          await openIntro();
-          state = await homeState();
-        } catch (err) {
-          // P0002 = 자격 있는 후보가 아직 없음. 정상 상태다.
-          if ((err as { code?: string })?.code !== "P0002") throw err;
-        }
-      }
+      const state = await homeState();
+      /*
+        **여기서 소개를 열지 않는다.** 예전에는 열린 소개가 없으면 openIntro() 를
+        대신 불러줬는데, v2 부터 그 호출은 소개 티켓 1장을 차감한다 — 홈을 열기만
+        해도 5,000원이 빠지게 된다. 홈은 "도착했다" 까지만 말하고, 차감은 /intro
+        의 열람 확인이 받는다.
+      */
       if (cancelled) return;
       setCandidate(state.candidate);
       setMeeting(state.meeting);
       setRequestCount(state.request_count);
       setNoShow(state.pending_no_show);
+      setQueued(state.queued_intros);
+      setIntroTickets(state.intro_tickets);
       setLoading(false);
     })();
     return () => {
@@ -139,9 +131,11 @@ function HomePage() {
             ? isMale
               ? "오늘 소개가 도착했어요."
               : "평가할 프로필이 있어요."
-            : isMale
-              ? "기다리는 단계예요."
-              : "지금은 쉬어가는 중이에요.";
+            : isMale && queued > 0
+              ? "소개가 도착했어요."
+              : isMale
+                ? "기다리는 단계예요."
+                : "지금은 쉬어가는 중이에요.";
 
   return (
     <AppScreen>
@@ -215,13 +209,32 @@ function HomePage() {
               <CandidatePreview candidate={candidate} isMale={isMale} />
             </div>
           </>
+        ) : isMale && queued > 0 ? (
+          /*
+            큐에 카드가 도착한 상태. 여는 데 소개 티켓 1장이 들어가므로 홈에서
+            바로 열지 않고 /intro 의 확인 화면으로 보낸다 — 돈이 빠지는 행동을
+            링크 한 번으로 일으키지 않는다.
+          */
+          <GuideNote
+            introduce
+            action={
+              <CardAction to="/intro">
+                {introTickets > 0 ? "소개 열어보기" : "소개 티켓 사기"}
+              </CardAction>
+            }
+          >
+            {queued > 1
+              ? `소개 ${queued}건이 도착했어요. 한 번에 한 분씩 열어 보실 수 있습니다.`
+              : "소개가 도착했어요. 프로필을 열면 만남으로 이어갈지 정하실 수 있습니다."}
+            {introTickets === 0 ? " 열람에는 소개 티켓 1장이 필요합니다." : ""}
+          </GuideNote>
         ) : (
           // "보통 2~3일 안에 보내드립니다"라고 약속했었다. 근거가 코드에 없다 —
-          // open_intro() 는 상대의 like 가 생기는 **즉시** 열리거나, 없으면
-          // 영원히 열리지 않는다. 기간을 말하는 대신 조건을 말한다.
+          // 이제는 운영자가 큐를 세워야 소개가 나가므로 기간을 말할 수 없다.
+          // 조건을 말한다.
           <GuideNote introduce>
             {isMale
-              ? "소개는 상대가 먼저 회원님을 선택했을 때 열립니다. 선택이 들어오면 바로 알려드릴게요."
+              ? "소개는 회원님을 먼저 좋다고 한 분들 중에서 골라 보내드립니다. 준비되면 바로 알려드릴게요."
               : "지금은 평가할 분이 없습니다. 새로 가입한 분이 생기면 이어서 보여드릴게요."}
           </GuideNote>
         )}

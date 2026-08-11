@@ -13,19 +13,59 @@ import {
   ticketBundles,
   unusedTicketCount,
   type TicketBundle,
+  type TicketKind,
   type TicketOrder,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/store")({
+  // 소개 화면에서 "소개 티켓 사기" 로 넘어올 때 그 탭이 바로 열려야 한다.
+  validateSearch: (q: Record<string, unknown>): { kind?: TicketKind } => ({
+    kind: q.kind === "intro" || q.kind === "meeting" ? q.kind : undefined,
+  }),
   head: () => ({
     meta: [
       { title: `티켓 상점 — ${BRAND.short}` },
-      { name: "description", content: "만남 티켓을 구매합니다. 한 장이면 한 번의 만남." },
+      { name: "description", content: "소개 티켓과 만남 티켓을 구매합니다." },
     ],
   }),
   component: StorePage,
 });
+
+/**
+ * 티켓이 두 종류다(v2). 화면마다 어느 티켓인지 분명해야 한다 — 값도 성격도
+ * 다르다. 소개 티켓은 **소멸**이고 만남 티켓은 조건부 환불이다.
+ */
+const KINDS: {
+  v: TicketKind;
+  label: string;
+  unit: string;
+  guide: string;
+  terms: string[];
+}[] = [
+  {
+    v: "intro",
+    label: "소개 티켓",
+    unit: "소개 프로필 열람 1회",
+    guide: "도착한 소개의 프로필을 열 때 1장이 사용됩니다.",
+    terms: [
+      "티켓은 만료되지 않습니다",
+      "열람에 사용하면 돌려받을 수 없습니다",
+      "열어 본 뒤 만남으로 이어갈지는 자유입니다",
+    ],
+  },
+  {
+    v: "meeting",
+    label: "만남 티켓",
+    unit: "만남 주선 1회",
+    guide: "티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 전액 돌려드립니다.",
+    terms: [
+      "티켓은 만료되지 않습니다",
+      "상대가 24시간 안에 답하지 않으면 전액 환불",
+      "상대 사유로 약속이 취소된 경우에도 환불",
+    ],
+  },
+];
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 
@@ -37,40 +77,61 @@ const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
  * 섞여 보인다.
  */
 function StorePage() {
+  const { kind: fromLink } = Route.useSearch();
+  const [kind, setKind] = useState<TicketKind>(fromLink ?? "meeting");
   const [owned, setOwned] = useState<number | null>(null);
   const [order, setOrder] = useState<TicketOrder | null>(null);
   /* 가격을 클라이언트에 두면 서버와 어긋난다 — 실제로 3장 가격을 바꾸며 겪었다. */
   const [bundles, setBundles] = useState<TicketBundle[]>([]);
-  const [picked, setPicked] = useState<1 | 3>(1);
+  const [picked, setPicked] = useState<number>(1);
   const [busy, setBusy] = useState(false);
 
-  async function load() {
+  const spec = KINDS.find((k) => k.v === kind)!;
+
+  async function load(k: TicketKind) {
     const [count, pending, list] = await Promise.all([
-      unusedTicketCount(),
-      myPendingTicketOrder(),
-      ticketBundles(),
+      unusedTicketCount(k),
+      myPendingTicketOrder(k),
+      ticketBundles(k),
     ]);
     setOwned(count);
     setOrder(pending);
     setBundles(list);
+    // 번들 구성이 종류마다 다르다(만남 1·3 / 소개 1·5) — 선택을 되돌려 놓는다.
+    setPicked(list[0]?.quantity ?? 1);
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    void load(kind);
+  }, [kind]);
 
   const single = bundles.find((b) => b.quantity === 1)?.amount ?? 0;
 
   return (
     <AppScreen title="티켓 상점" back="/me">
+      <div className="mt-3 flex gap-2">
+        {KINDS.map((k) => (
+          <button
+            key={k.v}
+            type="button"
+            aria-pressed={kind === k.v}
+            onClick={() => setKind(k.v)}
+            className={cn(
+              "flex-1 rounded-control border-2 px-3 py-2 text-sm font-medium transition-colors",
+              kind === k.v ? "border-primary bg-primary/8" : "border-border bg-card",
+            )}
+          >
+            {k.label}
+          </button>
+        ))}
+      </div>
+
       <div className="mt-3">
-        <GuideNote introduce>
-          티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 전액 돌려드립니다.
-        </GuideNote>
+        <GuideNote introduce>{spec.guide}</GuideNote>
       </div>
 
       <p className="mt-5 text-sm text-muted-foreground">
-        보유 티켓{" "}
+        보유 {spec.label}{" "}
         <span className="font-semibold text-foreground tabular-nums">{owned ?? "—"}장</span>
       </p>
 
@@ -84,7 +145,7 @@ function StorePage() {
               <button
                 type="button"
                 aria-pressed={on}
-                onClick={() => setPicked(quantity === 3 ? 3 : 1)}
+                onClick={() => setPicked(quantity)}
                 className={cn(
                   "flex w-full items-center gap-4 rounded-surface border-2 px-5 py-4 text-left transition-colors",
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
@@ -96,7 +157,9 @@ function StorePage() {
                   aria-hidden="true"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="headline block text-lg">만남 티켓 {quantity}장</span>
+                  <span className="headline block text-lg">
+                    {spec.label} {quantity}장
+                  </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     장당 {won(perUnit)}
                     {saved > 0 ? ` · ${won(saved)} 아낌` : ""}
@@ -115,7 +178,8 @@ function StorePage() {
         <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
           <p className="text-sm font-semibold text-primary-strong">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            티켓 {order.quantity}장 · {won(order.amount)}. 준비되면 보유 티켓에 바로 들어옵니다.
+            {spec.label} {order.quantity}장 · {won(order.amount)}. 준비되면 보유 티켓에 바로
+            들어옵니다.
           </p>
         </div>
       ) : (
@@ -131,7 +195,7 @@ function StorePage() {
             onClick={async () => {
               setBusy(true);
               try {
-                setOrder(await requestTicketOrder(picked));
+                setOrder(await requestTicketOrder(picked, kind));
                 toast.success("신청을 받았습니다.");
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
@@ -149,11 +213,7 @@ function StorePage() {
       )}
 
       <ul className="mt-8 space-y-2.5 border-t border-border pt-5 text-sm">
-        {[
-          "티켓은 만료되지 않습니다",
-          "상대가 24시간 안에 답하지 않으면 전액 환불",
-          "상대 사유로 약속이 취소된 경우에도 환불",
-        ].map((t) => (
+        {spec.terms.map((t) => (
           <li key={t} className="flex gap-2.5 text-muted-foreground">
             <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
             <span className="leading-relaxed">{t}</span>

@@ -55,6 +55,9 @@ function SettingsPage() {
     );
   }
 
+  // paused_at 의 의미가 성별로 다르다 — 아래 토글의 라벨과 설명이 갈린다.
+  const isMale = me.gender === "male";
+
   return (
     <AppScreen title="환경설정" back="/me">
       <section className="mt-5">
@@ -137,7 +140,12 @@ function SettingsPage() {
         깰 수는 없다. 그 사실을 화면에서도 분명히 말한다.
       */}
       <section className="mt-9">
-        <h2 className="text-sm font-semibold">잠시 쉬기</h2>
+        {/*
+          남성 쪽에는 효과가 하나 더 붙는다(v2). paused_at 은 여성 평가 큐에서
+          빠지는 것 외에 **운영자가 세운 소개 카드도 오지 않게** 한다. 컬럼을
+          늘리지 않고 같은 값을 쓰되, 라벨과 설명을 갈라 그 사실을 말한다.
+        */}
+        <h2 className="text-sm font-semibold">{isMale ? "소개 받기" : "잠시 쉬기"}</h2>
         <label className="mt-3 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
           <input
             type="checkbox"
@@ -159,9 +167,13 @@ function SettingsPage() {
             }}
           />
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">새 소개 받지 않기</span>
+            <span className="block text-sm font-medium">
+              {isMale ? "소개 받지 않기" : "새 소개 받지 않기"}
+            </span>
             <span className="block text-xs leading-relaxed text-muted-foreground">
-              진행 중인 요청과 약속은 그대로 남습니다. 언제든 다시 켜실 수 있습니다.
+              {isMale
+                ? "도착한 소개 카드도 더 이상 오지 않습니다. 진행 중인 요청과 약속은 그대로 남습니다."
+                : "진행 중인 요청과 약속은 그대로 남습니다. 언제든 다시 켜실 수 있습니다."}
             </span>
           </span>
         </label>

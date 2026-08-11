@@ -201,6 +201,14 @@ export type HomeState = {
   request_count: number;
   pending_no_show: NoShowReport | null;
   has_open_intro: boolean;
+  /**
+   * 운영자가 세운 큐에서 **전송된** 카드 수(v2). 홈의 "소개가 도착했습니다" 는
+   * 이 값이 근거다 — v1 은 호감만 있으면 곧 소개였다.
+   */
+  queued_intros: number;
+  /** 종류별 미사용 보유량. 열람 버튼이 "1장을 사용합니다" 를 말하려면 필요하다. */
+  intro_tickets: number;
+  meeting_tickets: number;
 };
 
 export async function homeState(): Promise<HomeState> {
@@ -353,26 +361,45 @@ export async function getOpenIntroWithCandidate(): Promise<{
 }
 
 /**
- * 남성 전용: 열린 소개가 없으면 다음 후보로 열어본다.
- * open_intro()는 멱등이라 이미 열려 있으면 그대로 반환하고, 자격 있는 후보가
- * 아직 없으면 P0002로 실패한다(정상 상태 — 화면은 "대기 중"으로 처리한다).
+ * 남성 전용: 열린 소개가 없으면 큐의 맨 앞 카드를 연다.
+ *
+ * **v2 부터 이 호출은 소개 티켓 1장을 쓴다.** 그래서 실패 두 가지를 반드시
+ * 구분해야 한다 — 화면 안내가 정반대이기 때문이다.
+ *
+ *   · P0002 큐가 비었다      → 운영자를 기다리는 상태. 사용자가 할 일이 없다.
+ *   · P0003 소개 티켓이 없다 → 사용자가 살 수 있다. 상점으로 보낸다.
+ *
+ * 하나로 뭉개면 티켓만 사면 볼 수 있는 사람에게 "기다려 주세요" 라고 말하거나,
+ * 큐가 빈 사람에게 결제를 권하게 된다.
+ *
+ * 이미 열려 있으면 그대로 반환하고 티켓을 쓰지 않는다(불변식 2).
  */
-export async function ensureOpenIntro(): Promise<{
-  intro: Intro;
-  candidate: PublicProfile;
-} | null> {
+export type OpenIntroResult =
+  | { ok: true; intro: Intro; candidate: PublicProfile }
+  | { ok: false; reason: "empty_queue" | "no_intro_ticket" };
+
+export async function ensureOpenIntro(): Promise<OpenIntroResult> {
   const existing = await getOpenIntroWithCandidate();
-  if (existing) return existing;
+  if (existing) return { ok: true, ...existing };
 
   const { error } = await supabase.rpc("open_intro");
   if (error) {
-    if (error.code === "P0002") return null;
+    if (error.code === "P0002") return { ok: false, reason: "empty_queue" };
+    if (error.code === "P0003") return { ok: false, reason: "no_intro_ticket" };
     throw error;
   }
-  return getOpenIntroWithCandidate();
+  const opened = await getOpenIntroWithCandidate();
+  if (!opened) return { ok: false, reason: "empty_queue" };
+  return { ok: true, ...opened };
 }
 
 // ─────────────────────── 티켓 (F5) ───────────────────────
+
+/**
+ * 티켓 종류(s19). 섞이면 5,000원이 30,000원으로 쓰인다 — 서버가 kind 로 막지만
+ * 화면에서도 어느 티켓을 말하는지 항상 분명해야 한다.
+ */
+export type TicketKind = "intro" | "meeting";
 
 /** 티켓 차감 + 만남 생성. 이름이 "use"로 시작하면 React 훅으로 오인되므로 redeem 을 쓴다. */
 export async function redeemMeetingTicket(introId: string): Promise<Meeting> {
@@ -399,10 +426,16 @@ export type TicketOrder = Database["public"]["Tables"]["ticket_orders"]["Row"];
  * 예전에는 티켓이 0장이면 비활성 버튼("보유한 티켓이 없습니다")만 남아
  * 사이클이 여기서 끊겼다(진단 UX-7) — 누를 수 있는 것이 없었다.
  */
-export async function requestTicketOrder(quantity: 1 | 3 = 1): Promise<TicketOrder> {
-  const { data, error } = await supabase.rpc("create_ticket_order", { p_quantity: quantity });
+export async function requestTicketOrder(
+  quantity: number = 1,
+  kind: TicketKind = "meeting",
+): Promise<TicketOrder> {
+  const { data, error } = await supabase.rpc("create_ticket_order", {
+    p_quantity: quantity,
+    p_kind: kind,
+  });
   if (error) throw error;
-  await track("ticket_requested", { quantity });
+  await track("ticket_requested", { quantity, kind });
   return data;
 }
 
@@ -438,8 +471,8 @@ export async function myStats(): Promise<MyStats | null> {
 /** 상품 목록. 가격은 서버가 정한다 — 클라이언트에 두면 서버와 어긋난다. */
 export type TicketBundle = { quantity: number; amount: number };
 
-export async function ticketBundles(): Promise<TicketBundle[]> {
-  const { data, error } = await supabase.rpc("ticket_bundles");
+export async function ticketBundles(kind: TicketKind = "meeting"): Promise<TicketBundle[]> {
+  const { data, error } = await supabase.rpc("ticket_bundles", { p_kind: kind });
   if (error) throw error;
   return data ?? [];
 }
@@ -479,23 +512,21 @@ export async function setFeedbackEmails(on: boolean): Promise<void> {
 }
 
 /** 아직 처리되지 않은 내 주문. 있으면 "접수됨" 상태로 보여준다. */
-export async function myPendingTicketOrder(): Promise<TicketOrder | null> {
-  const { data, error } = await supabase
-    .from("ticket_orders")
-    .select("*")
-    .eq("state", "pending")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+export async function myPendingTicketOrder(kind?: TicketKind): Promise<TicketOrder | null> {
+  let q = supabase.from("ticket_orders").select("*").eq("state", "pending");
+  if (kind) q = q.eq("kind", kind);
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data;
 }
 
-export async function unusedTicketCount(): Promise<number> {
-  const { count, error } = await supabase
+export async function unusedTicketCount(kind?: TicketKind): Promise<number> {
+  let q = supabase
     .from("tickets")
     .select("*", { count: "exact", head: true })
     .eq("state", "unused");
+  if (kind) q = q.eq("kind", kind);
+  const { count, error } = await q;
   if (error) throw error;
   return count ?? 0;
 }
