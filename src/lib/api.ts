@@ -454,7 +454,9 @@ export async function myStats(): Promise<MyStats | null> {
 
   const [{ data: profile }, tickets, { count: met }] = await Promise.all([
     supabase.from("profiles").select("created_at").eq("id", session.user.id).maybeSingle(),
-    unusedTicketCount(),
+    // 마이페이지의 "보유 티켓" 은 만남 티켓을 뜻한다 — 종류를 넘기지 않으면
+    // 소개 티켓이 섞여 숫자가 행동으로 이어지지 않는다.
+    unusedTicketCount("meeting"),
     // 내가 "만났다"고 답한 만남. completed_by 에 내가 들어 있어야 한다 —
     // 상대만 답한 건 내 기록이 아니다.
     supabase
