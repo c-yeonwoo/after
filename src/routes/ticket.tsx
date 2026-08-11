@@ -43,8 +43,10 @@ function TicketPage() {
     const opened = await getOpenIntroWithCandidate();
     setIntroId(opened?.intro.id ?? null);
     setMeeting(opened ? await getMeetingByIntro(opened.intro.id) : null);
-    setTickets(await unusedTicketCount());
-    setOrder(await myPendingTicketOrder());
+    // 종류를 반드시 넘긴다(s19). 안 넘기면 소개 티켓까지 세어, 만남 티켓이
+    // 0장인데 "보유 1장" 이 뜨고 사용 버튼을 눌러야 P0002 를 만난다.
+    setTickets(await unusedTicketCount("meeting"));
+    setOrder(await myPendingTicketOrder("meeting"));
     setLoading(false);
   }
 
@@ -135,16 +137,18 @@ function TicketPage() {
               }
             }}
           >
-            티켓 사용하기
+            만남 티켓 사용하기
           </Button>
-          <p className="mt-3 text-center text-xs text-muted-foreground">보유 티켓 {tickets}장</p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            보유 만남 티켓 {tickets}장
+          </p>
         </>
       ) : order ? (
         <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
           <p className="text-sm font-semibold text-primary-strong">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            티켓이 준비되면 이 화면에서 바로 사용하실 수 있습니다. 그때까지 소개는 그대로 열려 있고,
-            넘어가지 않습니다.
+            만남 티켓이 준비되면 이 화면에서 바로 사용하실 수 있습니다. 그때까지 소개는 그대로 열려
+            있고, 넘어가지 않습니다.
           </p>
         </div>
       ) : (
@@ -162,7 +166,7 @@ function TicketPage() {
             onClick={async () => {
               setBusy(true);
               try {
-                setOrder(await requestTicketOrder());
+                setOrder(await requestTicketOrder(1, "meeting"));
                 toast.success("신청을 받았습니다.");
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
@@ -171,10 +175,10 @@ function TicketPage() {
               }
             }}
           >
-            {busy ? "신청하는 중…" : "티켓 신청하기"}
+            {busy ? "신청하는 중…" : "만남 티켓 신청하기"}
           </Button>
           <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-            티켓 한 장 {MEETING_TICKET_PRICE_LABEL}. 결제 수단을 여는 중이라 지금은 신청만 받고
+            만남 티켓 한 장 {MEETING_TICKET_PRICE_LABEL}. 결제 수단을 여는 중이라 지금은 신청만 받고
             있습니다. 신청해 두시면 이 소개는 넘어가지 않고 기다립니다.
           </p>
         </>
