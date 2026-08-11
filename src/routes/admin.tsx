@@ -30,6 +30,8 @@ export const Route = createFileRoute("/admin")({
 const TABS: { to: string; label: string; exact?: boolean }[] = [
   // 대시보드만 exact 다. 아니면 /admin/members 에서도 활성으로 잡힌다.
   { to: "/admin", label: "대시보드", exact: true },
+  // 큐레이션이 매칭의 필수 경로다(v2) — 회원보다 앞에 둔다.
+  { to: "/admin/curation", label: "큐레이션" },
   { to: "/admin/members", label: "회원" },
   { to: "/admin/photos", label: "사진 검수" },
   { to: "/admin/reports", label: "신고" },

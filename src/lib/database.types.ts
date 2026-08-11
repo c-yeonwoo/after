@@ -1501,6 +1501,33 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_queue: {
+        Args: { p_male: string }
+        Returns: {
+          birth: string
+          curator_name: string
+          delivered_at: string
+          details: Json
+          drinking: string
+          expires_at: string
+          female_id: string
+          headline: string
+          hub_id: string
+          interests: string[]
+          intro: string
+          job: string
+          match_tags: string[]
+          mbti: string
+          name: string
+          note: string
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string
+          queue_position: number
+          religion: string
+          smoking: string
+          topics: string[]
+        }[]
+      }
       admin_reports: {
         Args: { p_state?: Database["public"]["Enums"]["report_state"] }
         Returns: {

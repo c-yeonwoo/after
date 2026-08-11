@@ -28,6 +28,7 @@ import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketRouteImport } from './routes/ticket'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminCurationRouteImport } from './routes/admin.curation'
 import { Route as AdminMeetingsRouteImport } from './routes/admin.meetings'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
@@ -130,6 +131,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCurationRoute = AdminCurationRouteImport.update({
+  id: '/curation',
+  path: '/curation',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMeetingsRoute = AdminMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/admin/curation': typeof AdminCurationRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/photos': typeof AdminPhotosRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/admin/curation': typeof AdminCurationRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/photos': typeof AdminPhotosRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/admin/curation': typeof AdminCurationRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/photos': typeof AdminPhotosRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/ticket'
+    | '/admin/curation'
     | '/admin/meetings'
     | '/admin/members'
     | '/admin/photos'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/ticket'
+    | '/admin/curation'
     | '/admin/meetings'
     | '/admin/members'
     | '/admin/photos'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/ticket'
+    | '/admin/curation'
     | '/admin/meetings'
     | '/admin/members'
     | '/admin/photos'
@@ -482,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/curation': {
+      id: '/admin/curation'
+      path: '/curation'
+      fullPath: '/admin/curation'
+      preLoaderRoute: typeof AdminCurationRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/meetings': {
       id: '/admin/meetings'
       path: '/meetings'
@@ -540,6 +559,7 @@ const AdminMembersRouteWithChildren = AdminMembersRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminCurationRoute: typeof AdminCurationRoute
   AdminMeetingsRoute: typeof AdminMeetingsRoute
   AdminMembersRoute: typeof AdminMembersRouteWithChildren
   AdminPhotosRoute: typeof AdminPhotosRoute
@@ -548,6 +568,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCurationRoute: AdminCurationRoute,
   AdminMeetingsRoute: AdminMeetingsRoute,
   AdminMembersRoute: AdminMembersRouteWithChildren,
   AdminPhotosRoute: AdminPhotosRoute,
