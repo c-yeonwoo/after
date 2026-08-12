@@ -217,6 +217,24 @@ export async function setQueue(maleId: string, femaleIds: string[], note: string
   return data ?? 0;
 }
 
+// ─────────────────── 큐레이터 지표 ───────────────────
+
+export type CuratorStats =
+  Database["public"]["Functions"]["admin_curator_stats"]["Returns"][number];
+
+/**
+ * 큐레이터별 퍼널. **비율은 서버가 계산하지 않는다** — 분자·분모를 그대로 받아
+ * 화면이 나눈다. 40% 만 오면 그게 2/5 인지 40/100 인지 알 수 없고, 운영자는
+ * 1/1 을 100% 로 읽는다.
+ */
+export async function fetchCuratorStats(since?: Date): Promise<CuratorStats[]> {
+  const { data, error } = await supabase.rpc("admin_curator_stats", {
+    p_since: since ? since.toISOString() : undefined,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // ─────────────────── 사진 검수 ───────────────────
 
 export type PhotoState = Database["public"]["Enums"]["photo_state"];
