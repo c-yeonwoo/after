@@ -1486,6 +1486,27 @@ export type Database = {
           unused_tickets: number
         }[]
       }
+      admin_no_show_reports: {
+        Args: { p_state?: Database["public"]["Enums"]["report_state"] }
+        Returns: {
+          accused_id: string
+          accused_name: string
+          accused_note: string
+          accused_state: Database["public"]["Enums"]["account_state"]
+          compensated: boolean
+          confirm_by: string
+          created_at: string
+          id: string
+          meeting_id: string
+          place_name: string
+          reporter_id: string
+          reporter_name: string
+          reporter_note: string
+          resolved_at: string
+          scheduled_at: string
+          state: Database["public"]["Enums"]["report_state"]
+        }[]
+      }
       admin_photo_queue: {
         Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
         Returns: {
@@ -1546,6 +1567,25 @@ export type Database = {
           resolved_at: string
           state: Database["public"]["Enums"]["report_state"]
         }[]
+      }
+      admin_resolve_no_show: {
+        Args: { p_note: string; p_report_id: string; p_upheld: boolean }
+        Returns: {
+          accused_id: string
+          confirm_by: string
+          created_at: string
+          id: string
+          meeting_id: string
+          reporter_id: string
+          resolved_at: string | null
+          state: Database["public"]["Enums"]["report_state"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "no_show_reports"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_review_photo: {
         Args: { p_approve: boolean; p_note: string; p_user: string }

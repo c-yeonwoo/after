@@ -242,6 +242,38 @@ export async function reviewPhoto(userId: string, approve: boolean, note: string
   if (error) throw error;
 }
 
+// ─────────────────── 노쇼 신고 ───────────────────
+
+export type NoShowReport =
+  Database["public"]["Functions"]["admin_no_show_reports"]["Returns"][number];
+
+export async function fetchNoShowReports(state?: ReportState): Promise<NoShowReport[]> {
+  const { data, error } = await supabase.rpc("admin_no_show_reports", {
+    p_state: state ?? undefined,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 노쇼 판정. 확정을 뒤집으면 서버가 제명을 풀지만 **보상 티켓은 회수하지
+ * 않는다** — 이미 나간 것을 사후 판단으로 빼앗지 않는다.
+ *
+ * 기각된 건을 다시 인정으로 되돌릴 수는 없다({@link ALREADY_RESOLVED}).
+ */
+export async function resolveNoShow(
+  reportId: string,
+  upheld: boolean,
+  note: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_resolve_no_show", {
+    p_report_id: reportId,
+    p_upheld: upheld,
+    p_note: note,
+  });
+  if (error) throw error;
+}
+
 // ─────────────────── 만남 ───────────────────
 
 export async function fetchMeetings(state?: MeetingFilter): Promise<AdminMeeting[]> {
