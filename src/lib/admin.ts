@@ -22,11 +22,49 @@ export type MeetingFilter = "active" | "confirmed" | "completed" | "cancelled";
 
 /*
   회원 상세는 jsonb 한 덩이로 온다. 생성된 타입은 Json 이라 그대로는 못 쓴다 —
-  화면이 기대하는 모양을 여기 한 곳에 적어 둔다. 서버가 to_jsonb(profiles) 를
-  그대로 내보내므로 profile 은 Row 타입을 재사용한다.
+  화면이 기대하는 모양을 여기 한 곳에 적어 둔다.
+
+  profile 은 **Row 전체가 아니다.** s23 에서 서버를 허용 목록으로 바꿨으므로
+  (민감 컬럼이 새 컬럼으로 추가돼도 안 나가게), 여기서도 나가는 것만 적는다.
+  Row 를 그대로 쓰면 실제로는 오지 않는 필드를 타입이 있다고 말한다.
 */
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+
 export type AdminMemberDetail = {
-  profile: Database["public"]["Tables"]["profiles"]["Row"];
+  profile: Pick<
+    ProfileRow,
+    | "id"
+    | "gender"
+    | "hub_id"
+    | "company_email"
+    | "email_verified_at"
+    | "account_state"
+    | "banned_reason"
+    | "name"
+    | "birth"
+    | "job"
+    | "photo_url"
+    | "mbti"
+    | "smoking"
+    | "drinking"
+    | "religion"
+    | "headline"
+    | "interests"
+    | "match_tags"
+    | "topics"
+    | "onboarding_step"
+    | "created_at"
+    | "intro"
+    | "details"
+    | "terms_agreed_at"
+    | "privacy_agreed_at"
+    | "agreed_policy_version"
+    | "paused_at"
+    | "role"
+    | "photo_state"
+    | "photo_reviewed_at"
+    | "photo_reject_reason"
+  >;
   tickets: {
     id: string;
     kind: string;
