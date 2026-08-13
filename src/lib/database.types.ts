@@ -572,6 +572,7 @@ export type Database = {
       intros: {
         Row: {
           closed_at: string | null
+          curated_by: string | null
           female_id: string
           id: string
           male_id: string
@@ -580,6 +581,7 @@ export type Database = {
         }
         Insert: {
           closed_at?: string | null
+          curated_by?: string | null
           female_id: string
           id?: string
           male_id: string
@@ -588,6 +590,7 @@ export type Database = {
         }
         Update: {
           closed_at?: string | null
+          curated_by?: string | null
           female_id?: string
           id?: string
           male_id?: string
@@ -595,6 +598,27 @@ export type Database = {
           outcome?: Database["public"]["Enums"]["intro_outcome"] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "intros_curated_by_fkey"
+            columns: ["curated_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intros_curated_by_fkey"
+            columns: ["curated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intros_curated_by_fkey"
+            columns: ["curated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "intros_female_id_fkey"
             columns: ["female_id"]
@@ -1415,6 +1439,21 @@ export type Database = {
           receiving: boolean
         }[]
       }
+      admin_curator_stats: {
+        Args: { p_since?: string }
+        Returns: {
+          curated: number
+          curator_id: string
+          curator_name: string
+          delivered: number
+          expired: number
+          met: number
+          opened: number
+          passed: number
+          undecided: number
+          waiting: number
+        }[]
+      }
       admin_dashboard: { Args: never; Returns: Json }
       admin_like_pool: {
         Args: { p_male: string }
@@ -1883,6 +1922,7 @@ export type Database = {
         Args: never
         Returns: {
           closed_at: string | null
+          curated_by: string | null
           female_id: string
           id: string
           male_id: string

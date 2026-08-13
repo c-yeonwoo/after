@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { CuratorTable } from "@/components/admin/CuratorTable";
 import { fetchDashboard, type AdminDashboard } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/")({ component: DashboardTab });
@@ -128,6 +129,13 @@ function DashboardTab() {
           search={{ state: "confirmed" as const }}
         />
       </Group>
+
+      {/*
+        큐레이터 지표는 대시보드에 둔다. 이 화면이 이미 "적체와 품질" 을 답하는
+        자리이고, 이건 그 품질의 내역이다 — 탭을 하나 더 늘리면 어디를 봐야
+        하는지가 흐려진다.
+      */}
+      <CuratorTable />
     </>
   );
 }
