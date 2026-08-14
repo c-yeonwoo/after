@@ -1,0 +1,57 @@
+<!--
+  가입 인증 코드 메일 (계정이 아직 없는 사람의 첫 인증).
+
+  ── 왜 템플릿이 두 개인가 ──
+  requestEmailCode() 는 signInWithOtp({ shouldCreateUser: true }) 를 쓴다. GoTrue 는
+  **계정 존재 여부에 따라 다른 템플릿**을 고른다 — 기존 회원은 magic_link,
+  처음 오는 사람은 confirm_signup 이다. 하나만 고치면 나머지 절반이 영문 기본
+  문구로 나간다.
+
+  ── 왜 문구가 다른가 ──
+  이 서비스는 **회사 이메일 인증이 가입 조건**이다(직장 인증 = 신뢰의 근거).
+  처음 오는 사람에게는 "왜 하필 회사 메일로 받았는가" 가 설명돼야 한다. 그 맥락이
+  없으면 개인 메일로 다시 시도하다 막히거나, 회사 메일을 요구하는 낯선 서비스로
+  읽힌다.
+
+  코드·만료·주의 문구는 magic_link.html 과 같게 유지한다. 두 메일의 규칙이
+  달라지면 사용자가 "지난번엔 됐는데" 를 겪는다.
+-->
+<div style="margin:0;padding:24px 0;background-color:#f7f2ef;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;">
+  <div style="max-width:440px;margin:0 auto;padding:0 20px;">
+
+    <p style="margin:0 0 28px;font-size:15px;font-weight:700;color:#c72b10;letter-spacing:-0.01em;">
+      애프터선셋
+    </p>
+
+    <p style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1c1917;letter-spacing:-0.02em;">
+      직장 인증 코드입니다
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#57534e;">
+      아래 6자리를 가입 화면에 입력하시면 인증이 끝납니다.
+    </p>
+
+    <div style="padding:20px;background-color:#ffffff;border:1px solid #e7e1dd;border-radius:14px;text-align:center;">
+      <div style="font-size:32px;font-weight:700;color:#1c1917;letter-spacing:0.2em;font-variant-numeric:tabular-nums;">
+        {{ .Token }}
+      </div>
+    </div>
+
+    <p style="margin:20px 0 0;font-size:13px;line-height:1.7;color:#78716c;">
+      이 코드는 <strong style="color:#57534e;">1시간</strong> 동안, 한 번만 쓸 수 있습니다.
+    </p>
+    <p style="margin:12px 0 0;font-size:13px;line-height:1.7;color:#78716c;">
+      회사 이메일로 보내는 이유는 <strong style="color:#57534e;">직장이 확인된 분들끼리만</strong>
+      소개하기 때문입니다. 회사명과 이메일 주소는 상대에게 공개되지 않습니다.
+    </p>
+    <p style="margin:12px 0 0;font-size:13px;line-height:1.7;color:#78716c;">
+      가입을 신청하지 않으셨다면 이 메일은 무시하셔도 됩니다. 코드를 다른 사람에게
+      알려주지 마세요.
+    </p>
+
+    <p style="margin:32px 0 0;padding-top:16px;border-top:1px solid #e7e1dd;font-size:12px;line-height:1.7;color:#a8a29e;">
+      애프터선셋 · 강남·역삼권 직장인 1:1 소개 서비스<br />
+      이 메일은 발신 전용입니다.
+    </p>
+
+  </div>
+</div>
