@@ -27,12 +27,28 @@
 질량과 선을 대비시키는 것이 같은 것 둘을 나란히 두는 것보다 작은 크기에서 강하다.
 이 관찰이 형태를 결정했다.
 
-### 두 벌로 유지한다
+### 세 벌로 유지한다
 
-| | 파일 | 이음선 | 링 두께 |
-|---|---|---|---|
-| 화면 | `src/components/Logo.tsx` | `mask` | 3.2 |
-| 아이콘 | `public/favicon.svg` | 코럴 원 겹쳐 그리기 | 4.4 |
+| | 파일 | 배경 | 이음선 | 링 두께 |
+|---|---|---|---|---|
+| 화면 | `src/components/Logo.tsx` | 없음(`currentColor`) | `mask` | 3.2 |
+| 파비콘 | `public/favicon.svg` | 둥근 타일(`rx=15`) | 코럴 원 겹쳐 그리기 | 4.4 |
+| 앱 아이콘 | `brand/app-icon-ios.svg` | **사각 전면** | 코럴 원 겹쳐 그리기 | 4.4 |
+
+**앱 아이콘이 따로 있는 이유**: 파비콘은 스스로 둥근 타일이라 코너가 투명하다.
+iOS 는 투명을 검게 칠하고 그 위에 자기 스퀴클 마스크를 씌우므로, 같은 파일을 쓰면
+둥근 모서리 바깥에 **검은 삼각형 네 개**가 남는다. 앱스토어 심사도 아이콘의 투명을
+받지 않는다. 앱 아이콘은 모서리를 깎지 않고 배경을 전면으로 채운다 — 둥글리는 일은
+OS 가 한다.
+
+마크 위치도 다르다. bounding box 중심이 캔버스 중심과 어긋나 있어(아래 참고) scale
+만 주면 한쪽으로 몰린다.
+
+    마크 bbox(32 단위): x 4.4~28.8, y 3.2~27.6 → 중심 (16.6, 15.4)
+    translate = 32 - scale × (16.6, 15.4)
+
+앱 아이콘은 `scale 1.45` 로 마크가 캔버스의 **약 55%** 다. 처음 1.18 로 뽑았더니
+46% 로 작아 아이콘 안에서 겉돌았다(관례는 55~60%).
 
 - **치수가 다른 이유**: 파비콘이 실제로 그려지는 크기는 16px 이고, 타일 안쪽 여백을
   빼면 마크에 10px 남짓만 남는다. 그 크기에서 3.2 두께 링은 사라진다.
@@ -70,7 +86,20 @@ done
 
 cp "$TMP/r-180.png"    public/apple-touch-icon.png
 cp "$TMP/icon-512.png" public/icon-512.png
-cp "$TMP/icon-1024.png" brand/app-store-1024.png
+```
+
+앱 아이콘은 **원본이 다르다**(`brand/app-icon-ios.svg`). 투명이 없어야 하므로
+배경을 흰색으로 지정해 렌더한다 — `--default-background-color=00000000` 을 쓰면
+알파 채널이 생긴다.
+
+```bash
+"$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
+  --screenshot="$TMP/ios-1024.png" --window-size=1024,1024 \
+  --default-background-color=ffffffff "file://$PWD/brand/app-icon-ios.svg"
+
+cp "$TMP/ios-1024.png" brand/app-store-1024.png
+cp "$TMP/ios-1024.png" \
+   'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'
 ```
 
 `favicon.ico` 는 16·32·48 을 한 파일에 담아야 한다(윈도우·구형 브라우저가
@@ -96,8 +125,16 @@ PY
 - `favicon.ico` 안의 PNG 가 실제로 그려졌는지 본다 — 빈 이미지도 구조는 유효하다.
   16x16 이 700바이트 아래면 의심한다(코럴 타일이 있으므로 그보다 작아질 수 없다).
 - 밝은 탭바·어두운 탭바 양쪽에서 실루엣이 남는지 본다.
-- iOS 홈 화면 아이콘은 **투명을 검게 칠한다.** `apple-touch-icon.png` 에 투명
-  영역이 없어야 한다 — 타일이 불투명하므로 지금은 충족한다.
+- iOS·앱스토어 아이콘에 **알파 채널이 없어야 한다.** PNG color type 이 2(RGB)여야
+  하고 6(RGBA)이면 안 된다.
+
+  ```bash
+  python3 -c "
+  import struct; d=open('brand/app-store-1024.png','rb').read()
+  print('color type', struct.unpack('>IIBB', d[16:26])[3], '(2=RGB 정상, 6=RGBA 문제)')"
+  ```
+
+- 시뮬레이터 홈 화면에서 실제로 본다 — 코너에 검은 삼각형이 없어야 한다.
 
 ---
 
