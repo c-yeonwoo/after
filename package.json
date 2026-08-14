@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:dry": "npm run build && wrangler deploy --dry-run",
-    "preview:cf": "npm run build && wrangler dev",
+    "deploy": "npm run build && npx wrangler deploy",
+    "deploy:dry": "npm run build && npx wrangler deploy --dry-run",
+    "preview:cf": "npm run build && npx wrangler dev",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
