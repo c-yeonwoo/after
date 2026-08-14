@@ -99,6 +99,15 @@ function CurationTab() {
                       큐 {t.queued_count}
                       {t.queued_count > DELIVER_WINDOW ? ` (전송 ${t.delivered_count})` : ""}
                     </span>
+                    {/*
+                      호감은 줬지만 후보 자격이 없어 담을 수 없는 사람. 사진 검수
+                      대기가 대부분이다 — 검수하면 곧바로 큐레이션 가능하므로
+                      "지금 무엇이 막혀 있는가" 로 보여준다. 숫자를 낮춰 감추면
+                      운영자는 그 사람이 존재하는지조차 모른다.
+                    */}
+                    {t.blocked_count > 0 ? (
+                      <span className="text-primary-strong">막힘 {t.blocked_count}</span>
+                    ) : null}
                     {t.oldest_like_hours !== null ? (
                       <span className={t.oldest_like_hours > 72 ? "text-primary-strong" : ""}>
                         최장 {Math.floor(t.oldest_like_hours / 24)}일

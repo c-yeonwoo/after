@@ -270,6 +270,36 @@ function Onboarding() {
                 </p>
               </div>
             </div>
+
+            {/*
+              검수 상태를 사용자에게 돌려준다.
+
+              s18 이후 사진은 승인 전까지 후보 풀에서 빠진다. 그런데 그 사실이
+              어디에도 안 적혀 있어서, 반려당한 사람은 **아무에게도 안 보이는
+              상태로 이유도 모른 채** 남았다(출시 전 검증 B5). 사유는 이미
+              profiles.photo_reject_reason 에 있고 본인만 읽을 수 있다 —
+              화면이 그걸 안 읽었을 뿐이다.
+
+              사진을 새로 고르면 트리거가 pending 으로 되돌리므로(s18), 여기서
+              할 일은 "지금 어느 상태이고 무엇을 하면 되는지" 를 말하는 것이다.
+            */}
+            {!photoPreview && me?.photo_url && me.photo_state !== "approved" ? (
+              <p
+                className={`mt-3 text-xs leading-relaxed ${
+                  me.photo_state === "rejected" ? "text-destructive" : "text-muted-foreground"
+                }`}
+              >
+                {me.photo_state === "rejected" ? (
+                  <>
+                    <span className="font-semibold">사진이 반려되었습니다.</span>{" "}
+                    {me.photo_reject_reason ?? "다른 사진으로 다시 올려주세요."} 새 사진을 올리면
+                    다시 검수합니다.
+                  </>
+                ) : (
+                  <>사진을 검수하고 있습니다. 검수가 끝나기 전까지는 상대에게 소개되지 않습니다.</>
+                )}
+              </p>
+            ) : null}
           </div>
 
           <div>

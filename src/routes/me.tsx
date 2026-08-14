@@ -26,7 +26,9 @@ function joinedLabel(iso: string) {
 
 const MENU = [
   { to: "/profile", icon: User, label: "내 프로필", hint: "상대에게 보이는 모습" },
-  { to: "/store", icon: Ticket, label: "티켓 상점", hint: "만남 티켓 구매" },
+  // 상점은 소개·만남 두 종류를 판다(s19). 부제가 한쪽만 말하면 소개 티켓을
+  // 사려는 사람이 여기로 들어올 이유를 못 찾는다.
+  { to: "/store", icon: Ticket, label: "티켓 상점", hint: "소개 · 만남 티켓 구매" },
   { to: "/settings", icon: Bell, label: "환경설정", hint: "화면 · 알림" },
   { to: "/terms", icon: FileText, label: "약관 · 문의", hint: "이용약관 · 개인정보" },
 ] as const;
@@ -106,13 +108,22 @@ function MePage() {
         </div>
 
         <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
+          {/*
+            티켓은 종류가 둘이라 한 숫자로 합치지 않는다. 합치면 "몇 장이
+            무엇에 쓰이는지" 를 잃고, 한쪽만 세면 나머지를 가진 사람이 0장을
+            본다 — 둘 다 겪었으므로 갈라서 적는다.
+          */}
           <div>
             <dt className="text-3xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
               보유 티켓
             </dt>
             <dd className="headline mt-1 text-2xl tabular-nums">
-              {stats ? stats.unusedTickets : "—"}
-              <span className="ml-1 text-sm font-normal text-muted-foreground">장</span>
+              {stats ? stats.introTickets : "—"}
+              <span className="ml-1 text-sm font-normal text-muted-foreground">장 소개</span>
+            </dd>
+            <dd className="headline mt-0.5 text-2xl tabular-nums">
+              {stats ? stats.meetingTickets : "—"}
+              <span className="ml-1 text-sm font-normal text-muted-foreground">장 만남</span>
             </dd>
           </div>
           <div>

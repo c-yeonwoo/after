@@ -1427,6 +1427,7 @@ export type Database = {
       admin_curation_targets: {
         Args: never
         Returns: {
+          blocked_count: number
           delivered_count: number
           has_open_intro: boolean
           hub_id: string
@@ -1600,6 +1601,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["report_kind"]
           meeting_id: string
           message_body: string
+          refundable: boolean
           reporter_id: string
           reporter_name: string
           resolve_note: string
