@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,8 +39,15 @@ export function Logo({ className, size = "md" }: { className?: string; size?: "s
   return (
     <span className={cn("flex min-w-0 items-center gap-2", className)}>
       <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
-      <span className={cn("wordmark truncate lowercase", size === "sm" ? "text-lg" : "text-xl")}>
-        after
+      {/*
+        워드마크는 **정식 라틴 표기**다. 전에는 `after` 한 단어였는데 그건 정식명도
+        약칭도 영문명도 아니었다 — 도메인은 aftersunset.kr 이고, 영어 `after` 는
+        전치사라 단독으로는 이름처럼 읽히지 않는다.
+
+        lowercase 를 걷었다. 고유명사이므로 대문자를 살린다.
+      */}
+      <span className={cn("wordmark truncate", size === "sm" ? "text-lg" : "text-xl")}>
+        {BRAND.nameEn}
       </span>
     </span>
   );

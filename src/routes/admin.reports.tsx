@@ -244,7 +244,7 @@ function ReportRow({
                 onDone={onResolved}
                 actions={[
                   {
-                    label: r.meeting_id ? "인정 · 티켓 환불" : "인정",
+                    label: r.refundable ? "인정 · 티켓 환불" : "인정",
                     done: "인정 처리했습니다.",
                     run: (note, ban) => resolveReport(r.id, true, note, ban),
                   },

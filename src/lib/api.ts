@@ -441,7 +441,8 @@ export async function requestTicketOrder(
 
 /** 마이페이지 대시보드용 숫자. 행동으로 이어지거나 본인에게 의미 있는 것만 센다. */
 export type MyStats = {
-  unusedTickets: number;
+  introTickets: number;
+  meetingTickets: number;
   metCount: number;
   joinedAt: string;
 };
@@ -452,10 +453,20 @@ export async function myStats(): Promise<MyStats | null> {
   } = await supabase.auth.getSession();
   if (!session) return null;
 
-  const [{ data: profile }, tickets, { count: met }] = await Promise.all([
+  const [{ data: profile }, introTickets, meetingTickets, { count: met }] = await Promise.all([
     supabase.from("profiles").select("created_at").eq("id", session.user.id).maybeSingle(),
-    // 마이페이지의 "보유 티켓" 은 만남 티켓을 뜻한다 — 종류를 넘기지 않으면
-    // 소개 티켓이 섞여 숫자가 행동으로 이어지지 않는다.
+    /*
+      종류를 **둘 다** 센다.
+
+      처음에는 만남 티켓만 셌다. 종류를 안 넘기면 두 종류가 한 숫자에 섞여
+      "몇 장이 무엇에 쓰이는지" 를 잃기 때문이었는데, 그 대가로 소개 티켓을
+      가진 사람이 자기 화면에서 `보유 티켓 0장` 을 보게 됐다(iOS 검증에서
+      민수가 소개 티켓 1장을 들고 0장을 봤다). 방금 5,000원을 낸 사람에게
+      0장은 결제 실패로 읽힌다.
+
+      섞지 않고 **갈라서** 낸다 — 숫자는 둘, 각자 무엇에 쓰이는지가 붙는다.
+    */
+    unusedTicketCount("intro"),
     unusedTicketCount("meeting"),
     // 내가 "만났다"고 답한 만남. completed_by 에 내가 들어 있어야 한다 —
     // 상대만 답한 건 내 기록이 아니다.
@@ -467,7 +478,12 @@ export async function myStats(): Promise<MyStats | null> {
   ]);
 
   if (!profile) return null;
-  return { unusedTickets: tickets, metCount: met ?? 0, joinedAt: profile.created_at };
+  return {
+    introTickets,
+    meetingTickets,
+    metCount: met ?? 0,
+    joinedAt: profile.created_at,
+  };
 }
 
 /** 상품 목록. 가격은 서버가 정한다 — 클라이언트에 두면 서버와 어긋난다. */
