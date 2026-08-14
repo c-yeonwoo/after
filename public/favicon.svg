@@ -1,16 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="애프터선셋">
   <!--
-    탭 파비콘. 탭 배경이 밝든 어둡든 형태가 유지되도록 코럴 타일 위에 흰 마크를
-    올린다 — 마크만 두면 다크 탭바에서 코럴이 묻힌다.
+    탭 파비콘 · 앱 아이콘의 원본. 탭 배경이 밝든 어둡든 형태가 유지되도록 코럴
+    타일 위에 흰 마크를 올린다 — 마크만 두면 다크 탭바에서 코럴이 묻힌다.
 
-    ⚠️ 이 마크는 교체 예정이다(src/components/Logo.tsx 참고). 새 마크를 받으면
-    이 파일과 apple-touch-icon.png · icon-512.png · 앱스토어용 1024 를 한 벌로
-    다시 만든다.
+    마크는 src/components/Logo.tsx 와 같은 형태(면 하나 + 열린 링 하나)지만
+    **치수와 구현이 모두 다르다.**
+
+    치수: 파비콘이 실제로 그려지는 크기는 16px 이고, 타일 안쪽 여백을 빼면 마크에
+    10px 남짓만 남는다. 그 크기에서 3.2 두께 링은 사라져서 링을 4.4 로 키우고
+    반지름을 줄여 질량을 확보했다.
+
+    구현: 컴포넌트는 mask 로 이음선을 파지만 여기서는 **코럴 원을 겹쳐 그려**
+    같은 틈을 만든다. mask 를 쓴 버전을 PNG 로 뽑아 보니 링이 팔각형으로 깨졌다
+    (래스터라이저가 mask 를 낮은 해상도로 처리한다). 배경색을 아는 자산이라
+    겹쳐 그리기가 가능하고, 그 편이 어떤 변환기를 거쳐도 안전하다.
+    컴포넌트는 currentColor 라 배경을 모르므로 그쪽은 mask 가 맞다.
+
+    ⚠️ 마크를 고치면 이 파일에서 apple-touch-icon.png(180) · icon-512.png ·
+    앱스토어용 1024 를 다시 뽑는다. 뽑는 방법은 docs/brand-assets.md 참고.
   -->
   <rect width="64" height="64" rx="15" fill="#c72b10"/>
-  <g transform="translate(12 12) scale(1.25)">
-    <clipPath id="h"><rect x="0" y="0" width="32" height="20.6"/></clipPath>
-    <circle cx="12.8" cy="15.27" r="8.6" fill="#FFF3EE" clip-path="url(#h)"/>
-    <path d="M3.2 20.6h25.6" stroke="#FFF3EE" stroke-width="2.6" stroke-linecap="round"/>
+  <g transform="translate(11 11) scale(1.3125)">
+    <!-- 열린 원 -->
+    <circle cx="19.8" cy="12.2" r="6.8" fill="none" stroke="#FFF3EE" stroke-width="4.4"/>
+    <!-- 이음선: 타일색으로 한 번 덮어 틈을 만든다 -->
+    <circle cx="12.2" cy="19.8" r="9.6" fill="#c72b10"/>
+    <!-- 채운 원 -->
+    <circle cx="12.2" cy="19.8" r="7.8" fill="#FFF3EE"/>
   </g>
 </svg>
