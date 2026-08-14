@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="애프터선셋">
+  <!--
+    iOS·앱스토어 아이콘 원본. public/favicon.svg 와 **모서리 처리가 다르다.**
+
+    파비콘은 스스로 둥근 타일(rx=15)이라 코너가 투명하다. iOS 는 투명을 검게
+    칠하고 그 위에 자기 스퀴클 마스크를 씌우므로, 같은 파일을 쓰면 둥근 모서리
+    바깥에 검은 삼각형 네 개가 남는다. 앱스토어 심사도 아이콘의 투명을 받지 않는다.
+
+    그래서 여기서는 **모서리를 깎지 않고 배경을 전면으로 채운다.** 둥글리는 일은
+    OS 가 한다.
+
+    ── 위치와 크기 ──
+    마크의 실제 bounding box 는 32 단위 공간에서 x 4.4~28.8, y 3.2~27.6 이다
+    (링의 stroke 절반까지 포함). 즉 중심이 (16.6, 15.4) 로 캔버스 중심(16,16)과
+    어긋나 있어서, scale 만 주고 균등하게 translate 하면 마크가 한쪽으로 몰린다.
+
+      translate = 32 - scale × (16.6, 15.4)
+
+    scale 1.45 → 마크 폭이 캔버스의 약 55% 다. 처음 1.18 로 뽑았더니 46% 로
+    작아서 아이콘 안에서 겉돌았다(앱 아이콘 관례는 55~60%).
+
+    ⚠️ 마크를 고치면 이 파일과 public/favicon.svg 를 함께 고친다.
+    재생성 절차는 docs/brand-assets.md 참고.
+  -->
+  <rect width="64" height="64" fill="#c72b10"/>
+  <g transform="translate(7.93 9.67) scale(1.45)">
+    <circle cx="19.8" cy="12.2" r="6.8" fill="none" stroke="#FFF3EE" stroke-width="4.4"/>
+    <circle cx="12.2" cy="19.8" r="9.6" fill="#c72b10"/>
+    <circle cx="12.2" cy="19.8" r="7.8" fill="#FFF3EE"/>
+  </g>
+</svg>
