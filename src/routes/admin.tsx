@@ -36,6 +36,8 @@ const TABS: { to: string; label: string; exact?: boolean }[] = [
   { to: "/admin/photos", label: "사진 검수" },
   { to: "/admin/reports", label: "신고" },
   { to: "/admin/meetings", label: "만남" },
+  // 베타에서는 주문이 곧 손으로 처리할 일이다(s27). 결제를 켜면 영수증이 된다.
+  { to: "/admin/orders", label: "주문" },
 ];
 
 function AdminLayout() {

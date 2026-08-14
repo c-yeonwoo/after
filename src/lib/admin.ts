@@ -112,6 +112,8 @@ export type AdminMemberDetail = {
 };
 
 export type AdminDashboard = {
+  /** 지금 티켓을 무엇이 발급하는가 — false 면 베타(운영자 승인)다. */
+  payments_enabled: boolean;
   members: { female: number; male: number; paused: number; banned: number };
   flow: {
     open_intros: number;
@@ -125,6 +127,8 @@ export type AdminDashboard = {
     pending_no_shows: number;
     /** 검수 대기 사진 수 = 지금 아무에게도 보이지 않는 회원 수 */
     pending_photos: number;
+    /** 발급을 기다리는 주문. 결제를 켜면 토스가 처리하므로 0 에 머문다(s27). */
+    pending_orders: number;
     /** 아직 어느 큐에도 들어가지 않은 호감 = 큐레이션 대기 */
     unmatched_likes: number;
     /** 큐가 비어 지금 아무것도 못 받는 활성 남성 */
@@ -377,6 +381,40 @@ export async function resolveReport(
     p_upheld: upheld,
     p_note: note,
     p_ban: ban,
+  });
+  if (error) throw error;
+}
+
+// ─────────────────── 결제 · 주문 ───────────────────
+
+export type AdminOrder = Database["public"]["Functions"]["admin_ticket_orders"]["Returns"][number];
+
+export type OrderFilter = "pending" | "confirmed" | "failed";
+
+/** 결제 전환. 사유는 서버에서 필수다 — admin_actions 에 남는다. */
+export async function setPayments(on: boolean, note: string): Promise<void> {
+  const { error } = await supabase.rpc("admin_set_payments", { p_on: on, p_note: note });
+  if (error) throw error;
+}
+
+export async function fetchOrders(state?: OrderFilter): Promise<AdminOrder[]> {
+  const { data, error } = await supabase.rpc("admin_ticket_orders", {
+    p_state: state ?? undefined,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 베타 발급. 결제가 켜져 있으면 서버가 42501 로 거부한다 — 그때 발급 주체는
+ * 토스이고, 두 경로가 동시에 열리면 낸 사람과 안 낸 사람이 섞인다.
+ *
+ * 이미 처리된 주문이면 {@link ALREADY_RESOLVED} 로 튕긴다.
+ */
+export async function fulfillOrder(orderId: string, note: string): Promise<void> {
+  const { error } = await supabase.rpc("admin_fulfill_order", {
+    p_order_id: orderId,
+    p_note: note,
   });
   if (error) throw error;
 }

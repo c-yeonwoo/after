@@ -174,6 +174,49 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          id: boolean
+          payments_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          payments_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          payments_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_reports: {
         Row: {
           accused_id: string
@@ -1080,6 +1123,8 @@ export type Database = {
           amount: number
           confirmed_at: string | null
           created_at: string
+          fulfill_note: string | null
+          fulfilled_by: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity: number
@@ -1090,6 +1135,8 @@ export type Database = {
           amount: number
           confirmed_at?: string | null
           created_at?: string
+          fulfill_note?: string | null
+          fulfilled_by?: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity?: number
@@ -1100,6 +1147,8 @@ export type Database = {
           amount?: number
           confirmed_at?: string | null
           created_at?: string
+          fulfill_note?: string | null
+          fulfilled_by?: string | null
           kind?: Database["public"]["Enums"]["ticket_kind"]
           order_id?: string
           quantity?: number
@@ -1107,6 +1156,27 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_orders_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_orders_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_orders_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ticket_orders_user_id_fkey"
             columns: ["user_id"]
@@ -1456,6 +1526,10 @@ export type Database = {
         }[]
       }
       admin_dashboard: { Args: never; Returns: Json }
+      admin_fulfill_order: {
+        Args: { p_note: string; p_order_id: string }
+        Returns: number
+      }
       admin_like_pool: {
         Args: { p_male: string }
         Returns: {
@@ -1726,9 +1800,41 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_set_payments: {
+        Args: { p_note: string; p_on: boolean }
+        Returns: {
+          id: boolean
+          payments_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_set_queue: {
         Args: { p_female_ids: string[]; p_male: string; p_note: string }
         Returns: number
+      }
+      admin_ticket_orders: {
+        Args: { p_state?: string }
+        Returns: {
+          amount: number
+          by_admin: boolean
+          confirmed_at: string
+          created_at: string
+          fulfill_note: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
+          order_id: string
+          quantity: number
+          state: string
+          user_gender: Database["public"]["Enums"]["gender"]
+          user_id: string
+          user_name: string
+        }[]
       }
       apply_no_show_confirmed: {
         Args: { p_report_id: string }
@@ -1793,6 +1899,8 @@ export type Database = {
           amount: number
           confirmed_at: string | null
           created_at: string
+          fulfill_note: string | null
+          fulfilled_by: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           quantity: number
