@@ -65,6 +65,18 @@ function DashboardTab() {
           to="/admin/reports"
           search={{ kind: "no_show" as const, state: "pending" as const }}
         />
+        {/*
+          베타(결제 OFF)에서 주문은 사람이 승인해야 티켓이 된다(s27). 여기 없으면
+          운영자가 상점 쪽을 따로 들여다봐야 하고, 그러면 놓친다. 결제를 켠 뒤에는
+          토스가 처리하므로 이 숫자는 자연히 0 에 머문다.
+        */}
+        <Stat
+          label="발급 대기 주문"
+          value={d.backlog.pending_orders}
+          alert={d.backlog.pending_orders > 0}
+          to="/admin/orders"
+          search={{ state: "pending" as const }}
+        />
         <Stat label="소개 안 된 호감" value={d.backlog.unmatched_likes} />
         <Stat
           label="가장 오래 기다린 호감"

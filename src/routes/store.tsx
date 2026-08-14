@@ -15,6 +15,7 @@ import {
   type TicketBundle,
   type TicketKind,
   type TicketOrder,
+  paymentsEnabled,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -85,18 +86,28 @@ function StorePage() {
   const [bundles, setBundles] = useState<TicketBundle[]>([]);
   const [picked, setPicked] = useState<number>(1);
   const [busy, setBusy] = useState(false);
+  /*
+    지금 무엇이 티켓을 발급하는가(s27).
+
+    null 은 아직 모르는 상태다. 기본값을 false 로 두면 결제가 켜진 서비스에서
+    한순간 "신청만 받습니다" 가 보였다가 바뀐다 — 돈 이야기라 깜빡임이 곧
+    오해다. 확정될 때까지 그 문장을 아예 그리지 않는다.
+  */
+  const [paid, setPaid] = useState<boolean | null>(null);
 
   const spec = KINDS.find((k) => k.v === kind)!;
 
   async function load(k: TicketKind) {
-    const [count, pending, list] = await Promise.all([
+    const [count, pending, list, payments] = await Promise.all([
       unusedTicketCount(k),
       myPendingTicketOrder(k),
       ticketBundles(k),
+      paymentsEnabled(),
     ]);
     setOwned(count);
     setOrder(pending);
     setBundles(list);
+    setPaid(payments);
     // 번들 구성이 종류마다 다르다(만남 1·3 / 소개 1·5) — 선택을 되돌려 놓는다.
     setPicked(list[0]?.quantity ?? 1);
   }
@@ -178,8 +189,8 @@ function StorePage() {
         <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
           <p className="text-sm font-semibold text-primary-strong">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            {spec.label} {order.quantity}장 · {won(order.amount)}. 준비되면 보유 티켓에 바로
-            들어옵니다.
+            {spec.label} {order.quantity}장 · {won(order.amount)}.{" "}
+            {paid === false ? "확인이 끝나면" : "준비되면"} 보유 티켓에 바로 들어옵니다.
           </p>
         </div>
       ) : (
@@ -187,6 +198,10 @@ function StorePage() {
           {/*
             결제 수단이 붙기 전이라 신청만 받는다. 보낼 수 없는 알림을
             약속하지 않고, 확인 가능한 사실만 적는다.
+
+            아래 문구는 **서버 설정에서 나온다**(s27). 하드코딩해 두면 결제를 켠
+            뒤에도 "신청만 받고 있습니다" 가 남는다 — 돈을 낸 사람에게 안 냈다고
+            말하는 화면이 된다.
           */}
           <Button
             className="mt-6 w-full"
@@ -206,9 +221,13 @@ function StorePage() {
           >
             {busy ? "신청하는 중…" : `${picked}장 신청하기`}
           </Button>
-          <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-            결제 수단을 여는 중이라 지금은 신청만 받고 있습니다.
-          </p>
+          {paid === null ? null : (
+            <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+              {paid
+                ? "결제가 끝나면 티켓이 바로 들어옵니다."
+                : "베타 기간이라 결제를 받지 않습니다. 신청하시면 확인 후 넣어 드립니다."}
+            </p>
+          )}
         </>
       )}
 
