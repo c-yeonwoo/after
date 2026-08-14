@@ -1,0 +1,70 @@
+{
+  // Cloudflare Workers 배포 설정.
+  //
+  // ── 왜 이 파일이 레포 루트에 있는가 ──
+  // nitro 의 cloudflare-module 프리셋은 .output/ 에 워커 진입점과 정적 자산만 만들고
+  // wrangler 설정은 만들어 주지 않는다(deployConfig 는 .output/package.json 의 main
+  // 만 채운다). 그렇다고 .output/ 안에 두면 빌드마다 지워지므로, 루트에 두고 경로를
+  // .output/ 으로 가리킨다. 배포는 레포 루트에서 `npm run deploy`.
+  //
+  // ── 런타임 시크릿이 없다 ──
+  // VITE_* 는 vite.config.ts 의 envDefine 이 **빌드 시점에 정적 치환**한다(서버
+  // 번들까지). 그래서 워커에 바인딩할 환경변수가 없다 — anon 키는 공개값이고,
+  // service_role 키는 애초에 프런트·SSR 어디에도 들어가지 않는다.
+  //
+  // 값을 바꾸려면 .env.production.local 을 고치고 **다시 빌드**해야 한다.
+  // wrangler secret 으로는 바뀌지 않는다.
+
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "after-sunset",
+  "main": ".output/server/index.mjs",
+
+  /*
+    호환 날짜는 **올리지 않는 편이 안전하다.** 이 날짜가 곧 워커가 어떤 런타임
+    동작을 보는지를 고정한다 — 올리면 그날 이후의 breaking change 를 한꺼번에
+    받는다. 런타임을 바꿀 이유가 생길 때만 의도적으로 올린다.
+  */
+  "compatibility_date": "2026-08-01",
+
+  /*
+    nitro 가 nodeCompat: true 로 빌드한다(.output/nitro.json). 이 플래그가 없으면
+    node: 내장 모듈을 쓰는 의존성이 런타임에 죽는다 — 지금 번들에서 직접 참조는
+    보이지 않지만, 의존성이 늘면 조용히 깨지는 쪽이므로 프리셋과 맞춰 둔다.
+  */
+  "compatibility_flags": ["nodejs_compat"],
+
+  /*
+    정적 자산은 **Cloudflare 가 직접** 낸다. 워커를 거치지 않으므로 요금과 지연이
+    모두 줄어든다.
+
+    .output/public 에 index.html 이 없다는 것이 중요하다 — 있으면 그 파일이 `/` 를
+    가로채 SSR 이 안 돌아간다. 랜딩은 로그인 전 화면이라 SEO 를 위해 서버가 그려야
+    한다(vite.config.ts 가 웹만 SSR 로 두는 이유).
+
+    not_found_handling 을 두지 않으면 매칭되지 않는 경로가 워커로 넘어온다. 그게
+    우리가 원하는 동작이다 — /home, /admin 같은 경로는 전부 SSR 이 처리한다.
+
+    캐시 헤더는 .output/public/_headers 가 들고 있다(assets/* 를 immutable 로).
+  */
+  "assets": {
+    "directory": ".output/public",
+  },
+
+  // 워커 로그를 켠다. 순수 큐레이션 운영이라 문제가 생기면 사람이 로그를 봐야 한다.
+  "observability": {
+    "enabled": true,
+  },
+
+  /*
+    커스텀 도메인은 **첫 배포 뒤에** 붙인다. 이 블록을 처음부터 켜 두면 네임서버
+    이전이 끝나기 전에 배포가 실패한다(zone 을 못 찾는다).
+
+    네임서버가 Cloudflare 로 옮겨진 뒤 아래 주석을 풀고 다시 배포하면 된다.
+    custom_domain 은 wrangler 가 DNS 레코드까지 만들어 준다 — 대시보드에서 A 레코드를
+    손으로 넣을 일이 없다(그래서 IP 를 알 필요도 없다).
+  */
+  // "routes": [
+  //   { "pattern": "aftersunset.kr", "custom_domain": true },
+  //   { "pattern": "www.aftersunset.kr", "custom_domain": true }
+  // ]
+}
