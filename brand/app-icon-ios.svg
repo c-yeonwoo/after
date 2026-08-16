@@ -22,10 +22,10 @@
     ⚠️ 마크를 고치면 이 파일과 public/favicon.svg 를 함께 고친다.
     재생성 절차는 docs/brand-assets.md 참고.
   -->
-  <rect width="64" height="64" fill="#0A0F1C"/>
+  <rect width="64" height="64" fill="#1A0F1E"/>
   <g transform="translate(7.93 9.67) scale(1.45)">
-    <circle cx="19.8" cy="12.2" r="6.8" fill="none" stroke="#F0B646" stroke-width="4.4"/>
-    <circle cx="12.2" cy="19.8" r="9.6" fill="#0A0F1C"/>
-    <circle cx="12.2" cy="19.8" r="7.8" fill="#F0B646"/>
+    <circle cx="19.8" cy="12.2" r="6.8" fill="none" stroke="#E2708A" stroke-width="4.4"/>
+    <circle cx="12.2" cy="19.8" r="9.6" fill="#1A0F1E"/>
+    <circle cx="12.2" cy="19.8" r="7.8" fill="#E2708A"/>
   </g>
 </svg>

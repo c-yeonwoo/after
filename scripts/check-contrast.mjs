@@ -4,7 +4,7 @@
  *
  * 실행: bun scripts/check-contrast.mjs   (또는 node)
  *
- * 왜 필요한가: D14(코럴 #c72b10)가 README·PRD 에는 확정으로 적혀 있었지만
+ * 왜 필요한가: D14(브랜드 컬러)가 README·PRD 에는 확정으로 적혀 있었지만
  * styles.css 에는 반영되지 않아, 대비 미달(3.07)인 이전 색이 계속 쓰이고 있었다.
  * 결정과 코드가 갈라지는 걸 사람 눈으로는 못 잡으므로 스크립트로 고정한다.
  */
@@ -14,27 +14,33 @@ const cssPath = new URL("../src/styles.css", import.meta.url);
 const css = readFileSync(cssPath, "utf8");
 
 /*
-  테마별 블록. 다크·브랜드 표면은 라이트 토큰을 상속하므로(예: --brand-*) 못 찾으면
-  :root 로 떨어진다 — 실제 CSS 캐스케이드와 같은 순서다.
+  테마별 블록. 다크는 라이트 토큰을 상속하므로(예: --brand-*) 못 찾으면 :root 로
+  떨어진다 — 실제 CSS 캐스케이드와 같은 순서다.
 
   **셀렉터로 자른다.** 예전에는 `:root {` 부터 `\n.dark` 까지를 라이트로 잘랐는데,
   그 사이에 `.brand-surface` 를 추가하자 그 블록의 값이 라이트 토큰으로 읽혔다.
   검사는 통과했지만 검사한 대상이 라이트 테마가 아니었다 — 가드가 조용히 무력해지는
   종류의 실패라, 블록마다 시작 셀렉터를 지정해 다음 셀렉터 직전까지만 자른다.
+
+  인자는 **정규식 소스**다 — 셀렉터 목록(`\\.dark,\\n\\.brand-surface`)도 받는다. 못 찾으면 던진다 — 검사가
+  조용히 빈 블록을 보는 것보다 시끄럽게 깨지는 편이 낫다.
 */
-function block(selector) {
-  const start = css.indexOf(`${selector} {`);
-  if (start < 0) throw new Error(`블록을 찾지 못했다: ${selector}`);
+function block(selectorPattern) {
+  const m = css.match(new RegExp(`(^|\\n)${selectorPattern}\\s*\\{`));
+  if (!m) throw new Error(`블록을 찾지 못했다: ${selectorPattern}`);
+  const rest = css.slice(m.index + m[0].length);
   // 다음 최상위 셀렉터(줄 시작의 `:root`/`.`/`@`) 직전까지
-  const rest = css.slice(start + selector.length);
   const next = rest.search(/\n(?=[.:@][a-z])/i);
   return next < 0 ? rest : rest.slice(0, next);
 }
 
 const lightBlock = block(":root");
-const darkBlock = block(".dark");
-/** 랜딩·로그인에만 적용되는 네이비 + 금빛 팔레트(s28). */
-const brandBlock = block(".brand-surface");
+/*
+  다크와 브랜드 접점(랜딩·로그인)은 **한 규칙을 공유한다**(styles.css). 팔레트를
+  한 벌로 통일하면서 합쳤다 — 따로 두면 반드시 어긋나고, 어긋난 쪽은 검사에
+  안 걸린다. 그래서 여기서도 하나로 본다.
+*/
+const darkBlock = block("\\.dark,\\n\\.brand-surface");
 
 let scope = lightBlock;
 function readFrom(block, name) {
@@ -156,14 +162,8 @@ function audit(themeName, block) {
   chk("ring / 배경", cr(toS(parseOklch(tokenRaw("ring"))), bg), 3.0);
 }
 
-audit("라이트", lightBlock);
-audit("다크", darkBlock);
-/*
-  브랜드 접점(랜딩·로그인)은 별도 팔레트를 쓴다. 여기가 검사에서 빠져 있으면
-  브랜드 색을 조정할 때 대비가 조용히 무너진다 — 실제로 이 블록을 추가하면서
-  라이트 검사가 엉뚱한 값을 보고 있었다.
-*/
-audit("브랜드 접점(네이비+금)", brandBlock);
+audit("라이트 — 블러시 페이퍼", lightBlock);
+audit("자정의 자두 — 다크 & 브랜드 접점", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

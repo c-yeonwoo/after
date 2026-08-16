@@ -67,7 +67,7 @@ function Landing() {
             </Link>
             <Link
               to="/signup"
-              className="inline-flex min-h-11 items-center rounded-full bg-foreground px-4 text-xs font-semibold text-background"
+              className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
             >
               시작
             </Link>
@@ -117,7 +117,13 @@ function Landing() {
           ref={btnRef}
           type="button"
           onClick={start}
-          className="headline flex w-full items-center justify-center rounded-control bg-foreground py-5 text-base text-background transition-colors duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          /*
+            브랜드 색으로 채운다. 예전에는 흰 필(bg-foreground)에 hover 로만
+            브랜드가 나왔는데, 네이비+금 시절의 잔재다 — 금색은 큰 면적으로
+            깔면 저렴해져서 피했었다. 로즈는 그 제약이 없고, 랜딩에서 가장 큰
+            면적이 브랜드 색이어야 색이 기억된다.
+          */
+          className="headline flex w-full items-center justify-center rounded-control bg-primary py-5 text-base text-primary-foreground transition-colors duration-300 hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           직장 인증하고 시작하기
         </button>

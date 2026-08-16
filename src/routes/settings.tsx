@@ -14,8 +14,16 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BRAND } from "@/lib/brand";
-import { setFeedbackEmails, setPaused, withdrawAccount } from "@/lib/api";
+import {
+  PASSWORD_MIN_LENGTH,
+  setFeedbackEmails,
+  setPassword,
+  setPaused,
+  withdrawAccount,
+} from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -42,6 +50,7 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [pw, setPw] = useState("");
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
@@ -177,6 +186,47 @@ function SettingsPage() {
             </span>
           </span>
         </label>
+      </section>
+
+      {/* ── 비밀번호 ─────────────────────────── */}
+      {/*
+        비밀번호를 아직 안 가진 계정이 있다 — 이 기능 이전에 가입한 사람들이다.
+        그들은 코드로 들어와 여기서 정한다. 그래서 "변경" 이 아니라 "설정" 이고,
+        지금 값을 묻지 않는다(GoTrue updateUser 는 현재 비밀번호를 요구하지 않고,
+        요구하면 애초에 없는 사람이 막힌다). 세션을 가진 사람만 닿는 화면이다.
+      */}
+      <section className="mt-9">
+        <h2 className="text-sm font-semibold">비밀번호</h2>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          다음 로그인부터 이메일과 이 비밀번호로 들어오실 수 있습니다. {PASSWORD_MIN_LENGTH}자 이상.
+        </p>
+        <Input
+          id="settings-password"
+          type="password"
+          autoComplete="new-password"
+          className="mt-3"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+        />
+        <Button
+          variant="outline"
+          className="mt-3 w-full"
+          disabled={pw.length < PASSWORD_MIN_LENGTH || busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await setPassword(pw);
+              setPw("");
+              toast.success("비밀번호를 저장했습니다.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "저장하지 못했습니다.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          저장
+        </Button>
       </section>
 
       {/* ── 탈퇴 ─────────────────────────────── */}

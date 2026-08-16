@@ -152,6 +152,65 @@ export async function signInExisting(
   return { kind: "ok", profile };
 }
 
+/**
+ * 비밀번호 최소 길이 — **화면 쪽 기준**이다.
+ *
+ * 실제 판정은 Supabase 설정(minimum_password_length)이 하고, 그 값은 우리가 모른다.
+ * 코드 길이에서 이미 한 번 데였으므로(OTP_MIN_LENGTH 주석) 여기서도 서버 값을
+ * 추측하지 않는다 — 우리가 권하는 최소치만 걸러 보내고, 서버가 더 엄격하면 그
+ * 에러를 그대로 사용자에게 보여 준다.
+ */
+export const PASSWORD_MIN_LENGTH = 8;
+
+/**
+ * 비밀번호 로그인.
+ *
+ * 가입 인증(회사 메일)은 **한 번만** 한다. 그게 "직장이 확인된 사람" 이라는 약속을
+ * 지키는 자리이고, 그 뒤의 재로그인은 본인 확인만 하면 되므로 매번 메일을 오갈
+ * 이유가 없다. 코드 로그인은 비밀번호를 잊었을 때의 길로 남긴다.
+ *
+ * 로그인 뒤 판정은 signInExisting 과 **같아야 한다** — 탈퇴·제명·미완료 가입이
+ * 비밀번호 경로로 들어오면 그 검사를 우회하게 된다.
+ */
+export async function signInWithPassword(
+  email: string,
+  password: string,
+): Promise<
+  | { kind: "ok"; profile: Profile }
+  | { kind: "incomplete"; profile: Profile }
+  | { kind: "no-profile" }
+  | { kind: "closed"; state: "banned" | "withdrawn" }
+> {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  const uid = data.user?.id;
+  if (!uid) throw new Error("로그인에 실패했습니다.");
+
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+  if (!profile) return { kind: "no-profile" };
+
+  if (profile.account_state !== "active") {
+    await supabase.auth.signOut();
+    return { kind: "closed", state: profile.account_state };
+  }
+
+  await track("login");
+  if (profile.onboarding_step < 7) return { kind: "incomplete", profile };
+  return { kind: "ok", profile };
+}
+
+/**
+ * 비밀번호 설정·변경. 로그인된 상태에서만 부른다.
+ *
+ * **재설정 흐름을 따로 만들지 않는다.** 비밀번호를 잊으면 로그인 화면의 "코드로
+ * 로그인" 으로 들어와 설정에서 바꾸면 된다 — 어차피 재설정도 메일 코드로 본인을
+ * 확인하는 일이라, 같은 일을 하는 화면을 둘 만들 이유가 없다.
+ */
+export async function setPassword(password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 /** 코드 검증 + (최초 1회) 프로필 생성. gender/hubId 는 인증 이전 단계에서 이미 고른 값. */
 export async function verifyEmailCode(
   email: string,

@@ -90,7 +90,7 @@
   --color-primary-foreground: var(--primary-foreground);
   /* 작은 텍스트/아이콘용 고대비 브랜드 컬러 (WCAG AA) */
   --color-primary-strong: var(--primary-strong);
-  /* 내가 보낸 말풍선 — 로그 전체를 덮으므로 강한 코럴(#c72b10)은 과했다 */
+  /* 내가 보낸 말풍선 — 로그 전체를 덮으므로 채도 높은 로즈는 과했다 */
   --color-bubble-mine: var(--bubble-mine);
   --color-bubble-mine-foreground: var(--bubble-mine-foreground);
 
@@ -120,7 +120,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* 브랜드 팔레트 — bg-brand-500, text-brand-600, bg-coral-400 등으로 사용 */
+  /* 브랜드 팔레트 — bg-brand-500, text-brand-600, bg-peach-300 등으로 사용 */
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);
@@ -130,12 +130,8 @@
   --color-brand-600: var(--brand-600);
   --color-brand-700: var(--brand-700);
   --color-brand-800: var(--brand-800);
-  --color-coral-100: var(--coral-100);
-  --color-coral-300: var(--coral-300);
-  --color-coral-400: var(--coral-400);
-  --color-coral-600: var(--coral-600);
-  --color-apricot-300: var(--apricot-300);
-  --color-apricot-500: var(--apricot-500);
+  --color-peach-300: var(--peach-300);
+  --color-peach-500: var(--peach-500);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-surface: var(--surface);
@@ -149,193 +145,156 @@
 }
 
 /*
- * 이클립스 — 오프화이트 & 코럴.
- * 오프화이트 페이퍼 배경 + 잉크 블랙 + 코럴 레드 액센트 + 소프트 애프리콧.
+ * 이클립스 — 자정의 자두(midnight plum) & 로즈.
+ *
+ * ── 왜 한 벌인가 ──
+ * 예전에는 팔레트가 둘이었다. 랜딩·로그인은 네이비+금(.brand-surface), 로그인
+ * 뒤의 앱은 종이+코럴. 두 가지가 깨져 있었다:
+ *   · 네이비+금은 프라이빗뱅킹·위스키의 언어다. 소개 서비스가 아니다.
+ *   · 랜딩에서 가입으로 넘어가는 순간 색이 통째로 갈렸다. 같은 제품으로
+ *     안 읽힌다.
+ * 그래서 **한 계열(자두→로즈, hue 315→5)로 통일**한다. 라이트는 블러시 페이퍼,
+ * 다크와 브랜드 접점은 같은 자두 밤이다. 어느 화면을 오가도 색이 이어진다.
+ *
+ * 값은 hex 로 정하고 대비를 검증한 뒤 oklch 로 옮겼다 — 주석의 hex 가 원본이다.
+ * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
  */
 :root {
+  /*
+    네이티브 위젯(체크박스·날짜 선택기·스크롤바)에 테마를 알려준다. 없으면
+    브라우저가 항상 밝은 버전을 그려서, 어두운 화면에 흰 체크박스가 뜬다 —
+    실제로 환경설정의 "새 소개 받지 않기" 가 그랬다.
+  */
+  color-scheme: light;
+
   /* 라운드 스케일 기준값 — sm .5 / md .625 / lg .75 / xl 1 / 2xl 1.25 / 3xl 1.5rem */
   --radius: 0.75rem;
   /* 입력폼은 한 단계 더 각지게 */
   --radius-field-value: 0.5rem;
 
-  /* ── 브랜드 원천 값 (single source of truth) — 코럴 레드 ── */
-  --brand-50: oklch(0.972 0.012 34);
-  --brand-100: oklch(0.945 0.028 34);
-  --brand-200: oklch(0.905 0.055 34);
-  --brand-300: oklch(0.855 0.085 33);
-  --brand-400: oklch(0.782 0.135 33);
-  --brand-500: oklch(0.712 0.185 32);
-  --brand-600: oklch(0.657 0.216 32);
-  /* brand-700 = D14 확정값 #c72b10. 이전 값(0.565 0.195 31)은 대비 미달이었다.
-     brand-800 은 primary-strong 용 — 틴트된 표면(bg-primary/8) 위에서도 통과해야 한다. */
-  --brand-700: oklch(0.54 0.195 32);
-  --brand-800: oklch(0.48 0.175 31);
-
-  /* 코럴 / 애프리콧 액센트 */
-  --coral-100: oklch(0.955 0.022 40);
-  --coral-300: oklch(0.902 0.048 55);
-  --coral-400: oklch(0.83 0.1 50);
-  --coral-600: oklch(0.565 0.195 31);
-  --apricot-300: oklch(0.902 0.048 55);
-  --apricot-500: oklch(0.83 0.11 62);
-
-  --ink: oklch(0.203 0 0);
-  --ink-muted: oklch(0.475 0.008 60);
+  /* ── 브랜드 원천 값 (single source of truth) — 로즈(hue≈5) ── */
+  --brand-50: oklch(0.975 0.01 5);
+  --brand-100: oklch(0.948 0.024 5);
+  --brand-200: oklch(0.908 0.048 4);
+  --brand-300: oklch(0.855 0.078 5);
+  --brand-400: oklch(0.762 0.115 6);
+  --brand-500: oklch(0.66 0.145 6);
+  --brand-600: oklch(0.585 0.152 6);
   /*
-   * 종이 톤은 유지하되 색기운을 코럴(h=32) 쪽 웜으로 맞춘다.
-   * 이전 배경은 h=100(노랑-초록)이라 저채도에서도 "때 탄 흰색"으로 읽혔고,
-   * 브랜드 코럴과 다른 웜 계열이라 코럴을 탁하게 만들었다.
-   *
-   * 그리고 카드에서 **순백을 없앤다.** 화면에 #fff 가 있으면 눈이 그걸 기준으로
-   * 잡아 나머지 틴트를 전부 얼룩으로 읽는다 — 배경만 바꿔서는 해결되지 않는 부분이다.
-   */
-  --surface: oklch(0.995 0.003 55);
-  --surface-subtle: oklch(0.935 0.008 55);
-  --success: oklch(0.56 0.11 155);
-  --warning: oklch(0.72 0.13 68);
+    brand-700 = #A93758 (라이트의 --primary). 필·텍스트 두 역할을 다 통과해야 해서
+    L 을 0.511 로 눌렀다 — 로즈는 밝게 두면 예쁘지만 흰 글자를 못 얹는다.
+    brand-800 은 primary-strong 용 — 틴트된 표면(bg-primary/8) 위에서도 통과한다.
+  */
+  --brand-700: oklch(0.511 0.151 6.6);
+  --brand-800: oklch(0.447 0.136 5.1);
 
-  --shadow-frame: 0 0 70px -24px oklch(0.203 0 0 / 35%);
-  --shadow-card: 0 12px 32px -22px oklch(0.203 0 0 / 40%);
-  --shadow-brand: 0 14px 34px -18px oklch(0.657 0.216 32 / 45%);
-  /* 위에 흰 텍스트를 얹는 그라디언트라 양 끝 모두 AA(4.5)를 통과해야 한다.
-     이전 시작점 brand-500 은 2.78 로 미달이었다 — L≈0.57 이 통과 경계. */
-  --gradient-brand: linear-gradient(135deg, oklch(0.57 0.21 34), oklch(0.46 0.17 27));
-  --gradient-warm: linear-gradient(135deg, var(--apricot-300), var(--brand-400));
+  /*
+    따뜻한 보조색. 로즈만으로 화면을 채우면 한 톤이라 단조롭고, 차가운 색을
+    섞으면 다시 두 팔레트가 된다. 자두-로즈의 웜 쪽 끝(hue 41)에서 하나만 쓴다.
+  */
+  --peach-300: oklch(0.893 0.043 41.4); /* #F6D3C6 */
+  --peach-500: oklch(0.83 0.09 45);
+
+  /* 잉크는 검정이 아니라 **깊은 자두**다. 순검정은 로즈 옆에서 차갑게 읽힌다. */
+  --ink: oklch(0.221 0.041 322.9); /* #241426 */
+  --ink-muted: oklch(0.481 0.042 338.3); /* #6E5566 */
+  /*
+    종이도 순백이 아니다. 화면에 #fff 가 있으면 눈이 그걸 기준으로 잡아 나머지
+    틴트를 전부 얼룩으로 읽는다. 배경은 아주 옅은 블러시(h≈355)로, 카드는 거기서
+    한 단계만 밝게 — 브랜드 hue 와 같은 계열이라 로즈가 탁해지지 않는다.
+  */
+  --surface: oklch(0.994 0.003 354.7); /* #FFFCFD */
+  --surface-subtle: oklch(0.943 0.013 345.5); /* #F3E9EE */
+  --success: oklch(0.56 0.11 155);
+  --warning: oklch(0.68 0.13 68);
+
+  --shadow-frame: 0 0 70px -24px oklch(0.221 0.041 322.9 / 35%);
+  --shadow-card: 0 12px 32px -22px oklch(0.221 0.041 322.9 / 40%);
+  --shadow-brand: 0 14px 34px -18px oklch(0.585 0.152 6 / 45%);
+  /* 위에 흰 텍스트를 얹는 그라디언트라 양 끝 모두 AA(4.5)를 통과해야 한다
+     (#B23A63 5.42 · #6E2044 10.20). */
+  --gradient-brand: linear-gradient(135deg, oklch(0.532 0.158 3.3), oklch(0.378 0.116 355.7));
+  --gradient-warm: linear-gradient(135deg, var(--peach-300), var(--brand-400));
 
   /* ── 시맨틱 토큰 (브랜드 값에서 파생) ── */
-  --background: oklch(0.965 0.006 55);
+  --background: oklch(0.975 0.007 354.8); /* #FBF5F7 */
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  /* D14: 필·텍스트 두 역할 모두 AA 통과 (5.19 / 4.93) */
+  /* 필·텍스트 두 역할 모두 AA 통과 (5.90 / 5.78) */
   --primary: var(--brand-700);
   --primary-strong: var(--brand-800);
 
-  --primary-foreground: oklch(0.985 0.004 55);
+  --primary-foreground: oklch(0.983 0.009 0.1); /* #FFF7F9 */
 
   /*
-   * 말풍선. 상대는 카드(흰 계열)+그림자, 나는 코럴 틴트.
-   * 채도 높은 코럴로 채우면 대화 한 화면이 통째로 붉어져서 읽기 피곤하다 —
-   * 브랜드 색은 유지하되 톤만 낮춘다. 잉크 텍스트 대비 13.2 로 넉넉하다.
+   * 말풍선. 상대는 카드(흰 계열)+그림자, 나는 로즈 틴트.
+   * 채도 높은 로즈로 채우면 대화 한 화면이 통째로 붉어져서 읽기 피곤하다 —
+   * 브랜드 색은 유지하되 톤만 낮춘다. 잉크 텍스트 대비 13.3 으로 넉넉하다.
    */
-  --bubble-mine: var(--brand-200);
+  --bubble-mine: oklch(0.913 0.035 357.7); /* #F7D9E2 */
   --bubble-mine-foreground: var(--ink);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-subtle);
   --muted-foreground: var(--ink-muted);
-  --accent: var(--apricot-300);
-  --accent-foreground: oklch(0.33 0.06 34);
-  --destructive: oklch(0.55 0.19 22);
+  --accent: var(--peach-300);
+  --accent-foreground: oklch(0.311 0.065 358.4); /* #4A2130 */
+  /* 브랜드가 로즈(h≈5)라 경고색은 hue 를 벌려 둔다 — 안 그러면 "위험"이 브랜드로 읽힌다. */
+  --destructive: oklch(0.55 0.19 28);
   --destructive-foreground: oklch(0.99 0.004 90);
-  --border: oklch(0.203 0 0 / 12%);
-  --input: oklch(0.203 0 0 / 22%);
+  --border: oklch(0.221 0.041 322.9 / 12%);
+  --input: oklch(0.221 0.041 322.9 / 22%);
   --ring: var(--brand-700);
 
   --chart-1: var(--brand-700);
-  --chart-2: var(--apricot-500);
+  --chart-2: var(--peach-500);
   --chart-3: var(--ink);
   --chart-4: var(--success);
-  --chart-5: var(--coral-400);
+  --chart-5: var(--brand-400);
   --sidebar: var(--background);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--brand-700);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--apricot-300);
+  --sidebar-accent: var(--peach-300);
   --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: oklch(0.203 0 0 / 10%);
+  --sidebar-border: oklch(0.221 0.041 322.9 / 10%);
   --sidebar-ring: var(--brand-700);
 }
 
 /*
-  다크 — 브랜드 hue 를 유지한 "따뜻한 잉크".
+  자정의 자두 — 다크 테마이자 **브랜드 접점의 바탕**이다.
 
-  기존 .dark 는 shadcn 기본값(hue 247~265 청회색)이 그대로 남아 있었고
-  --primary 가 거의 흰 회색이었다. 켜는 순간 코럴이 사라진 다른 제품이 된다.
-  라이트가 웜 페이퍼(h≈55)니 다크도 같은 계열의 어두운 종이여야 한다.
+  ── 왜 두 셀렉터가 한 규칙인가 ──
+  `.dark` 는 사용자가 어두운 화면을 고른 경우, `.brand-surface` 는 랜딩·로그인처럼
+  **테마와 무관하게 항상 자두 밤이어야 하는 화면**이다. 값이 갈리면 밝은 테마
+  사용자가 랜딩에서 본 색과 앱에서 본 색이 달라지고, 그게 예전 네이비+금의
+  실패였다. 그래서 한 벌을 두 셀렉터가 나눠 쓴다 — 따로 두면 반드시 어긋난다.
 
-  밝기 관계가 뒤집히는 지점이 셋이다:
-   · primary — 어두운 배경에서는 brand-700 이 너무 어둡다. 밝은 코럴로 올리고,
-     그 위에 얹는 글자(primary-foreground)는 반대로 어둡게 간다.
-   · bubble-mine — 라이트의 연한 살구색은 다크에서 눈을 찌른다. 깊은 적갈색 +
+  라이트에서 밝기 관계가 뒤집히는 지점이 셋이다:
+   · primary — 어두운 배경에서는 brand-700 이 너무 어둡다. 밝은 로즈로 올리고,
+     그 위에 얹는 글자(primary-foreground)는 반대로 바탕색을 쓴다.
+   · bubble-mine — 라이트의 연한 분홍은 다크에서 눈을 찌른다. 깊은 자두빛 +
      밝은 글자로 뒤집는다.
    · border/input — 잉크 알파가 아니라 흰색 알파여야 보인다.
 */
-
-/*
- * ── 브랜드 접점 (.brand-surface) — 네이비 + 금빛 코로나 ──
- *
- * 이클립스의 브랜드 색은 **네이비 바탕에 빛나는 링**이다. 그런데 앱 내부는 종이
- * 바탕 + 코럴을 그대로 쓴다. 둘을 나눈 이유:
- *
- *   · 전체를 다크로 뒤집으면 이 파일의 토큰 체계를 통째로 다시 잡아야 한다.
- *     지금은 첫 사용자를 받는 것이 먼저다.
- *   · 브랜드가 기억되는 자리는 랜딩·로그인·앱 아이콘이다. 로그인 후 화면은
- *     매일 쓰는 도구라 밝고 읽기 편한 편이 낫다.
- *
- * **이 분리는 임시가 아니라 선택이다.** 다만 대가가 있다 — 랜딩(네이비)에서
- * 가입(종이)으로 넘어갈 때 색이 바뀐다. 내부 액센트까지 금빛 계열로 옮기면
- * 이어지지만, 금색은 밝은 바탕에서 대비를 확보하기 어려워 따로 다뤄야 한다.
- *
- * 시맨틱 토큰만 덮어쓴다. 그래서 이 클래스가 붙은 트리 안에서는 기존
- * `bg-background` · `text-foreground` · `bg-primary` 가 그대로 네이비/금으로
- * 읽힌다 — 화면마다 클래스를 바꿔 달 필요가 없다.
- *
- * 대비는 hex 기준으로 검증하고 oklch 로 옮겼다(본문 16.9 · 보조 6.5 · 금/바탕
- * 10.5 · 금 위 글자 10.5 — 전부 AA 통과).
- */
+.dark,
 .brand-surface {
-  /*
-    토큰만 덮어쓰면 부족하다. 이 트리 안의 상당수 요소는 색 클래스를 달지 않고
-    **바깥에서 색을 상속**받는다(랜딩의 h1·본문 문단이 그렇다). 토큰 값만 바꾸면
-    그 요소들은 여전히 상위의 잉크색을 물려받아 어두운 바탕에 어둡게 찍힌다 —
-    실제로 그렇게 나왔다. 클래스 자신이 색을 정해 상속의 출발점을 여기로 옮긴다.
-  */
-  color: var(--foreground);
+  color-scheme: dark;
 
-  --background: oklch(0.171 0.028 267.4); /* #0A0F1C */
-  --foreground: oklch(0.957 0.01 261.8); /* #EDF1F8 */
-  --card: oklch(0.227 0.038 263.4); /* #131C2E */
-  --card-foreground: var(--foreground);
-  --popover: var(--card);
-  --popover-foreground: var(--foreground);
+  --ink: oklch(0.953 0.009 352.4); /* #F5EDF0 */
+  --ink-muted: oklch(0.779 0.037 343.5); /* #C9AEBD */
 
-  --muted: oklch(0.227 0.038 263.4);
-  --muted-foreground: oklch(0.674 0.037 261.9); /* #8A97AE */
-  --secondary: var(--card);
-  --secondary-foreground: var(--foreground);
-
-  /* 금빛 코로나. 어두운 바탕이라 글자는 반대로 바탕색을 쓴다. */
-  --primary: oklch(0.81 0.142 80.5); /* #F0B646 */
-  --primary-strong: oklch(0.73 0.14 76.3);
-  --primary-foreground: oklch(0.171 0.028 267.4);
-
-  --border: oklch(0.31 0.051 262.2); /* #22304A */
-  --input: var(--border);
-  --ring: var(--primary);
-
-  --accent: var(--card);
-  --accent-foreground: var(--foreground);
-
-  --shadow-card: 0 12px 32px -22px oklch(0 0 0 / 70%);
-  --shadow-brand: 0 14px 34px -18px oklch(0.81 0.142 80.5 / 35%);
-  --gradient-brand: linear-gradient(135deg, oklch(0.81 0.142 80.5), oklch(0.7 0.13 70));
-}
-
-.dark {
-  --ink: oklch(0.955 0.006 55);
-  --ink-muted: oklch(0.735 0.012 50);
-
-  --surface: oklch(0.235 0.011 48);
-  --surface-subtle: oklch(0.285 0.012 48);
+  --surface: oklch(0.249 0.046 316.5); /* #2A1A30 */
+  --surface-subtle: oklch(0.285 0.055 317); /* #35213C */
 
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 80%);
-  --shadow-card: 0 8px 24px -16px oklch(0 0 0 / 70%);
-  --shadow-brand: 0 10px 30px -14px oklch(0.5 0.17 32 / 55%);
+  --shadow-card: 0 12px 32px -22px oklch(0 0 0 / 72%);
+  --shadow-brand: 0 12px 34px -16px oklch(0.685 0.143 7.2 / 45%);
 
-  --background: oklch(0.175 0.009 48);
+  --background: oklch(0.191 0.034 316.7); /* #1A0F1E */
   --foreground: var(--ink);
 
   --card: var(--surface);
@@ -343,11 +302,11 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  /* 채움용 코럴. 위에 얹는 글자는 어둡다. */
-  --primary: oklch(0.7 0.17 33);
-  --primary-foreground: oklch(0.19 0.02 40);
-  /* 어두운 배경 위 텍스트용 — 더 밝아야 읽힌다. */
-  --primary-strong: oklch(0.8 0.13 34);
+  /* 채움용 로즈. 위에 얹는 글자는 바탕색(자두)이다. */
+  --primary: oklch(0.685 0.143 7.2); /* #E2708A */
+  --primary-foreground: oklch(0.191 0.034 316.7);
+  /* 어두운 배경 위 텍스트용 — 더 밝아야 읽힌다 (#F09BAE, 8.85 / 7.76). */
+  --primary-strong: oklch(0.78 0.104 5.2);
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -356,8 +315,8 @@
   --accent: var(--surface-subtle);
   --accent-foreground: var(--ink);
 
-  --destructive: oklch(0.68 0.19 25);
-  --destructive-foreground: oklch(0.19 0.02 40);
+  --destructive: oklch(0.7 0.17 30);
+  --destructive-foreground: oklch(0.191 0.034 316.7);
 
   --success: oklch(0.74 0.13 155);
   --warning: oklch(0.82 0.13 72);
@@ -367,22 +326,23 @@
   --ring: var(--primary);
 
   /* 내 말풍선 — 라이트와 명도 방향이 반대다. */
-  --bubble-mine: oklch(0.36 0.095 32);
-  --bubble-mine-foreground: oklch(0.965 0.008 45);
+  --bubble-mine: oklch(0.329 0.078 351); /* #52223A */
+  --bubble-mine-foreground: oklch(0.924 0.034 357); /* #FADDE6 */
 
   /*
     다크에서 그라디언트를 어둡게 두면 그 위의 primary-foreground(어두운 글자)가
-    안 읽힌다 — 실측 2.82 / 1.59. 다크의 브랜드 채움이 밝은 코럴이므로
-    그라디언트도 같은 계열로 올린다. 그러면 토큰을 새로 만들지 않고
-    bg-gradient-brand + text-primary-foreground 짝이 양쪽 테마에서 성립한다.
+    안 읽힌다. 브랜드 채움이 밝은 로즈이므로 그라디언트도 같은 계열로 올린다.
+    그러면 토큰을 새로 만들지 않고 bg-gradient-brand + text-primary-foreground
+    짝이 양쪽 테마에서 성립한다 (#EE8FA3 8.04 · #DE6B87 5.80).
   */
-  --gradient-brand: linear-gradient(135deg, oklch(0.755 0.145 40), oklch(0.645 0.185 28));
+  --gradient-brand: linear-gradient(135deg, oklch(0.754 0.117 6.7), oklch(0.671 0.146 6.5));
+  --gradient-warm: linear-gradient(135deg, oklch(0.78 0.104 5.2), oklch(0.671 0.146 6.5));
 
-  --chart-1: oklch(0.7 0.17 33);
+  --chart-1: oklch(0.685 0.143 7.2);
   --chart-2: oklch(0.74 0.13 155);
   --chart-3: oklch(0.82 0.13 72);
   --chart-4: oklch(0.72 0.11 250);
-  --chart-5: oklch(0.78 0.14 330);
+  --chart-5: oklch(0.83 0.09 45);
 
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink);
@@ -392,6 +352,16 @@
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: oklch(1 0 0 / 14%);
   --sidebar-ring: var(--primary);
+}
+
+/*
+  토큰만 덮어쓰면 부족하다. 이 트리 안의 상당수 요소는 색 클래스를 달지 않고
+  **바깥에서 색을 상속**받는다(랜딩의 h1·본문 문단이 그렇다). 토큰 값만 바꾸면
+  그 요소들은 여전히 상위의 잉크색을 물려받아 어두운 바탕에 어둡게 찍힌다 —
+  실제로 그렇게 나왔다. 클래스 자신이 색을 정해 상속의 출발점을 여기로 옮긴다.
+*/
+.brand-surface {
+  color: var(--foreground);
 }
 
 @layer base {
