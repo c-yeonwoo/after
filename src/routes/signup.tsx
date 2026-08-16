@@ -35,9 +35,11 @@ import {
   devFetchLatestOtp,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH,
   requestEmailCode,
   recordConsent,
   saveOnboardingStep,
+  setPassword,
   verifyEmailCode,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
@@ -90,6 +92,11 @@ function Onboarding() {
   const [agreed, setAgreed] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
+  /*
+    다음 로그인에 쓸 비밀번호. 인증 직후 같은 화면에서 받는다 — 회사 메일 확인은
+    여기서 딱 한 번 하고, 그 뒤로는 메일함을 오갈 일이 없어야 한다.
+  */
+  const [pw, setPw] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -596,6 +603,25 @@ function Onboarding() {
           </p>
         ) : null}
 
+        {codeSent ? (
+          <div className="mt-6">
+            <label className="text-sm font-semibold text-foreground" htmlFor="signup-password">
+              비밀번호
+            </label>
+            <Input
+              id="signup-password"
+              type="password"
+              autoComplete="new-password"
+              className="mt-2"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+            />
+            <p className="mt-2 text-sm text-muted-foreground">
+              다음부터는 이 비밀번호로 로그인합니다. {PASSWORD_MIN_LENGTH}자 이상.
+            </p>
+          </div>
+        ) : null}
+
         {/* 계정이 실제로 만들어지는 지점이므로 동의를 여기서 받는다 (PRD 266). */}
         {codeSent ? (
           <label className="mt-7 flex cursor-pointer items-start gap-3">
@@ -634,7 +660,12 @@ function Onboarding() {
             <Button
               className="flex-1"
               size="lg"
-              disabled={code.length < OTP_MIN_LENGTH || !agreed || authBusy}
+              disabled={
+                code.length < OTP_MIN_LENGTH ||
+                pw.length < PASSWORD_MIN_LENGTH ||
+                !agreed ||
+                authBusy
+              }
               onClick={async () => {
                 setAuthError(null);
                 setAuthBusy(true);
@@ -647,6 +678,14 @@ function Onboarding() {
                   );
                   // 동의는 서버에 시각·버전으로 남긴다. 이게 없으면
                   // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
+                  // 인증 직후 바로 건다. 여기서 실패해도 계정은 이미 만들어진
+                  // 뒤라 되돌릴 수 없으므로 가입은 계속 진행시키고, 나중에
+                  // 설정에서 정하게 안내한다 — 코드 로그인 경로가 살아 있다.
+                  try {
+                    await setPassword(pw);
+                  } catch {
+                    toast("비밀번호는 나중에 설정에서 정해 주세요.");
+                  }
                   await recordConsent();
                   setUserId(created.id);
                   setStep(2);

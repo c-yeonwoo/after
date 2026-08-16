@@ -12,8 +12,10 @@ import {
   devFetchLatestOtp,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH,
   requestEmailCode,
   signInExisting,
+  signInWithPassword,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 
@@ -39,6 +41,15 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoFilled, setAutoFilled] = useState(false);
+  const [password, setPassword] = useState("");
+  /*
+    기본은 비밀번호다. 코드는 **잊었을 때의 길**로 남긴다.
+
+    가입에서 회사 메일로 직장을 확인하는 것은 서비스의 근거라 한 번은 반드시
+    거쳐야 하지만, 그 뒤 재로그인까지 매번 메일을 오가게 하면 기기를 바꾸거나
+    앱을 다시 깔 때마다 메일함을 뒤져야 한다. 확인은 한 번, 이후는 비밀번호다.
+  */
+  const [mode, setMode] = useState<"password" | "code">("password");
 
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +85,31 @@ function LoginPage() {
   */
   const emailValid = /.+@.+\..+/.test(email.trim());
 
+  /** 로그인 성공 뒤 갈 곳. 코드·비밀번호 두 경로가 같은 판정을 써야 한다. */
+  async function land(result: Awaited<ReturnType<typeof signInWithPassword>>) {
+    if (result.kind === "closed") {
+      setError(
+        result.state === "withdrawn"
+          ? "탈퇴한 계정입니다. 새로 가입해 주세요."
+          : "이용이 중지된 계정입니다. 문의해 주세요.",
+      );
+      return;
+    }
+    if (result.kind === "no-profile") {
+      toast("가입이 완료되지 않은 계정입니다. 이어서 진행해 주세요.");
+      navigate({ to: "/signup" });
+      return;
+    }
+    if (result.kind === "incomplete") {
+      toast("남은 가입 절차를 마쳐주세요.");
+      navigate({ to: "/signup" });
+      return;
+    }
+    navigate({ to: "/home" });
+  }
+
+  const onCode = mode === "code";
+
   return (
     <div className="brand-surface flex h-full flex-col overflow-hidden bg-background px-6">
       <header className="flex shrink-0 items-center" style={{ paddingTop: "var(--safe-top)" }}>
@@ -82,30 +118,19 @@ function LoginPage() {
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-12">
         <h1 className="headline text-3xl">다시 오셨네요</h1>
-        {/*
-          코드 단계에서는 이 설명을 접는다.
-
-          키보드가 올라오면 본문이 짧아져서 **로그인 버튼이 화면 밖으로
-          밀린다**(iOS 검증). 코드를 받은 사람은 이 문장을 이미 읽었고, 지금
-          필요한 것은 입력칸과 누를 버튼이다 — 자리를 그쪽에 준다.
-        */}
         {!codeSent ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            가입할 때 인증한 회사 이메일로 코드를 보내드립니다. 비밀번호는 없습니다.
+            {onCode
+              ? "가입할 때 인증한 이메일로 코드를 보내드립니다."
+              : "가입할 때 정하신 비밀번호로 들어오세요."}
           </p>
         ) : null}
 
         {/*
-          코드를 보낸 뒤에는 입력칸 대신 보낸 주소를 한 줄로 적는다.
-
-          비활성 입력칸은 라벨·필드로 70px 넘게 차지하는데, 그 자리가 없어서
-          로그인 버튼이 키보드 밖으로 밀렸다(iOS 검증). 주소를 바꿀 길은 바로
-          아래 "이메일 다시 입력" 이 열어 두므로, 여기서 필요한 것은 **어디로
-          보냈는지 확인** 하는 것뿐이다.
-
-          "…으로" 가 아니라 "주소로" 라고 쓴다 — 조사는 앞 글자의 받침에 따라
-          갈리는데 이메일 끝은 무엇이든 올 수 있어서 어느 쪽을 박아도 틀리는
-          주소가 생긴다.
+          코드를 보낸 뒤에는 입력칸 대신 보낸 주소를 한 줄로 적는다 — 비활성
+          입력칸이 라벨·필드로 70px 넘게 차지해서 버튼이 키보드 밖으로 밀렸다.
+          "…으로" 가 아니라 "주소로" 라고 쓴다: 조사는 앞 글자의 받침에 따라
+          갈리는데 이메일 끝은 무엇이든 올 수 있다.
         */}
         {codeSent ? (
           <p className="mt-6 text-sm text-muted-foreground">
@@ -128,16 +153,29 @@ function LoginPage() {
                 setError(null);
               }}
             />
-            {/*
-              "개인 메일은 사용할 수 없습니다" 를 뺐다 — 로그인에서는 더 이상 막지
-              않으므로 사실이 아니다. 라벨도 "회사 이메일" 에서 바꿨다: 여기서 묻는
-              것은 규칙이 아니라 **어느 계정인지**다.
-            */}
-            <p className="mt-2 text-sm text-muted-foreground">가입할 때 쓰신 주소를 넣어 주세요.</p>
           </div>
         )}
 
-        {codeSent ? (
+        {!onCode ? (
+          <div className="mt-6">
+            <label className="text-sm font-semibold" htmlFor="login-password">
+              비밀번호
+            </label>
+            <Input
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              className="mt-2"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+            />
+          </div>
+        ) : null}
+
+        {onCode && codeSent ? (
           <div className="mt-6">
             <label className="text-sm font-semibold" htmlFor="login-code">
               인증 코드
@@ -174,19 +212,31 @@ function LoginPage() {
         ) : null}
 
         {/*
-          코드 단계에서는 이 묶음을 화면 안으로 끌어온다(아래 useEffect).
-
-          iOS 검증에서 코드를 넣은 직후 **로그인 버튼이 화면에서
-          사라졌다.** 키보드가 올라오면 본문이 그만큼 짧아지고 버튼은 스크롤
-          아래로 밀리는데, 숫자 키패드에는 완료 키가 없어서 "다 입력했는데
-          누를 것이 없는" 상태가 된다.
-
-          처음엔 sticky bottom-0 으로 붙여 봤다가 되돌렸다 — 버튼이 본문 위에
-          떠서 **인증 코드 입력칸을 가렸다.** 입력한 숫자를 못 보게 만드는
-          해결은 해결이 아니다. 자리를 옮기지 않고 스크롤만 맞춘다.
+          코드 단계에서는 이 묶음을 화면 안으로 끌어온다(위 useEffect). 키보드가
+          올라오면 본문이 짧아져 버튼이 스크롤 아래로 밀리는데, 숫자 키패드에는
+          완료 키가 없어서 "다 입력했는데 누를 것이 없는" 상태가 된다.
         */}
         <div ref={actionsRef} className="mt-8">
-          {codeSent ? (
+          {!onCode ? (
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={!emailValid || password.length < PASSWORD_MIN_LENGTH || busy}
+              onClick={async () => {
+                setError(null);
+                setBusy(true);
+                try {
+                  await land(await signInWithPassword(email, password));
+                } catch (err) {
+                  setError(authErrorMessage(err));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "확인 중…" : "로그인"}
+            </Button>
+          ) : codeSent ? (
             <Button
               className="w-full"
               size="lg"
@@ -195,28 +245,7 @@ function LoginPage() {
                 setError(null);
                 setBusy(true);
                 try {
-                  const result = await signInExisting(email, code);
-                  // 탈퇴·제명 계정은 OTP 자체는 통과한다(auth.users 가 남아 있다).
-                  // signInExisting 이 이미 로그아웃시켰으므로 여기선 알리기만 한다.
-                  if (result.kind === "closed") {
-                    setError(
-                      result.state === "withdrawn"
-                        ? "탈퇴한 계정입니다. 새로 가입해 주세요."
-                        : "이용이 중지된 계정입니다. 문의해 주세요.",
-                    );
-                    return;
-                  }
-                  if (result.kind === "no-profile") {
-                    toast("가입이 완료되지 않은 계정입니다. 이어서 진행해 주세요.");
-                    navigate({ to: "/signup" });
-                    return;
-                  }
-                  if (result.kind === "incomplete") {
-                    toast("남은 가입 절차를 마쳐주세요.");
-                    navigate({ to: "/signup" });
-                    return;
-                  }
-                  navigate({ to: "/home" });
+                  await land(await signInExisting(email, code));
                 } catch (err) {
                   setError(authErrorMessage(err));
                 } finally {
@@ -254,28 +283,32 @@ function LoginPage() {
             </Button>
           )}
 
-          {codeSent ? (
-            <Button
-              variant="ghost"
-              className="mt-2 w-full"
-              disabled={busy}
-              onClick={() => {
-                setCodeSent(false);
-                setCode("");
-                setAutoFilled(false);
-                setError(null);
-              }}
-            >
-              이메일 다시 입력
-            </Button>
-          ) : null}
+          {/*
+            두 경로를 오가는 문. 비밀번호를 아직 안 만든 사람(이 기능 이전 가입자)과
+            잊은 사람이 같은 문으로 들어온다 — 코드로 들어와서 설정에서 정하면 된다.
+            그래서 별도의 재설정 흐름을 만들지 않았다.
+          */}
+          <Button
+            variant="ghost"
+            className="mt-2 w-full"
+            disabled={busy}
+            onClick={() => {
+              setError(null);
+              setCode("");
+              setPassword("");
+              setAutoFilled(false);
+              setCodeSent(false);
+              setMode(onCode ? "password" : "code");
+            }}
+          >
+            {onCode ? "비밀번호로 로그인" : "비밀번호를 잊으셨나요? 코드로 로그인"}
+          </Button>
         </div>
       </main>
 
       {/*
-        가입 안내도 코드 단계에서는 접는다 — 본문 높이를 70pt 가까이 잡아먹어서
-        로그인 버튼이 들어갈 자리를 없앤다. 코드를 받은 사람에게 "아직 가입하지
-        않으셨나요?" 는 지금 필요한 안내가 아니다.
+        가입 안내는 코드 입력 단계에서만 접는다 — 본문 높이를 70pt 가까이 잡아먹어
+        로그인 버튼이 들어갈 자리를 없앤다.
       */}
       {!codeSent ? (
         <footer
