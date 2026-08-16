@@ -51,7 +51,7 @@ function Landing() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
+    <div className="brand-surface flex h-full flex-col overflow-hidden bg-background">
       <header
         className="z-20 shrink-0 bg-background px-6 pb-3"
         style={{ paddingTop: "var(--safe-top)" }}

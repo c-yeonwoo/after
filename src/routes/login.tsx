@@ -6,14 +6,14 @@ import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BRAND, isCompanyEmail } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import { authErrorMessage, devFetchLatestOtp, requestEmailCode, signInExisting } from "@/lib/api";
 import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: `로그인 — ${BRAND.short}` },
+      { title: `로그인 — ${BRAND.name}` },
       {
         name: "description",
         content: "가입한 회사 이메일로 인증 코드를 받아 다시 로그인합니다.",
@@ -52,10 +52,23 @@ function LoginPage() {
     actionsRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [codeSent]);
 
-  const emailValid = email.includes("@") && isCompanyEmail(email);
+  /*
+    로그인에서는 **회사 메일 여부를 따지지 않는다.**
+
+    개인 도메인 차단은 가입 규칙이다 — "직장이 확인된 사람만" 이라는 약속을 지키는
+    자리는 가입이고, 로그인 시점의 계정은 이미 그 관문을 통과해 만들어졌다.
+
+    여기서까지 막으면 두 가지가 깨진다.
+      · 개인 도메인으로 만든 운영자 계정이 자기 화면에 못 들어간다.
+      · PERSONAL_EMAIL_DOMAINS 에 도메인을 하나 추가하는 순간, 그 도메인으로 이미
+        가입해 쓰고 있던 회원이 **자기 계정에서 잠긴다.** 목록은 앞으로도 늘어난다.
+
+    존재하지 않는 주소를 넣으면 서버가 otp_disabled 로 거른다. 화면은 형식만 본다.
+  */
+  const emailValid = /.+@.+\..+/.test(email.trim());
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background px-6">
+    <div className="brand-surface flex h-full flex-col overflow-hidden bg-background px-6">
       <header className="flex shrink-0 items-center" style={{ paddingTop: "var(--safe-top)" }}>
         <Logo size="sm" />
       </header>
@@ -94,7 +107,7 @@ function LoginPage() {
         ) : (
           <div className="mt-8">
             <label className="text-sm font-semibold" htmlFor="login-email">
-              회사 이메일
+              가입한 이메일
             </label>
             <Input
               id="login-email"
@@ -108,7 +121,12 @@ function LoginPage() {
                 setError(null);
               }}
             />
-            <p className="mt-2 text-sm text-muted-foreground">개인 메일은 사용할 수 없습니다.</p>
+            {/*
+              "개인 메일은 사용할 수 없습니다" 를 뺐다 — 로그인에서는 더 이상 막지
+              않으므로 사실이 아니다. 라벨도 "회사 이메일" 에서 바꿨다: 여기서 묻는
+              것은 규칙이 아니라 **어느 계정인지**다.
+            */}
+            <p className="mt-2 text-sm text-muted-foreground">가입할 때 쓰신 주소를 넣어 주세요.</p>
           </div>
         )}
 

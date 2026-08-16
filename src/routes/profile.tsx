@@ -11,7 +11,7 @@ import { toProfileView } from "@/lib/profileView";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: `내 프로필 — ${BRAND.short}` },
+      { title: `내 프로필 — ${BRAND.name}` },
       { name: "description", content: "소개가 열린 상대에게 보이는 내 모습을 그대로 확인합니다." },
     ],
   }),

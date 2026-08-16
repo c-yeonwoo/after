@@ -26,7 +26,7 @@ export const Route = createFileRoute("/store")({
   }),
   head: () => ({
     meta: [
-      { title: `티켓 상점 — ${BRAND.short}` },
+      { title: `티켓 상점 — ${BRAND.name}` },
       { name: "description", content: "소개 티켓과 만남 티켓을 구매합니다." },
     ],
   }),

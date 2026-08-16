@@ -260,12 +260,12 @@ otp_expiry = 3600
 # Templates)가 정본이고 config.toml 을 읽지 않는다. 여기 두는 이유는 로컬에서
 # 실제로 나가는 메일이 운영과 같아야 문구를 검증할 수 있기 때문이다.
 [auth.email.template.magic_link]
-subject = "인증 코드 {{ .Token }} — 애프터선셋"
+subject = "인증 코드 {{ .Token }} — 이클립스"
 content_path = "./supabase/templates/magic_link.html"
 
 # 현재 쓰이지 않는다(enable_confirmations = false). 위 주석 참고.
 [auth.email.template.confirmation]
-subject = "가입 인증 코드 {{ .Token }} — 애프터선셋"
+subject = "가입 인증 코드 {{ .Token }} — 이클립스"
 content_path = "./supabase/templates/confirm_signup.html"
 
 # Uncomment to customize email template

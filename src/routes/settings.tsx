@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: `환경설정 — ${BRAND.short}` },
+      { title: `환경설정 — ${BRAND.name}` },
       { name: "description", content: "화면 테마와 알림 수신을 설정합니다." },
     ],
   }),

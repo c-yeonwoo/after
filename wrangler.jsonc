@@ -16,7 +16,7 @@
   // wrangler secret 으로는 바뀌지 않는다.
 
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "after-sunset",
+  "name": "eclipse",
   "main": ".output/server/index.mjs",
 
   /*
@@ -56,15 +56,34 @@
   },
 
   /*
-    커스텀 도메인은 **첫 배포 뒤에** 붙인다. 이 블록을 처음부터 켜 두면 네임서버
-    이전이 끝나기 전에 배포가 실패한다(zone 을 못 찾는다).
+    workers.dev 를 쓰지 않는다.
 
-    네임서버가 Cloudflare 로 옮겨진 뒤 아래 주석을 풀고 다시 배포하면 된다.
-    custom_domain 은 wrangler 가 DNS 레코드까지 만들어 준다 — 대시보드에서 A 레코드를
-    손으로 넣을 일이 없다(그래서 IP 를 알 필요도 없다).
+    이 계정에는 workers.dev 서브도메인이 등록돼 있지 않고, 등록은 대시보드에서
+    한 번 해야 하는 계정 설정이다(wrangler 가 자동 등록을 시도했으나 이름이
+    이미 쓰이고 있었다). 어차피 커스텀 도메인이 최종 형태라 중간 단계를 두지 않는다.
+
+    끄지 않으면 배포마다 서브도메인이 없다는 경고·실패가 난다.
   */
+  "workers_dev": false,
+
+  /*
+    커스텀 도메인. **네임서버 이전이 끝난 뒤에만** 켤 수 있다 — 그전에 켜면
+    wrangler 가 zone 을 못 찾아 배포가 실패한다.
+
+    custom_domain 은 wrangler 가 DNS 레코드까지 만들어 준다. 대시보드에서 A 레코드를
+    손으로 넣을 일이 없고, 그래서 **IP 를 알 필요도 없다**.
+
+    nitro 가 이 블록을 그대로 .output/server/wrangler.json 으로 넘긴다(확인함).
+    main·assets 만 경로가 달라 nitro 가 덮어쓰고 경고를 남긴다 — 정상이다.
+  */
+  // ⚠️ eclps.kr 을 아직 구입하지 않았다. 도메인을 사고 Cloudflare 존이 Active 가 된
+  //    뒤에 주석을 푼다 — 그전에 켜면 zone 을 못 찾아 배포가 실패한다.
+  //
+  //    worker 이름도 after-sunset → eclipse 로 바뀌었다. 즉 **새 워커가 생긴다.**
+  //    이전 워커(after-sunset)는 aftersunset.kr 을 물고 그대로 남으므로, 전환이
+  //    끝나면 대시보드에서 지운다.
   // "routes": [
-  //   { "pattern": "aftersunset.kr", "custom_domain": true },
-  //   { "pattern": "www.aftersunset.kr", "custom_domain": true }
+  //   { "pattern": "eclps.kr", "custom_domain": true },
+  //   { "pattern": "www.eclps.kr", "custom_domain": true }
   // ]
 }
