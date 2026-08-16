@@ -7,7 +7,14 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BRAND } from "@/lib/brand";
-import { authErrorMessage, devFetchLatestOtp, requestEmailCode, signInExisting } from "@/lib/api";
+import {
+  authErrorMessage,
+  devFetchLatestOtp,
+  OTP_MAX_LENGTH,
+  OTP_MIN_LENGTH,
+  requestEmailCode,
+  signInExisting,
+} from "@/lib/api";
 import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/login")({
@@ -133,25 +140,25 @@ function LoginPage() {
         {codeSent ? (
           <div className="mt-6">
             <label className="text-sm font-semibold" htmlFor="login-code">
-              인증 코드 6자리
+              인증 코드
             </label>
             <Input
               id="login-code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={6}
+              maxLength={OTP_MAX_LENGTH}
               className="mt-2 tracking-[0.4em]"
               placeholder="000000"
               value={code}
               onChange={(e) => {
-                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setCode(e.target.value.replace(/\D/g, "").slice(0, OTP_MAX_LENGTH));
                 setError(null);
               }}
             />
             <p className="mt-2 text-sm text-muted-foreground">
               {autoFilled
                 ? "개발환경이라 방금 발송된 코드를 자동으로 채웠습니다."
-                : "메일로 받은 6자리를 입력해 주세요."}
+                : "메일로 받은 숫자를 입력해 주세요."}
             </p>
           </div>
         ) : null}
@@ -169,7 +176,7 @@ function LoginPage() {
         {/*
           코드 단계에서는 이 묶음을 화면 안으로 끌어온다(아래 useEffect).
 
-          iOS 검증에서 코드 6자리를 넣은 직후 **로그인 버튼이 화면에서
+          iOS 검증에서 코드를 넣은 직후 **로그인 버튼이 화면에서
           사라졌다.** 키보드가 올라오면 본문이 그만큼 짧아지고 버튼은 스크롤
           아래로 밀리는데, 숫자 키패드에는 완료 키가 없어서 "다 입력했는데
           누를 것이 없는" 상태가 된다.
@@ -183,7 +190,7 @@ function LoginPage() {
             <Button
               className="w-full"
               size="lg"
-              disabled={code.length !== 6 || busy}
+              disabled={code.length < OTP_MIN_LENGTH || busy}
               onClick={async () => {
                 setError(null);
                 setBusy(true);

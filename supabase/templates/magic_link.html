@@ -2,7 +2,7 @@
   인증 코드 메일. **가입과 재로그인이 이 한 통을 공유한다.**
 
   ── 왜 링크가 아니라 코드인가 ──
-  이 앱의 로그인·가입 화면은 **6자리 코드를 입력받는다**(login.tsx / signup.tsx).
+  이 앱의 로그인·가입 화면은 **메일로 받은 숫자 코드를 입력받는다**(login.tsx / signup.tsx).
   기본 템플릿은 {{ .ConfirmationURL }} 링크만 담고 있어서, 그대로 쓰면 화면은
   코드를 묻는데 메일에는 코드가 없다. 실제로 출시 전 검증에서 제목이
   `Your Magic Link` 인 영문 기본 메일이 나갔다.
@@ -42,11 +42,11 @@
       인증 코드입니다
     </p>
     <p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#57534e;">
-      아래 6자리를 화면에 입력해 주세요.
+      아래 숫자를 화면에 입력해 주세요.
     </p>
 
     <div style="padding:20px;background-color:#ffffff;border:1px solid #e7e1dd;border-radius:14px;text-align:center;">
-      <!-- letter-spacing 을 크게 준다. 6자리를 눈으로 끊어 읽어야 오타가 안 난다. -->
+      <!-- letter-spacing 을 크게 준다. 숫자를 눈으로 끊어 읽어야 오타가 안 난다. -->
       <div style="font-size:32px;font-weight:700;color:#1c1917;letter-spacing:0.2em;font-variant-numeric:tabular-nums;">
         {{ .Token }}
       </div>

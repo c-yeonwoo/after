@@ -33,6 +33,8 @@ import {
   authErrorMessage,
   completeOnboarding,
   devFetchLatestOtp,
+  OTP_MAX_LENGTH,
+  OTP_MIN_LENGTH,
   requestEmailCode,
   recordConsent,
   saveOnboardingStep,
@@ -549,34 +551,36 @@ function Onboarding() {
         {codeSent ? (
           <div className="mt-6">
             <label className="text-sm font-semibold text-foreground" htmlFor="code">
-              인증 코드 6자리
+              인증 코드
             </label>
             <Input
               id="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={6}
+              maxLength={OTP_MAX_LENGTH}
               placeholder="000000"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              aria-invalid={code.length > 0 && code.length !== 6}
-              aria-describedby={code.length > 0 && code.length !== 6 ? "code-error" : "code-hint"}
+              aria-invalid={code.length > 0 && code.length < OTP_MIN_LENGTH}
+              aria-describedby={
+                code.length > 0 && code.length < OTP_MIN_LENGTH ? "code-error" : "code-hint"
+              }
               className="mt-2 tracking-[0.4em]"
             />
-            {code.length > 0 && code.length !== 6 ? (
+            {code.length > 0 && code.length < OTP_MIN_LENGTH ? (
               <p
                 id="code-error"
                 role="alert"
                 className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <span>숫자 6자리를 입력해 주세요.</span>
+                <span>메일로 받은 숫자를 그대로 입력해 주세요.</span>
               </p>
             ) : (
               <p id="code-hint" className="mt-2 text-sm text-muted-foreground">
                 {autoFilled
                   ? "개발환경이라 방금 발송된 코드를 자동으로 채웠습니다."
-                  : "메일로 받은 6자리를 입력해 주세요."}
+                  : "메일로 받은 숫자를 입력해 주세요."}
               </p>
             )}
           </div>
@@ -630,7 +634,7 @@ function Onboarding() {
             <Button
               className="flex-1"
               size="lg"
-              disabled={code.length !== 6 || !agreed || authBusy}
+              disabled={code.length < OTP_MIN_LENGTH || !agreed || authBusy}
               onClick={async () => {
                 setAuthError(null);
                 setAuthBusy(true);

@@ -85,6 +85,24 @@ export async function devFetchLatestOtp(email: string): Promise<string | null> {
   }
 }
 
+/**
+ * 인증 코드 길이 — **6 으로 박지 않는다.**
+ *
+ * 길이를 정하는 것은 앱이 아니라 Supabase 설정(Authentication → Email → OTP
+ * length)이고, 그 값은 로컬 config.toml 과 운영 대시보드가 따로 논다.
+ *
+ * 실제로 갈라졌다. 로컬은 6 이었는데 운영에서 8자리가 날아왔고, 화면은
+ * maxLength={6} 으로 여섯 자만 받은 뒤 `code.length !== 6` 로 버튼을 열었다.
+ * 즉 **운영에서 아무도 로그인할 수 없었다** — 여덟 자리 중 여섯 자만 서버로 가니
+ * 항상 틀린 코드였다. 화면에는 "코드가 올바르지 않습니다" 만 떠서 설정 문제라는
+ * 단서가 어디에도 없었다.
+ *
+ * 그래서 범위로 받는다. Supabase 가 허용하는 폭이 6~10 이므로 그만큼 열어 두고,
+ * 맞는지 틀린지는 서버가 판정한다. 설정이 또 바뀌어도 화면은 따라간다.
+ */
+export const OTP_MIN_LENGTH = 6;
+export const OTP_MAX_LENGTH = 10;
+
 export async function requestEmailCode(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
