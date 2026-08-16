@@ -149,7 +149,7 @@
 }
 
 /*
- * 애프터 — 오프화이트 & 코럴.
+ * 이클립스 — 오프화이트 & 코럴.
  * 오프화이트 페이퍼 배경 + 잉크 블랙 + 코럴 레드 액센트 + 소프트 애프리콧.
  */
 :root {
@@ -263,6 +263,67 @@
      밝은 글자로 뒤집는다.
    · border/input — 잉크 알파가 아니라 흰색 알파여야 보인다.
 */
+
+/*
+ * ── 브랜드 접점 (.brand-surface) — 네이비 + 금빛 코로나 ──
+ *
+ * 이클립스의 브랜드 색은 **네이비 바탕에 빛나는 링**이다. 그런데 앱 내부는 종이
+ * 바탕 + 코럴을 그대로 쓴다. 둘을 나눈 이유:
+ *
+ *   · 전체를 다크로 뒤집으면 이 파일의 토큰 체계를 통째로 다시 잡아야 한다.
+ *     지금은 첫 사용자를 받는 것이 먼저다.
+ *   · 브랜드가 기억되는 자리는 랜딩·로그인·앱 아이콘이다. 로그인 후 화면은
+ *     매일 쓰는 도구라 밝고 읽기 편한 편이 낫다.
+ *
+ * **이 분리는 임시가 아니라 선택이다.** 다만 대가가 있다 — 랜딩(네이비)에서
+ * 가입(종이)으로 넘어갈 때 색이 바뀐다. 내부 액센트까지 금빛 계열로 옮기면
+ * 이어지지만, 금색은 밝은 바탕에서 대비를 확보하기 어려워 따로 다뤄야 한다.
+ *
+ * 시맨틱 토큰만 덮어쓴다. 그래서 이 클래스가 붙은 트리 안에서는 기존
+ * `bg-background` · `text-foreground` · `bg-primary` 가 그대로 네이비/금으로
+ * 읽힌다 — 화면마다 클래스를 바꿔 달 필요가 없다.
+ *
+ * 대비는 hex 기준으로 검증하고 oklch 로 옮겼다(본문 16.9 · 보조 6.5 · 금/바탕
+ * 10.5 · 금 위 글자 10.5 — 전부 AA 통과).
+ */
+.brand-surface {
+  /*
+    토큰만 덮어쓰면 부족하다. 이 트리 안의 상당수 요소는 색 클래스를 달지 않고
+    **바깥에서 색을 상속**받는다(랜딩의 h1·본문 문단이 그렇다). 토큰 값만 바꾸면
+    그 요소들은 여전히 상위의 잉크색을 물려받아 어두운 바탕에 어둡게 찍힌다 —
+    실제로 그렇게 나왔다. 클래스 자신이 색을 정해 상속의 출발점을 여기로 옮긴다.
+  */
+  color: var(--foreground);
+
+  --background: oklch(0.171 0.028 267.4); /* #0A0F1C */
+  --foreground: oklch(0.957 0.01 261.8); /* #EDF1F8 */
+  --card: oklch(0.227 0.038 263.4); /* #131C2E */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+
+  --muted: oklch(0.227 0.038 263.4);
+  --muted-foreground: oklch(0.674 0.037 261.9); /* #8A97AE */
+  --secondary: var(--card);
+  --secondary-foreground: var(--foreground);
+
+  /* 금빛 코로나. 어두운 바탕이라 글자는 반대로 바탕색을 쓴다. */
+  --primary: oklch(0.81 0.142 80.5); /* #F0B646 */
+  --primary-strong: oklch(0.73 0.14 76.3);
+  --primary-foreground: oklch(0.171 0.028 267.4);
+
+  --border: oklch(0.31 0.051 262.2); /* #22304A */
+  --input: var(--border);
+  --ring: var(--primary);
+
+  --accent: var(--card);
+  --accent-foreground: var(--foreground);
+
+  --shadow-card: 0 12px 32px -22px oklch(0 0 0 / 70%);
+  --shadow-brand: 0 14px 34px -18px oklch(0.81 0.142 80.5 / 35%);
+  --gradient-brand: linear-gradient(135deg, oklch(0.81 0.142 80.5), oklch(0.7 0.13 70));
+}
+
 .dark {
   --ink: oklch(0.955 0.006 55);
   --ink-muted: oklch(0.735 0.012 50);

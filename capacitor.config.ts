@@ -10,13 +10,13 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * 껍데기가 되어 App Store 심사 4.2(최소 기능)에 걸릴 위험이 크고, 네트워크가
  * 없으면 첫 화면조차 안 뜬다.
  *
- * appId 는 보유 도메인(aftersunset.kr)의 역순 표기다. **App Store 에 한 번
+ * appId 는 보유 도메인(eclps.kr)의 역순 표기다. **App Store 에 한 번
  * 제출하면 바꿀 수 없다** — 반면 appName(스토어 표시명)은 버전마다 수정할 수
  * 있어서, 이름이 나중에 흔들려도 여기가 발목을 잡지 않는다.
  */
 const config: CapacitorConfig = {
-  appId: "kr.aftersunset.app",
-  appName: "애프터",
+  appId: "kr.eclps.app",
+  appName: "이클립스",
   webDir: "dist/client",
 
   ios: {

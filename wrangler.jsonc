@@ -16,7 +16,7 @@
   // wrangler secret 으로는 바뀌지 않는다.
 
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "after-sunset",
+  "name": "eclipse",
   "main": ".output/server/index.mjs",
 
   /*
@@ -76,8 +76,14 @@
     nitro 가 이 블록을 그대로 .output/server/wrangler.json 으로 넘긴다(확인함).
     main·assets 만 경로가 달라 nitro 가 덮어쓰고 경고를 남긴다 — 정상이다.
   */
-  "routes": [
-    { "pattern": "aftersunset.kr", "custom_domain": true },
-    { "pattern": "www.aftersunset.kr", "custom_domain": true },
-  ],
+  // ⚠️ eclps.kr 을 아직 구입하지 않았다. 도메인을 사고 Cloudflare 존이 Active 가 된
+  //    뒤에 주석을 푼다 — 그전에 켜면 zone 을 못 찾아 배포가 실패한다.
+  //
+  //    worker 이름도 after-sunset → eclipse 로 바뀌었다. 즉 **새 워커가 생긴다.**
+  //    이전 워커(after-sunset)는 aftersunset.kr 을 물고 그대로 남으므로, 전환이
+  //    끝나면 대시보드에서 지운다.
+  // "routes": [
+  //   { "pattern": "eclps.kr", "custom_domain": true },
+  //   { "pattern": "www.eclps.kr", "custom_domain": true }
+  // ]
 }

@@ -13,10 +13,28 @@ import { readFileSync } from "node:fs";
 const cssPath = new URL("../src/styles.css", import.meta.url);
 const css = readFileSync(cssPath, "utf8");
 
-// 테마별 블록. 다크는 라이트 토큰을 상속하므로(예: --brand-*) 못 찾으면
-// :root 로 떨어진다 — 실제 CSS 캐스케이드와 같은 순서다.
-const lightBlock = css.slice(css.indexOf(":root {"), css.indexOf("\n.dark"));
-const darkBlock = css.slice(css.indexOf(".dark {"), css.indexOf("\n@layer base"));
+/*
+  테마별 블록. 다크·브랜드 표면은 라이트 토큰을 상속하므로(예: --brand-*) 못 찾으면
+  :root 로 떨어진다 — 실제 CSS 캐스케이드와 같은 순서다.
+
+  **셀렉터로 자른다.** 예전에는 `:root {` 부터 `\n.dark` 까지를 라이트로 잘랐는데,
+  그 사이에 `.brand-surface` 를 추가하자 그 블록의 값이 라이트 토큰으로 읽혔다.
+  검사는 통과했지만 검사한 대상이 라이트 테마가 아니었다 — 가드가 조용히 무력해지는
+  종류의 실패라, 블록마다 시작 셀렉터를 지정해 다음 셀렉터 직전까지만 자른다.
+*/
+function block(selector) {
+  const start = css.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`블록을 찾지 못했다: ${selector}`);
+  // 다음 최상위 셀렉터(줄 시작의 `:root`/`.`/`@`) 직전까지
+  const rest = css.slice(start + selector.length);
+  const next = rest.search(/\n(?=[.:@][a-z])/i);
+  return next < 0 ? rest : rest.slice(0, next);
+}
+
+const lightBlock = block(":root");
+const darkBlock = block(".dark");
+/** 랜딩·로그인에만 적용되는 네이비 + 금빛 팔레트(s28). */
+const brandBlock = block(".brand-surface");
 
 let scope = lightBlock;
 function readFrom(block, name) {
@@ -140,6 +158,12 @@ function audit(themeName, block) {
 
 audit("라이트", lightBlock);
 audit("다크", darkBlock);
+/*
+  브랜드 접점(랜딩·로그인)은 별도 팔레트를 쓴다. 여기가 검사에서 빠져 있으면
+  브랜드 색을 조정할 때 대비가 조용히 무너진다 — 실제로 이 블록을 추가하면서
+  라이트 검사가 엉뚱한 값을 보고 있었다.
+*/
+audit("브랜드 접점(네이비+금)", brandBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

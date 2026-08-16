@@ -11,12 +11,12 @@ import { listMyActiveMeetings, type ActiveMeeting } from "@/lib/api";
 export const Route = createFileRoute("/chats")({
   head: () => ({
     meta: [
-      { title: `대화 — ${BRAND.short}` },
+      { title: `대화 — ${BRAND.name}` },
       {
         name: "description",
         content: "약속을 잡는 데 필요한 만큼의 대화. 양쪽이 좋다고 했을 때만 열립니다.",
       },
-      { property: "og:title", content: `대화 — ${BRAND.short}` },
+      { property: "og:title", content: `대화 — ${BRAND.name}` },
       { property: "og:description", content: "양쪽이 좋다고 했을 때만 열리는 1:1 대화." },
     ],
   }),

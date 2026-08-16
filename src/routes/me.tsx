@@ -11,7 +11,7 @@ import { usePhotoUrl } from "@/lib/photo";
 export const Route = createFileRoute("/me")({
   head: () => ({
     meta: [
-      { title: `나 — ${BRAND.short}` },
+      { title: `나 — ${BRAND.name}` },
       { name: "description", content: "내 프로필과 티켓, 설정을 한곳에서 관리합니다." },
     ],
   }),

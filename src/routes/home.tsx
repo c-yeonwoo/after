@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/home")({
   head: () => ({
     meta: [
-      { title: `홈 — ${BRAND.short}` },
+      { title: `홈 — ${BRAND.name}` },
       { name: "description", content: "지금 해야 할 일 하나와 진행 상황을 확인합니다." },
-      { property: "og:title", content: `홈 — ${BRAND.short}` },
+      { property: "og:title", content: `홈 — ${BRAND.name}` },
       { property: "og:description", content: "소개 도착 · 채팅 오픈 · 만남 확정까지의 진행 상황." },
     ],
   }),
@@ -331,7 +331,7 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
 }
 
 /**
- * 약속 시각이 지난 만남 — 제품 이름이 '애프터'인데 이 상태가 없었다(진단 UX-10).
+ * 약속 시각이 지난 만남 — 제품 이름이 '이클립스'인데 이 상태가 없었다(진단 UX-10).
  *
  * 홈의 상태 기계가 confirmed_at 에서 끝나 있어서, 이틀 지난 약속에도 "만남이
  * 잡혔어요"와 지난 시각에 대한 "열립니다"가 그대로 남았다. 그리고 북극성인

@@ -37,12 +37,12 @@ import { useMe } from "@/lib/me";
 export const Route = createFileRoute("/intro")({
   head: () => ({
     meta: [
-      { title: `이번 소개 — ${BRAND.short}` },
+      { title: `이번 소개 — ${BRAND.name}` },
       {
         name: "description",
         content: "한 번에 한 사람. 소개받은 상대의 프로필을 읽고 좋다/다음에를 선택합니다.",
       },
-      { property: "og:title", content: `이번 소개 — ${BRAND.short}` },
+      { property: "og:title", content: `이번 소개 — ${BRAND.name}` },
       { property: "og:description", content: "훑어보는 피드 없이, 한 사람씩 순서대로." },
     ],
   }),
