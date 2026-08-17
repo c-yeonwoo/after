@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,14 +10,26 @@ import { BRAND } from "@/lib/brand";
 import {
   authErrorMessage,
   devFetchLatestOtp,
+  kakaoAuthorizeUrl,
+  landAfterOAuth,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
   PASSWORD_MIN_LENGTH,
   requestEmailCode,
   signInExisting,
   signInWithPassword,
+  type SignInResult,
 } from "@/lib/api";
+import { useKeepActionsVisible, useKeyboardOpen } from "@/lib/keyboard";
 import { useMe } from "@/lib/me";
+import { supabase } from "@/lib/supabase";
+import {
+  consumeAuthCode,
+  isNative,
+  NATIVE_REDIRECT,
+  openAuthUrl,
+  watchAuthDeepLinks,
+} from "@/lib/native";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -50,25 +62,102 @@ function LoginPage() {
     앱을 다시 깔 때마다 메일함을 뒤져야 한다. 확인은 한 번, 이후는 비밀번호다.
   */
   const [mode, setMode] = useState<"password" | "code">("password");
+  /** 카카오에 다녀오는 동안. 자동 이동(아래 useEffect)을 잠가 둔다. */
+  const [oauthBusy, setOauthBusy] = useState(false);
 
   const actionsRef = useRef<HTMLDivElement>(null);
+  const keyboardOpen = useKeyboardOpen();
+
+  /** 로그인 성공 뒤 갈 곳. 세 경로(코드·비밀번호·카카오)가 같은 판정을 써야 한다. */
+  const land = useCallback(
+    async (result: SignInResult) => {
+      if (result.kind === "closed") {
+        setError(
+          result.state === "withdrawn"
+            ? "탈퇴한 계정입니다. 새로 가입해 주세요."
+            : "이용이 중지된 계정입니다. 문의해 주세요.",
+        );
+        return;
+      }
+      if (result.kind === "no-profile") {
+        /*
+          카카오로 처음 들어온 경우가 대부분이다. Supabase 는 그 카카오 이메일로
+          **새 auth 유저**를 만들어 두므로, 여기서 로그아웃시키지 않으면 프로필도
+          없는 계정에 세션만 남아 앱이 빈 화면을 돈다.
+        */
+        await supabase.auth.signOut();
+        toast("가입 이력이 없는 계정입니다. 회사 메일로 가입해 주세요.");
+        navigate({ to: "/signup" });
+        return;
+      }
+      if (result.kind === "incomplete") {
+        toast("남은 가입 절차를 마쳐주세요.");
+        navigate({ to: "/signup" });
+        return;
+      }
+      navigate({ to: "/home" });
+    },
+    [navigate],
+  );
 
   // 이미 로그인돼 있으면 로그인 화면을 보여줄 이유가 없다.
+  // 카카오에 다녀오는 중에는 판정(land)이 끝나기 전이라 잠가 둔다.
   useEffect(() => {
-    if (ready && me) navigate({ to: "/home" });
-  }, [ready, me, navigate]);
+    if (ready && me && !oauthBusy) navigate({ to: "/home" });
+  }, [ready, me, navigate, oauthBusy]);
 
   /*
-    코드 단계로 넘어가면 버튼 줄까지 화면 안으로 끌어온다.
-
-    키보드가 올라온 만큼 본문이 짧아져서, 그냥 두면 입력칸은 보이는데 누를
-    버튼이 화면 밖에 있다(iOS 검증에서 실제로 그랬다). block: "end" 로 맞추면
-    입력칸과 버튼이 함께 보이는 위치가 된다.
+    카카오에서 돌아왔다. 두 경로가 여기로 온다.
+      · 웹 — 같은 주소로 리다이렉트되어 `?code=` 가 붙어 있다.
+      · 앱 — 딥링크 이벤트로 온다(watchAuthDeepLinks).
+    둘 다 consumeAuthCode 로 교환하고 같은 land() 를 지난다.
   */
   useEffect(() => {
-    if (!codeSent) return;
-    actionsRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-  }, [codeSent]);
+    let alive = true;
+    const finish = async () => {
+      if (!alive) return;
+      try {
+        await land(await landAfterOAuth());
+      } catch (err) {
+        setError(authErrorMessage(err));
+      } finally {
+        if (alive) setOauthBusy(false);
+      }
+    };
+
+    if (!isNative && typeof window !== "undefined" && window.location.search.includes("code=")) {
+      setOauthBusy(true);
+      void (async () => {
+        try {
+          if (await consumeAuthCode(window.location.href)) {
+            // 교환한 코드는 한 번만 쓸 수 있다. 주소에 남겨 두면 새로고침이 실패한다.
+            window.history.replaceState({}, "", window.location.pathname);
+            await finish();
+            return;
+          }
+          setOauthBusy(false);
+        } catch (err) {
+          setError(authErrorMessage(err));
+          setOauthBusy(false);
+        }
+      })();
+    }
+
+    const stop = watchAuthDeepLinks(() => void finish());
+    return () => {
+      alive = false;
+      stop();
+    };
+  }, [land]);
+
+  /*
+    키보드가 뜨면 버튼 줄을 화면 안으로 끌어온다.
+
+    예전에는 "코드를 보낸 뒤" 한 번만 했는데, 비밀번호 모드에도 같은 문제가
+    있었다 — 비밀번호를 다 치고 나면 누를 버튼이 접힌 자리 밖이고, 화면 아래
+    가입 안내는 그대로 보여서 다 보이는 줄 알게 된다. 이제 포커스마다 맞춘다.
+  */
+  useKeepActionsVisible(actionsRef, [codeSent, mode]);
 
   /*
     로그인에서는 **회사 메일 여부를 따지지 않는다.**
@@ -84,29 +173,6 @@ function LoginPage() {
     존재하지 않는 주소를 넣으면 서버가 otp_disabled 로 거른다. 화면은 형식만 본다.
   */
   const emailValid = /.+@.+\..+/.test(email.trim());
-
-  /** 로그인 성공 뒤 갈 곳. 코드·비밀번호 두 경로가 같은 판정을 써야 한다. */
-  async function land(result: Awaited<ReturnType<typeof signInWithPassword>>) {
-    if (result.kind === "closed") {
-      setError(
-        result.state === "withdrawn"
-          ? "탈퇴한 계정입니다. 새로 가입해 주세요."
-          : "이용이 중지된 계정입니다. 문의해 주세요.",
-      );
-      return;
-    }
-    if (result.kind === "no-profile") {
-      toast("가입이 완료되지 않은 계정입니다. 이어서 진행해 주세요.");
-      navigate({ to: "/signup" });
-      return;
-    }
-    if (result.kind === "incomplete") {
-      toast("남은 가입 절차를 마쳐주세요.");
-      navigate({ to: "/signup" });
-      return;
-    }
-    navigate({ to: "/home" });
-  }
 
   const onCode = mode === "code";
 
@@ -284,6 +350,51 @@ function LoginPage() {
           )}
 
           {/*
+            ── 카카오 ──
+            코드를 기다리는 중에는 감춘다. 그 화면은 "지금 받은 숫자를 넣는" 한
+            가지 일만 하는 자리라, 다른 로그인 수단이 끼면 방금 온 메일을 두고
+            길을 잃는다.
+
+            카카오는 **연결해 둔 사람만** 들어온다(설정 → 카카오 연결). 안 한
+            계정으로 누르면 프로필이 없어 land() 가 가입으로 돌려보낸다.
+          */}
+          {!codeSent ? (
+            <>
+              <div className="mt-6 flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-2xs text-muted-foreground">또는</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+
+              <button
+                type="button"
+                disabled={busy || oauthBusy}
+                onClick={async () => {
+                  setError(null);
+                  setOauthBusy(true);
+                  try {
+                    /*
+                      웹은 이 주소로 되돌아오고, 앱은 커스텀 스킴으로 되돌아온다.
+                      어느 쪽이든 위의 useEffect 가 받아 같은 판정을 지난다.
+                    */
+                    const redirectTo = isNative
+                      ? NATIVE_REDIRECT
+                      : `${window.location.origin}/login`;
+                    await openAuthUrl(await kakaoAuthorizeUrl(redirectTo));
+                  } catch (err) {
+                    setError(authErrorMessage(err));
+                    setOauthBusy(false);
+                  }
+                }}
+                className="mt-4 flex min-h-13 w-full items-center justify-center gap-2 rounded-control bg-[#FEE500] text-sm font-semibold text-[#191600] transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+              >
+                <KakaoMark />
+                {oauthBusy ? "카카오로 이동 중…" : "카카오로 로그인"}
+              </button>
+            </>
+          ) : null}
+
+          {/*
             두 경로를 오가는 문. 비밀번호를 아직 안 만든 사람(이 기능 이전 가입자)과
             잊은 사람이 같은 문으로 들어온다 — 코드로 들어와서 설정에서 정하면 된다.
             그래서 별도의 재설정 흐름을 만들지 않았다.
@@ -307,10 +418,12 @@ function LoginPage() {
       </main>
 
       {/*
-        가입 안내는 코드 입력 단계에서만 접는다 — 본문 높이를 70pt 가까이 잡아먹어
-        로그인 버튼이 들어갈 자리를 없앤다.
+        가입 안내를 접는 두 경우.
+          · 코드 입력 단계 — 그 화면은 "받은 숫자를 넣는" 한 가지 일만 한다.
+          · 키보드가 떠 있을 때 — 본문 높이를 70pt 가까이 잡아먹어 로그인 버튼이
+            들어갈 자리를 없앤다. 실기기에서 버튼이 화면 밖으로 밀렸다.
       */}
-      {!codeSent ? (
+      {!codeSent && !keyboardOpen ? (
         <footer
           className="shrink-0 pt-8"
           style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}
@@ -324,5 +437,19 @@ function LoginPage() {
         </footer>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * 카카오 말풍선 마크.
+ *
+ * 색·형태는 카카오 디자인 가이드가 고정한다 — 브랜드 토큰으로 바꾸면 안 된다.
+ * 그래서 이 자리만 hex 를 직접 쓴다(#FEE500 바탕 / #191600 글자·심볼).
+ */
+function KakaoMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4.5" aria-hidden="true" fill="currentColor">
+      <path d="M12 3C6.99 3 3 6.24 3 10.23c0 2.55 1.68 4.79 4.2 6.06l-1.06 3.9c-.09.34.29.61.59.42l4.63-3.06c.21.02.42.03.64.03 5.01 0 9-3.24 9-7.35S17.01 3 12 3Z" />
+    </svg>
   );
 }

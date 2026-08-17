@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { describePrefs, formatMeetTime } from "@/lib/meet";
 import { confirmMeeting, type Meeting } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/native";
 
 const PLACE_HINTS = ["카페", "저녁", "가벼운 술", "기타"];
 
@@ -126,6 +127,7 @@ export function MeetPlanner({
               placeName.trim(),
               placeKind ?? undefined,
             );
+            haptics.success();
             toast.success("만남이 확정되었습니다.");
             onConfirmed(updated);
           } catch (err) {

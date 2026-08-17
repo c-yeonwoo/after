@@ -117,39 +117,35 @@ export async function requestEmailCode(email: string): Promise<void> {
  *
  * 검증 후 프로필 상태에 따라 어디로 보낼지 호출자가 결정할 수 있게 종류를 반환한다.
  */
-export async function signInExisting(
-  email: string,
-  token: string,
-): Promise<
+/**
+ * 로그인 직후의 공통 판정.
+ *
+ * **경로가 셋이다** — 코드·비밀번호·카카오. 판정이 갈리면 그중 하나가 탈퇴·제명
+ * 검사를 우회하는 문이 된다(실제로 auth.users 는 탈퇴 후에도 남아 있어서, 이
+ * 검사가 없으면 탈퇴한 사람이 빈 프로필로 그대로 로그인됐다). 그래서 한 함수에
+ * 모으고, 새 로그인 수단이 생기면 반드시 여기를 지나게 한다.
+ */
+export type SignInResult =
   | { kind: "ok"; profile: Profile }
   | { kind: "incomplete"; profile: Profile }
   | { kind: "no-profile" }
-  | { kind: "closed"; state: "banned" | "withdrawn" }
-> {
+  | { kind: "closed"; state: "banned" | "withdrawn" };
+
+async function landAfterSignIn(uid: string): Promise<SignInResult> {
+  return landAfterSignIn(uid);
+}
+
+export async function signInExisting(email: string, token: string): Promise<SignInResult> {
   const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
   if (error) throw error;
   const uid = data.user?.id;
   if (!uid) throw new Error("인증에 실패했습니다.");
 
   // 인증은 됐으니 email_verified_at 을 최신화한다(가입 흐름과 동일).
-  // 프로필이 아직 없는 계정이면 실패하는데, 그건 아래에서 no-profile 로 처리한다.
+  // 프로필이 아직 없는 계정이면 실패하는데, 그건 landAfterSignIn 이 no-profile 로 처리한다.
   await supabase.rpc("sync_email_verified");
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-
-  if (!profile) return { kind: "no-profile" };
-
-  // 탈퇴·제명 계정은 인증이 되더라도 들여보내지 않는다. auth.users 는 남아
-  // 있으므로 OTP 자체는 성공한다 — 그래서 이 판정이 없으면 탈퇴한 사람이
-  // 그대로 로그인됐다(신원은 이미 지워진 빈 프로필로).
-  if (profile.account_state !== "active") {
-    await supabase.auth.signOut();
-    return { kind: "closed", state: profile.account_state };
-  }
-
-  await track("login");
-  if (profile.onboarding_step < 7) return { kind: "incomplete", profile };
-  return { kind: "ok", profile };
+  return landAfterSignIn(uid);
 }
 
 /**
@@ -172,15 +168,7 @@ export const PASSWORD_MIN_LENGTH = 8;
  * 로그인 뒤 판정은 signInExisting 과 **같아야 한다** — 탈퇴·제명·미완료 가입이
  * 비밀번호 경로로 들어오면 그 검사를 우회하게 된다.
  */
-export async function signInWithPassword(
-  email: string,
-  password: string,
-): Promise<
-  | { kind: "ok"; profile: Profile }
-  | { kind: "incomplete"; profile: Profile }
-  | { kind: "no-profile" }
-  | { kind: "closed"; state: "banned" | "withdrawn" }
-> {
+export async function signInWithPassword(email: string, password: string): Promise<SignInResult> {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   const uid = data.user?.id;
@@ -209,6 +197,97 @@ export async function signInWithPassword(
 export async function setPassword(password: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
+}
+
+/* ── 카카오 ────────────────────────────────────────────────────────── */
+
+/**
+ * 카카오는 **가입 수단이 아니라 재로그인 수단**이다.
+ *
+ * 이 서비스의 전제는 회사 메일로 확인한 직장이다. 카카오로 계정을 만들 수 있게
+ * 하면 그 관문이 무의미해지므로, 카카오는 **이미 있는 계정에 붙이는** 방식만
+ * 허용한다(설정 → 카카오 연결). 연결하고 나면 다음부터는 카카오 하나로 들어온다.
+ *
+ * ── 연결하지 않은 카카오로 로그인하면 ──
+ * Supabase 는 그 카카오 이메일로 **새 auth 유저**를 만든다. 프로필이 없으므로
+ * landAfterSignIn 이 no-profile 을 돌려주고, 화면이 로그아웃시킨 뒤 안내한다.
+ * (자동 연결은 이메일이 같고 검증됐을 때만 일어나는데, 회사 메일과 카카오 계정
+ * 메일이 같은 경우는 거의 없다 — 기대하지 않는다.)
+ */
+export const KAKAO_PROVIDER = "kakao" as const;
+
+/** 브라우저(웹)에서 카카오 로그인 — 같은 탭에서 리다이렉트되고 돌아온다. */
+export async function signInWithKakaoWeb(redirectTo: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: KAKAO_PROVIDER,
+    options: { redirectTo },
+  });
+  if (error) throw error;
+}
+
+/**
+ * 네이티브에서 쓸 카카오 인가 URL 을 만든다(브라우저를 열지는 않는다).
+ *
+ * `skipBrowserRedirect` 를 켜서 **URL 만** 받는다. 앱 웹뷰에서 그대로 이동하면
+ * 카카오·구글 같은 제공자가 임베디드 웹뷰를 차단하거나, 성공해도 세션이 앱이
+ * 아니라 웹뷰 안에 갇힌다. URL 은 호출부가 시스템 브라우저로 연다.
+ */
+export async function kakaoAuthorizeUrl(redirectTo: string): Promise<string> {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: KAKAO_PROVIDER,
+    options: { redirectTo, skipBrowserRedirect: true },
+  });
+  if (error) throw error;
+  if (!data.url) throw new Error("카카오 로그인 주소를 받지 못했습니다.");
+  return data.url;
+}
+
+/** 딥링크로 세션이 생긴 뒤의 공통 판정. 카카오 경로도 탈퇴·제명 검사를 지난다. */
+export async function landAfterOAuth(): Promise<SignInResult> {
+  const { data } = await supabase.auth.getUser();
+  const uid = data.user?.id;
+  if (!uid) throw new Error("로그인에 실패했습니다.");
+  return landAfterSignIn(uid);
+}
+
+/** 내 계정에 붙어 있는 로그인 수단들. 설정 화면에서 연결 여부를 보여준다. */
+export async function linkedProviders(): Promise<string[]> {
+  const { data, error } = await supabase.auth.getUserIdentities();
+  if (error) throw error;
+  return (data?.identities ?? []).map((i) => i.provider);
+}
+
+/**
+ * 로그인된 계정에 카카오를 붙인다.
+ *
+ * Supabase 대시보드에서 **Manual linking 을 켜야** 동작한다(꺼져 있으면
+ * `manual_linking_disabled`). 네이티브에서는 웹처럼 리다이렉트할 수 없으므로
+ * URL 만 받아 시스템 브라우저로 연다.
+ */
+export async function linkKakao(redirectTo: string, skipBrowserRedirect: boolean): Promise<string> {
+  const { data, error } = await supabase.auth.linkIdentity({
+    provider: KAKAO_PROVIDER,
+    options: { redirectTo, skipBrowserRedirect },
+  });
+  if (error) throw error;
+  return data?.url ?? "";
+}
+
+/**
+ * 카카오 연결을 끊는다.
+ *
+ * 마지막 남은 수단은 끊지 못한다 — GoTrue 가 거절하지만, 그 전에 화면에서
+ * 막는 편이 낫다. 이메일 아이덴티티는 가입 때 반드시 생기므로 보통 둘 이상이다.
+ */
+export async function unlinkKakao(): Promise<void> {
+  const { data, error } = await supabase.auth.getUserIdentities();
+  if (error) throw error;
+  const identities = data?.identities ?? [];
+  if (identities.length < 2) throw new Error("마지막 로그인 수단은 끊을 수 없습니다.");
+  const kakao = identities.find((i) => i.provider === KAKAO_PROVIDER);
+  if (!kakao) return;
+  const { error: unlinkError } = await supabase.auth.unlinkIdentity(kakao);
+  if (unlinkError) throw unlinkError;
 }
 
 /** 코드 검증 + (최초 1회) 프로필 생성. gender/hubId 는 인증 이전 단계에서 이미 고른 값. */

@@ -19,7 +19,9 @@ import {
   type MeetPrefs,
 } from "@/lib/meet";
 import { listMeetingsAwaitingMyPrefs, submitMeetingPrefs } from "@/lib/api";
+import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/native";
 
 export const Route = createFileRoute("/prefs")({
   // 요청이 여러 건일 수 있으므로 어느 요청에 답하는지 반드시 지정한다.
@@ -42,6 +44,8 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 function PrefsPage() {
   const navigate = useNavigate();
   const { meetingId: meetingIdParam } = Route.useSearch();
+  // 역 후보를 내 권역으로 좁힌다 — 강남 사용자에게 판교 역을 보여줄 이유가 없다.
+  const { me } = useMe();
   const [loading, setLoading] = useState(true);
   const [meetingId, setMeetingId] = useState<string | null>(null);
   const [candidateName, setCandidateName] = useState<string | null>(null);
@@ -290,9 +294,9 @@ function PrefsPage() {
           />
         </div>
 
-        {searchStations(q, stations).length ? (
+        {searchStations(q, stations, me?.hub_id).length ? (
           <ul className="mt-2 overflow-hidden rounded-field border border-border">
-            {searchStations(q, stations).map((st) => (
+            {searchStations(q, stations, me?.hub_id).map((st) => (
               <li key={st}>
                 <button
                   type="button"
@@ -362,6 +366,7 @@ function PrefsPage() {
             };
             await submitMeetingPrefs(meetingId, prefs);
             // S7: 여기서 대화가 열리지 않는다 — 세라가 전달하고, 상대가 확정해야 열린다.
+            haptics.success();
             toast.success("전달했습니다. 상대가 날짜를 고르면 대화가 열려요.");
             navigate({ to: "/home" });
           } catch (err) {

@@ -16,6 +16,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { applyStatusBar } from "@/lib/native";
+
 export type ThemeChoice = "system" | "light" | "dark";
 
 const STORAGE_KEY = "after.theme";
@@ -81,6 +83,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     else localStorage.setItem(STORAGE_KEY, c);
     setIsDark(apply(c));
   }, []);
+
+  /*
+    네이티브 상태바를 테마와 함께 돌린다.
+
+    웹에서는 브라우저 크롬이 알아서 하지만 앱에는 우리 화면 위에 시계·배터리가
+    그대로 얹힌다. 자두 밤 배경에 검은 글자가 얹히면 시간이 안 보인다 — 앱을
+    처음 켠 순간 눈에 띄는 종류의 어긋남이다. 웹에서는 no-op 이다.
+  */
+  useEffect(() => {
+    void applyStatusBar(isDark);
+  }, [isDark]);
 
   const value = useMemo<ThemeState>(
     () => ({ choice, isDark, setChoice }),

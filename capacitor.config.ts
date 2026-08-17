@@ -38,6 +38,21 @@ const config: CapacitorConfig = {
   },
 
   plugins: {
+    /*
+      스플래시를 **앱이 직접 걷는다**(launchAutoHide: false).
+
+      자동으로 걷으면 정해진 시간이 지나는 순간 사라지는데, 그때 웹뷰는 아직
+      비어 있을 수 있다. 그러면 자두 밤 → 흰 깜빡임 → 첫 화면 순서가 되어,
+      앱을 켤 때마다 흰 섬광이 지나간다. __root 가 마운트된 뒤에 걷으면
+      스플래시에서 첫 화면으로 바로 이어진다.
+
+      배경색은 자정의 자두(#1A0F1E)다 — 라이트 테마 사용자에게도 브랜드 접점은
+      항상 자두 밤이므로(styles.css 의 .brand-surface) 랜딩·로그인과 이어진다.
+    */
+    SplashScreen: {
+      launchAutoHide: false,
+      backgroundColor: "#1A0F1E",
+    },
     Keyboard: {
       /*
         키보드가 올라와도 **웹뷰 크기를 건드리지 않는다.**

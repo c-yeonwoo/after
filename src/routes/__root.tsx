@@ -17,6 +17,7 @@ import { MobileFrame } from "@/components/MobileFrame";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 import { MeProvider } from "@/lib/me";
 import { watchKeyboard } from "@/lib/keyboard";
+import { hideSplash } from "@/lib/native";
 
 function NotFoundComponent() {
   return (
@@ -170,6 +171,9 @@ function RootComponent() {
 
   // 네이티브에서만 붙는다. 키보드 높이를 --keyboard-height 로 내려보낸다.
   useEffect(() => watchKeyboard(), []);
+
+  // 첫 화면이 그려진 뒤에 스플래시를 걷는다 — 자동으로 걷으면 흰 섬광이 낀다.
+  useEffect(() => void hideSplash(), []);
 
   return (
     <QueryClientProvider client={queryClient}>

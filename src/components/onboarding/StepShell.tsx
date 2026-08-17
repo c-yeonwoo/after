@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 import { Logo } from "@/components/Logo";
+import { useKeepActionsVisible, useKeyboardOpen } from "@/lib/keyboard";
 
 export function StepShell({
   step,
@@ -19,6 +20,16 @@ export function StepShell({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  /*
+    가입은 모든 단계가 "입력하고 → 아래 버튼을 누른다" 구조다. 키보드가 뜨면
+    본문 스크롤러가 그만큼 짧아져 그 버튼이 접힌 자리 밖으로 밀린다. 단계마다
+    따로 처리하지 않고 껍데기에서 한 번에 맞춘다 — 새 단계가 생겨도 따라온다.
+  */
+  const endRef = useRef<HTMLDivElement>(null);
+  useKeepActionsVisible(endRef, [step]);
+  // 키보드가 떠 있으면 하단 고정 영역을 접는다 — 그만큼 본문이 넓어진다.
+  const keyboardOpen = useKeyboardOpen();
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       <header
@@ -57,9 +68,10 @@ export function StepShell({
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
         ) : null}
         <div className="mt-8">{children}</div>
+        <div ref={endRef} aria-hidden="true" />
       </main>
 
-      {footer ? (
+      {footer && !keyboardOpen ? (
         <footer className="shrink-0 border-t border-border bg-background">
           <div
             className="mx-auto px-5 pt-4"

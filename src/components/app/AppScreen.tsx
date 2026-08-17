@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Heart, Home, MessageCircle, User } from "lucide-react";
 
@@ -64,6 +64,23 @@ export function AppScreen({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  /*
+    화면이 바뀌면 **본문을 맨 위로 되돌린다.**
+
+    AppScreen 은 모든 탭·하위 화면이 함께 쓰는 껍데기라, 라우트가 바뀌어도
+    React 는 이 `<main>` DOM 노드를 재사용한다. 그래서 앞 화면에서 스크롤한
+    위치가 그대로 남아, 다음 화면이 중간부터 열린다 — 환경설정에 들어갔더니
+    첫 줄이 반쯤 잘린 채 시작하는 상태를 실기기에서 그대로 봤다.
+
+    라우터의 scrollRestoration 은 여기에 닿지 않는다. 그건 문서 스크롤(혹은
+    등록된 스크롤러)을 다루는데, 이 앱에서 스크롤하는 건 문서가 아니라 이
+    요소다. 네이티브 화면 전환은 항상 맨 위에서 시작하므로 그 쪽에 맞춘다.
+  */
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
+
   return (
     <div
       className="flex h-full flex-col overflow-hidden bg-background"
@@ -102,6 +119,7 @@ export function AppScreen({
       </header>
 
       <main
+        ref={mainRef}
         className={cn(
           "mx-auto w-full min-h-0 flex-1 px-6 pt-1",
           // 스크롤하는 유일한 지점. overscroll-contain 은 본문 끝에서 더 당겼을 때

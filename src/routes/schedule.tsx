@@ -7,6 +7,7 @@ import { GuideNote } from "@/components/app/GuideNote";
 import { MeetPlanner } from "@/components/app/MeetPlanner";
 import { BRAND } from "@/lib/brand";
 import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
+import { haptics } from "@/lib/native";
 
 export const Route = createFileRoute("/schedule")({
   validateSearch: (search: Record<string, unknown>): { meetingId?: string } => ({
@@ -103,6 +104,7 @@ function SchedulePage() {
           meeting={meeting}
           onConfirmed={(m) => {
             setMeeting(m);
+            haptics.success();
             toast.success("만남이 확정되었습니다. 대화가 열렸어요.");
             navigate({ to: "/chats" });
           }}

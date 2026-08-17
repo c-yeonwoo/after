@@ -418,7 +418,8 @@ function ConfirmedCard({
             {formatWhen(meeting.scheduled_at)}
           </p>
         ) : null}
-        <p className="mt-1 text-sm text-primary-foreground/90">
+        {/* 약속 장소는 지도 앱에 옮겨 넣게 된다 — 선택을 열어 둔다. */}
+        <p data-selectable className="mt-1 text-sm text-primary-foreground/90">
           {meeting.place_name}
           {counterpart?.name ? ` · ${counterpart.name}님과` : ""}
         </p>
