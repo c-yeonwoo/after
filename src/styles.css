@@ -46,6 +46,18 @@
   --font-wordmark: Fraunces, ui-serif, Georgia, serif;
 
   /*
+    랜딩 히어로 전용. **워드마크와 다른 서체를 쓴다.**
+
+    한때 Fraunces 900 으로 통일했었다. 한 파일로 두 역할을 덮으니 요청이 줄고
+    한 손에서 나온 느낌도 났다. 그런데 히어로는 브랜드네임과 하는 일이 다르다 —
+    이름은 읽히면 되고, 히어로는 **때려야** 한다. 세리프 900 은 우아하지만 그
+    타격이 없었다.
+
+    그래서 여기만 되돌린다. 라틴 서체 둘을 받는 비용(요청 1개)을 치른다.
+  */
+  --font-hero: "Archivo Black", ui-sans-serif, sans-serif;
+
+  /*
    * 타입 스케일 — Tailwind 기본 스텝(xs .75 / sm .875 / base 1 / lg 1.125 …)은
    * 그대로 쓰고, 그 아래 마이크로 단계만 추가한다. 기존 코드에 0.6~0.7rem 사이
    * 임의값이 6종(0.6·0.62·0.65·0.66·0.68·0.7)이나 흩어져 있었는데 서로 구분이
@@ -566,19 +578,20 @@
 }
 
 /*
-  랜딩 히어로 — 같은 서체의 가장 굵은 쪽. 워드마크와 한 손에서 나온 것으로
-  읽히면서도, 900 과 400 의 차이가 커서 둘이 경쟁하지 않는다.
-  opsz 는 여기서는 큰 값(144)이 맞다 — 실제로 크게 쓰는 자리다.
+  랜딩 히어로 — Archivo Black. 기하 그로테스크의 단단한 대문자다.
+
+  워드마크(Fraunces 세리프)와 서체가 다르다. 의도한 대비다 — 이름은 부드럽게
+  읽히고, 히어로는 크게 때린다. 둘이 같은 서체였을 때는 히어로가 우아해지면서
+  힘을 잃었다.
+
+  단일 웨이트(400)라 굵기를 줄 수 없고 한글 글리프도 없다. 이 클래스는 **라틴
+  대문자만 들어가는 자리**에서만 쓴다.
 */
 @utility display-wordmark {
-  font-family: var(--font-wordmark);
-  font-weight: 900;
-  font-variation-settings:
-    "opsz" 144,
-    "SOFT" 60,
-    "WONK" 1;
+  font-family: var(--font-hero);
+  font-weight: 400;
   font-synthesis-weight: none;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.02em;
   line-height: 0.95;
 }
 
