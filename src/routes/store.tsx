@@ -164,7 +164,10 @@ function StorePage() {
                 )}
               >
                 <Ticket
-                  className={cn("size-5 shrink-0", on ? "text-primary" : "text-muted-foreground")}
+                  className={cn(
+                    "size-5 shrink-0",
+                    on ? "text-primary-strong" : "text-muted-foreground",
+                  )}
                   aria-hidden="true"
                 />
                 <span className="min-w-0 flex-1">

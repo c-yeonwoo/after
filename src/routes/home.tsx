@@ -145,7 +145,7 @@ function HomePage() {
       <h1 className="headline mt-2 text-3xl leading-[1.35]">
         {me?.name ? `${me.name}님,` : "안녕하세요,"}
         <br />
-        <span className="text-primary">{headline}</span>
+        <span className="text-primary-strong">{headline}</span>
       </h1>
 
       {noShow ? (

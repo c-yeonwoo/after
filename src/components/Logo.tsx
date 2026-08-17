@@ -43,7 +43,7 @@ export function LogoMark({ className }: { className?: string }) {
       viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
-      className={cn("size-7 text-primary", className)}
+      className={cn("size-7 text-primary-strong", className)}
     >
       {/* 채운 원보다 조금 크게 파서 두 원 사이에 빈 틈을 남긴다 */}
       <mask id={maskId}>
@@ -65,18 +65,46 @@ export function LogoMark({ className }: { className?: string }) {
 
 export function Logo({ className, size = "md" }: { className?: string; size?: "sm" | "md" }) {
   return (
-    <span className={cn("flex min-w-0 items-center gap-2", className)}>
-      <LogoMark className={cn("shrink-0", size === "sm" ? "size-6" : "size-7")} />
+    <span
+      className={cn(
+        "wordmark inline-flex min-w-0 items-baseline whitespace-nowrap",
+        size === "sm" ? "text-2xl" : "text-3xl",
+        className,
+      )}
+      /*
+        스크린리더에는 한국어 정식명을 준다. 안에 들어 있는 글자는 `eclıpse`
+        (점 없는 i)라 그대로 읽히면 이상하고, 마크는 aria-hidden 이다.
+      */
+      aria-label={BRAND.name}
+      role="img"
+    >
       {/*
-        워드마크는 **정식 라틴 표기**다. 전에는 `after` 한 단어였는데 그건 정식명도
-        약칭도 영문명도 아니었다 — 도메인은 eclps.kr 이고, 영어 `after` 는
-        전치사라 단독으로는 이름처럼 읽히지 않는다.
+        ── 워드마크 ──
+        마크를 옆에 세우지 않는다. **i 의 점이 마크다.**
 
-        lowercase 를 걷었다. 고유명사이므로 대문자를 살린다.
+        전에는 [마크] + "Eclipse" 였다. 마크와 글자가 각자 서 있어서 둘의 관계를
+        읽는 사람이 만들어야 했고, 워드마크 자체는 폰트를 깐 것 이상이 아니었다.
+        점 자리에 마크를 얹으면 이름 안에 일식이 한 번 더 들어가고, 어떤 서체를
+        쓰더라도 이 조합은 우리 것이 된다.
+
+        `ı`(U+0131, 점 없는 i)를 쓴다 — 일반 `i` 를 두고 점을 가리는 것보다,
+        애초에 점이 없는 글자를 쓰는 편이 서체가 바뀌어도 안전하다.
       */}
-      <span className={cn("wordmark truncate", size === "sm" ? "text-lg" : "text-xl")}>
-        {BRAND.nameEn}
+      <span aria-hidden="true">ecl</span>
+      <span className="relative inline-block" aria-hidden="true">
+        {"\u0131"}
+        {/*
+          점의 위치·크기는 em 으로 잡는다. 워드마크가 18px 로도 48px 로도 쓰이므로
+          px 로 두면 한쪽에서 어긋난다. 값은 Fraunces 의 어센더 높이에 맞춘 실측.
+        */}
+        {/*
+          점만 브랜드 색을 쓴다(LogoMark 의 기본값 = primary-strong). 글자는 주변
+          색을 물려받는다 — 랜딩에서는 흰 글자 + 분홍 점, 밝은 화면에서는 잉크
+          글자 + 진한 로즈 점이 된다. 일식이 이름 안에서 빛나는 자리다.
+        */}
+        <LogoMark className="absolute bottom-[0.78em] left-1/2 size-[0.42em] -translate-x-1/2" />
       </span>
+      <span aria-hidden="true">pse</span>
     </span>
   );
 }

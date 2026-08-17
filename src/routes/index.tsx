@@ -76,7 +76,7 @@ function Landing() {
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
         <section className="pt-8 pb-10">
-          <h1 className="wordmark text-5xl leading-[0.95] uppercase">
+          <h1 className="display-wordmark text-5xl uppercase">
             After Work
             <br />
             <span className="text-primary">Matching</span>
@@ -124,8 +124,12 @@ function Landing() {
             브랜드가 나왔는데, 네이비+금 시절의 잔재다 — 금색은 큰 면적으로
             깔면 저렴해져서 피했었다. 로즈는 그 제약이 없고, 랜딩에서 가장 큰
             면적이 브랜드 색이어야 색이 기억된다.
+
+            hover 는 primary-strong 이 아니라 primary/90 이다 — primary-strong 은
+            **글자 전용** 토큰이라 밝은 테마에서는 채움으로 쓸 수 없다(그 위에
+            얹히는 잉크 글자와 2.15 밖에 안 난다). 다른 버튼도 같은 규칙을 쓴다.
           */
-          className="headline flex w-full items-center justify-center rounded-control bg-primary py-5 text-base text-primary-foreground transition-colors duration-300 hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="headline flex w-full items-center justify-center rounded-control bg-primary py-5 text-base text-primary-foreground transition-colors duration-300 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           직장 인증하고 시작하기
         </button>
