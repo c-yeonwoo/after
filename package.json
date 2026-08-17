@@ -15,12 +15,19 @@
     "format": "prettier --write .",
     "check:contrast": "bun scripts/check-contrast.mjs",
     "demo:state": "bun scripts/demo-state.mjs",
-    "build:app": "BUILD_TARGET=app vite build"
+    "build:app": "BUILD_TARGET=app vite build",
+    "build:app:dev": "BUILD_TARGET=app vite build --mode development",
+    "shots:seed": "bun scripts/screenshot-seed.mjs"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.5.0",
     "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

@@ -410,6 +410,55 @@
     letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+
+    /*
+      ── 여기부터 "웹처럼 보이는 것" 을 지운다 ──
+
+      웹뷰를 그냥 두면 네이티브 앱과 다르다는 게 조작할 때마다 드러난다.
+        · 탭할 때마다 회색 사각형이 번쩍인다(-webkit-tap-highlight-color).
+        · 카드나 라벨을 꾹 누르면 텍스트 선택 핸들과 "복사" 팝업이 뜬다.
+        · 두 번 탭하면 확대된다.
+      아래 셋이 그 셋을 각각 끈다. iOS 앱에서 이런 동작을 하는 곳은 없다.
+
+      선택은 **필요한 곳에만 되살린다**(아래 규칙) — 다 막으면 대화 내용이나
+      상대가 적어 준 장소를 복사할 수 없다. 그건 네이티브 앱도 되는 일이다.
+    */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  /*
+    읽고 옮겨 적을 수 있어야 하는 것들. 대화 본문·장소·시간·프로필 소개처럼
+    "손으로 베껴 쓸 만한 정보" 에만 선택을 허용한다.
+  */
+  input,
+  textarea,
+  [data-selectable] {
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /*
+    관성 스크롤. 본문 스크롤러가 손을 떼면 뚝 멈추는 것이 웹 느낌의 큰 축이다.
+    (iOS 13+ 는 기본이 되었지만 WKWebView 의 중첩 스크롤러에서는 여전히
+    명시해야 붙는 경우가 있어 남긴다.)
+  */
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /*
+    스크롤바를 감춘다. macOS 에서 "항상 표시" 로 두면 웹뷰 안에도 회색 막대가
+    그려져 앱이 즉시 웹으로 보인다. 스크롤 위치는 콘텐츠 움직임으로 충분히 읽힌다.
+  */
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 
   h1,

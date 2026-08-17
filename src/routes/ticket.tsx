@@ -7,6 +7,7 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { BRAND, MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
+import { haptics } from "@/lib/native";
 import {
   getOpenIntroWithCandidate,
   getMeetingByIntro,
@@ -129,6 +130,7 @@ function TicketPage() {
               try {
                 const created = await redeemMeetingTicket(introId);
                 setMeeting(created);
+                haptics.success();
                 toast.success("티켓을 사용했습니다. 세라가 상대에게 물어볼게요.");
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "티켓 사용에 실패했습니다.");

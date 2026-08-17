@@ -23,8 +23,14 @@ if (!STATES.includes(target)) {
   process.exit(1);
 }
 
-const MALE = "yeonwoo@demo.after";
-const FEMALE = "hana@demo.after";
+/*
+  기본값은 시드의 데모 계정. 스크린샷 시딩처럼 다른 계정 쌍으로 같은 전이를
+  돌려야 할 때가 있어 환경변수로 갈아끼울 수 있게 뒀다.
+*/
+const MALE = process.env.DEMO_MALE ?? "yeonwoo@demo.after";
+const FEMALE = process.env.DEMO_FEMALE ?? "hana@demo.after";
+/** 큐에 후보를 세우려면 운영자 권한이 필요하다(admin_set_queue 는 is_admin() 게이트). */
+const ADMIN = process.env.DEMO_ADMIN ?? "admin@verify.local";
 
 function sql(text) {
   return execFileSync(
@@ -53,6 +59,9 @@ sql(`
   -- tickets.intro_id 가 intros 를 참조하므로 intros 를 지우기 전에 먼저 끊는다.
   update tickets set state = 'unused', used_at = null, intro_id = null where user_id = '${maleId}';
   delete from intros where male_id = '${maleId}';
+  -- 큐 카드도 걷는다. 한 번 연 카드(opened_at)는 admin_set_queue 가 건드리지
+  -- 않아서, 이게 없으면 두 번째 실행부터 "no eligible candidate" 로 막힌다.
+  delete from intro_queue where male_id = '${maleId}';
   delete from intro_exclusions
    where user_lo = least('${maleId}'::uuid,'${femaleId}'::uuid)
      and user_hi = greatest('${maleId}'::uuid,'${femaleId}'::uuid);
@@ -71,14 +80,43 @@ sql(`
   on conflict (from_id, to_id) do update set verdict = 'like';
 `);
 
-// 티켓 보유 보장 (없으면 결제 웹훅 경로로 발급)
-const unused = sql(`select count(*) from tickets where user_id = '${maleId}' and state = 'unused'`);
-if (Number(unused) === 0) {
-  sql(`select issue_ticket('${maleId}', 'demo_${Date.now()}', 30000)`);
+/*
+  티켓 보유 보장 — **종류별로** 센다.
+
+  소개를 여는 데는 `intro` 티켓, 만남을 잡는 데는 `meeting` 티켓이 필요하다.
+  예전에는 종류를 안 가리고 "하나라도 있으면 통과" 로 셌는데, meeting 만 남아
+  있으면 open_intro 가 "no unused intro ticket" 으로 막힌다.
+*/
+for (const kind of ["intro", "meeting"]) {
+  const unused = sql(
+    `select count(*) from tickets where user_id = '${maleId}' and state = 'unused' and kind = '${kind}'`,
+  );
+  if (Number(unused) === 0) {
+    // 가격대가 종류마다 다르다(tickets_price_band: intro 1천~1만, meeting 1만~10만).
+    const price = kind === "intro" ? 3000 : 30000;
+    sql(`select issue_ticket('${maleId}', 'demo_${kind}_${Date.now()}', ${price}, '${kind}')`);
+  }
 }
 
 const asMale = `set local "request.jwt.claims" to '{"sub":"${maleId}","role":"authenticated"}';`;
 const asFemale = `set local "request.jwt.claims" to '{"sub":"${femaleId}","role":"authenticated"}';`;
+
+/*
+  s20 이후로 소개는 **큐를 거친다.** 여성이 호감을 줬다고 바로 열리지 않고,
+  운영자가 후보를 큐에 세우고(admin_set_queue) 그것이 배달된(delivered_at)
+  뒤에야 open_intro 가 카드를 집는다. 이 단계를 빼면 "no eligible candidate"
+  로 막힌다 — 실제로 그렇게 낡아 있었다.
+*/
+const adminId = sql(`select id from profiles where company_email = '${ADMIN}'`);
+if (!adminId) {
+  console.error(`운영자 계정(${ADMIN})을 찾을 수 없습니다.`);
+  process.exit(1);
+}
+const asAdmin = `set local "request.jwt.claims" to '{"sub":"${adminId}","role":"authenticated"}';`;
+sql(
+  `begin; ${asAdmin} select admin_set_queue('${maleId}', array['${femaleId}']::uuid[], '전시·사진 취향이 겹칩니다. 활동 지역도 같아요.'); commit;`,
+);
+sql(`select promote_intro_queue('${maleId}');`);
 
 sql(`begin; ${asMale} select open_intro(); commit;`);
 if (target === "intro") {
@@ -101,6 +139,16 @@ if (target === "scheduling") {
   process.exit(0);
 }
 
-sql(`begin; ${asMale} select confirm_meeting('${meetingId}', now() + interval '5 days',
+/*
+  시각을 **한국 시간** 저녁 7시에 맞춘다.
+
+  `now() + interval '5 days'` 는 지금 시계 시각을 그대로 끌고 가서 "오후 1:07"
+  같은 값이 나왔다 — 퇴근 후 만남이라는 전제와 어긋난다. 그렇다고 UTC 로
+  19시를 만들면 화면에는 새벽 4시로 찍힌다(앱은 기기 시간대로 그린다).
+  그래서 Asia/Seoul 기준으로 자른 뒤 다시 timestamptz 로 돌린다.
+*/
+sql(`begin; ${asMale} select confirm_meeting('${meetingId}',
+      (date_trunc('day', (now() at time zone 'Asia/Seoul') + interval '5 days')
+        + interval '19 hours') at time zone 'Asia/Seoul',
       '역삼역 3번 출구 근처', 'dinner'); commit;`);
 console.log("→ 만남 확정 상태 (날짜·장소·사적 대화 오픈 시각)");

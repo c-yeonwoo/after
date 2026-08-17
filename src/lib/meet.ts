@@ -1,4 +1,5 @@
 /** 만남 조율에 쓰이는 선택지 */
+import { HUBS, PRIMARY_HUB } from "@/lib/brand";
 
 export type MeetPrefs = {
   /** 가능한 저녁 (ISO datetime) */
@@ -12,38 +13,31 @@ export type MeetPrefs = {
 };
 
 /**
- * 역 검색 후보.
+ * 역 검색 후보 — **사용자의 권역 안에서만** 찾는다.
  *
- * 노선으로 묶지 않는다 — 강남·역삼권은 2호선 연속 구간이지만 논현·신논현처럼
- * 다른 노선의 역도 충분히 이동 가능 범위라, 노선을 전제하면 실제 가능한 선택지를
- * 오히려 좁힌다. 허브가 늘어나도 이 목록만 확장하면 된다.
+ * 목록 자체는 `HUBS[].stations` 가 갖는다(brand.ts). 예전에는 여기 강남권 역만
+ * 담긴 전역 배열이 있었는데, 그러면 판교 사용자가 생기는 순간 "역 이름 검색"에
+ * 강남 역만 나온다. 권역을 여는 스위치와 그 권역의 역이 같은 자리에 있어야
+ * 그 사고가 안 난다.
+ *
+ * hubId 를 모르면(구 데이터·로딩 중) 첫 열린 권역으로 떨어진다. 빈 목록을 주면
+ * 검색이 조용히 아무것도 안 찾는 화면이 되는데, 그건 고장과 구분이 안 된다.
  */
-export const STATIONS = [
-  "강남",
-  "역삼",
-  "선릉",
-  "삼성",
-  "논현",
-  "신논현",
-  "언주",
-  "학동",
-  "선정릉",
-  "강남구청",
-  "삼성중앙",
-  "봉은사",
-  "청담",
-  "압구정",
-  "신사",
-  "한티",
-  "도곡",
-  "매봉",
-  "양재",
-];
+/* hubId 는 DB 컬럼(text)에서 그대로 온다 — HubId 로 좁히면 호출부마다 캐스팅이 붙는다. */
+export function stationsFor(hubId: string | null | undefined): readonly string[] {
+  return (HUBS.find((h) => h.id === hubId) ?? PRIMARY_HUB).stations;
+}
 
-export function searchStations(query: string, exclude: string[] = []) {
+export function searchStations(
+  query: string,
+  exclude: string[] = [],
+  hubId?: string | null,
+): string[] {
   const q = query.trim();
   if (!q) return [];
-  return STATIONS.filter((s) => s.includes(q) && !exclude.includes(s)).slice(0, 6);
+  return stationsFor(hubId)
+    .filter((s) => s.includes(q) && !exclude.includes(s))
+    .slice(0, 6);
 }
 
 /** 요약 문구 — 상대(남성)에게 보여줄 때 쓴다. */

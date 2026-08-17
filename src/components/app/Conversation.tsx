@@ -206,6 +206,8 @@ export function Conversation({
                   </time>
                 ) : null}
                 <span
+                  // 대화 내용은 베껴 쓸 수 있어야 한다 — 장소·시간이 여기서 오간다.
+                  data-selectable
                   className={cn(
                     "max-w-[76%] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
                     row.mine

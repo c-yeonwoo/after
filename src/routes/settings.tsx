@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -18,12 +18,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BRAND } from "@/lib/brand";
 import {
+  KAKAO_PROVIDER,
+  linkedProviders,
+  linkKakao,
   PASSWORD_MIN_LENGTH,
   setFeedbackEmails,
   setPassword,
   setPaused,
+  unlinkKakao,
   withdrawAccount,
 } from "@/lib/api";
+import { consumeAuthCode, isNative, NATIVE_REDIRECT, openAuthUrl } from "@/lib/native";
 import { useMe } from "@/lib/me";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -51,10 +56,53 @@ function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [pw, setPw] = useState("");
+  /** 이 계정에 붙어 있는 로그인 수단. null 이면 아직 못 읽었다. */
+  const [providers, setProviders] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
+
+  const refreshProviders = useCallback(async () => {
+    try {
+      setProviders(await linkedProviders());
+    } catch {
+      // 못 읽으면 연결 여부를 모른다고 두는 편이 낫다 — 틀린 상태를 보여주는 것보다.
+      setProviders(null);
+    }
+  }, []);
+
+  /*
+    카카오 연결에서 돌아오는 길.
+
+    웹은 이 주소로 `?code=` 를 달고 돌아온다. 앱은 딥링크로 돌아오는데, 그건
+    login.tsx 의 리스너가 이미 교환을 끝낸 뒤라 여기서는 목록만 다시 읽으면
+    된다 — 앱은 화면이 살아 있는 채로 시트만 닫히므로 이 컴포넌트가 다시
+    마운트되지 않는다. 그래서 창이 포커스를 되찾을 때도 한 번 읽는다.
+  */
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      if (typeof window !== "undefined" && window.location.search.includes("code=")) {
+        try {
+          if (await consumeAuthCode(window.location.href)) {
+            window.history.replaceState({}, "", window.location.pathname);
+            if (alive) toast.success("카카오를 연결했습니다.");
+          }
+        } catch (err) {
+          if (alive) toast.error(err instanceof Error ? err.message : "연결하지 못했습니다.");
+        }
+      }
+      if (alive) await refreshProviders();
+    })();
+
+    const onFocus = () => void refreshProviders();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      alive = false;
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [refreshProviders]);
 
   if (!me) {
     return (
@@ -63,6 +111,8 @@ function SettingsPage() {
       </AppScreen>
     );
   }
+
+  const kakaoLinked = providers?.includes(KAKAO_PROVIDER) ?? false;
 
   // paused_at 의 의미가 성별로 다르다 — 아래 토글의 라벨과 설명이 갈린다.
   const isMale = me.gender === "male";
@@ -226,6 +276,52 @@ function SettingsPage() {
           }}
         >
           저장
+        </Button>
+      </section>
+
+      {/* ── 카카오 ───────────────────────────── */}
+      {/*
+        카카오는 **가입 수단이 아니라 재로그인 수단**이다. 여기서 연결해 둔
+        사람만 로그인 화면의 카카오 버튼으로 들어올 수 있다 — 카카오로 계정을
+        만들 수 있게 하면 회사 메일 인증이라는 이 서비스의 전제가 무너진다.
+      */}
+      <section className="mt-9">
+        <h2 className="text-sm font-semibold">카카오</h2>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          {kakaoLinked
+            ? "카카오로 로그인하실 수 있습니다. 회사 메일과 비밀번호도 그대로 쓸 수 있습니다."
+            : "연결하면 다음부터 카카오 한 번으로 로그인하실 수 있습니다. 프로필에는 아무것도 공개되지 않습니다."}
+        </p>
+        <Button
+          variant="outline"
+          className="mt-3 w-full"
+          disabled={busy || providers === null}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              if (kakaoLinked) {
+                await unlinkKakao();
+                await refreshProviders();
+                toast.success("카카오 연결을 끊었습니다.");
+              } else {
+                /*
+                  웹은 리다이렉트에 맡기고(skip=false), 앱은 URL 만 받아
+                  시스템 브라우저로 연다 — 웹뷰 안에서 열면 제공자가 막는다.
+                */
+                const redirectTo = isNative
+                  ? NATIVE_REDIRECT
+                  : `${window.location.origin}/settings`;
+                const url = await linkKakao(redirectTo, isNative);
+                if (isNative && url) await openAuthUrl(url);
+              }
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "처리하지 못했습니다.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {providers === null ? "불러오는 중…" : kakaoLinked ? "연결 끊기" : "카카오 연결하기"}
         </Button>
       </section>
 

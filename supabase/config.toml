@@ -161,7 +161,19 @@ site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+#
+# 카카오 로그인이 돌아오는 주소들이다. 세 종류가 필요하다:
+#   · 로컬 웹(vite dev) — 로그인·설정 두 화면이 각각 콜백을 받는다.
+#   · 앱 커스텀 스킴 — Capacitor 빌드는 http 주소가 없다.
+# **운영은 이 파일이 아니라 대시보드에서 관리한다**(config push 를 쓰면 [auth]
+# 블록이 통째로 덮여 SMTP 설정이 날아간다). 대시보드에도 같은 목록을 넣어야 한다:
+#   https://eclps.kr/login, https://eclps.kr/settings, kr.eclps.app://auth/callback
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "http://localhost:55317/login",
+  "http://localhost:55317/settings",
+  "kr.eclps.app://auth/callback",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -344,6 +356,19 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+# ── 카카오 ──
+# 카카오는 **재로그인 수단**이다(가입은 회사 메일 인증이 필수). 자세한 근거는
+# src/lib/api.ts 의 KAKAO_PROVIDER 주석.
+#
+# client_id  = 카카오 개발자센터의 REST API 키
+# secret     = 보안 → Client Secret (활성화한 경우. 안 켰으면 빈 문자열)
+# 카카오 쪽 Redirect URI 에는 **Supabase 의 콜백**을 넣는다:
+#   https://<project-ref>.supabase.co/auth/v1/callback
+[auth.external.kakao]
+enabled = false
+client_id = "env(KAKAO_CLIENT_ID)"
+secret = "env(KAKAO_CLIENT_SECRET)"
+
 [auth.external.apple]
 enabled = false
 client_id = ""
