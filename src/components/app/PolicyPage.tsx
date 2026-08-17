@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { LEGAL_TODO, POLICY_VERSION, type PolicySection } from "@/lib/policy";
+import { BUSINESS_LINES, LEGAL_TODO, POLICY_VERSION, type PolicySection } from "@/lib/policy";
 
 /** 약관·처리방침 공용 레이아웃. 두 문서의 구조가 같아 하나로 둔다. */
 export function PolicyPage({ title, sections }: { title: string; sections: PolicySection[] }) {
@@ -32,23 +32,30 @@ export function PolicyPage({ title, sections }: { title: string; sections: Polic
           버전 {POLICY_VERSION}
         </p>
 
-        <div
-          role="note"
-          className="mt-4 rounded-surface border border-warning/40 bg-warning/10 px-4 py-3.5"
-        >
-          <p className="text-sm font-semibold">법률 검토 전 초안입니다</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-foreground/80">
-            베타 오픈 전에 아래 항목을 확정하고 법률 검토를 받아야 합니다. 확정되지 않은 정보를
-            임의로 적지 않았습니다.
-          </p>
-          <ul className="mt-2.5 space-y-1">
-            {LEGAL_TODO.map((item) => (
-              <li key={item} className="text-xs text-muted-foreground">
-                · {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/*
+          미확정 항목이 남아 있을 때만 띄운다. LEGAL_TODO 는 BUSINESS 에서
+          파생되므로, 값을 채우면 이 상자가 저절로 사라진다 — 다 채웠는데
+          "초안입니다" 가 남아 있는 상태가 생기지 않는다.
+        */}
+        {LEGAL_TODO.length > 0 ? (
+          <div
+            role="note"
+            className="mt-4 rounded-surface border border-warning/40 bg-warning/10 px-4 py-3.5"
+          >
+            <p className="text-sm font-semibold">법률 검토 전 초안입니다</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-foreground/80">
+              베타 오픈 전에 아래 항목을 확정하고 법률 검토를 받아야 합니다. 확정되지 않은 정보를
+              임의로 적지 않았습니다.
+            </p>
+            <ul className="mt-2.5 space-y-1">
+              {LEGAL_TODO.map((item) => (
+                <li key={item} className="text-xs text-muted-foreground">
+                  · {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         {sections.map((s) => (
           <section key={s.heading} className="mt-8">
@@ -62,6 +69,20 @@ export function PolicyPage({ title, sections }: { title: string; sections: Polic
             </div>
           </section>
         ))}
+
+        {/* 사업자 정보 — 전자상거래법이 공개를 요구한다. 확정된 항목만 나온다. */}
+        <section className="mt-10 border-t border-border pt-5">
+          <h2 className="text-2xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            사업자 정보
+          </h2>
+          <ul className="mt-2.5 space-y-1">
+            {BUSINESS_LINES.map((line) => (
+              <li key={line} className="text-xs leading-relaxed text-muted-foreground">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     </div>
   );
