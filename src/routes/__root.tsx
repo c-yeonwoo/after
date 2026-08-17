@@ -81,12 +81,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: `${BRAND.name} — 강남·역삼 직장인 1:1 매칭` },
+      { title: `${BRAND.name} — 직장인 1:1 소개 서비스` },
       {
         name: "description",
         content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명. 스와이프 없는 1:1 소개 서비스.",
       },
-      { property: "og:title", content: `${BRAND.name} — 강남·역삼 직장인 1:1 매칭` },
+      { property: "og:title", content: `${BRAND.name} — 직장인 1:1 소개 서비스` },
       {
         property: "og:description",
         content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",

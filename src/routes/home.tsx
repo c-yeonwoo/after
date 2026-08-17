@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
-import { BRAND, HUBS } from "@/lib/brand";
+import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
 import { homeState, markMet, type Meeting, type NoShowReport, type PublicProfile } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
@@ -140,7 +140,7 @@ function HomePage() {
   return (
     <AppScreen>
       <p className="mt-4 text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-        {hub?.label ?? "강남·역삼권"}
+        {hub?.label ?? PRIMARY_HUB.label}
       </p>
       <h1 className="headline mt-2 text-3xl leading-[1.35]">
         {me?.name ? `${me.name}님,` : "안녕하세요,"}

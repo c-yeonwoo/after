@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Bell, FileText, Ticket, User } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
-import { BRAND, HUBS } from "@/lib/brand";
+import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
 import { myStats, signOut, type MyStats } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { usePhotoUrl } from "@/lib/photo";
@@ -101,7 +101,7 @@ function MePage() {
           <div className="min-w-0">
             <p className="headline truncate text-xl">{me.name ?? "이름 없음"}</p>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {hub?.label ?? "강남·역삼권"}
+              {hub?.label ?? PRIMARY_HUB.label}
               {stats ? ` · ${joinedLabel(stats.joinedAt)}` : ""}
             </p>
           </div>
