@@ -1,16 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
-import { BRAND, HUBS } from "@/lib/brand";
+import { BRAND, COVERAGE_LABEL } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: `${BRAND.name} — 강남·역삼 직장인 1:1 소개 서비스` },
+      { title: `${BRAND.name} — 직장인 1:1 소개 서비스` },
       { name: "description", content: BRAND.description },
-      { property: "og:title", content: `${BRAND.name} — 강남·역삼 직장인 1:1 소개 서비스` },
+      { property: "og:title", content: `${BRAND.name} — 직장인 1:1 소개 서비스` },
       { property: "og:description", content: BRAND.tagline },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -26,7 +26,6 @@ const POINTS = [
 ];
 
 function Landing() {
-  const hub = HUBS[0];
   const navigate = useNavigate();
   const { me, ready } = useMe();
 
@@ -87,7 +86,9 @@ function Landing() {
             <br />
             좋은 사람 한 명.
           </p>
-          <p className="mt-3 text-xs text-muted-foreground">현재 {hub.label}에서 운영합니다.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            현재 {COVERAGE_LABEL}에서 운영합니다.
+          </p>
         </section>
 
         <section className="border-t border-border/70" aria-label="서비스 소개">
@@ -105,7 +106,8 @@ function Landing() {
         </section>
 
         <p className="mt-7 text-2xs leading-relaxed text-muted-foreground">
-          {BRAND.name} · {hub.label} 단일 지역 운영 · 그룹 미팅·전국 매칭은 제공하지 않습니다.
+          {BRAND.name} · 현재 {COVERAGE_LABEL} 운영 · 그룹 미팅·권역을 넘는 매칭은 제공하지
+          않습니다.
         </p>
       </main>
 

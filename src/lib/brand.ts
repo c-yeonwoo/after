@@ -26,8 +26,19 @@ export const BRAND = {
   domain: "eclps.kr",
 
   tagline: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",
+  /*
+    ── 지역은 정체성이 아니다 ──
+    강남·역삼권은 **첫 허브**이지 이 서비스의 정의가 아니다. 권역은 늘어날
+    예정이고, 브랜드 문구에 지역을 박아 두면 늘어날 때마다 제목·og·메일
+    푸터·앱스토어 문구를 전부 따라 고쳐야 한다. 게다가 그때까지는 다른
+    권역에서 온 사람이 "여긴 내 동네 서비스가 아니구나" 로 읽는다.
+
+    그래서 **정체성 문구에는 지역을 쓰지 않고**, 지역은 "현재 …에서
+    운영합니다" 처럼 **상태**로만 말한다. 그 상태 문구는 아래 COVERAGE_LABEL
+    에서 파생되므로 HUBS 의 available 만 바꾸면 화면이 따라온다.
+  */
   description:
-    "직장 인증을 마친 강남·역삼권 직장인끼리, 오가는 길이 겹치는 한 사람을 소개받습니다. 저녁 한 끼든 가벼운 한 잔이든, 무엇을 할지는 두 분이 정하세요.",
+    "직장 인증을 마친 직장인끼리, 오가는 길이 겹치는 한 사람을 소개받습니다. 저녁 한 끼든 가벼운 한 잔이든, 무엇을 할지는 두 분이 정하세요.",
 } as const;
 
 export const HUBS = [
@@ -58,6 +69,13 @@ export const HUBS = [
 ] as const;
 
 export type HubId = (typeof HUBS)[number]["id"];
+
+/** 지금 가입을 받는 권역. 하드코딩한 "강남·역삼권" 을 대신한다. */
+export const OPEN_HUBS = HUBS.filter((h) => h.available);
+/** 허브를 알 수 없을 때의 기본값(가입 첫 화면·표시용 폴백). */
+export const PRIMARY_HUB = OPEN_HUBS[0] ?? HUBS[0];
+/** 상태 문구용 — 권역이 둘 이상이면 "강남·역삼권 · 판교권" 으로 늘어난다. */
+export const COVERAGE_LABEL = OPEN_HUBS.map((h) => h.label).join(" · ");
 
 /**
  * 만남 티켓 가격 (D 확정: 30,000원).
