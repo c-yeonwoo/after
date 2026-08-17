@@ -109,12 +109,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
       },
-      // Archivo Black 만 남긴다 — 워드마크 전용.
-      // Instrument Serif 는 사용처가 0건이었고, Hind(5웨이트)는 한글 글리프가 없어
-      // 한 줄 안에서 서체가 갈라지는 원인이었다. 둘 다 제거해 요청 6개를 줄였다.
+      /*
+        Fraunces 하나만 받는다 — 워드마크(400)와 랜딩 히어로(900)가 같은 서체다.
+
+        예전에는 Archivo Black 이었다. 기하 그로테스크라 "딱딱하다" 는 지적이
+        정확했고, 단일 웨이트(400)라 히어로에 굵기를 줄 수도 없었다. Fraunces 는
+        가변 서체라 한 파일로 두 역할을 덮는다 — 요청 수가 늘지 않는다.
+
+        SOFT·WONK 축이 이 서체를 고른 이유다. 후리를 둥글게(SOFT) 하고 몇 글자를
+        살짝 기울이면(WONK) 세리프인데도 격식이 빠진다. 축 값은 styles.css 에서
+        정하는데, 폰트 URL 에 축 범위를 함께 요청해야 그 값이 실제로 적용된다.
+      */
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&display=swap",
       },
       /*
         SVG 를 먼저 둔다 — 지원 브라우저는 이걸 쓰고 어느 크기에서도 선명하다.

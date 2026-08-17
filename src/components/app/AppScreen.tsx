@@ -78,7 +78,17 @@ export function AppScreen({
   */
   const mainRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0 });
+    /*
+      다음 프레임에 한 번 더 되돌린다.
+
+      effect 안에서 한 번만 하면 **브라우저·라우터가 나중에 스크롤을 복원해**
+      덮어쓴다. 실기기에서 환경설정이 두 번째 방문부터 중간에서 열렸고, 원인이
+      이 순서였다. rAF 로 한 프레임 뒤에 한 번 더 하면 우리 쪽이 마지막이 된다.
+    */
+    const reset = () => mainRef.current?.scrollTo({ top: 0 });
+    reset();
+    const raf = requestAnimationFrame(reset);
+    return () => cancelAnimationFrame(raf);
   }, [pathname]);
 
   return (
@@ -162,7 +172,7 @@ export function AppScreen({
                     className={cn(
                       "flex min-h-14 flex-col items-center justify-center gap-1 pt-2 text-2xs font-semibold transition-colors",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      active ? "text-primary" : "text-muted-foreground",
+                      active ? "text-primary-strong" : "text-muted-foreground",
                     )}
                   >
                     <Icon className="size-5" aria-hidden="true" strokeWidth={active ? 2.6 : 1.9} />

@@ -130,15 +130,29 @@ function audit(themeName, block) {
   console.log(`--primary-strong   ${hex(strong)}`);
   console.log(`gradient stops     ${stops.map(hex).join(" → ")}\n`);
 
-  console.log("── 텍스트 역할 (AA 4.5) ──");
-  chk("primary 텍스트 / 배경", cr(primary, bg), 4.5);
-  chk("primary 텍스트 / 카드", cr(primary, card), 4.5);
-  chk("primary-strong 텍스트 / 배경", cr(strong, bg), 4.5);
-  chk("primary-strong 텍스트 / 카드", cr(strong, card), 4.5);
+  /*
+    역할을 나눠서 검사한다.
 
-  console.log("\n── 필 역할 (버튼 위 흰 글씨, 4.5) ──");
+    예전에는 --primary 를 텍스트로도 검사했다. 그때는 한 토큰이 채움과 글자를
+    겸했기 때문인데, 그 구속 때문에 채움을 밝힐 수 없었다(밝히면 글자가 미달).
+    이제 --primary 는 **채움 전용**이고 글자는 --primary-strong 이 맡는다.
+
+    검사를 느슨하게 한 것이 아니다 — 각 토큰을 **실제로 쓰이는 역할로** 본다.
+    채움은 그 위의 글자와, 글자는 뒤의 배경과 겨룬다. `text-primary` 가 남아 있는
+    곳은 랜딩·로그인뿐이고 거기는 항상 어두운 바탕이라, 다크 팔레트의 primary
+    검사가 그 자리를 덮는다.
+  */
+  console.log("── 글자 역할: primary-strong (AA 4.5) ──");
+  chk("primary-strong / 배경", cr(strong, bg), 4.5);
+  chk("primary-strong / 카드", cr(strong, card), 4.5);
+
+  /*
+    primary-strong 을 필로는 검사하지 않는다 — **채움으로 쓰는 곳이 없다.**
+    한 곳(랜딩 CTA 의 hover)에 있었는데, 밝은 테마에서 어두운 와인 위에 잉크
+    글자가 얹혀 2.15 였다. hover 는 primary/90 으로 바꿨다.
+  */
+  console.log("\n── 채움 역할: primary (그 위의 글자, 4.5) ──");
   chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
-  chk("primary-strong 필 + primary-foreground", cr(strong, primaryFg), 4.5);
 
   console.log("\n── 틴트 표면 (GuideNote bg-primary/8, 칩 /10) ──");
   chk("primary-strong / bg-primary\\8 (배경)", cr(strong, over(primary, bg, 0.08)), 4.5);
@@ -155,7 +169,7 @@ function audit(themeName, block) {
     4.5,
   );
 
-  console.log("\n── 그라디언트 위 흰 텍스트 (양 끝, 4.5) ──");
+  console.log("\n── 그라디언트 위 글자 (양 끝, 4.5) ──");
   stops.forEach((s, i) => chk(`gradient stop ${i + 1} (${hex(s)})`, cr(s, primaryFg), 4.5));
 
   console.log("\n── 포커스 링 (비텍스트 3.0) ──");

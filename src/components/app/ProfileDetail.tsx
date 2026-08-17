@@ -69,7 +69,7 @@ function Reveal({
 function SectionHead({ index, title, kicker }: { index: number; title: string; kicker?: string }) {
   return (
     <div className="mb-4 flex items-baseline gap-3 border-b-2 border-foreground/85 pb-2">
-      <span className="headline text-sm leading-none text-primary">
+      <span className="headline text-sm leading-none text-primary-strong">
         {String(index).padStart(2, "0")}
       </span>
       <h2 className="headline text-lg leading-none tracking-tight text-foreground">{title}</h2>
