@@ -110,19 +110,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
       },
       /*
-        Fraunces 하나만 받는다 — 워드마크(400)와 랜딩 히어로(900)가 같은 서체다.
+        라틴 서체 **둘**을 받는다. 역할이 다르다.
 
-        예전에는 Archivo Black 이었다. 기하 그로테스크라 "딱딱하다" 는 지적이
-        정확했고, 단일 웨이트(400)라 히어로에 굵기를 줄 수도 없었다. Fraunces 는
-        가변 서체라 한 파일로 두 역할을 덮는다 — 요청 수가 늘지 않는다.
-
-        SOFT·WONK 축이 이 서체를 고른 이유다. 후리를 둥글게(SOFT) 하고 몇 글자를
-        살짝 기울이면(WONK) 세리프인데도 격식이 빠진다. 축 값은 styles.css 에서
-        정하는데, 폰트 URL 에 축 범위를 함께 요청해야 그 값이 실제로 적용된다.
+        · Fraunces — 브랜드네임(워드마크). SOFT·WONK 축으로 세리프의 격식을 덜어
+          "딱딱하다" 는 지적을 해소한 자리다. 축 값은 styles.css 에서 정하지만,
+          폰트 URL 에 축 범위를 함께 요청해야 실제로 적용된다.
+        · Archivo Black — 랜딩 히어로. 한때 Fraunces 900 으로 통일했다가 되돌렸다.
+          히어로는 이름과 달리 **때려야** 하는 자리고, 세리프 900 은 우아해지면서
+          그 타격을 잃었다. wght 축을 더 안 받으므로 Fraunces 쪽 요청도 가벼워졌다.
       */
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,SOFT,WONK@9..144,0..100,0..1&display=swap",
       },
       /*
         SVG 를 먼저 둔다 — 지원 브라우저는 이걸 쓰고 어느 크기에서도 선명하다.

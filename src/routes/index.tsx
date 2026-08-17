@@ -76,7 +76,17 @@ function Landing() {
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
         <section className="pt-8 pb-10">
-          <h1 className="display-wordmark text-5xl uppercase">
+          {/*
+            크기를 vw 로 잡는다. Archivo Black 은 폭이 넓어서 48px 로 두면
+            "AFTER WORK" 가 356px 이 되고 375px 화면(SE·mini)의 본문 폭
+            327px 을 넘겨 세 줄로 쪼개진다 — "AFTER / WORK / MATCHING" 은
+            읽는 리듬이 깨진다.
+
+            아래·위 한계가 둘 다 필요하다. 최소값은 좁은 화면에서 한 줄을
+            지키고, 최대값은 데스크톱에서 프레임(430px)을 넘지 않게 한다 —
+            vw 는 프레임이 아니라 뷰포트를 보기 때문이다.
+          */}
+          <h1 className="display-wordmark text-[clamp(2.45rem,11.4vw,2.9rem)] uppercase">
             After Work
             <br />
             <span className="text-primary">Matching</span>
