@@ -18,14 +18,53 @@
  */
 export const POLICY_VERSION = "2026-08-17";
 
-/** 사업자 정보가 확정되면 채울 자리. 임의로 채우지 말 것. */
-export const LEGAL_TODO = [
-  "사업자명 / 대표자",
-  "사업장 주소",
-  "사업자등록번호 · 통신판매업 신고번호",
-  "개인정보 보호책임자 이름·연락처",
-  "고객 문의 채널(이메일 또는 전화)",
-] as const;
+/**
+ * 사업자 정보.
+ *
+ * 전자상거래법·개인정보보호법이 **정확한 값**을 공개하도록 요구하는 자리이고,
+ * App Store 심사자도 이 문서를 읽는다. 그래서 **모르는 값은 null 로 둔다** —
+ * 그럴듯한 값을 적으면 공개된 허위 기재가 된다. 특히 통신판매업 신고번호는
+ * 정부가 부여하는 번호라 만들어 낼 수 없다.
+ *
+ * null 인 항목은 LEGAL_TODO 로 자동 노출된다(아래). 목록을 손으로 관리하지
+ * 않는 이유는, 값을 채우고 목록을 안 지우면 "미확정" 이 거짓이 되기 때문이다.
+ */
+export const BUSINESS = {
+  name: "널디선데이",
+  /** 개인사업자이므로 대표자 = 본인. 법적 성명이 필요하다. */
+  owner: null as string | null,
+  registrationNo: "538-04-03325",
+  /** 통신판매업 신고번호. 관할 구청 신고 후 부여된다(예: 제2026-강남-1234호). */
+  mailOrderNo: null as string | null,
+  address: null as string | null,
+  /**
+   * 문의 창구. 지금은 실제로 받는 주소를 쓴다 — 닿지 않는 주소를 적는 것이
+   * 비워 두는 것보다 나쁘다. `help@eclps.kr` 로 옮기려면 Cloudflare Email
+   * Routing(무료)에서 이 주소로 포워딩만 걸면 된다.
+   */
+  contactEmail: "aftersunset.officially@gmail.com",
+  /** 개인정보 보호책임자. 개인사업자는 통상 대표자 본인이다. */
+  privacyOfficer: null as string | null,
+} as const;
+
+/** 화면에 "미확정" 으로 띄울 항목. BUSINESS 에서 파생되므로 어긋날 수 없다. */
+export const LEGAL_TODO: string[] = [
+  BUSINESS.owner === null && "대표자 성명",
+  BUSINESS.address === null && "사업장 주소",
+  BUSINESS.mailOrderNo === null && "통신판매업 신고번호",
+  BUSINESS.privacyOfficer === null && "개인정보 보호책임자 성명",
+].filter((v): v is string => typeof v === "string");
+
+/** 문서 맨 아래에 붙는 사업자 정보 줄. 확정된 것만 보여준다. */
+export const BUSINESS_LINES: string[] = [
+  `상호 ${BUSINESS.name}`,
+  BUSINESS.owner && `대표자 ${BUSINESS.owner}`,
+  `사업자등록번호 ${BUSINESS.registrationNo}`,
+  BUSINESS.mailOrderNo && `통신판매업 신고 ${BUSINESS.mailOrderNo}`,
+  BUSINESS.address && `사업장 ${BUSINESS.address}`,
+  `문의 ${BUSINESS.contactEmail}`,
+  BUSINESS.privacyOfficer && `개인정보 보호책임자 ${BUSINESS.privacyOfficer}`,
+].filter((v): v is string => typeof v === "string");
 
 export type PolicySection = { heading: string; body: string[] };
 
@@ -78,6 +117,16 @@ export const PRIVACY_SECTIONS: PolicySection[] = [
     body: [
       "언제든 프로필 열람·수정, 동의 철회, 회원 탈퇴를 요청할 수 있습니다.",
       "성별과 활동 지역은 소개의 기준이 되는 값이라 가입 후 변경할 수 없습니다. 변경이 필요하면 탈퇴 후 다시 가입해야 합니다.",
+    ],
+  },
+  {
+    /* 개인정보보호법이 요구하는 자리다. 책임자 성명이 확정되면 BUSINESS 에 넣는다. */
+    heading: "7. 개인정보 보호책임자",
+    body: [
+      BUSINESS.privacyOfficer
+        ? `${BUSINESS.privacyOfficer} · ${BUSINESS.contactEmail}`
+        : `문의는 ${BUSINESS.contactEmail} 로 보내주세요. 책임자 성명은 사업자 정보 확정과 함께 이 문서에 기재합니다.`,
+      "개인정보 침해에 관한 신고·상담은 개인정보침해신고센터(privacy.kisa.or.kr, 국번없이 118)에도 하실 수 있습니다.",
     ],
   },
 ];
@@ -145,6 +194,9 @@ export const TERMS_SECTIONS: PolicySection[] = [
   },
   {
     heading: "7. 문의",
-    body: ["약관과 개인정보 처리에 관한 문의 창구는 베타 오픈 전 이 문서에 명시합니다."],
+    body: [
+      `약관과 개인정보 처리에 관한 문의는 ${BUSINESS.contactEmail} 로 보내주세요.`,
+      "영업일 기준 3일 안에 답변드립니다.",
+    ],
   },
 ];
