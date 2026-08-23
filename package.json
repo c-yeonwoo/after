@@ -17,7 +17,8 @@
     "demo:state": "bun scripts/demo-state.mjs",
     "build:app": "BUILD_TARGET=app vite build",
     "build:app:dev": "BUILD_TARGET=app vite build --mode development",
-    "shots:seed": "bun scripts/screenshot-seed.mjs"
+    "shots:seed": "bun scripts/screenshot-seed.mjs",
+    "e2e:seed": "bun scripts/e2e-seed.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
