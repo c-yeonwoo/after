@@ -1914,6 +1914,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      decline_meeting: {
+        Args: { p_meeting_id: string; p_reason?: string }
+        Returns: undefined
+      }
       drain_notification_outbox: { Args: never; Returns: undefined }
       enqueue_feedback_due: { Args: never; Returns: number }
       enqueue_meeting_notification: {
@@ -2383,7 +2387,13 @@ export type Database = {
       account_state: "active" | "banned" | "withdrawn"
       affinity_verdict: "like" | "pass"
       gender: "female" | "male"
-      intro_outcome: "passed" | "ticket_used" | "expired" | "withdrawn"
+      intro_outcome:
+        | "passed"
+        | "ticket_used"
+        | "expired"
+        | "withdrawn"
+        | "blocked"
+        | "declined"
       msg_channel: "coord" | "private"
       notification_kind:
         | "meeting_requested"
@@ -2528,7 +2538,14 @@ export const Constants = {
       account_state: ["active", "banned", "withdrawn"],
       affinity_verdict: ["like", "pass"],
       gender: ["female", "male"],
-      intro_outcome: ["passed", "ticket_used", "expired", "withdrawn"],
+      intro_outcome: [
+        "passed",
+        "ticket_used",
+        "expired",
+        "withdrawn",
+        "blocked",
+        "declined",
+      ],
       msg_channel: ["coord", "private"],
       notification_kind: [
         "meeting_requested",

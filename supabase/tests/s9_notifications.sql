@@ -96,7 +96,8 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"b0000000-0000-0000-0000-00000000000a","role":"authenticated"}';
 select submit_meeting_prefs(
   (select m.id from meetings m join intros i on i.id=m.intro_id where i.female_id=auth.uid()),
-  '{"dates":["2026-08-20T10:00:00.000Z"],"stations":["강남"],"anywhere":false}'::jsonb
+  jsonb_build_object('dates', jsonb_build_array(to_char(now() + interval '3 days', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')),
+                     'stations', jsonb_build_array('강남'), 'anywhere', false)
 );
 reset role;
 
@@ -111,7 +112,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"b0000000-0000-0000-0000-00000000000b","role":"authenticated"}';
 select confirm_meeting(
   (select m.id from meetings m join intros i on i.id=m.intro_id where i.male_id=auth.uid()),
-  '2026-08-20T10:00:00.000Z'::timestamptz,
+  (now() + interval '3 days'),
   '강남역 근처 카페',
   '카페'
 );
