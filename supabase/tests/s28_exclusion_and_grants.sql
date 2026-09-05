@@ -121,8 +121,9 @@ select is(
       and female_id = '28000000-0000-0000-0000-0000000000f1'),
   'blocked', 'T10 차단은 열려 있던 소개를 닫는다 (다음 소개를 받을 수 있다)'
 );
+-- s30 이후 뷰는 직접 못 읽는다. 조회 함수로 같은 것을 묻는다.
 select is_empty(
-  $$ select id from public_profiles where id = '28000000-0000-0000-0000-0000000000a1' $$,
+  $$ select id from get_public_profile('28000000-0000-0000-0000-0000000000a1') $$,
   'T11 차단한 상대의 프로필은 더 이상 보이지 않는다'
 );
 
