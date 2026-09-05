@@ -9,6 +9,7 @@
 import type { Basics } from "@/components/onboarding/basics";
 import type { ProfileDraft } from "@/components/onboarding/profile";
 import type { MeetPrefs } from "@/lib/meet";
+import { deleteMyPhotos } from "@/lib/photo";
 import { POLICY_VERSION } from "@/lib/policy";
 import { supabase } from "@/lib/supabase";
 
@@ -663,13 +664,37 @@ export async function setPaused(on: boolean): Promise<Profile> {
 }
 
 /**
- * 탈퇴. 진행 중 약속을 취소하고 **상대 티켓을 환불한 뒤** 신원 정보를 지운다.
- * 거래 기록은 남는다(보존 의무 + 환불 근거).
+ * 탈퇴. 진행 중 약속을 취소하고 **상대 티켓을 환불한 뒤** 내가 쓴 것과 신원
+ * 정보를 지운다. 거래 기록은 남는다(보존 의무 + 환불 근거).
+ *
+ * 사진 파일은 **RPC 보다 먼저** 지운다. RPC 가 먼저 돌면 photo_url 이 null 이
+ * 되고 계정이 withdrawn 이 되어, 그 뒤에는 Storage 정책이 우리를 막는다 —
+ * 순서가 곧 지워지느냐 마느냐다. 파일 삭제가 실패해도 탈퇴 자체는 진행한다.
  */
 export async function withdrawAccount(reason?: string): Promise<void> {
+  try {
+    await deleteMyPhotos();
+  } catch {
+    // 파일을 못 지웠다고 탈퇴를 막지 않는다. 계정 정리가 우선이다.
+  }
   const { error } = await supabase.rpc("withdraw_account", { p_reason: reason });
   if (error) throw error;
   await supabase.auth.signOut();
+}
+
+/**
+ * 만남 요청 거절 (여성). 상대의 만남 티켓을 **즉시** 환불하고 영구 배제한다.
+ *
+ * 지금까지 거절하는 방법은 24시간 방치뿐이었다. 그 24시간 동안 상대의
+ * 30,000원이 묶여 있었고, 거절하는 쪽은 "답을 안 하는 것" 말고는 답이 없었다.
+ */
+export async function declineMeeting(meetingId: string, reason?: string): Promise<void> {
+  const { error } = await supabase.rpc("decline_meeting", {
+    p_meeting_id: meetingId,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  // 이벤트는 RPC 안에서 남긴다(events.meeting_declined). 여기서 또 부르면 두 번 센다.
 }
 
 /** 후기 요청 메일 수신 여부. 만남 진행 알림은 끌 수 없다(상대의 환불 기한이 걸려 있다). */

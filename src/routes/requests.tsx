@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Clock } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
 import { BRAND } from "@/lib/brand";
 import { listMeetingsAwaitingMyPrefs, type MeetingRequest } from "@/lib/api";
@@ -122,6 +123,20 @@ function RequestsPage() {
                       "곧 만료됩니다"
                     )}
                   </p>
+                </div>
+                {/*
+                  거절을 카드 안에 둔다. 예전에는 답하는 길만 있고 거절하는
+                  길이 없어서, 거절하려면 24시간 방치하는 수밖에 없었다.
+                  그동안 상대의 30,000원도 함께 묶인다.
+                */}
+                <div className="border-t border-border px-5 pb-1">
+                  <DeclineRequest
+                    meetingId={meeting.id}
+                    candidateName={candidate.name}
+                    onDone={() =>
+                      setRequests((list) => list.filter((r) => r.meeting.id !== meeting.id))
+                    }
+                  />
                 </div>
                 <Link
                   to="/prefs"

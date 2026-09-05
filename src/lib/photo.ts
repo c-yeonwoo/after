@@ -44,6 +44,36 @@ async function shrink(file: File): Promise<Blob> {
   return blob;
 }
 
+/**
+ * 내 폴더의 파일 경로 전부. 경로 첫 칸이 소유자라 폴더 하나가 곧 한 사람이다.
+ *
+ * 실패해도 던지지 않고 빈 배열을 준다 — 호출부(탈퇴·교체)는 둘 다 "지울 수
+ * 있으면 지운다" 가 목적이고, 파일 목록을 못 읽었다고 탈퇴를 막을 수는 없다.
+ */
+async function myPhotoPaths(uid: string): Promise<string[]> {
+  const { data, error } = await supabase.storage.from(BUCKET).list(uid, { limit: 100 });
+  if (error || !data) return [];
+  return data.map((o) => `${uid}/${o.name}`);
+}
+
+/**
+ * 내 사진 파일을 **전부** 지운다. 탈퇴 경로가 쓴다.
+ *
+ * 왜 SQL 이 아니라 여기인가: storage.objects 행을 지워도 백엔드의 파일 자체는
+ * 남는다. 진짜 삭제는 Storage API 를 통해야 하고, 탈퇴는 본인이 로그인한
+ * 상태에서 시작하므로 자기 photos_delete_own 정책으로 직접 지우는 것이 가장
+ * 확실하다. Edge Function 경유는 운영 시크릿(Vault)에 의존해 조용히 실패한다.
+ */
+export async function deleteMyPhotos(): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return;
+  const paths = await myPhotoPaths(session.user.id);
+  if (paths.length === 0) return;
+  await supabase.storage.from(BUCKET).remove(paths);
+}
+
 /** 업로드하고 저장할 **경로**를 돌려준다. 행에는 이 경로만 들어간다. */
 export async function uploadProfilePhoto(file: File): Promise<string> {
   const {
@@ -55,11 +85,21 @@ export async function uploadProfilePhoto(file: File): Promise<string> {
   // 경로 첫 폴더가 소유자여야 한다 — Storage 정책이 그걸로 판정한다.
   const path = `${session.user.id}/${crypto.randomUUID()}.webp`;
 
+  // 파일명에 uuid 를 쓰므로 교체해도 새 파일이 생긴다. 예전 파일을 안 지우면
+  // 사람이 사진을 바꿀 때마다 **지난 얼굴이 버킷에 영구히 쌓인다** — 화면에는
+  // 안 보이고 삭제 경로도 없는, 가장 방어하기 어려운 종류의 잔존이다.
+  const stale = await myPhotoPaths(session.user.id);
+
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
     contentType: "image/webp",
     upsert: false,
   });
   if (error) throw error;
+
+  // 새 파일이 올라간 뒤에 지운다. 순서가 반대면 업로드가 실패했을 때 사진이
+  // 하나도 없는 상태가 된다.
+  if (stale.length > 0) await supabase.storage.from(BUCKET).remove(stale);
+
   return path;
 }
 

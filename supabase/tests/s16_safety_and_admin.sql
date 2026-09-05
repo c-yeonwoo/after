@@ -106,11 +106,18 @@ select is(
   'T13 **피신고자에게는 보이지 않는다** (보복 차단)'
 );
 
+/*
+  운영자 시야는 **이 테스트가 만든 신고**로 좁혀서 센다. 예전에는 전역 count 라,
+  개발용 표본 데이터(scripts/e2e-seed.mjs)를 넣어 둔 DB 에서 이 줄이 깨졌다 —
+  테스트가 틀린 게 아니라 세는 범위가 틀린 것이었고, 그 차이를 읽어 내는 데
+  시간이 든다. "빨간 줄인데 코드는 멀쩡" 이 반복되면 결국 아무도 안 본다.
+*/
 set local request.jwt.claims = '{"sub":"50000000-0000-0000-0000-00000000000c"}';
 select is(
-  (select count(*)::int from content_reports),
+  (select count(*)::int from content_reports
+    where accused_id = '50000000-0000-0000-0000-00000000000b'),
   1,
-  'T14 운영자는 모든 신고를 본다'
+  'T14 운영자는 (피신고자 기준으로) 신고를 본다'
 );
 
 -- ─────────────── 운영자 처리 ───────────────
@@ -118,7 +125,7 @@ select is(
 set local request.jwt.claims = '{"sub":"50000000-0000-0000-0000-00000000000b"}';
 select throws_ok(
   format($$ select resolve_content_report(%L, true, '처리') $$,
-         (select id from content_reports limit 1)),
+         (select id from content_reports where accused_id = '50000000-0000-0000-0000-00000000000b')),
   '42501', null,
   'T15 일반 회원은 신고를 처리할 수 없다'
 );
@@ -126,28 +133,31 @@ select throws_ok(
 set local request.jwt.claims = '{"sub":"50000000-0000-0000-0000-00000000000c"}';
 select throws_ok(
   format($$ select resolve_content_report(%L, true, '   ') $$,
-         (select id from content_reports limit 1)),
+         (select id from content_reports where accused_id = '50000000-0000-0000-0000-00000000000b')),
   '22023', null,
   'T16 **사유 없이는 처리할 수 없다**'
 );
 select lives_ok(
   format($$ select resolve_content_report(%L, true, '소개글에 연락처가 적혀 있었음') $$,
-         (select id from content_reports limit 1)),
+         (select id from content_reports where accused_id = '50000000-0000-0000-0000-00000000000b')),
   'T17 운영자는 사유와 함께 처리할 수 있다'
 );
 select is(
-  (select state::text from content_reports limit 1),
+  (select state::text from content_reports
+    where accused_id = '50000000-0000-0000-0000-00000000000b'),
   'confirmed',
   'T18 인정하면 confirmed 가 된다'
 );
 select is(
-  (select count(*)::int from admin_actions where kind = 'resolve_report'),
+  (select count(*)::int from admin_actions
+    where kind = 'resolve_report'
+      and actor_id = '50000000-0000-0000-0000-00000000000c'),
   1,
   'T19 처리는 admin_actions 에 남는다'
 );
 select throws_ok(
   format($$ select resolve_content_report(%L, false, '재처리 시도') $$,
-         (select id from content_reports limit 1)),
+         (select id from content_reports where accused_id = '50000000-0000-0000-0000-00000000000b')),
   -- s16c 에서 P0002 → PT409(HTTP 409)로 바꿨다. 경합은 장애가 아니라 "늦었다" 다.
   'PT409', null,
   'T20 이미 처리된 신고는 다시 처리할 수 없다'
