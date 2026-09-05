@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Ticket } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import {
   type TicketOrder,
   paymentsEnabled,
 } from "@/lib/api";
+import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/store")({
@@ -78,6 +79,8 @@ const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
  * 섞여 보인다.
  */
 function StorePage() {
+  const { me, ready } = useMe();
+  const navigate = useNavigate();
   const { kind: fromLink } = Route.useSearch();
   const [kind, setKind] = useState<TicketKind>(fromLink ?? "meeting");
   const [owned, setOwned] = useState<number | null>(null);
@@ -96,6 +99,18 @@ function StorePage() {
   const [paid, setPaid] = useState<boolean | null>(null);
 
   const spec = KINDS.find((k) => k.v === kind)!;
+
+  /*
+    여성에게는 이 화면이 존재하지 않는다.
+
+    메뉴에서 지웠지만 주소는 남는다 — 옛 링크·뒤로가기·북마크로 들어올 수 있다.
+    화면을 지우는 것과 길을 막는 것은 다른 일이고, 서버(create_ticket_order)에
+    성별 게이트를 넣은 것과도 또 다른 일이다. 셋 다 해야 "여성에게 과금하지
+    않는다" 가 참이 된다.
+  */
+  useEffect(() => {
+    if (ready && me && me.gender !== "male") navigate({ to: "/me", replace: true });
+  }, [ready, me, navigate]);
 
   async function load(k: TicketKind) {
     const [count, pending, list, payments] = await Promise.all([
@@ -117,6 +132,15 @@ function StorePage() {
   }, [kind]);
 
   const single = bundles.find((b) => b.quantity === 1)?.amount ?? 0;
+
+  // 판정 전(또는 리다이렉트 직전)에는 가격을 그리지 않는다.
+  if (!ready || (me && me.gender !== "male")) {
+    return (
+      <AppScreen title="티켓 상점" back="/me">
+        <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+      </AppScreen>
+    );
+  }
 
   return (
     <AppScreen title="티켓 상점" back="/me">

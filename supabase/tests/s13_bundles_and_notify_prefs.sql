@@ -108,14 +108,15 @@ select use_meeting_ticket((select id from intros where male_id=auth.uid() and cl
 set local request.jwt.claims = '{"sub":"e0000000-0000-0000-0000-00000000000a","role":"authenticated"}';
 select submit_meeting_prefs(
   (select m.id from meetings m join intros i on i.id=m.intro_id where i.female_id=auth.uid()),
-  '{"dates":["2026-08-20T10:00:00.000Z"],"stations":[],"anywhere":true}'::jsonb
+  jsonb_build_object('dates', jsonb_build_array(to_char(now() + interval '3 days', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')),
+                     'stations', '[]'::jsonb, 'anywhere', true)
 );
 
 -- 확정은 남성이 한다.
 set local request.jwt.claims = '{"sub":"e0000000-0000-0000-0000-00000000000b","role":"authenticated"}';
 select confirm_meeting(
   (select m.id from meetings m join intros i on i.id=m.intro_id where i.male_id=auth.uid()),
-  '2026-08-20T10:00:00.000Z'::timestamptz, '강남역', '카페'
+  (now() + interval '3 days'), '강남역', '카페'
 );
 
 reset role;

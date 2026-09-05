@@ -4,6 +4,7 @@ import { Check, MapPin, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -381,6 +382,19 @@ function PrefsPage() {
       <p className="mt-3 text-center text-xs text-muted-foreground">
         세라가 상대에게 그대로 전달합니다. 상대가 날짜와 장소를 정하면 대화가 열립니다.
       </p>
+
+      {/*
+        답하기 화면에도 거절을 둔다. 여성이 홈에서 이 화면으로 바로 오는 경로가
+        있어서(요청 1건일 때), /requests 에만 두면 그 사람에게는 거절이 없는
+        것과 같다. 눈에 덜 띄게 아래에 두되 **있기는 있어야 한다.**
+      */}
+      <div className="mt-8 border-t border-border pt-3">
+        <DeclineRequest
+          meetingId={meetingId}
+          candidateName={candidateName}
+          onDone={() => navigate({ to: "/home" })}
+        />
+      </div>
     </AppScreen>
   );
 }
