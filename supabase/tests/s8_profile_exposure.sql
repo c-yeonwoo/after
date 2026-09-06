@@ -3,6 +3,12 @@
 -- 통과 케이스와 차단 케이스를 짝으로 둔다. 차단만 검사하면 "전부 막혀서 통과"하는
 -- 가짜 초록불이 나온다 — 실제로 S1 에서 그 함정을 밟은 적이 있다.
 
+/*
+  s30 이후 `public_profiles` 는 **직접 조회할 수 없다** — 한 번의 GET 으로 권역
+  남성 전원이 나가던 경로를 닫았다. 컬럼 노출 규칙(T1·T2)은 information_schema
+  로 그대로 보고, 행 가시성은 뷰를 대신 읽어 주는 함수로 묻는다.
+  검사하는 규칙은 바뀌지 않았다. 묻는 창구만 바뀌었다.
+*/
 begin;
 select plan(14);
 
@@ -50,8 +56,9 @@ select is(
 
 -- 시드 계정도 같은 권역이라 함께 잡힌다. 픽스처 2명만 세어 단언을 고정한다.
 select is(
-  (select count(*)::int from public_profiles
-    where id in ('a0000000-0000-0000-0000-00000000000b','a0000000-0000-0000-0000-00000000000c')),
+  (select count(*)::int from get_public_profiles(
+     array['a0000000-0000-0000-0000-00000000000b',
+           'a0000000-0000-0000-0000-00000000000c']::uuid[])),
   2,
   'T4 [통과] 같은 권역 남성은 뷰로 보인다 — 전부 막힌 가짜 초록불이 아님을 확인'
 );
@@ -67,7 +74,7 @@ select is(
 set local request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-00000000000b","role":"authenticated"}';
 
 select is(
-  (select count(*)::int from public_profiles where id <> auth.uid()),
+  (select count(*)::int from visible_profile_ids() v where v.id <> auth.uid()),
   0,
   'T6 [차단] 소개가 없는 남성은 아무도 못 본다 (여성 목록 열람 불가)'
 );
@@ -95,7 +102,7 @@ set local role authenticated;
 select open_intro();
 
 select is(
-  (select count(*)::int from public_profiles where id='a0000000-0000-0000-0000-00000000000a'),
+  (select count(*)::int from get_public_profile('a0000000-0000-0000-0000-00000000000a')),
   1,
   'T7 [통과] 소개가 열리면 상대 여성이 보인다'
 );
@@ -109,7 +116,7 @@ select is(
 select pass_intro((select id from intros where male_id=auth.uid() and closed_at is null));
 
 select is(
-  (select count(*)::int from public_profiles where id='a0000000-0000-0000-0000-00000000000a'),
+  (select count(*)::int from get_public_profile('a0000000-0000-0000-0000-00000000000a')),
   0,
   'T9 [차단] 소개를 넘기면(영구 배제) 상대 프로필 열람권이 즉시 회수된다'
 );
@@ -145,7 +152,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-00000000000c","role":"authenticated"}';
 select use_meeting_ticket((select id from intros where male_id=auth.uid() and closed_at is null));
 select is(
-  (select count(*)::int from public_profiles where id='a0000000-0000-0000-0000-00000000000a'),
+  (select count(*)::int from get_public_profile('a0000000-0000-0000-0000-00000000000a')),
   1,
   'T10 [통과] 티켓을 쓴 상대는 계속 보인다'
 );
@@ -158,7 +165,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-00000000000c","role":"authenticated"}';
 
 select is(
-  (select count(*)::int from public_profiles where id='a0000000-0000-0000-0000-00000000000a'),
+  (select count(*)::int from get_public_profile('a0000000-0000-0000-0000-00000000000a')),
   1,
   'T11 [통과] 소개가 닫혀도 만남이 살아 있으면 상대가 보인다 (대화방·피드백)'
 );

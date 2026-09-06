@@ -1936,6 +1936,60 @@ export type Database = {
       expire_unanswered_meetings: { Args: never; Returns: number }
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
       fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
+      get_public_profile: {
+        Args: { p_id: string }
+        Returns: {
+          age: number | null
+          details: Json | null
+          drinking: string | null
+          headline: string | null
+          hub_id: string | null
+          id: string | null
+          interests: string[] | null
+          intro: string | null
+          job: string | null
+          match_tags: string[] | null
+          mbti: string | null
+          name: string | null
+          photo_url: string | null
+          religion: string | null
+          smoking: string | null
+          topics: string[] | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "public_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_public_profiles: {
+        Args: { p_ids: string[] }
+        Returns: {
+          age: number | null
+          details: Json | null
+          drinking: string | null
+          headline: string | null
+          hub_id: string | null
+          id: string | null
+          interests: string[] | null
+          intro: string | null
+          job: string | null
+          match_tags: string[] | null
+          mbti: string | null
+          name: string | null
+          photo_url: string | null
+          religion: string | null
+          smoking: string | null
+          topics: string[] | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "public_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       home_state: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       is_channel_open: {
@@ -2380,6 +2434,12 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      visible_profile_ids: {
+        Args: never
+        Returns: {
+          id: string
+        }[]
       }
       withdraw_account: { Args: { p_reason?: string }; Returns: undefined }
     }

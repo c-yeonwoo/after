@@ -455,23 +455,32 @@ export async function remainingCandidates(): Promise<number> {
   return data ?? 0;
 }
 
+/*
+  뷰가 아니라 **함수**를 부른다(s30).
+
+  `public_profiles` 는 authenticated 에게 열려 있었고, 그 말은
+  `GET /rest/v1/public_profiles` 한 번으로 권역 남성 전원이 나온다는 뜻이었다 —
+  이름·직업·사진 경로·인터뷰 답변까지, 사진도 전량 서명 URL 발급이 됐다.
+  화면이 한 명씩 보여 주는 것은 UI 규약일 뿐 데이터 계층의 규약이 아니었다.
+
+  이 두 함수는 원래도 **항상 id 로 좁혀** 읽고 있었으므로 옮기면서 잃는 것이
+  없다. 얻는 것은 "id 를 모르면 아무것도 못 읽는다" 이고, 여성이 남성 id 를 얻는
+  경로는 next_candidate() 뿐이라 그건 한 번에 한 명이다.
+*/
 export async function getProfile(id: string): Promise<PublicProfile | null> {
-  const { data, error } = await supabase
-    .from("public_profiles")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  // setof 라 배열이다. 볼 수 없는 사람이면 빈 배열 — 스칼라 복합형으로 두면
+  // 여기가 "전 컬럼 NULL 인 객체" 가 되어 이름 없는 카드가 그려진다.
+  const { data, error } = await supabase.rpc("get_public_profile", { p_id: id });
   if (error) throw error;
-  return data;
+  return data?.[0] ?? null;
 }
 
-/** 여러 명을 한 번에. 목록 화면의 N+1 을 없앤다(진단 PERF-3). */
+/** 여러 명을 한 번에. 목록 화면의 N+1 을 없앤다(진단 PERF-3). 서버가 100명으로 자른다. */
 export async function getProfiles(ids: string[]): Promise<Map<string, PublicProfile>> {
   if (!ids.length) return new Map();
-  const { data, error } = await supabase
-    .from("public_profiles")
-    .select("*")
-    .in("id", [...new Set(ids)]);
+  const { data, error } = await supabase.rpc("get_public_profiles", {
+    p_ids: [...new Set(ids)],
+  });
   if (error) throw error;
   return new Map((data ?? []).flatMap((p) => (p.id ? [[p.id, p] as const] : [])));
 }
