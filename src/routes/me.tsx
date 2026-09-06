@@ -18,12 +18,6 @@ export const Route = createFileRoute("/me")({
   component: MePage,
 });
 
-/** "2026년 3월부터" 처럼 소속감만 준다. 일수를 세면 압박이 된다. */
-function joinedLabel(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월부터`;
-}
-
 /**
  * 메뉴.
  *
@@ -116,9 +110,14 @@ function MePage() {
           </div>
           <div className="min-w-0">
             <p className="headline truncate text-xl">{me.name ?? "이름 없음"}</p>
+            {/*
+              가입 시점("2026년 9월부터")을 적었었다. 소속감을 준다고 생각했지만,
+              읽는 사람이 그 숫자로 할 수 있는 일이 없다. 자기 프로필에서 자기
+              가입월을 확인할 이유가 없고, 오래된 계정에는 "아직도 못 만났구나"
+              로 읽힌다. 쓸모가 없으면 지우는 편이 낫다.
+            */}
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {hub?.label ?? PRIMARY_HUB.label}
-              {stats ? ` · ${joinedLabel(stats.joinedAt)}` : ""}
             </p>
           </div>
         </div>
@@ -179,7 +178,7 @@ function MePage() {
           ) : null
         ) : (
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            <span className="font-semibold text-primary-strong">
+            <span className="font-semibold text-foreground">
               여성 회원은 이용료를 내지 않습니다.
             </span>{" "}
             소개도, 만남도 무료예요.
@@ -196,7 +195,7 @@ function MePage() {
                 to={to}
                 className="flex min-h-16 items-center gap-3.5 border-b border-border/70 px-5 last:border-0 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <Icon className="size-5 shrink-0 text-primary-strong" aria-hidden="true" />
+                <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold">{label}</span>
                   <span className="block text-xs text-muted-foreground">{hint}</span>

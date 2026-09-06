@@ -188,10 +188,7 @@ function StorePage() {
                 )}
               >
                 <Ticket
-                  className={cn(
-                    "size-5 shrink-0",
-                    on ? "text-primary-strong" : "text-muted-foreground",
-                  )}
+                  className={cn("size-5 shrink-0", on ? "text-primary" : "text-muted-foreground")}
                   aria-hidden="true"
                 />
                 <span className="min-w-0 flex-1">
@@ -214,7 +211,7 @@ function StorePage() {
 
       {order ? (
         <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
-          <p className="text-sm font-semibold text-primary-strong">신청을 받았습니다</p>
+          <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {spec.label} {order.quantity}장 · {won(order.amount)}.{" "}
             {paid === false ? "확인이 끝나면" : "준비되면"} 보유 티켓에 바로 들어옵니다.
@@ -261,7 +258,7 @@ function StorePage() {
       <ul className="mt-8 space-y-2.5 border-t border-border pt-5 text-sm">
         {spec.terms.map((t) => (
           <li key={t} className="flex gap-2.5 text-muted-foreground">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+            <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <span className="leading-relaxed">{t}</span>
           </li>
         ))}

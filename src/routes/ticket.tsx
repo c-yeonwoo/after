@@ -100,7 +100,7 @@ function TicketPage() {
             "장소와 시간은 두 분이 정합니다",
           ].map((t) => (
             <li key={t} className="flex gap-2.5 text-foreground">
-              <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+              <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
               <span className="leading-relaxed">{t}</span>
             </li>
           ))}
@@ -147,7 +147,7 @@ function TicketPage() {
         </>
       ) : order ? (
         <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
-          <p className="text-sm font-semibold text-primary-strong">신청을 받았습니다</p>
+          <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             만남 티켓이 준비되면 이 화면에서 바로 사용하실 수 있습니다. 그때까지 소개는 그대로 열려
             있고, 넘어가지 않습니다.

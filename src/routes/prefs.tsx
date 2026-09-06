@@ -233,7 +233,7 @@ function PrefsPage() {
                             "min-h-11 rounded-control border text-sm transition-colors",
                             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                             on
-                              ? "border-primary bg-primary/12 font-medium text-primary-strong"
+                              ? "border-primary bg-primary font-semibold text-primary-foreground"
                               : "border-border text-foreground",
                           )}
                         >
@@ -264,7 +264,7 @@ function PrefsPage() {
             {stations.map((st) => (
               <span
                 key={st}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-control bg-primary/12 pr-2 pl-3.5 text-sm font-medium text-primary-strong"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-control bg-primary pr-2 pl-3.5 text-sm font-semibold text-primary-foreground"
               >
                 <MapPin className="size-3.5" aria-hidden="true" />
                 {st}
@@ -329,7 +329,7 @@ function PrefsPage() {
             "mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-control border text-sm transition-colors",
             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             anywhere
-              ? "border-primary bg-primary/10 font-medium text-primary-strong"
+              ? "border-primary bg-primary font-semibold text-primary-foreground"
               : "border-border bg-card text-foreground",
           )}
         >

@@ -105,8 +105,8 @@ export function AppScreen({
         className="z-20 shrink-0 bg-background pb-3"
         style={{
           paddingTop: "var(--safe-top)",
-          paddingLeft: "max(env(safe-area-inset-left, 0px), 1.5rem)",
-          paddingRight: "max(env(safe-area-inset-right, 0px), 1.5rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 1.25rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 1.25rem)",
         }}
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -131,7 +131,13 @@ export function AppScreen({
       <main
         ref={mainRef}
         className={cn(
-          "mx-auto w-full min-h-0 flex-1 px-6 pt-1",
+          /*
+            좌우 20px. 예전에는 24px 이었는데, 프레임이 430px 로 고정된 앱에서
+            48px 을 여백으로 쓰면 카드 안의 글줄이 눈에 띄게 짧아진다. 화면이
+            비어 보이는 원인이 세로 쪽이라 좌우를 크게 줄이지는 않고 한 단계만
+            좁힌다. 헤더·푸터도 같은 값을 써야 세로선이 맞는다.
+          */
+          "mx-auto w-full min-h-0 flex-1 px-5 pt-1",
           // 스크롤하는 유일한 지점. overscroll-contain 은 본문 끝에서 더 당겼을 때
           // 스크롤이 문서로 새어 나가는 것을 막는다.
           fill ? "flex flex-col" : "overflow-y-auto overscroll-contain",
@@ -143,7 +149,7 @@ export function AppScreen({
 
       {footer ? (
         <div
-          className="z-30 shrink-0 border-t border-border/70 bg-background px-6 pt-3"
+          className="z-30 shrink-0 border-t border-border/70 bg-background px-5 pt-3"
           /*
             탭바와의 간격. 0.75rem 이면 실측 12.3pt 라 대화 화면 입력창(15.3pt)
             보다 좁았다 — 티켓을 쓰는 자리라 더 후하게 둔다.
@@ -172,7 +178,7 @@ export function AppScreen({
                     className={cn(
                       "flex min-h-14 flex-col items-center justify-center gap-1 pt-2 text-2xs font-semibold transition-colors",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      active ? "text-primary-strong" : "text-muted-foreground",
+                      active ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     <Icon className="size-5" aria-hidden="true" strokeWidth={active ? 2.6 : 1.9} />

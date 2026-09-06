@@ -652,6 +652,38 @@ export async function myStats(): Promise<MyStats | null> {
   };
 }
 
+/**
+ * 프로필 문장 생성 (Edge Function `compose-profile`).
+ *
+ * 모델이 가입자의 답변으로 한 줄 소개 후보 3개와 소개글 1편을 씁니다.
+ * 키를 클라이언트에 둘 수 없어 서버를 거칩니다(빌드 시점에 VITE_* 가 정적으로
+ * 치환되므로 번들에 문자열로 박힙니다).
+ *
+ * **실패하면 던지지 않고 null 을 돌려줍니다.** 부르는 쪽은 규칙 기반 초안을
+ * 이미 손에 들고 있고, 문장이 더 좋아지지 않았다고 가입을 막을 이유가 없습니다.
+ * 모델이 거절했든, 시간이 초과됐든, 키가 없든 화면은 같게 동작합니다.
+ */
+export type ComposedProfile = { headlines: string[]; intro: string };
+
+export async function composeProfile(input: {
+  job?: string | null;
+  interests: { label: string; note?: string }[];
+  matchTags: string[];
+  matchNote?: string;
+  topics: string[];
+  topicNote?: string;
+}): Promise<ComposedProfile | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke<ComposedProfile>("compose-profile", {
+      body: input,
+    });
+    if (error || !data?.headlines?.length || !data?.intro) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 /** 상품 목록. 가격은 서버가 정한다 — 클라이언트에 두면 서버와 어긋난다. */
 export type TicketBundle = { quantity: number; amount: number };
 

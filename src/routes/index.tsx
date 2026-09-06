@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
-import { BRAND, COVERAGE_LABEL } from "@/lib/brand";
+import { BRAND, COVERAGE_LABEL, MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 
@@ -19,10 +19,37 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
+/*
+  ── 1번 자리는 우리만 할 수 있는 말이 차지한다 ──
+
+  예전 1번은 "회사 이메일로 인증된 사람만" 이었다. 이건 **위생요인**이다.
+  없으면 안 되지만, 있다고 우리를 고를 이유가 되지는 않는다. 직장 인증은
+  2015년부터 여러 서비스가 해 왔고 지금도 따라 하기 쉽다.
+
+  따라 하기 어려운 것은 **환불**이다. 노출이나 메시지 횟수를 파는 서비스는
+  이 약속을 그대로 가져가면 자기 매출을 부정하게 된다. 우리는 만남을 팔기
+  때문에 할 수 있는 말이다. 그런데 지금까지 랜딩에 한 글자도 없었다.
+
+  ── 문구를 좁게 쓰는 이유 ──
+
+  "만나지 못하면 돌려드립니다" 로 쓰고 싶었지만 그건 사실이 아니다. 환불이
+  실제로 일어나는 경우는 **상대가 24시간 안에 답하지 않거나 거절했을 때**이고
+  (expire_unanswered_meetings · decline_meeting), 답을 받고 조율하다 흐지부지된
+  경우에는 환불되지 않는다. 넓게 쓰면 그 차이가 그대로 클레임이 된다.
+  약속을 넓히는 대신 **지킬 수 있는 만큼만** 쓴다.
+
+  소개 티켓(5,000원)은 환불 대상이 아니라서 여기 넣지 않는다. 한 화면에서
+  "환불됩니다" 와 "환불되지 않습니다" 를 같이 말하면 남는 인상은 후자다.
+*/
 const POINTS = [
-  { n: "01", title: "회사 이메일로 인증된 사람만", body: "퇴근 후 만나기 좋은 거리 안에서." },
-  { n: "02", title: "한 번에 한 명만 소개", body: "고르는 피로 없이, 한 사람에 집중." },
-  { n: "03", title: "약속까지 대신 조율", body: "채팅이 열리고 날짜와 장소를 정리해 드려요." },
+  {
+    n: "01",
+    title: "답이 없으면 돌려드립니다",
+    body: `만남 티켓 ${MEETING_TICKET_PRICE_LABEL}. 상대가 24시간 안에 답하지 않거나 거절하면 전액 환불됩니다.`,
+  },
+  { n: "02", title: "회사 이메일로 인증된 사람만", body: "퇴근 후 만나기 좋은 거리 안에서." },
+  { n: "03", title: "한 번에 한 명만 소개", body: "고르는 피로 없이, 한 사람에 집중." },
+  { n: "04", title: "약속까지 대신 조율", body: "채팅이 열리고 날짜와 장소를 정리해 드려요." },
 ];
 
 function Landing() {
