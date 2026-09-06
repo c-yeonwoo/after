@@ -340,7 +340,7 @@ function IntroPage() {
 
       {maleAnswered ? (
         <div className="mt-8 rounded-xl border border-border bg-card px-4 py-4 text-sm">
-          <p className="font-medium text-primary-strong">
+          <p className="font-semibold text-foreground">
             {meeting?.prefs_submitted_at ? "대화가 열렸습니다" : "상대의 답변을 기다리는 중입니다"}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">

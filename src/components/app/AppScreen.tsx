@@ -178,7 +178,7 @@ export function AppScreen({
                     className={cn(
                       "flex min-h-14 flex-col items-center justify-center gap-1 pt-2 text-2xs font-semibold transition-colors",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      active ? "text-primary-strong" : "text-muted-foreground",
+                      active ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     <Icon className="size-5" aria-hidden="true" strokeWidth={active ? 2.6 : 1.9} />

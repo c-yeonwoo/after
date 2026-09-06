@@ -93,11 +93,9 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "unauthenticated" }, 401);
 
-  const caller = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
+  const caller = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authHeader } },
+  });
   const {
     data: { user },
     error: userError,
@@ -130,8 +128,14 @@ Deno.serve(async (req) => {
     .slice(0, 5)
     .map((i) => ({ label: clip(i?.label, 40), note: clip(i?.note, 200) }))
     .filter((i) => i.label);
-  const matchTags = (body.matchTags ?? []).slice(0, 4).map((t) => clip(t, 40)).filter(Boolean);
-  const topics = (body.topics ?? []).slice(0, 4).map((t) => clip(t, 40)).filter(Boolean);
+  const matchTags = (body.matchTags ?? [])
+    .slice(0, 4)
+    .map((t) => clip(t, 40))
+    .filter(Boolean);
+  const topics = (body.topics ?? [])
+    .slice(0, 4)
+    .map((t) => clip(t, 40))
+    .filter(Boolean);
 
   if (interests.length === 0) return json({ error: "interests are required" }, 400);
 
@@ -167,7 +171,10 @@ Deno.serve(async (req) => {
     const parsed = response.parsed_output;
     if (!parsed) return json({ error: "unparsable" }, 502);
 
-    const headlines = parsed.headlines.map((h) => h.trim()).filter(Boolean).slice(0, 3);
+    const headlines = parsed.headlines
+      .map((h) => h.trim())
+      .filter(Boolean)
+      .slice(0, 3);
     const intro = parsed.intro.trim();
     if (headlines.length === 0 || intro.length < 20) {
       return json({ error: "too short" }, 502);

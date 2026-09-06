@@ -43,7 +43,7 @@ export function LogoMark({ className }: { className?: string }) {
       viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
-      className={cn("size-7 text-primary-strong", className)}
+      className={cn("size-7 text-primary", className)}
     >
       {/* 채운 원보다 조금 크게 파서 두 원 사이에 빈 틈을 남긴다 */}
       <mask id={maskId}>

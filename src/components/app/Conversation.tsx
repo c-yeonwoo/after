@@ -129,7 +129,7 @@ export function Conversation({
       {/* 약속 요약 — 대화 중 계속 보여야 하는 맥락이라 위에 고정한다 */}
       {meeting.confirmed_at && meeting.scheduled_at ? (
         <div className="flex shrink-0 items-center gap-2 rounded-surface bg-primary/10 px-3.5 py-2.5">
-          <CalendarCheck className="size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+          <CalendarCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
           <p className="min-w-0 truncate text-xs text-foreground">
             <span className="font-semibold">
               {new Date(meeting.scheduled_at).toLocaleDateString("ko-KR", {
@@ -161,7 +161,7 @@ export function Conversation({
                 "min-h-11 rounded-control border px-3.5 text-xs font-medium transition-colors",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 channel === c.id
-                  ? "border-primary bg-primary/10 text-primary-strong"
+                  ? "border-primary bg-primary text-primary-foreground"
                   : "border-border",
               )}
             >

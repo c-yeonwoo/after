@@ -38,7 +38,7 @@ export function MeetPlanner({
     return (
       <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
         <div className="flex items-center gap-2">
-          <CalendarCheck className="size-4 text-primary-strong" aria-hidden="true" />
+          <CalendarCheck className="size-4 text-primary" aria-hidden="true" />
           <p className="text-sm font-semibold">만남 확정</p>
         </div>
         <p className="mt-2 text-sm text-foreground">{formatMeetTime(confirmed.toISOString())}</p>
@@ -53,7 +53,7 @@ export function MeetPlanner({
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
       <div className="flex items-center gap-2">
-        <CalendarCheck className="size-4 text-primary-strong" aria-hidden="true" />
+        <CalendarCheck className="size-4 text-primary" aria-hidden="true" />
         <p className="text-sm font-semibold">약속 정하기</p>
       </div>
 
@@ -64,7 +64,7 @@ export function MeetPlanner({
         </div>
       ) : null}
 
-      <p className="mt-4 text-xs font-medium text-primary-strong">날짜 고르기</p>
+      <p className="mt-4 text-xs font-semibold text-foreground">날짜 고르기</p>
       <div className="mt-2 space-y-2">
         {(prefs?.dates ?? []).map((iso) => (
           <button
@@ -76,7 +76,7 @@ export function MeetPlanner({
               "min-h-12 w-full rounded-xl border px-4 text-left text-sm transition-colors",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               date === iso
-                ? "border-primary bg-primary/10 font-medium text-primary-strong"
+                ? "border-primary bg-primary font-semibold text-primary-foreground"
                 : "border-border",
             )}
           >
@@ -85,7 +85,7 @@ export function MeetPlanner({
         ))}
       </div>
 
-      <p className="mt-5 text-xs font-medium text-primary-strong">장소 정하기</p>
+      <p className="mt-5 text-xs font-semibold text-foreground">장소 정하기</p>
       <p className="mt-1 text-xs text-muted-foreground">
         카페든 저녁이든 무엇이든 괜찮습니다. 장소를 직접 적어 주세요.
       </p>
@@ -105,7 +105,7 @@ export function MeetPlanner({
             className={cn(
               "min-h-11 rounded-full border px-3 text-xs transition-colors",
               placeKind === h
-                ? "border-primary bg-primary/10 text-primary-strong"
+                ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background",
             )}
           >

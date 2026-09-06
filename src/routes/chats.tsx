@@ -119,7 +119,7 @@ function ChatsPage() {
                   </p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">{counterpart.job}</p>
                   {meeting.confirmed_at ? (
-                    <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary-strong">
+                    <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
                       <CalendarCheck className="size-3.5" aria-hidden="true" />
                       만남 확정
                     </p>

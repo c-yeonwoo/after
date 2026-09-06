@@ -135,7 +135,7 @@ function SettingsPage() {
                 "min-h-11 rounded-control border text-sm transition-colors",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 choice === o.id
-                  ? "border-primary bg-primary/12 font-medium text-primary-strong"
+                  ? "border-primary bg-primary font-semibold text-primary-foreground"
                   : "border-border bg-card text-foreground",
               )}
             >

@@ -386,7 +386,7 @@ function ReadinessPanel({
               <Link
                 to="/store"
                 search={{ kind: "intro" as const }}
-                className="shrink-0 text-xs font-semibold text-primary-strong underline underline-offset-4"
+                className="shrink-0 text-xs font-semibold text-foreground underline underline-offset-4"
               >
                 티켓 보기
               </Link>

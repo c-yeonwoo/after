@@ -178,7 +178,7 @@ function MePage() {
           ) : null
         ) : (
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            <span className="font-semibold text-primary-strong">
+            <span className="font-semibold text-foreground">
               여성 회원은 이용료를 내지 않습니다.
             </span>{" "}
             소개도, 만남도 무료예요.
@@ -195,7 +195,7 @@ function MePage() {
                 to={to}
                 className="flex min-h-16 items-center gap-3.5 border-b border-border/70 px-5 last:border-0 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <Icon className="size-5 shrink-0 text-primary-strong" aria-hidden="true" />
+                <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold">{label}</span>
                   <span className="block text-xs text-muted-foreground">{hint}</span>
