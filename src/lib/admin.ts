@@ -219,6 +219,28 @@ export type CurationTarget =
   Database["public"]["Functions"]["admin_curation_targets"]["Returns"][number];
 export type LikePoolItem = Database["public"]["Functions"]["admin_like_pool"]["Returns"][number];
 
+export type PreferenceCompareRow =
+  Database["public"]["Functions"]["admin_preference_compare"]["Returns"][number];
+
+/**
+ * 두 사람의 취향 문답을 문항별로 나란히.
+ *
+ * 사용자 쪽에는 이런 조회가 없다 — preference_answers 의 SELECT 정책은 본인 행만
+ * 연다. 서로의 취향을 대조하는 일은 큐레이터의 몫이고, 사용자에게 열면 "나랑 몇
+ * 개 맞나" 를 보려고 프로필을 뒤지는 화면이 된다.
+ */
+export async function fetchPreferenceCompare(
+  maleId: string,
+  femaleId: string,
+): Promise<PreferenceCompareRow[]> {
+  const { data, error } = await supabase.rpc("admin_preference_compare", {
+    p_male: maleId,
+    p_female: femaleId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** 작업 대상(남성) 목록. 큐가 빈 사람부터, 그중 오래 기다린 순. */
 export async function fetchCurationTargets(): Promise<CurationTarget[]> {
   const { data, error } = await supabase.rpc("admin_curation_targets");
