@@ -9,14 +9,18 @@ import { hubLabel } from "@/components/admin/labels";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
 import { usePhotoUrl } from "@/lib/photo";
+import { questionById } from "@/lib/preferences";
 import { toProfileView } from "@/lib/profileView";
+import { cn } from "@/lib/utils";
 import {
   fetchCurationTargets,
   fetchLikePool,
   fetchQueue,
   setQueue,
+  fetchPreferenceCompare,
   type CurationTarget,
   type LikePoolItem,
+  type PreferenceCompareRow,
   type QueueCard,
 } from "@/lib/admin";
 
@@ -355,6 +359,19 @@ function Workbench({
                     <p className="mt-0.5 text-2xs text-muted-foreground tabular-nums">
                       {p.waiting_hours !== null ? `${Math.floor(p.waiting_hours / 24)}일 대기` : ""}
                     </p>
+                    {/*
+                      취향 일치 수(s31). **분모를 반드시 함께 적는다** — 3중 3과
+                      9중 7은 다른 신호이고, 비율만 쓰면 한 문항만 답한 사람이
+                      100%가 된다. 운영 대시보드가 이미 지키고 있는 규율이다.
+                    */}
+                    {p.pref_both !== null && p.pref_both > 0 ? (
+                      <p className="mt-0.5 text-2xs tabular-nums">
+                        <span className="text-muted-foreground">취향 </span>
+                        <span className="font-semibold text-foreground">
+                          {p.pref_agree} / {p.pref_both}
+                        </span>
+                      </p>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"
@@ -394,6 +411,14 @@ function Workbench({
             </div>
             <div className="mt-2 max-h-[calc(100dvh-14rem)] overflow-y-auto rounded-surface border border-border p-4">
               <ProfileDetail p={toProfileView(preview)} />
+              {/*
+                미리보기에는 풀 카드(LikePoolItem)와 큐 카드(QueueCard)가 둘 다
+                들어온다. 여성 id 를 담는 필드 이름이 서로 다르므로 여기서 고른다.
+              */}
+              <PreferenceCompare
+                maleId={maleId}
+                femaleId={"female_id" in preview ? preview.female_id : preview.id}
+              />
             </div>
           </div>
         ) : (
@@ -403,6 +428,81 @@ function Workbench({
         )}
       </aside>
     </div>
+  );
+}
+
+/**
+ * 취향 문답 대조표.
+ *
+ * 이 화면이 있어야 홈의 "소개를 고를 때 이 답을 함께 봅니다" 가 참이 된다.
+ * 모으기만 하고 쓰지 않으면 그 문장은 거짓말이고, 지금 15개 프로필 항목이 정확히
+ * 그 상태다. 같은 함정을 하나 더 파지 않으려고 같은 작업에서 만들었다.
+ *
+ * 한쪽만 답한 문항도 보여준다. 큐레이터가 "아직 답이 적은 사람" 을 알아볼 수
+ * 있어야 일치 수를 과신하지 않는다.
+ */
+function PreferenceCompare({ maleId, femaleId }: { maleId: string; femaleId: string }) {
+  const [rows, setRows] = useState<PreferenceCompareRow[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRows(null);
+    fetchPreferenceCompare(maleId, femaleId)
+      .then((r) => {
+        if (!cancelled) setRows(r);
+      })
+      .catch(() => {
+        if (!cancelled) setRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [maleId, femaleId]);
+
+  if (rows === null) return null;
+  const both = rows.filter((r) => r.male_choice !== null && r.female_choice !== null);
+  if (rows.length === 0) {
+    return (
+      <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">
+        두 분 다 취향 문답에 답하지 않았습니다.
+      </p>
+    );
+  }
+  const agree = both.filter((r) => r.male_choice === r.female_choice).length;
+
+  return (
+    <section className="mt-6 border-t border-border pt-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-xs font-semibold">취향 문답</h3>
+        <p className="text-xs tabular-nums text-muted-foreground">
+          둘 다 답한 {both.length}문항 중{" "}
+          <span className="font-semibold text-foreground">{agree}개 일치</span>
+        </p>
+      </div>
+      <ul className="mt-2 space-y-1.5">
+        {rows.map((r) => {
+          const q = questionById(r.question_id);
+          if (!q) return null;
+          const pick = (c: number | null) => (c === null ? "—" : q.options[c]);
+          const same =
+            r.male_choice !== null && r.female_choice !== null && r.male_choice === r.female_choice;
+          return (
+            <li key={r.question_id} className="text-2xs leading-relaxed">
+              <p className="text-muted-foreground">{q.prompt}</p>
+              <p
+                className={cn(
+                  "tabular-nums",
+                  same ? "font-semibold text-foreground" : "text-muted-foreground",
+                )}
+              >
+                남 {pick(r.male_choice)} · 여 {pick(r.female_choice)}
+                {same ? " · 같음" : ""}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

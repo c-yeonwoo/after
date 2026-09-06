@@ -684,6 +684,34 @@ export async function composeProfile(input: {
   }
 }
 
+/**
+ * 취향 문답 — 내가 답한 것.
+ *
+ * 상대의 답은 어떤 경로로도 읽히지 않는다(RLS SELECT 정책이 본인 행만 연다).
+ * 두 사람의 답을 맞춰 보는 일은 큐레이터의 몫이다. 사용자에게 열면 "나랑 몇 개
+ * 맞나" 를 보려고 프로필을 뒤지는 화면이 되고, 그건 이 제품이 피하려는 행동이다.
+ */
+export async function myPreferenceAnswers(): Promise<Map<number, number>> {
+  const { data, error } = await supabase.from("preference_answers").select("question_id, choice");
+  if (error) throw error;
+  return new Map((data ?? []).map((r) => [r.question_id, r.choice]));
+}
+
+/** 답을 저장한다. 이미 답한 문항이면 고쳐 쓴다. */
+export async function savePreferenceAnswer(questionId: number, choice: 0 | 1): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("로그인이 필요합니다.");
+  const { error } = await supabase
+    .from("preference_answers")
+    .upsert(
+      { user_id: session.user.id, question_id: questionId, choice },
+      { onConflict: "user_id,question_id" },
+    );
+  if (error) throw error;
+}
+
 /** 상품 목록. 가격은 서버가 정한다 — 클라이언트에 두면 서버와 어긋난다. */
 export type TicketBundle = { quantity: number; amount: number };
 
