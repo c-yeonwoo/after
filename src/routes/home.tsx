@@ -4,10 +4,18 @@ import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
-import { homeState, markMet, type Meeting, type NoShowReport, type PublicProfile } from "@/lib/api";
+import {
+  homeState,
+  markMet,
+  setPaused,
+  type Meeting,
+  type NoShowReport,
+  type PublicProfile,
+} from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +56,7 @@ function remaining(deadlineIso: string, now: number) {
 }
 
 function HomePage() {
-  const { me, ready } = useMe();
+  const { me, ready, refresh } = useMe();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [candidate, setCandidate] = useState<PublicProfile | null>(null);
@@ -142,10 +150,19 @@ function HomePage() {
       <p className="mt-4 text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
         {hub?.label ?? PRIMARY_HUB.label}
       </p>
+      {/*
+        예전에는 아랫줄을 브랜드 색으로 칠했다. 그런데 그 자리에 오는 문장은
+        "상대의 답변을 기다리는 중." 처럼 **행동이 아니라 상태**다. 화면에서
+        가장 크고 진한 색이 누를 수 없는 것을 가리키고 있었고, 바로 아래 카드와
+        버튼까지 같은 분홍이라 화면 전체가 한 색으로 덮였다.
+
+        색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
+        상태 문장이 저절로 앞으로 나온다. 분홍은 **누를 수 있는 것**에만 남긴다.
+      */}
       <h1 className="headline mt-2 text-3xl leading-[1.35]">
-        {me?.name ? `${me.name}님,` : "안녕하세요,"}
+        <span className="text-muted-foreground">{me?.name ? `${me.name}님,` : "안녕하세요,"}</span>
         <br />
-        <span className="text-primary-strong">{headline}</span>
+        {headline}
       </h1>
 
       {noShow ? (
@@ -241,6 +258,27 @@ function HomePage() {
       </div>
 
       {/*
+        진행 중인 만남이 없을 때만 띄운다. 약속이 잡혀 있으면 화면에 이미 할 일이
+        있고, 그때 "소개 받기" 스위치는 지금 하는 일과 무관한 잡음이다.
+      */}
+      {!loading && !meeting && !noShow ? (
+        <ReadinessPanel
+          isMale={isMale}
+          paused={me?.paused_at !== null && me?.paused_at !== undefined}
+          introTickets={introTickets}
+          onToggle={async (next) => {
+            try {
+              await setPaused(next);
+              await refresh();
+              toast.success(next ? "새 소개를 멈췄습니다." : "다시 소개를 받습니다.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+            }
+          }}
+        />
+      ) : null}
+
+      {/*
         진행 위치 — 며칠 걸리는 과정이라 위치 정보는 남기되, 부수적으로 다룬다.
         만남이 끝난 뒤에는 감춘다. 이 퍼널은 "만남 확정"에서 끝나므로 그 이후에도
         4/4 를 띄우면 아직 진행 중인 일이 남은 것처럼 읽힌다.
@@ -264,6 +302,99 @@ function HomePage() {
         </section>
       )}
     </AppScreen>
+  );
+}
+
+/**
+ * 소개 받기 스위치 + 준비 상태.
+ *
+ * ── 왜 홈에 두는가 ──
+ * 기다리는 화면에는 읽을 것 하나뿐이고 **누를 것이 없었다.** 남성이 로그인해서
+ * 소개가 아직 없으면 할 수 있는 일이 0개다. 그 화면을 며칠 동안 다시 열게 하는
+ * 것은 무리다.
+ *
+ * 없던 기능을 만들지는 않는다. `set_paused` 는 이미 있고 환경설정 안에 묻혀
+ * 있었다. 지금 상태를 말하는 자리와 그 상태를 바꾸는 자리는 같아야 한다.
+ *
+ * ── 기다리는 기간을 말하지 않는 이유 ──
+ * 예전에 "보통 2~3일 안에 보내드립니다" 가 있었고 근거가 코드에 없어서 지웠다.
+ * 지금도 소개는 운영자가 큐를 세워야 나가므로 기간을 약속할 수 없다. 대신
+ * **말할 수 있는 사실**을 적는다: 지금 받는 중인지, 열 준비가 됐는지.
+ */
+function ReadinessPanel({
+  isMale,
+  paused,
+  introTickets,
+  onToggle,
+}: {
+  isMale: boolean;
+  paused: boolean;
+  introTickets: number;
+  onToggle: (next: boolean) => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <section className="mt-6" aria-label="소개 설정">
+      <div className="overflow-hidden rounded-surface border border-border bg-card">
+        <div className="flex min-h-16 items-center gap-3.5 px-5">
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">
+              {paused ? "지금은 쉬는 중입니다" : "소개를 받는 중입니다"}
+            </span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+              {paused
+                ? "새 소개가 오지 않습니다. 진행 중인 약속은 그대로입니다."
+                : isMale
+                  ? "회원님을 먼저 좋다고 한 분들 중에서 골라 보내드립니다."
+                  : "새로 가입한 분이 생기면 이어서 보여드립니다."}
+            </span>
+          </span>
+          {/*
+            체크박스가 아니라 스위치다. 왼쪽 체크박스는 "동의합니다" 처럼 읽히고,
+            이건 동의가 아니라 켜고 끄는 값이다. 켜짐이 곧 "받는 중" 이라
+            체크 표시보다 손잡이가 움직이는 편이 상태를 잘 말한다.
+          */}
+          <Switch
+            aria-label={paused ? "소개 다시 받기" : "소개 잠시 멈추기"}
+            checked={!paused}
+            disabled={busy}
+            onCheckedChange={async (on) => {
+              setBusy(true);
+              try {
+                await onToggle(!on);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        </div>
+
+        {/*
+          남성에게만 붙는 줄. 소개가 도착해도 티켓이 없으면 열지 못하므로,
+          "지금 열 수 있는가" 가 기다리는 동안 알아 둘 값이다. 여성은 티켓을
+          쓰지 않으므로 이 줄이 없다.
+        */}
+        {isMale && !paused ? (
+          <div className="flex min-h-14 items-center gap-3.5 border-t border-border px-5">
+            <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
+              {introTickets > 0
+                ? `소개가 오면 바로 열 수 있습니다. 소개 티켓 ${introTickets}장 보유.`
+                : "소개를 열려면 소개 티켓 1장이 필요합니다."}
+            </span>
+            {introTickets === 0 ? (
+              <Link
+                to="/store"
+                search={{ kind: "intro" as const }}
+                className="shrink-0 text-xs font-semibold text-primary-strong underline underline-offset-4"
+              >
+                티켓 보기
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -460,7 +591,12 @@ function CardAction({
     <Link
       to={to}
       search={search}
-      className="flex min-h-12 items-center justify-center gap-2 rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      /*
+        카드 안에 뜬 알약이 아니라 **카드 밑변 전체**를 쓰는 막대다. 안에 뜬
+        버튼은 카드 속의 또 다른 카드로 읽혀서, 읽을 것과 누를 것의 경계가
+        흐려졌다. CandidatePreview 의 링크와 같은 모양으로 맞춘다.
+      */
+      className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {children}
       <ArrowRight className="size-4" aria-hidden="true" />
