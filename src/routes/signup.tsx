@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +32,7 @@ import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
 import {
   authErrorMessage,
   completeOnboarding,
+  composeProfile,
   devFetchLatestOtp,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
@@ -41,6 +42,7 @@ import {
   saveOnboardingStep,
   setPassword,
   verifyEmailCode,
+  type ComposedProfile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
@@ -109,6 +111,14 @@ function Onboarding() {
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
   const [intro, setIntro] = useState("");
+  /*
+    모델이 쓴 문장(compose-profile). null 이면 아직 못 받았거나 실패한 것이고,
+    그때는 규칙 기반 초안이 그대로 쓰인다. **실패가 곧 빈 화면이 되지 않는다.**
+  */
+  const [composed, setComposed] = useState<ComposedProfile | null>(null);
+  const [composing, setComposing] = useState(false);
+  /* 같은 답변으로 두 번 부르지 않는다. 호출마다 돈이 나간다. */
+  const composedKey = useRef<string | null>(null);
   const [seedInput, setSeedInput] = useState("");
   const [activeSeed, setActiveSeed] = useState(0);
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
@@ -177,6 +187,66 @@ function Onboarding() {
   );
 
   const draft = useMemo(() => buildIntro(profile), [profile]);
+
+  /*
+    마지막 확인 화면에 들어오면 모델에게 문장을 맡긴다.
+
+    ── 왜 자동으로 부르는가 ──
+    "AI로 다듬기" 버튼을 두면 대부분 누르지 않고 지나간다. 그러면 좋은 문장은
+    누른 사람만 갖고, 프로필 품질이 사용자의 호기심에 따라 갈린다. 화면에
+    들어온 김에 미리 만들어 두고, 마음에 안 들면 직접 고치게 하는 편이 낫다.
+
+    ── 왜 같은 답변으로 두 번 안 부르는가 ──
+    호출마다 돈이 나간다. 이전 단계로 갔다가 돌아오는 일이 잦은 화면이라,
+    답변이 그대로면 이미 받은 결과를 다시 쓴다. 답변을 고쳤으면 키가 달라져
+    자연스럽게 다시 부른다.
+
+    실패는 조용히 지나간다. 규칙 기반 초안이 이미 화면에 있고, 문장이 더
+    좋아지지 않았다고 가입을 막을 이유가 없다.
+  */
+  useEffect(() => {
+    if (step !== 9 || selectedInterests.length === 0) return;
+
+    const payload = {
+      job: basics.job,
+      interests: selectedInterests.map((label) => ({
+        label,
+        note: profile.details[label]?.trim() || undefined,
+      })),
+      matchTags: profile.matchTags,
+      matchNote: profile.matchNote.trim() || undefined,
+      topics: profile.topics,
+      topicNote: profile.topicNote.trim() || undefined,
+    };
+    const key = JSON.stringify(payload);
+    if (composedKey.current === key) return;
+    composedKey.current = key;
+
+    let cancelled = false;
+    setComposing(true);
+    composeProfile(payload)
+      .then((result) => {
+        if (cancelled || !result) return;
+        setComposed(result);
+        /*
+          사용자가 이미 손댄 소개글은 건드리지 않는다. 아직 규칙 기반 초안
+          그대로이거나 비어 있을 때만 바꿔 넣는다 — 남이 쓰던 글을 화면이
+          말없이 지우는 일은 없어야 한다.
+        */
+        setIntro((current) =>
+          current.trim() === "" || current === draft ? result.intro : current,
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setComposing(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // draft 는 의도적으로 뺀다. 소개글을 고치는 순간 draft 가 바뀌어 재호출된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, selectedInterests, basics.job, profile]);
 
   function patch(next: Partial<ProfileDraft>) {
     setProfile((prev) => ({ ...prev, ...next }));
@@ -968,7 +1038,12 @@ function Onboarding() {
     ...profile.topics,
     ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : []),
   ];
-  const headlineOptions = suggestHeadlines(profile, basics.job);
+  /*
+    모델이 쓴 문장이 있으면 그걸 쓰고, 없으면 규칙 기반 후보를 쓴다.
+    화면 구조는 하나다 — 두 경로를 따로 그리면 실패했을 때만 보이는 화면이
+    생기고, 그런 화면은 아무도 안 본다.
+  */
+  const headlineOptions = composed?.headlines ?? suggestHeadlines(profile, basics.job);
 
   return (
     <StepShell
@@ -1031,7 +1106,19 @@ function Onboarding() {
       </div>
 
       <div className="mt-6">
-        <p className="text-sm font-semibold text-foreground">한 줄 소개 제안</p>
+        <div className="flex min-h-6 items-center gap-2">
+          <p className="text-sm font-semibold text-foreground">한 줄 소개 제안</p>
+          {/*
+            생성에는 몇 초가 걸린다. 그동안 화면은 규칙 기반 초안을 이미 보여
+            주고 있으므로 비어 있지 않다. 다만 곧 바뀐다는 사실은 말해야 한다 —
+            읽고 고른 문장이 말없이 교체되면 그게 더 나쁘다.
+          */}
+          {composing ? (
+            <span aria-live="polite" className="text-xs text-muted-foreground">
+              문장을 다듬는 중이에요…
+            </span>
+          ) : null}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           적어주신 답변을 바탕으로 만든 문장입니다. 마음에 드는 것을 고르거나 직접 고쳐 쓰세요.
         </p>
@@ -1045,7 +1132,12 @@ function Onboarding() {
                 aria-pressed={selected}
                 onClick={() => {
                   patch({ headline: line });
-                  setIntro(buildIntro({ ...profile, headline: line }));
+                  /*
+                    모델이 쓴 소개글이 있으면 후보를 바꿔도 그 글을 유지한다.
+                    한 줄 소개와 소개글은 따로 쓰인 글이라, 후보를 누를 때마다
+                    소개글을 규칙 기반 초안으로 되돌리면 방금 받은 문장이 사라진다.
+                  */
+                  if (!composed) setIntro(buildIntro({ ...profile, headline: line }));
                 }}
                 className={cn(
                   "w-full rounded-xl border border-border bg-card p-4 text-left text-sm leading-relaxed transition-colors",
