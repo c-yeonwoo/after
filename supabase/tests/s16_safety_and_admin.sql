@@ -28,8 +28,8 @@ insert into profiles (id, gender, hub_id, company_email, email_verified_at, name
                       onboarding_step, terms_agreed_at, privacy_agreed_at, role, photo_url, photo_state)
 values
   ('50000000-0000-0000-0000-00000000000a','female','gangnam','sf@t.co',now(),'에스여','1994-02-02','디자이너',7,now(),now(),'member','50000000-0000-0000-0000-00000000000a/approved.jpg','approved'),
-  ('50000000-0000-0000-0000-00000000000b','male',  'gangnam','sm@t.co',now(),'에스남','1992-03-03','엔지니어',7,now(),now(),'member'),
-  ('50000000-0000-0000-0000-00000000000c','male',  'gangnam','sa@t.co',now(),'운영자','1990-01-01','운영',   7,now(),now(),'admin');
+  ('50000000-0000-0000-0000-00000000000b','male',  'gangnam','sm@t.co',now(),'에스남','1992-03-03','엔지니어',7,now(),now(),'member',null,'pending'),
+  ('50000000-0000-0000-0000-00000000000c','male',  'gangnam','sa@t.co',now(),'운영자','1990-01-01','운영',   7,now(),now(),'admin', null,'pending');
 
 -- ─────────────── is_admin ───────────────
 
@@ -204,7 +204,8 @@ select lives_ok(
   'T25 운영자는 승인된 사진을 내릴 수 있다'
 );
 select is(
-  (select photo_state::text from profiles where id = '50000000-0000-0000-0000-00000000000a'),
+  (select photo_state::text from admin_photo_queue('rejected')
+    where id = '50000000-0000-0000-0000-00000000000a'),
   'rejected',
   'T26 승인 취소한 사진은 후보 풀에서 빠지는 rejected 상태가 된다'
 );
