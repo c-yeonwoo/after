@@ -12,7 +12,7 @@
 -- 짝으로 붙인다.
 
 begin;
-select plan(22);
+select plan(27);
 
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, aud, role,
                         confirmation_token, recovery_token, email_change,
@@ -25,9 +25,9 @@ values
   ('50000000-0000-0000-0000-00000000000c','sa@t.co','x',now(),'authenticated','authenticated','','','','','','','','','{}'::jsonb,'{}'::jsonb);
 
 insert into profiles (id, gender, hub_id, company_email, email_verified_at, name, birth, job,
-                      onboarding_step, terms_agreed_at, privacy_agreed_at, role)
+                      onboarding_step, terms_agreed_at, privacy_agreed_at, role, photo_url, photo_state)
 values
-  ('50000000-0000-0000-0000-00000000000a','female','gangnam','sf@t.co',now(),'에스여','1994-02-02','디자이너',7,now(),now(),'member'),
+  ('50000000-0000-0000-0000-00000000000a','female','gangnam','sf@t.co',now(),'에스여','1994-02-02','디자이너',7,now(),now(),'member','50000000-0000-0000-0000-00000000000a/approved.jpg','approved'),
   ('50000000-0000-0000-0000-00000000000b','male',  'gangnam','sm@t.co',now(),'에스남','1992-03-03','엔지니어',7,now(),now(),'member'),
   ('50000000-0000-0000-0000-00000000000c','male',  'gangnam','sa@t.co',now(),'운영자','1990-01-01','운영',   7,now(),now(),'admin');
 
@@ -181,6 +181,37 @@ select throws_ok(
      values ('50000000-0000-0000-0000-00000000000b','ban','직접삽입') $$,
   null, null,
   'T22 감사 로그를 직접 INSERT 할 수 없다'
+);
+
+-- ─────────────── 승인 취소 ───────────────
+-- 이미 승인한 사진도 나중에 안전 문제가 드러날 수 있다. 계정 정지보다 좁은
+-- 조치로 사진만 후보 풀에서 내리고, 사유를 남겨 회원이 다시 올릴 수 있게 한다.
+
+select throws_ok(
+  $$ select admin_reset_photo('50000000-0000-0000-0000-00000000000a', '부적절한 사진') $$,
+  '42501', null,
+  'T23 일반 회원은 승인된 사진을 내릴 수 없다'
+);
+
+set local request.jwt.claims = '{"sub":"50000000-0000-0000-0000-00000000000c"}';
+select throws_ok(
+  $$ select admin_reset_photo('50000000-0000-0000-0000-00000000000a', '   ') $$,
+  '22023', null,
+  'T24 운영자도 사유 없이 사진을 내릴 수 없다'
+);
+select lives_ok(
+  $$ select admin_reset_photo('50000000-0000-0000-0000-00000000000a', '프로필 기준에 맞지 않습니다') $$,
+  'T25 운영자는 승인된 사진을 내릴 수 있다'
+);
+select is(
+  (select photo_state::text from profiles where id = '50000000-0000-0000-0000-00000000000a'),
+  'rejected',
+  'T26 승인 취소한 사진은 후보 풀에서 빠지는 rejected 상태가 된다'
+);
+select throws_ok(
+  $$ select admin_reset_photo('50000000-0000-0000-0000-00000000000a', '재처리') $$,
+  'PT409', null,
+  'T27 이미 내린 사진은 다시 처리할 수 없다'
 );
 
 select * from finish();

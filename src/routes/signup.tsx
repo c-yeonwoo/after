@@ -56,8 +56,7 @@ export const Route = createFileRoute("/signup")({
       { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {
         name: "description",
-        content:
-          "활동 지역 선택, 회사 이메일 직장 인증, 취향에 따라 달라지는 프로필 작성까지 몇 분이면 끝나는 가입 절차입니다.",
+        content: "활동 지역과 회사 이메일을 확인하고, 취향에 따라 달라지는 프로필을 작성합니다.",
       },
       { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.name}` },
       {

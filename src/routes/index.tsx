@@ -171,7 +171,7 @@ function Landing() {
           직장 인증하고 시작하기
         </button>
         <p className="mt-3 text-center text-3xs font-semibold tracking-[0.16em] uppercase text-muted-foreground">
-          인증은 1분이면 끝나요.
+          회사 이메일을 확인한 뒤 시작해요.
         </p>
         <p className="mt-2 text-center text-xs text-muted-foreground">
           이미 가입하셨나요?{" "}

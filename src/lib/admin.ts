@@ -324,6 +324,18 @@ export async function reviewPhoto(userId: string, approve: boolean, note: string
   if (error) throw error;
 }
 
+/**
+ * 이미 승인한 사진을 다시 내린다. 노출을 멈추고 반려 사유를 사용자에게 보여 주므로,
+ * 운영자도 사유를 반드시 남긴다.
+ */
+export async function resetApprovedPhoto(userId: string, note: string): Promise<void> {
+  const { error } = await supabase.rpc("admin_reset_photo", {
+    p_user: userId,
+    p_note: note,
+  });
+  if (error) throw error;
+}
+
 // ─────────────────── 노쇼 신고 ───────────────────
 
 export type NoShowReport =

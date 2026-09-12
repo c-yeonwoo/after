@@ -3,6 +3,17 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Tag } from "@/components/admin/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { hubLabel } from "@/components/admin/labels";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +21,7 @@ import { usePhotoUrl } from "@/lib/photo";
 import {
   ALREADY_RESOLVED,
   fetchPhotoQueue,
+  resetApprovedPhoto,
   reviewPhoto,
   type PhotoReviewItem,
   type PhotoState,
@@ -184,8 +196,77 @@ function PhotoCard({ r, onDone }: { r: PhotoReviewItem; onDone: () => void }) {
               </Button>
             </div>
           </>
+        ) : r.photo_state === "approved" ? (
+          <ApprovedPhotoAction photo={r} onDone={onDone} />
         ) : null}
       </div>
     </li>
+  );
+}
+
+/**
+ * 승인 상태에서만 보인다. 사진을 내리면 즉시 후보 풀에서 빠지고 사용자는 반려
+ * 사유를 본다. 실수로 누르는 것을 막기 위해 사유 입력과 한 번의 확인을 모두 둔다.
+ */
+function ApprovedPhotoAction({ photo, onDone }: { photo: PhotoReviewItem; onDone: () => void }) {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function reset() {
+    setBusy(true);
+    try {
+      await resetApprovedPhoto(photo.id, note.trim());
+      toast.success("사진을 내렸습니다. 회원은 새 사진을 올릴 수 있습니다.");
+      onDone();
+    } catch (e) {
+      if ((e as { code?: string } | null)?.code === ALREADY_RESOLVED) {
+        toast.error("다른 운영자가 먼저 처리했습니다.");
+        onDone();
+      } else {
+        toast.error("처리하지 못했습니다.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const canReset = note.trim().length > 0;
+
+  return (
+    <div className="mt-2">
+      <Textarea
+        className="text-sm"
+        rows={2}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="승인 취소 사유 (필수 — 사용자에게 보입니다)"
+        aria-label="승인 취소 사유"
+      />
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button className="mt-2" size="sm" variant="destructive" disabled={busy || !canReset}>
+            승인 취소
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>이 사진의 승인을 취소할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              사진은 즉시 소개 후보에서 빠지고, 입력한 사유가 회원에게 표시됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>돌아가기</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={busy}
+              onClick={() => void reset()}
+            >
+              {busy ? "처리 중…" : "승인 취소"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

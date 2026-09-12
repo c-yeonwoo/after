@@ -1755,6 +1755,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_reset_photo: {
+        Args: { p_note: string; p_user: string }
+        Returns: undefined
+      }
       admin_review_photo: {
         Args: { p_approve: boolean; p_note: string; p_user: string }
         Returns: {
@@ -2681,4 +2685,3 @@ export const Constants = {
     },
   },
 } as const
-
