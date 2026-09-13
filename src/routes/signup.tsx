@@ -33,7 +33,7 @@ import {
   authErrorMessage,
   completeOnboarding,
   composeProfile,
-  devFetchLatestOtp,
+  LOCAL_DEV_AUTH_BYPASS,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -41,6 +41,7 @@ import {
   recordConsent,
   saveOnboardingStep,
   setPassword,
+  startLocalDevSignup,
   track,
   verifyEmailCode,
   type ComposedProfile,
@@ -638,7 +639,7 @@ function Onboarding() {
           </p>
         )}
 
-        {codeSent ? (
+        {codeSent && !LOCAL_DEV_AUTH_BYPASS ? (
           <div className="mt-6">
             <label className="text-sm font-semibold text-foreground" htmlFor="code">
               인증 코드
@@ -673,6 +674,15 @@ function Onboarding() {
                   : "메일로 받은 숫자를 입력해 주세요."}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {codeSent && LOCAL_DEV_AUTH_BYPASS ? (
+          <div className="mt-6 rounded-surface border border-primary/25 bg-primary/10 px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">로컬 개발 환경</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              인증 코드를 확인하지 않습니다. 아래에서 바로 가입 흐름을 이어가세요.
+            </p>
           </div>
         ) : null}
 
@@ -744,7 +754,7 @@ function Onboarding() {
               className="flex-1"
               size="lg"
               disabled={
-                code.length < OTP_MIN_LENGTH ||
+                (!LOCAL_DEV_AUTH_BYPASS && code.length < OTP_MIN_LENGTH) ||
                 pw.length < PASSWORD_MIN_LENGTH ||
                 !agreed ||
                 authBusy
@@ -779,7 +789,11 @@ function Onboarding() {
                 }
               }}
             >
-              {authBusy ? "확인 중…" : "인증하고 계속"}
+              {authBusy
+                ? "확인 중…"
+                : LOCAL_DEV_AUTH_BYPASS
+                  ? "개발 환경으로 계속"
+                  : "인증하고 계속"}
             </Button>
           ) : (
             <Button
@@ -790,13 +804,18 @@ function Onboarding() {
                 setAuthError(null);
                 setAuthBusy(true);
                 try {
-                  await requestEmailCode(email);
+                  if (LOCAL_DEV_AUTH_BYPASS) {
+                    await startLocalDevSignup(email);
+                  } else {
+                    await requestEmailCode(email);
+                  }
                   setCodeSent(true);
-                  toast.success("인증 코드를 보냈습니다.");
-                  const dev = await devFetchLatestOtp(email);
-                  if (dev) {
-                    setCode(dev);
+                  if (LOCAL_DEV_AUTH_BYPASS) {
+                    setCode("000000");
                     setAutoFilled(true);
+                    toast.success("로컬 개발 계정을 준비했습니다.");
+                  } else {
+                    toast.success("인증 코드를 보냈습니다.");
                   }
                 } catch (err) {
                   setAuthError(authErrorMessage(err));
@@ -805,7 +824,11 @@ function Onboarding() {
                 }
               }}
             >
-              {authBusy ? "보내는 중…" : "인증 코드 받기"}
+              {authBusy
+                ? "준비 중…"
+                : LOCAL_DEV_AUTH_BYPASS
+                  ? "개발 계정 만들기"
+                  : "인증 코드 받기"}
             </Button>
           )}
         </div>

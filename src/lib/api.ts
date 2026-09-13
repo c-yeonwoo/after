@@ -37,6 +37,26 @@ export type MsgChannel = Database["public"]["Enums"]["msg_channel"];
 // 입력" UI가 그대로 이 흐름과 맞아떨어진다. isCompanyEmail() 도메인 차단 목록은
 // 인증이 아니라 보조 수단이며, 실제 인증은 여기 verifyEmailCode() 가 한다.
 
+/*
+  로컬 DB에만 허용하는 가입 편의 경로다.
+
+  `DEV`만 보면 개발 빌드가 실수로 운영 Supabase를 보게 됐을 때 인증을 우회할
+  여지가 생긴다. 그래서 개발 빌드이면서 URL이 loopback일 때만 연다. 운영 번들에는
+  false로 정적 치환되고, 로컬 외 Supabase에는 이 함수가 절대 켜지지 않는다.
+*/
+export const LOCAL_DEV_AUTH_BYPASS =
+  import.meta.env.DEV &&
+  (() => {
+    try {
+      const host = new URL(import.meta.env.VITE_SUPABASE_URL).hostname;
+      return host === "127.0.0.1" || host === "localhost";
+    } catch {
+      return false;
+    }
+  })();
+
+const LOCAL_DEV_PASSWORD = "eclipse-local-dev-auth-only";
+
 /**
  * Supabase Auth 의 영어 에러를 화면에 그대로 노출하지 않는다.
  * ("Token has expired or is invalid" 이 한국어 화면에 그대로 떴다)
@@ -83,6 +103,38 @@ export async function devFetchLatestOtp(email: string): Promise<string | null> {
     return hit?.Snippet?.match(/(\d{6})/)?.[1] ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * 로컬 가입은 메일함·OTP를 통과하지 않는다. `signUp`이 로컬 Auth의 auto-confirm
+ * 설정으로 실제 세션을 만들고, 아래 verifyEmailCode는 그 세션을 검증한다.
+ *
+ * 이미 이 개발 경로로 만든 계정은 알려진 로컬 전용 비밀번호로 재진입할 수 있다.
+ * 이전에 OTP 요청만 해 둔 미확인 계정은 보안상 이 경로로 탈취하지 않고 새 테스트
+ * 주소를 쓰게 한다. 이 값은 운영에서 쓰이지 않는다.
+ */
+export async function startLocalDevSignup(email: string): Promise<void> {
+  if (!LOCAL_DEV_AUTH_BYPASS) {
+    throw new Error("로컬 개발 환경에서만 사용할 수 있습니다.");
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const { data, error } = await supabase.auth.signUp({
+    email: normalized,
+    password: LOCAL_DEV_PASSWORD,
+  });
+  if (data.session?.user) return;
+
+  const { data: signedIn, error: signInError } = await supabase.auth.signInWithPassword({
+    email: normalized,
+    password: LOCAL_DEV_PASSWORD,
+  });
+  if (signInError || !signedIn.user) {
+    if (error) throw error;
+    throw new Error(
+      "이 주소는 이전 로컬 인증 흐름에 남아 있습니다. 다른 테스트 주소를 사용해 주세요.",
+    );
   }
 }
 
@@ -298,9 +350,21 @@ export async function verifyEmailCode(
   gender: Gender,
   hubId: string,
 ): Promise<Profile> {
-  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  if (error) throw error;
-  const uid = data.user?.id;
+  let uid: string | undefined;
+  if (LOCAL_DEV_AUTH_BYPASS) {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error || !user || user.email?.toLowerCase() !== email.trim().toLowerCase()) {
+      throw new Error("로컬 개발 세션을 만들지 못했습니다. 다른 테스트 주소로 다시 시작해 주세요.");
+    }
+    uid = user.id;
+  } else {
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw error;
+    uid = data.user?.id;
+  }
   if (!uid) throw new Error("인증에 실패했습니다.");
 
   // 재인증(재로그인) 시 이미 프로필이 있을 수 있다 — upsert 로 멱등하게 처리.

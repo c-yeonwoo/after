@@ -8,7 +8,7 @@ import { useMe } from "@/lib/me";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: `${BRAND.name} — 직장인 1:1 소개 서비스` },
+      { title: `${BRAND.name} — 한 사람을 제대로 만나는 소개` },
       { name: "description", content: BRAND.description },
       { property: "og:title", content: `${BRAND.name} — 직장인 1:1 소개 서비스` },
       { property: "og:description", content: BRAND.tagline },
@@ -19,37 +19,27 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-/*
-  ── 1번 자리는 우리만 할 수 있는 말이 차지한다 ──
-
-  예전 1번은 "회사 이메일로 인증된 사람만" 이었다. 이건 **위생요인**이다.
-  없으면 안 되지만, 있다고 우리를 고를 이유가 되지는 않는다. 직장 인증은
-  2015년부터 여러 서비스가 해 왔고 지금도 따라 하기 쉽다.
-
-  따라 하기 어려운 것은 **환불**이다. 노출이나 메시지 횟수를 파는 서비스는
-  이 약속을 그대로 가져가면 자기 매출을 부정하게 된다. 우리는 만남을 팔기
-  때문에 할 수 있는 말이다. 그런데 지금까지 랜딩에 한 글자도 없었다.
-
-  ── 문구를 좁게 쓰는 이유 ──
-
-  "만나지 못하면 돌려드립니다" 로 쓰고 싶었지만 그건 사실이 아니다. 환불이
-  실제로 일어나는 경우는 **상대가 24시간 안에 답하지 않거나 거절했을 때**이고
-  (expire_unanswered_meetings · decline_meeting), 답을 받고 조율하다 흐지부지된
-  경우에는 환불되지 않는다. 넓게 쓰면 그 차이가 그대로 클레임이 된다.
-  약속을 넓히는 대신 **지킬 수 있는 만큼만** 쓴다.
-
-  소개 티켓(5,000원)은 환불 대상이 아니라서 여기 넣지 않는다. 한 화면에서
-  "환불됩니다" 와 "환불되지 않습니다" 를 같이 말하면 남는 인상은 후자다.
-*/
 const POINTS = [
   {
     n: "01",
-    title: "답이 없으면 돌려드립니다",
+    title: "소개는 한 사람씩",
+    body: "피드를 넘기지 않습니다. 비교 대신, 한 사람을 충분히 알아갈 시간을 드립니다.",
+  },
+  {
+    n: "02",
+    title: "질문에서 시작하는 프로필",
+    body: "사진과 조건을 나열하기보다, 어떤 이야기를 나누고 싶은지부터 담습니다.",
+  },
+  {
+    n: "03",
+    title: "약속까지 흐름이 이어지게",
+    body: "서로 좋다고 하면 대화가 열리고, 날짜와 장소를 함께 정합니다.",
+  },
+  {
+    n: "04",
+    title: "응답이 없으면 돌려드립니다",
     body: `만남 티켓 ${MEETING_TICKET_PRICE_LABEL}. 상대가 24시간 안에 답하지 않거나 거절하면 전액 환불됩니다.`,
   },
-  { n: "02", title: "회사 이메일로 인증된 사람만", body: "퇴근 후 만나기 좋은 거리 안에서." },
-  { n: "03", title: "한 번에 한 명만 소개", body: "고르는 피로 없이, 한 사람에 집중." },
-  { n: "04", title: "약속까지 대신 조율", body: "채팅이 열리고 날짜와 장소를 정리해 드려요." },
 ];
 
 function Landing() {
@@ -103,25 +93,17 @@ function Landing() {
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
         <section className="pt-8 pb-10">
-          {/*
-            크기를 vw 로 잡는다. Archivo Black 은 폭이 넓어서 48px 로 두면
-            "AFTER WORK" 가 356px 이 되고 375px 화면(SE·mini)의 본문 폭
-            327px 을 넘겨 세 줄로 쪼개진다 — "AFTER / WORK / MATCHING" 은
-            읽는 리듬이 깨진다.
-
-            아래·위 한계가 둘 다 필요하다. 최소값은 좁은 화면에서 한 줄을
-            지키고, 최대값은 데스크톱에서 프레임(430px)을 넘지 않게 한다 —
-            vw 는 프레임이 아니라 뷰포트를 보기 때문이다.
-          */}
-          <h1 className="display-wordmark text-[clamp(2.45rem,11.4vw,2.9rem)] uppercase">
-            After Work
+          <p className="text-2xs font-semibold tracking-[0.16em] text-primary-strong uppercase">
+            One introduction at a time
+          </p>
+          <h1 className="mt-4 text-[clamp(2.25rem,10.5vw,2.75rem)] leading-[1.08] font-bold tracking-[-0.055em]">
+            한 사람을
             <br />
-            <span className="text-primary">Matching</span>
+            <span className="text-primary-strong">제대로 만나는 방식.</span>
           </h1>
-          <p className="mt-6 text-lg leading-snug font-medium">
-            퇴근하고 만나기 좋은 거리에,
-            <br />
-            좋은 사람 한 명.
+          <p className="mt-5 text-base leading-relaxed font-medium text-foreground/85">
+            직장 인증을 마친 가까운 거리의 사람을,
+            <br />한 번에 한 사람씩 소개합니다.
           </p>
           <p className="mt-3 text-xs text-muted-foreground">
             현재 {COVERAGE_LABEL}에서 운영합니다.
@@ -168,10 +150,10 @@ function Landing() {
           */
           className="headline flex w-full items-center justify-center rounded-control bg-primary py-5 text-base text-primary-foreground transition-colors duration-300 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          직장 인증하고 시작하기
+          소개 만들기
         </button>
         <p className="mt-3 text-center text-3xs font-semibold tracking-[0.16em] uppercase text-muted-foreground">
-          회사 이메일을 확인한 뒤 시작해요.
+          회사 이메일은 재직 확인에만 사용합니다.
         </p>
         <p className="mt-2 text-center text-xs text-muted-foreground">
           이미 가입하셨나요?{" "}

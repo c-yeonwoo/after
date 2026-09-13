@@ -1,31 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="이클립스">
-  <!--
-    탭 파비콘의 원본. 탭 배경이 밝든 어둡든 형태가 유지되도록 **자두 타일 위에
-    로즈 마크**를 올린다 — 마크만 두면 어두운 탭바에서 자두가 배경에 묻힌다.
-
-    마크는 src/components/Logo.tsx 와 같은 형태(면 하나 + 열린 링 하나)지만
-    **치수와 구현이 모두 다르다.**
-
-    치수: 파비콘이 실제로 그려지는 크기는 16px 이고, 타일 안쪽 여백을 빼면 마크에
-    10px 남짓만 남는다. 그 크기에서 3.2 두께 링은 사라져서 링을 4.4 로 키우고
-    반지름을 줄여 질량을 확보했다.
-
-    구현: 컴포넌트는 mask 로 이음선을 파지만 여기서는 **자두 원을 겹쳐 그려**
-    같은 틈을 만든다. mask 를 쓴 버전을 PNG 로 뽑아 보니 링이 팔각형으로 깨졌다
-    (래스터라이저가 mask 를 낮은 해상도로 처리한다). 배경색을 아는 자산이라
-    겹쳐 그리기가 가능하고, 그 편이 어떤 변환기를 거쳐도 안전하다.
-    컴포넌트는 currentColor 라 배경을 모르므로 그쪽은 mask 가 맞다.
-
-    ⚠️ 마크를 고치면 이 파일에서 apple-touch-icon.png(180) · icon-512.png ·
-    앱스토어용 1024 를 다시 뽑는다. 뽑는 방법은 docs/brand-assets.md 참고.
-  -->
+  <!-- 탭에서도 남는 큰 초승과 얇은 궤도. src/components/Logo.tsx와 같은 방향이다. -->
   <rect width="64" height="64" rx="15" fill="#1A0F1E"/>
-  <g transform="translate(11 11) scale(1.3125)">
-    <!-- 열린 원 -->
-    <circle cx="19.8" cy="12.2" r="6.8" fill="none" stroke="#E2708A" stroke-width="4.4"/>
-    <!-- 이음선: 타일색(자두)으로 한 번 덮어 틈을 만든다 -->
-    <circle cx="12.2" cy="19.8" r="9.6" fill="#1A0F1E"/>
-    <!-- 채운 원 -->
-    <circle cx="12.2" cy="19.8" r="7.8" fill="#E2708A"/>
+  <g transform="translate(8 8) scale(1.5)">
+    <circle cx="16" cy="16" r="11.5" fill="none" stroke="#E2708A" stroke-width="1.25" opacity=".45"/>
+    <circle cx="15" cy="17" r="9.5" fill="#E2708A"/>
+    <circle cx="21.5" cy="11.5" r="9.5" fill="#1A0F1E"/>
   </g>
 </svg>
