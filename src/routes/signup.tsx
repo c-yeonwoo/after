@@ -85,7 +85,7 @@ function Onboarding() {
   const navigate = useNavigate();
   const { edit } = Route.useSearch();
   const editing = Boolean(edit);
-  const { me, ready } = useMe();
+  const { me, ready, refresh } = useMe();
   const [step, setStep] = useState(editing ? 2 : 1);
   const [gender, setGender] = useState<Gender | null>(null);
   const [hubId, setHubId] = useState<string | null>(null);
@@ -1248,6 +1248,9 @@ function Onboarding() {
               } else {
                 await track("profile_composition_saved", { source: "rule_based_fallback" });
               }
+              // 완료 직전까지 읽고 있던 me 는 프로필을 쓰기 전 값이다. 갱신하지 않으면
+              // /profile 이 소개글 없이 그려져 새로고침해야만 방금 쓴 내용이 보인다.
+              await refresh();
               toast.success("프로필이 저장되었습니다");
               navigate({ to: "/me" });
             } catch (err) {

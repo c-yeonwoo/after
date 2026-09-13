@@ -58,10 +58,6 @@ function ProfilePage() {
         </Link>
       }
     >
-      <p className="mb-4 rounded-surface bg-muted/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-        소개가 열린 상대에게는 아래 그대로 보입니다. 회사 이메일과 피드백은 공개되지 않습니다.
-      </p>
-
       <ProfileDetail p={view} />
     </AppScreen>
   );
