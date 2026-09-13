@@ -4,7 +4,6 @@ import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
-import { PreferenceCard } from "@/components/app/PreferenceCard";
 import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
@@ -12,7 +11,6 @@ import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
 import {
   homeState,
   markMet,
-  myPreferenceAnswers,
   setPaused,
   type Meeting,
   type NoShowReport,
@@ -71,8 +69,6 @@ function HomePage() {
   const [requestCount, setRequestCount] = useState(0);
   // 환불 기한 카운트다운용. 서버 시각이 권위이고 이건 표시 전용이다.
   const [now, setNow] = useState<number | null>(null);
-  /* 취향 문답. null 은 아직 못 읽은 상태 — 카드를 그리지 않는다. */
-  const [prefs, setPrefs] = useState<Map<number, number> | null>(null);
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
@@ -104,15 +100,6 @@ function HomePage() {
       setQueued(state.queued_intros);
       setIntroTickets(state.intro_tickets);
       setLoading(false);
-      /*
-        문답은 홈 상태와 따로 읽는다. 실패해도 홈은 그려져야 하므로 묶지 않는다 —
-        문답 카드가 안 뜨는 것과 홈이 안 뜨는 것은 무게가 다르다.
-      */
-      myPreferenceAnswers()
-        .then((m) => {
-          if (!cancelled) setPrefs(m);
-        })
-        .catch(() => {});
     })();
     return () => {
       cancelled = true;
@@ -258,16 +245,7 @@ function HomePage() {
               : "소개가 도착했어요. 프로필을 열면 만남으로 이어갈지 정하실 수 있습니다."}
             {introTickets === 0 ? " 열람에는 소개 티켓 1장이 필요합니다." : ""}
           </GuideNote>
-        ) : (
-          // "보통 2~3일 안에 보내드립니다"라고 약속했었다. 근거가 코드에 없다 —
-          // 이제는 운영자가 큐를 세워야 소개가 나가므로 기간을 말할 수 없다.
-          // 조건을 말한다.
-          <GuideNote introduce>
-            {isMale
-              ? "소개는 회원님을 먼저 좋다고 한 분들 중에서 골라 보내드립니다. 준비되면 바로 알려드릴게요."
-              : "지금은 평가할 분이 없습니다. 새로 가입한 분이 생기면 이어서 보여드릴게요."}
-          </GuideNote>
-        )}
+        ) : null}
       </div>
 
       {/*
@@ -288,17 +266,6 @@ function HomePage() {
               toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
             }
           }}
-        />
-      ) : null}
-
-      {/*
-        기다리는 동안 할 일. 진행 중인 만남이 있으면 그때 할 일이 따로 있으므로
-        띄우지 않는다 — 소개 받기 스위치와 같은 조건이다.
-      */}
-      {!loading && !meeting && !noShow && prefs ? (
-        <PreferenceCard
-          answered={prefs}
-          onAnswered={(id, choice) => setPrefs((prev) => new Map(prev).set(id, choice))}
         />
       ) : null}
 
