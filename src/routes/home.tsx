@@ -336,9 +336,7 @@ function ReadinessPanel({
             <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
               {paused
                 ? "새 소개가 오지 않습니다. 진행 중인 약속은 그대로입니다."
-                : isMale
-                  ? "회원님을 먼저 좋다고 한 분들 중에서 골라 보내드립니다."
-                  : "새로 가입한 분이 생기면 이어서 보여드립니다."}
+                : "소개가 준비되면 알려드릴게요."}
             </span>
           </span>
           {/*

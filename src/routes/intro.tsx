@@ -135,8 +135,7 @@ function IntroPage() {
             <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
               <p className="text-sm font-medium">아직 도착한 소개가 없습니다</p>
               <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                소개는 회원님을 먼저 좋다고 한 분들 중에서 골라 보내드립니다. 준비되면 바로
-                알려드릴게요.
+                소개가 준비되면 알려드릴게요.
               </p>
             </div>
           ) : (
