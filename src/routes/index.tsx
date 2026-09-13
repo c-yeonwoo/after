@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
-import { BRAND, COVERAGE_LABEL, MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
+import { BRAND, COVERAGE_LABEL } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 
@@ -18,29 +18,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Landing,
 });
-
-const POINTS = [
-  {
-    n: "01",
-    title: "소개는 한 사람씩",
-    body: "피드를 넘기지 않습니다. 비교 대신, 한 사람을 충분히 알아갈 시간을 드립니다.",
-  },
-  {
-    n: "02",
-    title: "질문에서 시작하는 프로필",
-    body: "사진과 조건을 나열하기보다, 어떤 이야기를 나누고 싶은지부터 담습니다.",
-  },
-  {
-    n: "03",
-    title: "약속까지 흐름이 이어지게",
-    body: "서로 좋다고 하면 대화가 열리고, 날짜와 장소를 함께 정합니다.",
-  },
-  {
-    n: "04",
-    title: "응답이 없으면 돌려드립니다",
-    body: `만남 티켓 ${MEETING_TICKET_PRICE_LABEL}. 상대가 24시간 안에 답하지 않거나 거절하면 전액 환불됩니다.`,
-  },
-];
 
 function Landing() {
   const navigate = useNavigate();
@@ -91,43 +68,23 @@ function Landing() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
-        <section className="pt-8 pb-10">
+      <main className="min-h-0 flex flex-1 items-center px-6">
+        <section className="w-full pb-8">
           <p className="text-2xs font-semibold tracking-[0.16em] text-primary-strong uppercase">
             One introduction at a time
           </p>
           <h1 className="mt-4 text-[clamp(2.25rem,10.5vw,2.75rem)] leading-[1.08] font-bold tracking-[-0.055em]">
             한 사람을
             <br />
-            <span className="text-primary-strong">제대로 만나는 방식.</span>
+            <span className="text-primary-strong">제대로 만나세요.</span>
           </h1>
           <p className="mt-5 text-base leading-relaxed font-medium text-foreground/85">
-            직장 인증을 마친 가까운 거리의 사람을,
-            <br />한 번에 한 사람씩 소개합니다.
+            피드를 넘기지 않고, 한 사람과의 소개를 시작합니다.
           </p>
           <p className="mt-3 text-xs text-muted-foreground">
             현재 {COVERAGE_LABEL}에서 운영합니다.
           </p>
         </section>
-
-        <section className="border-t border-border/70" aria-label="서비스 소개">
-          {POINTS.map((p) => (
-            <div key={p.n} className="flex gap-4 border-b border-border/70 py-5">
-              <span className="mt-0.5 text-2xs font-semibold tracking-[0.14em] text-primary">
-                {p.n}
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-base font-semibold">{p.title}</h2>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <p className="mt-7 text-2xs leading-relaxed text-muted-foreground">
-          {BRAND.name} · 현재 {COVERAGE_LABEL} 운영 · 그룹 미팅·권역을 넘는 매칭은 제공하지
-          않습니다.
-        </p>
       </main>
 
       <div
@@ -154,12 +111,6 @@ function Landing() {
         </button>
         <p className="mt-3 text-center text-3xs font-semibold tracking-[0.16em] uppercase text-muted-foreground">
           회사 이메일은 재직 확인에만 사용합니다.
-        </p>
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          이미 가입하셨나요?{" "}
-          <Link to="/login" className="font-semibold text-primary-strong underline">
-            로그인
-          </Link>
         </p>
       </div>
 
