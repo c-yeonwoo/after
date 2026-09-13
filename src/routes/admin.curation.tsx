@@ -18,8 +18,10 @@ import {
   fetchQueue,
   setQueue,
   fetchPreferenceCompare,
+  composePairBrief,
   type CurationTarget,
   type LikePoolItem,
+  type PairBrief,
   type PreferenceCompareRow,
   type QueueCard,
 } from "@/lib/admin";
@@ -419,6 +421,10 @@ function Workbench({
                 maleId={maleId}
                 femaleId={"female_id" in preview ? preview.female_id : preview.id}
               />
+              <PairBriefCard
+                maleId={maleId}
+                femaleId={"female_id" in preview ? preview.female_id : preview.id}
+              />
             </div>
           </div>
         ) : (
@@ -428,6 +434,88 @@ function Workbench({
         )}
       </aside>
     </div>
+  );
+}
+
+/**
+ * 큐레이션 판단을 대신하지 않는 읽기 보조물.
+ *
+ * 버튼을 누를 때만 만든다. 카드를 훑을 때마다 모델을 부르면 비용만 생기고,
+ * 정작 큐레이터가 원 프로필을 읽는 과정도 흐려진다.
+ */
+function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string }) {
+  const [brief, setBrief] = useState<PairBrief | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setBrief(null);
+    setBusy(false);
+  }, [maleId, femaleId]);
+
+  return (
+    <section className="mt-6 border-t border-border pt-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h3 className="text-xs font-semibold">페어 브리프</h3>
+          <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
+            프로필과 취향 문답을 다시 읽기 위한 메모입니다. 소개 순서나 결정을 자동으로 바꾸지
+            않습니다.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            composePairBrief(maleId, femaleId)
+              .then(setBrief)
+              .catch(() =>
+                toast.error("브리프를 만들지 못했습니다. 프로필과 문답으로 계속 판단해 주세요."),
+              )
+              .finally(() => setBusy(false));
+          }}
+        >
+          {busy ? "만드는 중…" : brief ? "다시 만들기" : "브리프 만들기"}
+        </Button>
+      </div>
+
+      {brief ? (
+        <div className="mt-3 space-y-4 rounded-surface border border-border bg-muted/30 p-3 text-xs leading-relaxed">
+          {brief.commonGround.length ? (
+            <div>
+              <p className="font-semibold text-foreground">함께 볼 만한 점</p>
+              <ul className="mt-1.5 space-y-2">
+                {brief.commonGround.map((item, index) => (
+                  <li key={`${item.insight}-${index}`}>
+                    <p className="text-foreground">{item.insight}</p>
+                    <p className="mt-0.5 text-muted-foreground">근거 · {item.basis}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div>
+            <p className="font-semibold text-foreground">대화 출발점</p>
+            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-muted-foreground">
+              {brief.conversationStarters.map((item, index) => (
+                <li key={`${item}-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          {brief.considerations.length ? (
+            <div>
+              <p className="font-semibold text-foreground">직접 확인할 점</p>
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-muted-foreground">
+                {brief.considerations.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   );
 }
 

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/database.types";
+import { track } from "@/lib/api";
 
 /**
  * 운영자 전용 호출.
@@ -239,6 +240,36 @@ export async function fetchPreferenceCompare(
   });
   if (error) throw error;
   return data ?? [];
+}
+
+/**
+ * 큐레이터 보조 브리프. 자동 소개·점수·순위와 분리한다.
+ *
+ * Edge Function이 현재 호감 관계를 다시 확인하고, 이름·나이·사진·회사 이메일은
+ * 보내지 않은 채 공개 프로필 재료와 취향 문답만 요약한다.
+ */
+export type PairBrief = {
+  commonGround: { insight: string; basis: string }[];
+  conversationStarters: string[];
+  considerations: string[];
+  meta?: { model: string; inputTokens: number; outputTokens: number };
+};
+
+export async function composePairBrief(maleId: string, femaleId: string): Promise<PairBrief> {
+  const startedAt = performance.now();
+  const { data, error } = await supabase.functions.invoke<PairBrief>("compose-pair-brief", {
+    body: { maleId, femaleId },
+  });
+  if (error || !data?.conversationStarters?.length)
+    throw error ?? new Error("브리프를 만들지 못했습니다.");
+
+  void track("pair_brief_generated", {
+    duration_ms: Math.round(performance.now() - startedAt),
+    model: data.meta?.model ?? "unknown",
+    input_tokens: data.meta?.inputTokens ?? null,
+    output_tokens: data.meta?.outputTokens ?? null,
+  });
+  return data;
 }
 
 /** 작업 대상(남성) 목록. 큐가 빈 사람부터, 그중 오래 기다린 순. */

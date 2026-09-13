@@ -41,6 +41,7 @@ import {
   recordConsent,
   saveOnboardingStep,
   setPassword,
+  track,
   verifyEmailCode,
   type ComposedProfile,
 } from "@/lib/api";
@@ -223,9 +224,22 @@ function Onboarding() {
 
     let cancelled = false;
     setComposing(true);
+    const startedAt = performance.now();
     composeProfile(payload)
       .then((result) => {
-        if (cancelled || !result) return;
+        if (cancelled) return;
+        const durationMs = Math.round(performance.now() - startedAt);
+        if (!result) {
+          // 실패 원문이나 답변은 남기지 않는다. 운영자는 성공률과 지연만 본다.
+          void track("profile_composition_fallback", { duration_ms: durationMs });
+          return;
+        }
+        void track("profile_composition_generated", {
+          duration_ms: durationMs,
+          model: result.meta?.model ?? "unknown",
+          input_tokens: result.meta?.inputTokens ?? null,
+          output_tokens: result.meta?.outputTokens ?? null,
+        });
         setComposed(result);
         /*
           사용자가 이미 손댄 소개글은 건드리지 않는다. 아직 규칙 기반 초안
@@ -1200,6 +1214,17 @@ function Onboarding() {
             setSaving(true);
             try {
               await completeOnboarding(userId, basics, profile, intro.trim());
+              if (composed) {
+                const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+                await track("profile_composition_saved", {
+                  headline: composed.headlines.includes(profile.headline.trim())
+                    ? "candidate"
+                    : "edited_or_custom",
+                  intro: normalize(intro) === normalize(composed.intro) ? "kept" : "edited",
+                });
+              } else {
+                await track("profile_composition_saved", { source: "rule_based_fallback" });
+              }
               toast.success("프로필이 저장되었습니다");
               navigate({ to: "/me" });
             } catch (err) {

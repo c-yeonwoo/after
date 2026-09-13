@@ -663,7 +663,12 @@ export async function myStats(): Promise<MyStats | null> {
  * 이미 손에 들고 있고, 문장이 더 좋아지지 않았다고 가입을 막을 이유가 없습니다.
  * 모델이 거절했든, 시간이 초과됐든, 키가 없든 화면은 같게 동작합니다.
  */
-export type ComposedProfile = { headlines: string[]; intro: string };
+export type ComposedProfile = {
+  headlines: string[];
+  intro: string;
+  /** 가입자 답변·생성 문장 자체는 남기지 않는 최소 운영 계측값. */
+  meta?: { model: string; inputTokens: number; outputTokens: number };
+};
 
 export async function composeProfile(input: {
   job?: string | null;
