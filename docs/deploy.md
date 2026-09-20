@@ -162,6 +162,7 @@ SSR 이 안 돌아가고, 랜딩의 SEO 를 잃는다(랜딩은 로그인 전 �
 - 정적 자산 200, `_headers` 의 `immutable` 캐시 규칙이 적용된다
 - `ASSETS` 바인딩 정상
 
-실제 Worker와 커스텀 도메인은 연결돼 있습니다. 운영 URL의 버전은
-`npm run verify:deploy -- <git-sha>`로 확인합니다. GitHub 자동 배포는 위 production
-environment 값과 활성화 변수가 설정돼야 켜집니다.
+실제 Worker와 커스텀 도메인은 연결돼 있습니다. 현재 체크아웃의 커밋과 운영 URL의
+버전은 `npm run verify:deploy`로 비교합니다. 다른 주소를 확인할 때만
+`npm run verify:deploy -- https://주소`를 사용합니다. GitHub 자동 배포는 위
+production environment 값과 활성화 변수가 설정돼야 켜집니다.
