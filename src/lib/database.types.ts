@@ -918,6 +918,7 @@ export type Database = {
         Row: {
           attempts: number
           created_at: string
+          event_id: string | null
           id: string
           kind: Database["public"]["Enums"]["notification_kind"]
           last_error: string | null
@@ -929,6 +930,7 @@ export type Database = {
         Insert: {
           attempts?: number
           created_at?: string
+          event_id?: string | null
           id?: string
           kind: Database["public"]["Enums"]["notification_kind"]
           last_error?: string | null
@@ -940,6 +942,7 @@ export type Database = {
         Update: {
           attempts?: number
           created_at?: string
+          event_id?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["notification_kind"]
           last_error?: string | null
@@ -1045,6 +1048,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
+          notification_email?: string | null
+          notification_email_verified_at?: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -1083,6 +1088,8 @@ export type Database = {
           match_tags?: string[]
           mbti?: string | null
           name?: string | null
+          notification_email?: string | null
+          notification_email_verified_at?: string | null
           onboarding_step?: number
           paused_at?: string | null
           photo_reject_reason?: string | null
@@ -1121,6 +1128,8 @@ export type Database = {
           match_tags?: string[]
           mbti?: string | null
           name?: string | null
+          notification_email?: string | null
+          notification_email_verified_at?: string | null
           onboarding_step?: number
           paused_at?: string | null
           photo_reject_reason?: string | null
@@ -2174,6 +2183,7 @@ export type Database = {
         Returns: string
       }
       promote_intro_queue: { Args: { p_male: string }; Returns: number }
+      request_notification_email: { Args: { p_email: string }; Returns: string }
       record_consent: {
         Args: { p_policy_version: string }
         Returns: {
@@ -2335,6 +2345,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      verify_notification_email: { Args: { p_code: string }; Returns: boolean }
       set_paused: {
         Args: { p_on: boolean }
         Returns: {
@@ -2524,6 +2535,10 @@ export type Database = {
         | "prefs_submitted"
         | "meeting_confirmed"
         | "feedback_due"
+        | "notification_email_verify"
+        | "intro_delivered"
+        | "candidates_refilled"
+        | "no_show_response_required"
       photo_state: "pending" | "approved" | "rejected"
       report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
@@ -2676,6 +2691,10 @@ export const Constants = {
         "prefs_submitted",
         "meeting_confirmed",
         "feedback_due",
+        "notification_email_verify",
+        "intro_delivered",
+        "candidates_refilled",
+        "no_show_response_required",
       ],
       photo_state: ["pending", "approved", "rejected"],
       report_kind: ["profile", "message"],

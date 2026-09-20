@@ -56,6 +56,7 @@ function TicketPage() {
   }, []);
 
   const waiting = Boolean(meeting) && !meeting?.prefs_submitted_at;
+  const readyToSchedule = Boolean(meeting?.prefs_submitted_at) && !meeting?.confirmed_at;
 
   if (loading) {
     return (
@@ -68,15 +69,14 @@ function TicketPage() {
   return (
     <AppScreen title="만남 티켓" hideTabs back="/intro">
       <div className="mt-3">
-        {/*
-          지불 직전이다. 가장 강한 근거를 맨 앞에 세운다 — 이 사람은 이미
-          회원님을 골랐고(open_intro 불변식 1), 답이 없으면 돈은 돌아온다.
-          예전엔 절차 설명("가능한 날과 취향을 먼저 여쭤봅니다")만 있었다.
-        */}
         <GuideNote introduce>
           {waiting
-            ? "선호를 여쭤보았습니다. 답이 오면 대화를 열어드리겠습니다."
-            : "이분은 이미 회원님을 좋다고 하셨어요. 티켓을 쓰시면 제가 가능한 날을 여쭤봅니다."}
+            ? "가능한 날을 여쭤보았습니다. 답이 오면 알려드릴게요."
+            : readyToSchedule
+              ? "가능한 날짜가 도착했습니다. 하나를 정하면 대화가 열립니다."
+              : meeting?.confirmed_at
+                ? "약속이 확정되었습니다. 대화에서 세부 내용을 나눠 보세요."
+                : "티켓을 쓰시면 제가 가능한 날을 여쭤보고 전달해 드립니다."}
         </GuideNote>
       </div>
 
@@ -89,15 +89,13 @@ function TicketPage() {
               {MEETING_TICKET_PRICE_LABEL}
             </p>
           </div>
-          <p className="mt-1 text-xs text-primary-foreground/85">
-            이미 회원님을 고른 한 사람과의 만남 한 번.
-          </p>
+          <p className="mt-1 text-xs text-primary-foreground/85">한 사람과의 만남을 조율합니다.</p>
         </div>
         <ul className="space-y-2.5 px-6 py-5 text-sm">
           {[
             "답이 없으면 24시간 뒤 전액 돌려드립니다",
-            "상대가 답하면 대화가 열립니다",
-            "장소와 시간은 두 분이 정합니다",
+            "가능한 날짜를 받아 한 번에 고릅니다",
+            "약속을 확정하면 대화가 열립니다",
           ].map((t) => (
             <li key={t} className="flex gap-2.5 text-foreground">
               <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -111,9 +109,18 @@ function TicketPage() {
         <div className="mt-7 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
           <p className="text-sm font-medium">답변을 기다리는 중입니다</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            답이 도착하면 대화방이 열립니다. 24시간 안에 응답이 없으면 티켓은 자동으로 환불됩니다.
+            답이 도착하면 날짜를 고를 수 있습니다. 24시간 안에 응답이 없으면 티켓은 자동으로
+            환불됩니다.
           </p>
         </div>
+      ) : readyToSchedule && meeting ? (
+        <Button
+          className="mt-7 w-full"
+          size="lg"
+          onClick={() => navigate({ to: "/schedule", search: { meetingId: meeting.id } })}
+        >
+          날짜 고르기
+        </Button>
       ) : meeting ? (
         <Button className="mt-7 w-full" size="lg" onClick={() => navigate({ to: "/chats" })}>
           대화방으로 이동

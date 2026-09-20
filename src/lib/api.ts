@@ -848,6 +848,32 @@ export async function setFeedbackEmails(on: boolean): Promise<void> {
   if (error) throw error;
 }
 
+/** 회사 인증 메일과 분리된 개인 알림 메일로 확인 코드를 보낸다. */
+export async function requestNotificationEmail(email: string): Promise<string> {
+  const { data, error } = await supabase.rpc("request_notification_email", {
+    p_email: email.trim().toLowerCase(),
+  });
+  if (error) {
+    if (error.message.includes("too recently")) {
+      throw new Error("코드를 보낸 지 얼마 되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+    }
+    if (error.message.includes("invalid email")) {
+      throw new Error("이메일 주소를 다시 확인해 주세요.");
+    }
+    throw error;
+  }
+  return data;
+}
+
+/** 개인 알림 메일에 도착한 6자리 코드를 확인한다. */
+export async function verifyNotificationEmail(code: string): Promise<void> {
+  const { data, error } = await supabase.rpc("verify_notification_email", {
+    p_code: code.trim(),
+  });
+  if (error) throw error;
+  if (!data) throw new Error("코드가 맞지 않거나 만료되었습니다. 새 코드를 받아 주세요.");
+}
+
 /** 아직 처리되지 않은 내 주문. 있으면 "접수됨" 상태로 보여준다. */
 export async function myPendingTicketOrder(kind?: TicketKind): Promise<TicketOrder | null> {
   let q = supabase.from("ticket_orders").select("*").eq("state", "pending");
@@ -1090,7 +1116,7 @@ export async function sendMessage(
 /** 채널이 지금 실제로 열려 있는지. 낙관적 UI 판단용 — 최종 판정은 항상 INSERT 실패 여부다. */
 export function isChannelOpenNow(meeting: Meeting, channel: MsgChannel): boolean {
   if (meeting.cancelled_at) return false;
-  if (channel === "coord") return meeting.prefs_submitted_at != null;
+  if (channel === "coord") return meeting.confirmed_at != null;
   return (
     meeting.private_opens_at != null && new Date(meeting.private_opens_at).getTime() <= Date.now()
   );

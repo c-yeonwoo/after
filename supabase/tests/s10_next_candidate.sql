@@ -21,10 +21,11 @@ select ('d0000000-0000-0000-0000-' || lpad(i::text,12,'0'))::uuid,
 insert into profiles (id, gender, hub_id, company_email, email_verified_at, name, birth, job,
                       onboarding_step, terms_agreed_at, privacy_agreed_at, created_at)
 values
-  ('d0000000-0000-0000-0000-000000000001','female','gangnam','nc1@t.co',now(),'디여','1995-03-14','디자이너',7,now(),now(), now() - interval '10 day'),
-  ('d0000000-0000-0000-0000-000000000002','male',  'gangnam','nc2@t.co',now(),'디남1','1992-06-21','엔지니어',7,now(),now(), now() - interval '9 day'),
-  ('d0000000-0000-0000-0000-000000000003','male',  'gangnam','nc3@t.co',now(),'디남2','1993-01-05','기획자',  7,now(),now(), now() - interval '8 day'),
-  ('d0000000-0000-0000-0000-000000000004','male',  'gangnam','nc4@t.co',now(),'디남3','1994-02-02','마케터',  4,now(),now(), now() - interval '7 day');
+  -- 기본 seed 가 쓰는 강남과 분리해 순서 단언이 로컬 테스트 데이터에 흔들리지 않게 한다.
+  ('d0000000-0000-0000-0000-000000000001','female','pangyo','nc1@t.co',now(),'디여','1995-03-14','디자이너',7,now(),now(), now() - interval '10 day'),
+  ('d0000000-0000-0000-0000-000000000002','male',  'pangyo','nc2@t.co',now(),'디남1','1992-06-21','엔지니어',7,now(),now(), now() - interval '9 day'),
+  ('d0000000-0000-0000-0000-000000000003','male',  'pangyo','nc3@t.co',now(),'디남2','1993-01-05','기획자',  7,now(),now(), now() - interval '8 day'),
+  ('d0000000-0000-0000-0000-000000000004','male',  'pangyo','nc4@t.co',now(),'디남3','1994-02-02','마케터',  4,now(),now(), now() - interval '7 day');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"d0000000-0000-0000-0000-000000000001","role":"authenticated"}';
@@ -79,7 +80,7 @@ select is(
 insert into affinities (from_id, to_id, verdict)
 values ('d0000000-0000-0000-0000-000000000001','d0000000-0000-0000-0000-000000000003','like');
 
--- 시드 남성도 같은 권역이라 후보로 남는다. 픽스처 두 명이 빠졌는지만 본다.
+-- 픽스처 두 명이 빠졌는지 본다.
 select is(
   (select count(*)::int from next_candidate()
     where id in ('d0000000-0000-0000-0000-000000000002',

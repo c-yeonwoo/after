@@ -3,6 +3,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
+import { execFileSync } from "node:child_process";
 
 /**
  * 빌드 타깃이 둘이다.
@@ -37,12 +38,27 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
     Nitro 빌드에는 자동으로 닿지 않는다. 이게 없으면 `VITE_SUPABASE_URL 가 설정되지
     않았습니다`(src/lib/supabase.ts)로 런타임에 죽는다.
   */
-  const envDefine = Object.fromEntries(
+  const envDefine: Record<string, string> = Object.fromEntries(
     Object.entries(loadEnv(mode, process.cwd(), "VITE_")).map(([key, value]) => [
       `import.meta.env.${key}`,
       JSON.stringify(value),
     ]),
   );
+
+  // 실제 배포물이 어느 커밋에서 만들어졌는지 HTML과 설정 화면에 남긴다.
+  // 자동 배포가 끊겨도 운영 URL의 버전과 origin/main 을 기계적으로 비교할 수 있다.
+  let appVersion =
+    process.env.GITHUB_SHA?.slice(0, 12) ?? process.env.CF_PAGES_COMMIT_SHA?.slice(0, 12);
+  if (!appVersion) {
+    try {
+      appVersion = execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+        encoding: "utf8",
+      }).trim();
+    } catch {
+      appVersion = "unknown";
+    }
+  }
+  envDefine["import.meta.env.VITE_APP_VERSION"] = JSON.stringify(appVersion);
 
   const plugins: PluginOption[] = [
     tailwindcss(),

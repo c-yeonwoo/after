@@ -9,7 +9,14 @@
 //     회사 메일함에 남고, 우리는 그 메일함을 통제하지 못한다.
 
 export type NotificationKind =
-  "meeting_requested" | "prefs_submitted" | "meeting_confirmed" | "feedback_due";
+  | "meeting_requested"
+  | "prefs_submitted"
+  | "meeting_confirmed"
+  | "feedback_due"
+  | "notification_email_verify"
+  | "intro_delivered"
+  | "candidates_refilled"
+  | "no_show_response_required";
 
 export type MailContext = {
   /** 받는 사람 이름 */
@@ -18,6 +25,8 @@ export type MailContext = {
   counterpart: string | null;
   /** 앱 진입 경로 (절대 URL) */
   url: string;
+  /** 개인 알림 메일 확인용 6자리 코드 */
+  verificationCode?: string | null;
 };
 
 export type RenderedMail = { subject: string; text: string };
@@ -39,6 +48,59 @@ export function renderNotification(kind: NotificationKind, ctx: MailContext): Re
   const who = ctx.counterpart ?? "상대";
 
   switch (kind) {
+    case "notification_email_verify":
+      return {
+        subject: `알림 받을 이메일을 확인해 주세요 — ${BRAND}`,
+        text: [
+          greet(ctx.name),
+          "",
+          "이 주소로 소개와 약속 진행 알림을 받으시려면 아래 코드를 입력해 주세요.",
+          "",
+          ctx.verificationCode ?? "코드를 다시 요청해 주세요.",
+          "",
+          "코드는 15분 동안 유효합니다.",
+        ].join("\n"),
+      };
+
+    case "intro_delivered":
+      return {
+        subject: `새 소개가 도착했어요 — ${BRAND}`,
+        text: [
+          greet(ctx.name),
+          "",
+          "차분히 살펴볼 한 분의 소개가 도착했습니다.",
+          "준비되셨을 때 열어 보세요.",
+          "",
+          ctx.url,
+        ].join("\n"),
+      };
+
+    case "candidates_refilled":
+      return {
+        subject: `새로 살펴볼 프로필이 있어요 — ${BRAND}`,
+        text: [
+          greet(ctx.name),
+          "",
+          "같은 생활권에 새 프로필이 준비되었습니다.",
+          "한 분씩 천천히 확인하실 수 있어요.",
+          "",
+          ctx.url,
+        ].join("\n"),
+      };
+
+    case "no_show_response_required":
+      return {
+        subject: `약속 불참 신고에 답변해 주세요 — ${BRAND}`,
+        text: [
+          greet(ctx.name),
+          "",
+          "약속 불참 신고가 접수되었습니다.",
+          "사실과 다르다면 24시간 안에 앱에서 답변해 주세요.",
+          "",
+          ctx.url,
+        ].join("\n"),
+      };
+
     case "meeting_requested":
       return {
         subject: `${who}님이 만나고 싶다고 하셨어요 — ${BRAND}`,
@@ -100,6 +162,13 @@ export function renderNotification(kind: NotificationKind, ctx: MailContext): Re
 /** 알림 종류별 착지 경로. 메일을 열고 한 번 눌러 끝나는 곳으로 보낸다. */
 export function pathFor(kind: NotificationKind, meetingId: string | null): string {
   switch (kind) {
+    case "notification_email_verify":
+      return "/settings";
+    case "intro_delivered":
+    case "candidates_refilled":
+      return "/intro";
+    case "no_show_response_required":
+      return "/home";
     case "meeting_requested":
       return "/requests";
     case "prefs_submitted":

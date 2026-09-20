@@ -165,6 +165,16 @@ function HomePage() {
         {headline}
       </h1>
 
+      {me && !me.notification_email_verified_at ? (
+        <Link
+          to="/settings"
+          className="mt-4 flex min-h-11 items-center justify-between rounded-control border border-border bg-card px-4 text-xs font-medium text-foreground"
+        >
+          <span>소개 알림 받을 이메일 설정</span>
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      ) : null}
+
       {noShow ? (
         <div className="mt-5">
           <NoShowPrompt report={noShow} onResolved={() => setNoShow(null)} />

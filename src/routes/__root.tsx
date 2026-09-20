@@ -18,6 +18,7 @@ import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 import { MeProvider } from "@/lib/me";
 import { watchKeyboard } from "@/lib/keyboard";
 import { hideSplash } from "@/lib/native";
+import { APP_VERSION } from "@/lib/version";
 
 function NotFoundComponent() {
   return (
@@ -93,6 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",
       },
       { property: "og:site_name", content: "Eclipse" },
+      { name: "app-version", content: APP_VERSION },
 
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

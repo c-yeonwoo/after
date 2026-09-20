@@ -42,7 +42,18 @@ type PendingRow = {
   kind: NotificationKind;
   meeting_id: string | null;
   attempts: number;
-  payload: { counterpart_id?: string } | null;
+  payload: {
+    counterpart_id?: string;
+    email?: string;
+    verification_code?: string;
+  } | null;
+};
+
+type Person = {
+  id: string;
+  name: string | null;
+  notification_email: string | null;
+  notification_email_verified_at: string | null;
 };
 
 Deno.serve(async (req) => {
@@ -88,11 +99,11 @@ Deno.serve(async (req) => {
   }
   const { data: people, error: peopleErr } = await db
     .from("profiles")
-    .select("id, name, company_email")
+    .select("id, name, notification_email, notification_email_verified_at")
     .in("id", [...ids]);
   if (peopleErr) return json({ error: peopleErr.message }, 500);
 
-  const byId = new Map((people ?? []).map((p) => [p.id, p]));
+  const byId = new Map((people as Person[] | null | undefined)?.map((p) => [p.id, p]) ?? []);
 
   // feedback_due 는 payload 에 상대가 없다(cron 이 만든다) — 만남에서 역산한다.
   const meetingIds = [
@@ -118,11 +129,19 @@ Deno.serve(async (req) => {
 
   for (const row of rows) {
     const to = byId.get(row.user_id);
-    if (!to?.company_email) {
-      // 받을 주소가 없으면 재시도해도 달라지지 않는다. 사유를 남기고 소진시킨다.
+    const destination =
+      row.kind === "notification_email_verify"
+        ? row.payload?.email
+        : to?.notification_email_verified_at
+          ? to.notification_email
+          : null;
+
+    if (!destination) {
+      // 회사 인증 메일로 대신 보내지 않는다. 개인 메일을 확인하면
+      // verify_notification_email() 이 이 행을 다시 시도 가능한 상태로 되돌린다.
       await db
         .from("notifications")
-        .update({ attempts: MAX_ATTEMPTS, last_error: "recipient email missing" })
+        .update({ attempts: MAX_ATTEMPTS, last_error: "verified notification email missing" })
         .eq("id", row.id);
       skipped++;
       continue;
@@ -136,16 +155,22 @@ Deno.serve(async (req) => {
     const counterpartName = counterpartId ? (byId.get(counterpartId)?.name ?? null) : null;
 
     const mail = renderNotification(row.kind, {
-      name: to.name ?? null,
+      name: to?.name ?? null,
       counterpart: counterpartName,
       url: `${APP_URL}${pathFor(row.kind, row.meeting_id)}`,
+      verificationCode: row.payload?.verification_code ?? null,
     });
 
     try {
-      await send({ to: to.company_email, subject: mail.subject, text: mail.text });
+      await send({ to: destination, subject: mail.subject, text: mail.text });
       await db
         .from("notifications")
-        .update({ sent_at: new Date().toISOString(), last_error: null })
+        .update({
+          sent_at: new Date().toISOString(),
+          last_error: null,
+          // 확인 코드는 발송 뒤 아웃박스에 평문으로 남겨 두지 않는다.
+          ...(row.kind === "notification_email_verify" ? { payload: {} } : {}),
+        })
         .eq("id", row.id);
       sent++;
     } catch (err) {

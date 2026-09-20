@@ -63,7 +63,7 @@ function ChatsPage() {
         <div className="mt-16 rounded-surface border-2 border-dashed border-foreground/20 px-6 py-12 text-center">
           <p className="headline text-base">아직 열린 대화가 없습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            가능한 날짜를 주고받으면 이곳에서 대화가 열립니다.
+            날짜와 장소가 확정되면 이곳에서 대화가 열립니다.
           </p>
         </div>
       </AppScreen>

@@ -22,16 +22,19 @@ import {
   linkedProviders,
   linkKakao,
   PASSWORD_MIN_LENGTH,
+  requestNotificationEmail,
   setFeedbackEmails,
   setPassword,
   setPaused,
   unlinkKakao,
+  verifyNotificationEmail,
   withdrawAccount,
 } from "@/lib/api";
 import { consumeAuthCode, isNative, NATIVE_REDIRECT, openAuthUrl } from "@/lib/native";
 import { useMe } from "@/lib/me";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { APP_VERSION } from "@/lib/version";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -56,12 +59,21 @@ function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [pw, setPw] = useState("");
+  const [notificationEmail, setNotificationEmail] = useState(me?.notification_email ?? "");
+  const [notificationCode, setNotificationCode] = useState("");
+  const [notificationCodeSent, setNotificationCodeSent] = useState(false);
   /** 이 계정에 붙어 있는 로그인 수단. null 이면 아직 못 읽었다. */
   const [providers, setProviders] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
+
+  useEffect(() => {
+    if (me?.notification_email && !notificationCodeSent) {
+      setNotificationEmail(me.notification_email);
+    }
+  }, [me?.notification_email, notificationCodeSent]);
 
   const refreshProviders = useCallback(async () => {
     try {
@@ -148,8 +160,89 @@ function SettingsPage() {
       <section className="mt-9">
         <h2 className="text-sm font-semibold">알림</h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          가입할 때 인증한 회사 메일로 보냅니다.
+          회사 인증 메일에는 소개 내용을 보내지 않습니다. 개인 메일을 한 번 확인해 주세요.
         </p>
+
+        <div className="mt-4 rounded-surface border border-border bg-card p-5">
+          <label htmlFor="notification-email" className="text-sm font-medium">
+            알림 받을 이메일
+          </label>
+          {me.notification_email_verified_at ? (
+            <p className="mt-1 text-xs text-muted-foreground">{me.notification_email} · 확인됨</p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              소개와 약속 진행 알림을 받을 주소입니다.
+            </p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <Input
+              id="notification-email"
+              type="email"
+              autoComplete="email"
+              placeholder="name@example.com"
+              value={notificationEmail}
+              disabled={busy}
+              onChange={(e) => setNotificationEmail(e.target.value)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              disabled={busy || !notificationEmail.includes("@")}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await requestNotificationEmail(notificationEmail);
+                  setNotificationCodeSent(true);
+                  setNotificationCode("");
+                  toast.success("확인 코드를 보냈습니다.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "코드를 보내지 못했습니다.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {me.notification_email_verified_at ? "변경" : "코드 받기"}
+            </Button>
+          </div>
+
+          {notificationCodeSent ? (
+            <div className="mt-3 flex gap-2">
+              <Input
+                aria-label="이메일 확인 코드"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="6자리 코드"
+                value={notificationCode}
+                disabled={busy}
+                onChange={(e) => setNotificationCode(e.target.value.replace(/\D/g, ""))}
+              />
+              <Button
+                type="button"
+                className="shrink-0"
+                disabled={busy || notificationCode.length !== 6}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await verifyNotificationEmail(notificationCode);
+                    await refresh();
+                    setNotificationCodeSent(false);
+                    setNotificationCode("");
+                    toast.success("알림 받을 이메일을 확인했습니다.");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "코드를 확인하지 못했습니다.");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                확인
+              </Button>
+            </div>
+          ) : null}
+        </div>
 
         <label className="mt-4 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
           <input
@@ -186,9 +279,8 @@ function SettingsPage() {
         <div className="mt-3 rounded-surface border border-dashed border-border px-5 py-4">
           <p className="text-sm font-medium">만남 진행 알림</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            요청 도착 · 답변 도착 · 만남 확정은 끌 수 없습니다. 요청을 못 보시면 24시간 뒤 상대의
-            티켓이 자동 환불되기 때문입니다. 당분간 소개를 받지 않으시려면 아래 잠시 쉬기를 켜
-            주세요.
+            소개 도착 · 요청 · 답변 · 만남 확정은 끌 수 없습니다. 당분간 소개를 받지 않으시려면 아래
+            잠시 쉬기를 켜 주세요.
           </p>
         </div>
       </section>
@@ -373,6 +465,8 @@ function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <p className="mt-8 text-center text-3xs text-muted-foreground">버전 {APP_VERSION}</p>
     </AppScreen>
   );
 }

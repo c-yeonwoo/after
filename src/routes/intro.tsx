@@ -318,20 +318,12 @@ function IntroPage() {
       }
     >
       <div className="mb-4">
-        {/*
-          남성에게는 "이분이 먼저 골랐다"를 명시한다.
-          open_intro() 의 불변식 1 이 이걸 보장한다 — 남성은 자신에게 like 를 준
-          여성만 볼 수 있고, 없으면 P0002 로 아예 열리지 않는다. 그런데 이 사실이
-          UI 어디에도 없었다. 3만원을 정당화하는 가장 강한 근거인데 화면은
-          "오늘 소개할 한 분입니다"라고만 말했다.
-          여성에게는 성립하지 않는 문장이므로(평가 큐다) 갈라 쓴다.
-        */}
         <GuideNote>
           {maleAnswered
             ? "답을 받았습니다. 다음 단계는 제가 안내하겠습니다."
             : isMale
-              ? "이분이 먼저 회원님을 좋다고 하셨어요. 편하게 읽고 답해 주세요."
-              : "오늘 평가할 한 분입니다. 편하게 읽고 답해 주세요."}
+              ? "오늘 소개할 한 분입니다. 편하게 읽어 보세요."
+              : "오늘 살펴볼 한 분입니다. 편하게 읽고 답해 주세요."}
         </GuideNote>
       </div>
 
@@ -340,21 +332,35 @@ function IntroPage() {
       {maleAnswered ? (
         <div className="mt-8 rounded-xl border border-border bg-card px-4 py-4 text-sm">
           <p className="font-semibold text-foreground">
-            {meeting?.prefs_submitted_at ? "대화가 열렸습니다" : "상대의 답변을 기다리는 중입니다"}
+            {meeting?.confirmed_at
+              ? "대화가 열렸습니다"
+              : meeting?.prefs_submitted_at
+                ? "날짜를 고르면 대화가 열립니다"
+                : "상대의 답변을 기다리는 중입니다"}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {meeting?.prefs_submitted_at
-              ? "날짜와 장소만 정하면 됩니다."
-              : "가능한 날과 취향을 여쭤봤어요. 답이 오면 대화가 열립니다."}
+            {meeting?.confirmed_at
+              ? "정해진 약속을 확인하고 이야기를 이어가세요."
+              : meeting?.prefs_submitted_at
+                ? "가능한 날짜를 받았습니다. 하나를 확정해 주세요."
+                : "가능한 날과 취향을 여쭤봤어요. 답이 오면 알려드릴게요."}
           </p>
           <Button
             className="mt-4 w-full"
             size="lg"
             onClick={() =>
-              meeting?.prefs_submitted_at ? navigate({ to: "/chats" }) : navigate({ to: "/ticket" })
+              meeting?.confirmed_at
+                ? navigate({ to: "/chats" })
+                : meeting?.prefs_submitted_at
+                  ? navigate({ to: "/schedule", search: { meetingId: meeting.id } })
+                  : navigate({ to: "/ticket" })
             }
           >
-            {meeting?.prefs_submitted_at ? "대화 이어가기" : "진행 상황 보기"}
+            {meeting?.confirmed_at
+              ? "대화 이어가기"
+              : meeting?.prefs_submitted_at
+                ? "날짜 고르기"
+                : "진행 상황 보기"}
           </Button>
         </div>
       ) : null}
