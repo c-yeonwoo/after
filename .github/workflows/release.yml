@@ -25,7 +25,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.117.0
       - run: npm ci
       - run: supabase start
       - run: npm run release:check
