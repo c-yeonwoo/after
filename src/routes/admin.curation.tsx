@@ -80,46 +80,45 @@ function CurationTab() {
               <li key={t.id}>
                 <button
                   onClick={() => void navigate({ search: { male: t.id }, replace: true })}
-                  className={`w-full px-3 py-2.5 text-left transition-colors ${
+                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                     male === t.id ? "bg-muted" : "hover:bg-muted/50"
                   }`}
                 >
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                    <span className={`font-semibold ${t.receiving ? "" : "text-muted-foreground"}`}>
-                      {t.name ?? "(이름 없음)"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{hubLabel(t.hub_id)}</span>
-                    {/* 소개 받기 OFF 는 큐레이션 대상이 아니다(문서 §1). */}
-                    {!t.receiving ? <Tag tone="muted">소개 받기 OFF</Tag> : null}
-                    {t.has_open_intro ? <Tag tone="muted">소개 열림</Tag> : null}
-                  </div>
-                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground tabular-nums">
-                    <span
-                      className={
-                        t.pool_count > 0 && t.queued_count === 0 ? "text-primary-strong" : ""
-                      }
-                    >
-                      대기 호감 {t.pool_count}
-                    </span>
-                    <span>
-                      큐 {t.queued_count}
-                      {t.queued_count > DELIVER_WINDOW ? ` (전송 ${t.delivered_count})` : ""}
-                    </span>
-                    {/*
-                      호감은 줬지만 후보 자격이 없어 담을 수 없는 사람. 사진 검수
-                      대기가 대부분이다 — 검수하면 곧바로 큐레이션 가능하므로
-                      "지금 무엇이 막혀 있는가" 로 보여준다. 숫자를 낮춰 감추면
-                      운영자는 그 사람이 존재하는지조차 모른다.
-                    */}
-                    {t.blocked_count > 0 ? (
-                      <span className="text-primary-strong">막힘 {t.blocked_count}</span>
-                    ) : null}
-                    {t.oldest_like_hours !== null ? (
-                      <span className={t.oldest_like_hours > 72 ? "text-primary-strong" : ""}>
-                        최장 {Math.floor(t.oldest_like_hours / 24)}일
+                  <Thumb path={t.photo_url} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                      <span
+                        className={`font-semibold ${t.receiving ? "" : "text-muted-foreground"}`}
+                      >
+                        {t.name ?? "(이름 없음)"}
                       </span>
-                    ) : null}
-                  </p>
+                      <span className="text-xs text-muted-foreground">{hubLabel(t.hub_id)}</span>
+                      {/* 소개 받기 OFF 는 큐레이션 대상이 아니다(문서 §1). */}
+                      {!t.receiving ? <Tag tone="muted">소개 받기 OFF</Tag> : null}
+                      {t.has_open_intro ? <Tag tone="muted">소개 열림</Tag> : null}
+                    </div>
+                    <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground tabular-nums">
+                      <span
+                        className={
+                          t.pool_count > 0 && t.queued_count === 0 ? "text-primary-strong" : ""
+                        }
+                      >
+                        대기 호감 {t.pool_count}
+                      </span>
+                      <span>
+                        큐 {t.queued_count}
+                        {t.queued_count > DELIVER_WINDOW ? ` (전송 ${t.delivered_count})` : ""}
+                      </span>
+                      {t.blocked_count > 0 ? (
+                        <span className="text-primary-strong">막힘 {t.blocked_count}</span>
+                      ) : null}
+                      {t.oldest_like_hours !== null ? (
+                        <span className={t.oldest_like_hours > 72 ? "text-primary-strong" : ""}>
+                          최장 {Math.floor(t.oldest_like_hours / 24)}일
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
                 </button>
               </li>
             ))}

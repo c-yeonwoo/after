@@ -278,6 +278,73 @@ export type Database = {
           },
         ]
       }
+      candidate_impressions: {
+        Row: {
+          candidate_id: string
+          first_shown_at: string
+          last_shown_at: string
+          show_count: number
+          viewer_id: string
+        }
+        Insert: {
+          candidate_id: string
+          first_shown_at?: string
+          last_shown_at?: string
+          show_count?: number
+          viewer_id: string
+        }
+        Update: {
+          candidate_id?: string
+          first_shown_at?: string
+          last_shown_at?: string
+          show_count?: number
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_impressions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_impressions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_impressions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_impressions_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_impressions_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_impressions_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_reports: {
         Row: {
           accused_id: string
@@ -1730,6 +1797,7 @@ export type Database = {
           waiting_hours: number
         }[]
       }
+      admin_marketplace_health: { Args: never; Returns: Json }
       admin_meetings: {
         Args: { p_state?: string }
         Returns: {
