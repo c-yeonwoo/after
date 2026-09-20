@@ -96,6 +96,7 @@ export function renderNotification(kind: NotificationKind, ctx: MailContext): Re
           "",
           "약속 불참 신고가 접수되었습니다.",
           "사실과 다르다면 24시간 안에 앱에서 답변해 주세요.",
+          "답변이나 무응답만으로 이용이 제한되지는 않으며, 운영팀이 양쪽 기록을 확인합니다.",
           "",
           ctx.url,
         ].join("\n"),

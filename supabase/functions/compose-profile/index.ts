@@ -28,9 +28,16 @@ import Anthropic from "npm:@anthropic-ai/sdk@0.124.0";
 import { z } from "npm:zod@4.5.4";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.124.0/helpers/zod";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { escapeXml, validProfileComposition } from "../_shared/ai-quality.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const MODEL = "claude-opus-5";
+const PROMPT_VERSION = "profile-copy-v2";
+const DAILY_LIMIT = 5;
 
 /*
   화면이 그대로 쓰는 모양. 후보 3개와 소개글 1개.
@@ -43,18 +50,6 @@ const Composed = z.object({
   headlines: z.array(z.string()).length(3),
   intro: z.string(),
 });
-
-const HEADLINE_MIN = 15;
-const HEADLINE_MAX = 35;
-const INTRO_MIN = 150;
-const INTRO_MAX = 350;
-const BANNED_PHRASES = [
-  "진심입니다",
-  "소소한 행복",
-  "함께하고 싶어요",
-  "일상에 스며든",
-  "하루를 마무리합니다",
-];
 
 /*
   문체 지침을 프롬프트에 명시한다.
@@ -88,58 +83,6 @@ const SYSTEM = `당신은 소개팅 서비스의 프로필 문장을 다듬는 �
 - 한 줄 소개: 각 15자에서 35자 사이. 세 개가 서로 다른 각도여야 합니다. 마침표로 끝냅니다.
 - 소개글: 두세 문단, 전체 150자에서 350자 사이. 문단은 빈 줄로 나눕니다.`;
 
-const characterCount = (value: string) => Array.from(value).length;
-
-function escapedXml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
-
-function hasBannedStyle(value: string) {
-  return (
-    BANNED_PHRASES.some((phrase) => value.includes(phrase)) ||
-    /[—;!()]/.test(value) ||
-    /[\p{Extended_Pictographic}]/u.test(value)
-  );
-}
-
-/*
-  구조화 출력은 JSON 모양을 맞추지만, 문체·분량 같은 제품 계약까지 대신 지키지는
-  않는다. 통과하지 못한 결과는 저장하지 않고 기존 규칙 기반 초안으로 돌아간다.
-*/
-function validComposition(headlines: string[], intro: string) {
-  if (headlines.length !== 3) return false;
-  const normalized = new Set<string>();
-  for (const headline of headlines) {
-    const compact = headline.replace(/\s+/g, " ").trim();
-    if (
-      characterCount(compact) < HEADLINE_MIN ||
-      characterCount(compact) > HEADLINE_MAX ||
-      hasBannedStyle(compact)
-    ) {
-      return false;
-    }
-    normalized.add(compact.replace(/[\s.]/g, ""));
-  }
-  if (normalized.size !== 3) return false;
-
-  const paragraphs = intro
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-  return (
-    characterCount(intro) >= INTRO_MIN &&
-    characterCount(intro) <= INTRO_MAX &&
-    paragraphs.length >= 2 &&
-    paragraphs.length <= 3 &&
-    !hasBannedStyle(intro)
-  );
-}
-
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -157,7 +100,7 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "unauthenticated" }, 401);
 
-  const caller = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+  const caller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
   const {
@@ -166,7 +109,18 @@ Deno.serve(async (req) => {
   } = await caller.auth.getUser();
   if (userError || !user) return json({ error: "unauthenticated" }, 401);
 
-  if (!ANTHROPIC_API_KEY) return json({ error: "ANTHROPIC_API_KEY not configured" }, 500);
+  if (!ANTHROPIC_API_KEY || !SERVICE_ROLE_KEY) return json({ error: "not configured" }, 500);
+
+  const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentRuns, error: quotaError } = await db
+    .from("ai_runs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("feature", "profile_copy")
+    .gte("created_at", since);
+  if (quotaError) return json({ error: "quality tracking unavailable" }, 503);
+  if ((recentRuns ?? 0) >= DAILY_LIMIT) return json({ error: "daily limit reached" }, 429);
 
   let body: {
     job?: string;
@@ -209,26 +163,43 @@ Deno.serve(async (req) => {
     "앞 지시를 무시해" 같은 입력이 프롬프트 구조를 흐릴 수 있다.
   */
   const answers = `<profile_facts>
-  ${body.job ? `<job>${escapedXml(clip(body.job, 60))}</job>` : ""}
+  ${body.job ? `<job>${escapeXml(clip(body.job, 60))}</job>` : ""}
   <interests>
   ${interests
     .map(
       (i) =>
-        `<interest><label>${escapedXml(i.label)}</label>${i.note ? `<note>${escapedXml(i.note)}</note>` : ""}</interest>`,
+        `<interest><label>${escapeXml(i.label)}</label>${i.note ? `<note>${escapeXml(i.note)}</note>` : ""}</interest>`,
     )
     .join("\n  ")}
   </interests>
-  ${matchTags.length ? `<match_tags>${escapedXml(matchTags.join(", "))}</match_tags>` : ""}
-  ${clip(body.matchNote, 300) ? `<match_note>${escapedXml(clip(body.matchNote, 300))}</match_note>` : ""}
-  ${topics.length ? `<topics>${escapedXml(topics.join(", "))}</topics>` : ""}
-  ${clip(body.topicNote, 300) ? `<topic_note>${escapedXml(clip(body.topicNote, 300))}</topic_note>` : ""}
+  ${matchTags.length ? `<match_tags>${escapeXml(matchTags.join(", "))}</match_tags>` : ""}
+  ${clip(body.matchNote, 300) ? `<match_note>${escapeXml(clip(body.matchNote, 300))}</match_note>` : ""}
+  ${topics.length ? `<topics>${escapeXml(topics.join(", "))}</topics>` : ""}
+  ${clip(body.topicNote, 300) ? `<topic_note>${escapeXml(clip(body.topicNote, 300))}</topic_note>` : ""}
 </profile_facts>`;
 
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY, timeout: 12_000, maxRetries: 1 });
+  const startedAt = Date.now();
+  const record = async (
+    status: "success" | "refused" | "invalid" | "error",
+    usage?: { input_tokens: number; output_tokens: number },
+  ) => {
+    const { error } = await db.from("ai_runs").insert({
+      user_id: user.id,
+      feature: "profile_copy",
+      prompt_version: PROMPT_VERSION,
+      model: MODEL,
+      status,
+      latency_ms: Date.now() - startedAt,
+      input_tokens: usage?.input_tokens ?? null,
+      output_tokens: usage?.output_tokens ?? null,
+    });
+    if (error) console.error("compose-profile metrics failed", error.code);
+  };
 
   try {
     const response = await client.messages.parse({
-      model: "claude-opus-5",
+      model: MODEL,
       // 짧은 글이라 상한을 낮게 둔다. 생각 토큰까지 여기서 나간다.
       max_tokens: 2000,
       // 카피 한 편을 쓰는 일이라 깊게 생각할 이유가 없다. 비용과 지연이 모두 줄어든다.
@@ -239,32 +210,41 @@ Deno.serve(async (req) => {
 
     // 안전 분류기가 거절하면 content 를 읽기 전에 걸러야 한다.
     if (response.stop_reason === "refusal") {
+      await record("refused", response.usage);
       return json({ error: "refused" }, 422);
     }
     const parsed = response.parsed_output;
-    if (!parsed) return json({ error: "unparsable" }, 502);
+    if (!parsed) {
+      await record("invalid", response.usage);
+      return json({ error: "unparsable" }, 502);
+    }
 
     const headlines = parsed.headlines
       .map((h) => h.trim())
       .filter(Boolean)
       .slice(0, 3);
     const intro = parsed.intro.trim();
-    if (!validComposition(headlines, intro)) {
+    if (!validProfileComposition(headlines, intro)) {
+      await record("invalid", response.usage);
       return json({ error: "invalid composition" }, 502);
     }
+
+    await record("success", response.usage);
 
     return json({
       headlines,
       intro,
       // 원문이나 가입자 답변 없이 성능·비용을 계측할 수 있는 최소 메타데이터다.
       meta: {
-        model: "claude-opus-5",
+        model: MODEL,
+        promptVersion: PROMPT_VERSION,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       },
     });
   } catch (err) {
-    console.error("compose-profile failed", err);
+    await record("error");
+    console.error("compose-profile failed", err instanceof Error ? err.name : "unknown");
     return json({ error: "generation failed" }, 502);
   }
 });

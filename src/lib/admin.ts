@@ -147,6 +147,19 @@ export type AdminDashboard = {
   };
 };
 
+export type AdminOperationalHealth = {
+  no_show: { pending: number; overdue: number; oldest_hours: number | null };
+  scheduling: { awaiting_confirmation: number; stale_confirmation: number };
+  notifications: { pending: number; failed: number; oldest_pending_minutes: number | null };
+  ai: {
+    runs_24h: number;
+    failures_24h: number;
+    profile_runs_24h: number;
+    brief_runs_24h: number;
+    p95_latency_ms: number | null;
+  };
+};
+
 /** 내가 운영자인가. 화면 분기용 — 최종 판정은 항상 서버다. */
 export async function amIAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc("is_admin");
@@ -158,6 +171,12 @@ export async function fetchDashboard(): Promise<AdminDashboard> {
   const { data, error } = await supabase.rpc("admin_dashboard");
   if (error) throw error;
   return data as unknown as AdminDashboard;
+}
+
+export async function fetchOperationalHealth(): Promise<AdminOperationalHealth> {
+  const { data, error } = await supabase.rpc("admin_operational_health");
+  if (error) throw error;
+  return data as unknown as AdminOperationalHealth;
 }
 
 export async function fetchReports(state?: ReportState): Promise<AdminReport[]> {
@@ -252,7 +271,7 @@ export type PairBrief = {
   commonGround: { insight: string; basis: string }[];
   conversationStarters: string[];
   considerations: string[];
-  meta?: { model: string; inputTokens: number; outputTokens: number };
+  meta?: { model: string; promptVersion: string; inputTokens: number; outputTokens: number };
 };
 
 export async function composePairBrief(maleId: string, femaleId: string): Promise<PairBrief> {
@@ -266,6 +285,7 @@ export async function composePairBrief(maleId: string, femaleId: string): Promis
   void track("pair_brief_generated", {
     duration_ms: Math.round(performance.now() - startedAt),
     model: data.meta?.model ?? "unknown",
+    prompt_version: data.meta?.promptVersion ?? "unknown",
     input_tokens: data.meta?.inputTokens ?? null,
     output_tokens: data.meta?.outputTokens ?? null,
   });

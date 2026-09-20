@@ -4,12 +4,12 @@
 --
 -- "단일 미검증 신고로 즉시 제명하지 않는다"는 원칙이 실제로 지켜지는지가
 -- 이 파일의 핵심이다: 신고 그 자체(report_no_show)는 아무 효과가 없고,
--- 반드시 상대의 인정 또는 확인 기한 만료(무응답)를 거쳐야만 제명·재발급이
--- 일어난다(apply_no_show_confirmed). 그 경로를 아무 롤에도 직접 열어두지
--- 않았다는 것도 함께 검증한다.
+-- 반드시 운영자의 근거 있는 판정을 거쳐야만 제명·재발급이 일어난다
+-- (apply_no_show_confirmed). 인정·부인·무응답 어느 것도 자동 제재하지 않고,
+-- 그 내부 경로를 클라이언트에 직접 열지 않았다는 것도 함께 검증한다.
 
 begin;
-select plan(12);
+select plan(18);
 
 -- ═══════════════════════════ 픽스처 ═══════════════════════════
 
@@ -20,7 +20,9 @@ values
   ('cccc0002-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'm4@corp.example', '', now(), now()),
   ('cccc0003-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'x4@corp.example', '', now(), now());
+   'authenticated', 'authenticated', 'x4@corp.example', '', now(), now()),
+  ('cccc0004-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'admin4@corp.example', '', now(), now());
 
 -- 동의 컬럼(S6)이 없으면 eligible_profiles 를 통과하지 못한다.
 insert into profiles (id, gender, hub_id, company_email, email_verified_at, onboarding_step, name,
@@ -28,7 +30,11 @@ insert into profiles (id, gender, hub_id, company_email, email_verified_at, onbo
 values
   ('cccc0001-0000-0000-0000-000000000001', 'female', 'gangnam', 'f4@corp.example', now(), 7, '가희', now(), now(), '2026-08-01'),
   ('cccc0002-0000-0000-0000-000000000002', 'male',   'gangnam', 'm4@corp.example', now(), 7, '도윤', now(), now(), '2026-08-01'),
-  ('cccc0003-0000-0000-0000-000000000003', 'male',   'gangnam', 'x4@corp.example', now(), 7, '제3자', now(), now(), '2026-08-01');
+  ('cccc0003-0000-0000-0000-000000000003', 'male',   'gangnam', 'x4@corp.example', now(), 7, '제3자', now(), now(), '2026-08-01'),
+  ('cccc0004-0000-0000-0000-000000000004', 'male',   'gangnam', 'admin4@corp.example', now(), 7, '운영자', now(), now(), '2026-08-01');
+
+update profiles set role = 'admin'
+ where id = 'cccc0004-0000-0000-0000-000000000004';
 
 insert into affinities (from_id, to_id, verdict) values
   ('cccc0001-0000-0000-0000-000000000001', 'cccc0002-0000-0000-0000-000000000002', 'like');
@@ -134,7 +140,7 @@ select throws_ok(
 reset role;
 
 
--- ═════════ T7 — 피고발자가 부인하면 기각되고, 제명되지 않는다 ═════════
+-- ═════════ T7 — 피고발자의 부인은 자동 기각이 아니라 사람 검토로 간다 ═════════
 
 set local "request.jwt.claims" to '{"sub":"cccc0002-0000-0000-0000-000000000002","role":"authenticated"}';
 set local role authenticated;
@@ -149,18 +155,43 @@ reset role;
 select is(
   (select state from no_show_reports
     where reporter_id = 'cccc0001-0000-0000-0000-000000000001'),
-  'dismissed',
-  'T8: 부인하면 기각(dismissed)된다'
+  'pending',
+  'T8: 부인해도 운영자 판정 전에는 pending 이다'
+);
+
+select is(
+  (select accused_admitted from no_show_reports
+    where reporter_id = 'cccc0001-0000-0000-0000-000000000001'),
+  false,
+  'T9: 부인 응답이 판정 자료로 기록된다'
+);
+
+select ok(
+  (select review_requested_at is not null from no_show_reports
+    where reporter_id = 'cccc0001-0000-0000-0000-000000000001'),
+  'T10: 응답 즉시 운영자 검토 큐에 들어간다'
 );
 
 select is(
   (select account_state from profiles where id = 'cccc0002-0000-0000-0000-000000000002'),
   'active',
-  'T9: 기각된 신고는 제명으로 이어지지 않는다'
+  'T11: 부인 응답만으로는 제명되지 않는다'
 );
 
+set local "request.jwt.claims" to '{"sub":"cccc0002-0000-0000-0000-000000000002","role":"authenticated"}';
+set local role authenticated;
+select throws_ok(
+  $$ select respond_no_show(
+       (select id from no_show_reports where reporter_id = 'cccc0001-0000-0000-0000-000000000001'),
+       true) $$,
+  '42501',
+  null,
+  'T12: 같은 신고에는 한 번만 응답할 수 있다'
+);
+reset role;
 
--- ═════════ T10 — 확인 기한이 지나면 스윕이 자동으로 확정한다 ═════════
+
+-- ═════════ T13 — 확인 기한이 지나면 스윕은 사람 검토로만 보낸다 ═════════
 -- (같은 신고자는 같은 만남을 두 번 신고할 수 없으므로 — unique(meeting_id,
 -- reporter_id) — 이번엔 남성 쪽이 여성을 신고한다. 같은 만남을 재사용한다.)
 
@@ -180,21 +211,52 @@ select expire_unanswered_no_show_reports();
 
 select is(
   (select state from no_show_reports where reporter_id = 'cccc0002-0000-0000-0000-000000000002'),
-  'confirmed',
-  'T10: 확인 기한 만료 후 스윕이 자동으로 확정한다'
+  'pending',
+  'T13: 확인 기한 만료 후에도 자동 확정하지 않는다'
 );
 
 select is(
   (select account_state from profiles where id = 'cccc0001-0000-0000-0000-000000000001'),
-  'banned',
-  'T11: 확정되면 노쇼자가 영구 제명된다'
+  'active',
+  'T14: 무응답만으로는 영구 제명되지 않는다'
 );
 
 select is(
   (select count(*)::int from tickets
     where user_id = 'cccc0002-0000-0000-0000-000000000002' and price_krw = 0),
+  0,
+  'T15: 무응답만으로는 보상 티켓이 발급되지 않는다'
+);
+
+select ok(
+  (select review_requested_at is not null from no_show_reports
+    where reporter_id = 'cccc0002-0000-0000-0000-000000000002'),
+  'T16: 무응답 신고는 운영자 검토 큐에 들어간다'
+);
+
+-- 운영자가 양쪽 후기를 확인한 뒤에만 확정 효과가 난다.
+set local "request.jwt.claims" to '{"sub":"cccc0004-0000-0000-0000-000000000004","role":"authenticated"}';
+set local role authenticated;
+select admin_resolve_no_show(
+  (select id from admin_no_show_reports('pending')
+    where reporter_id = 'cccc0002-0000-0000-0000-000000000002'),
+  true,
+  '양쪽 기록과 연락 내역 확인'
+);
+reset role;
+
+select is(
+  (select account_state from profiles where id = 'cccc0001-0000-0000-0000-000000000001'),
+  'banned',
+  'T17: 운영자가 확정한 뒤에만 노쇼자가 영구 제명된다'
+);
+
+select is(
+  (select count(*)::int from tickets
+    where user_id = 'cccc0002-0000-0000-0000-000000000002'
+      and price_krw = 0 and kind = 'meeting'),
   1,
-  'T12: 확정되면 피해자에게 티켓이 재발급된다'
+  'T18: 운영자가 확정하면 피해자에게 만남 티켓이 재발급된다'
 );
 
 

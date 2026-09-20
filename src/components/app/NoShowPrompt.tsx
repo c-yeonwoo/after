@@ -18,8 +18,8 @@ import { respondNoShow, type NoShowReport } from "@/lib/api";
 /**
  * 나에게 접수된 노쇼 신고에 답하는 카드 (P4).
  *
- * 인정은 되돌릴 수 없고 즉시 영구 제명으로 이어지므로 확인 다이얼로그를 반드시
- * 거친다. 기한(24시간) 내 무응답도 확정으로 처리되므로 기한을 명시한다.
+ * 인정·부인 어느 쪽도 자동 제재하지 않고 운영자가 양쪽 기록을 확인한다.
+ * 다만 인정은 중요한 진술이므로 실수로 누르지 않게 확인 다이얼로그를 거친다.
  */
 export function NoShowPrompt({
   report,
@@ -43,7 +43,7 @@ export function NoShowPrompt({
     setBusy(true);
     try {
       await respondNoShow(report.id, admit);
-      toast.success(admit ? "인정으로 처리되었습니다." : "신고에 대해 답변했습니다.");
+      toast.success("답변을 보냈습니다. 운영팀이 확인할게요.");
       onResolved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "처리에 실패했습니다.");
@@ -63,8 +63,8 @@ export function NoShowPrompt({
         상대가 약속에 나오지 않았다고 신고했습니다. 사실이 아니라면 아니라고 답해 주세요.
       </p>
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-        {deadlineLabel}까지 답하지 않으면 신고 내용이 사실로 확정되며, 서비스 이용이 영구적으로
-        제한됩니다.
+        {deadlineLabel}까지 답해 주세요. 답변이 없으면 운영팀 검토가 시작되며, 무응답만으로 이용이
+        제한되지는 않습니다.
       </p>
 
       <div className="mt-5 flex gap-2">
@@ -86,8 +86,8 @@ export function NoShowPrompt({
           <AlertDialogHeader>
             <AlertDialogTitle>노쇼를 인정하시겠어요?</AlertDialogTitle>
             <AlertDialogDescription>
-              인정하면 서비스 이용이 영구적으로 제한되고 상대에게 만남 티켓이 재발급됩니다. 되돌릴
-              수 없습니다.
+              답변은 운영팀 판정 자료로 기록됩니다. 인정만으로 바로 이용이 제한되지는 않으며, 양쪽
+              기록을 확인한 뒤 결과를 안내합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

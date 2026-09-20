@@ -96,7 +96,8 @@ function HomePage() {
       setCandidate(state.candidate);
       setMeeting(state.meeting);
       setRequestCount(state.request_count);
-      setNoShow(state.pending_no_show);
+      // 답변한 신고는 운영자 검토 큐다. 판정 전까지 같은 질문을 반복하지 않는다.
+      setNoShow(state.pending_no_show?.responded_at ? null : state.pending_no_show);
       setQueued(state.queued_intros);
       setIntroTickets(state.intro_tickets);
       setLoading(false);

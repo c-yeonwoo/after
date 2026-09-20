@@ -731,7 +731,7 @@ export type ComposedProfile = {
   headlines: string[];
   intro: string;
   /** 가입자 답변·생성 문장 자체는 남기지 않는 최소 운영 계측값. */
-  meta?: { model: string; inputTokens: number; outputTokens: number };
+  meta?: { model: string; promptVersion: string; inputTokens: number; outputTokens: number };
 };
 
 export async function composeProfile(input: {

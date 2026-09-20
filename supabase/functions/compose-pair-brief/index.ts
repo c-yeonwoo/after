@@ -9,12 +9,16 @@ import { z } from "npm:zod@4.5.4";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.124.0/helpers/zod";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+import { escapeXml, validPairBrief } from "../_shared/ai-quality.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const MODEL = "claude-opus-5";
+const PROMPT_VERSION = "pair-brief-v2";
+const DAILY_LIMIT = 60;
 
 const Brief = z.object({
   commonGround: z.array(z.object({ insight: z.string(), basis: z.string() })).max(3),
@@ -73,14 +77,6 @@ const json = (body: unknown, status = 200) =>
 const clip = (value: unknown, length: number) =>
   typeof value === "string" ? value.trim().slice(0, length) : "";
 
-const escapeXml = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-
 function profileFacts(tag: "person_a" | "person_b", profile: Profile) {
   const interests = (profile.interests ?? []).map((value) => clip(value, 40)).filter(Boolean);
   const details =
@@ -115,21 +111,6 @@ function profileFacts(tag: "person_a" | "person_b", profile: Profile) {
       .join(", "),
   )}</topics>
 </${tag}>`;
-}
-
-function isShortText(value: string, min: number, max: number) {
-  const length = Array.from(value.trim()).length;
-  return length >= min && length <= max && !/[\p{Extended_Pictographic}]/u.test(value);
-}
-
-function validBrief(brief: z.infer<typeof Brief>) {
-  return (
-    brief.commonGround.every(
-      (item) => isShortText(item.insight, 8, 110) && isShortText(item.basis, 3, 100),
-    ) &&
-    brief.conversationStarters.every((item) => isShortText(item, 8, 120)) &&
-    brief.considerations.every((item) => isShortText(item, 8, 120))
-  );
 }
 
 Deno.serve(async (req) => {
@@ -199,6 +180,16 @@ Deno.serve(async (req) => {
     return json({ error: "pair not available" }, 404);
   }
 
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentRuns, error: quotaError } = await db
+    .from("ai_runs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("feature", "pair_brief")
+    .gte("created_at", since);
+  if (quotaError) return json({ error: "quality tracking unavailable" }, 503);
+  if ((recentRuns ?? 0) >= DAILY_LIMIT) return json({ error: "daily limit reached" }, 429);
+
   const byUserAndQuestion = new Map(
     (answers ?? []).map((answer) => [`${answer.user_id}:${answer.question_id}`, answer.choice]),
   );
@@ -211,9 +202,31 @@ Deno.serve(async (req) => {
     .filter(Boolean)
     .join("\n");
 
+  const startedAt = Date.now();
+  const record = async (
+    status: "success" | "refused" | "invalid" | "error",
+    usage?: { input_tokens: number; output_tokens: number },
+  ) => {
+    const { error } = await db.from("ai_runs").insert({
+      user_id: user.id,
+      feature: "pair_brief",
+      prompt_version: PROMPT_VERSION,
+      model: MODEL,
+      status,
+      latency_ms: Date.now() - startedAt,
+      input_tokens: usage?.input_tokens ?? null,
+      output_tokens: usage?.output_tokens ?? null,
+    });
+    if (error) console.error("compose-pair-brief metrics failed", error.code);
+  };
+
   try {
-    const response = await new Anthropic({ apiKey: ANTHROPIC_API_KEY }).messages.parse({
-      model: "claude-opus-5",
+    const response = await new Anthropic({
+      apiKey: ANTHROPIC_API_KEY,
+      timeout: 12_000,
+      maxRetries: 1,
+    }).messages.parse({
+      model: MODEL,
       max_tokens: 1400,
       output_config: { effort: "low", format: zodOutputFormat(Brief) },
       system: SYSTEM,
@@ -227,19 +240,23 @@ Deno.serve(async (req) => {
     if (
       response.stop_reason === "refusal" ||
       !response.parsed_output ||
-      !validBrief(response.parsed_output)
+      !validPairBrief(response.parsed_output)
     ) {
+      await record(response.stop_reason === "refusal" ? "refused" : "invalid", response.usage);
       return json({ error: "brief unavailable" }, 502);
     }
+    await record("success", response.usage);
     return json({
       ...response.parsed_output,
       meta: {
-        model: "claude-opus-5",
+        model: MODEL,
+        promptVersion: PROMPT_VERSION,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       },
     });
   } catch (error) {
+    await record("error");
     console.error("compose-pair-brief failed", error instanceof Error ? error.name : "unknown");
     return json({ error: "brief unavailable" }, 502);
   }

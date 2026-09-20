@@ -174,6 +174,67 @@ export type Database = {
           },
         ]
       }
+      ai_runs: {
+        Row: {
+          created_at: string
+          feature: string
+          id: number
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string
+          output_tokens: number | null
+          prompt_version: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          feature: string
+          id?: never
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model: string
+          output_tokens?: number | null
+          prompt_version: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          feature?: string
+          id?: never
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string
+          output_tokens?: number | null
+          prompt_version?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           id: boolean
@@ -833,33 +894,45 @@ export type Database = {
       }
       no_show_reports: {
         Row: {
+          accused_admitted: boolean | null
           accused_id: string
           confirm_by: string
           created_at: string
           id: string
           meeting_id: string
           reporter_id: string
+          resolution_note: string | null
           resolved_at: string | null
+          responded_at: string | null
+          review_requested_at: string | null
           state: Database["public"]["Enums"]["report_state"]
         }
         Insert: {
+          accused_admitted?: boolean | null
           accused_id: string
           confirm_by: string
           created_at?: string
           id?: string
           meeting_id: string
           reporter_id: string
+          resolution_note?: string | null
           resolved_at?: string | null
+          responded_at?: string | null
+          review_requested_at?: string | null
           state?: Database["public"]["Enums"]["report_state"]
         }
         Update: {
+          accused_admitted?: boolean | null
           accused_id?: string
           confirm_by?: string
           created_at?: string
           id?: string
           meeting_id?: string
           reporter_id?: string
+          resolution_note?: string | null
           resolved_at?: string | null
+          responded_at?: string | null
+          review_requested_at?: string | null
           state?: Database["public"]["Enums"]["report_state"]
         }
         Relationships: [
@@ -909,6 +982,55 @@ export type Database = {
             foreignKeyName: "no_show_reports_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_email_verifications: {
+        Row: {
+          attempts: number
+          code_hash: string
+          email: string
+          expires_at: string
+          requested_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          email: string
+          expires_at: string
+          requested_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          email?: string
+          expires_at?: string
+          requested_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_email_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_email_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_email_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
@@ -1048,8 +1170,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
-          notification_email?: string | null
-          notification_email_verified_at?: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -1657,6 +1779,7 @@ export type Database = {
       admin_no_show_reports: {
         Args: { p_state?: Database["public"]["Enums"]["report_state"] }
         Returns: {
+          accused_admitted: boolean
           accused_id: string
           accused_name: string
           accused_note: string
@@ -1670,11 +1793,15 @@ export type Database = {
           reporter_id: string
           reporter_name: string
           reporter_note: string
+          resolution_note: string
           resolved_at: string
+          responded_at: string
+          review_requested_at: string
           scheduled_at: string
           state: Database["public"]["Enums"]["report_state"]
         }[]
       }
+      admin_operational_health: { Args: never; Returns: Json }
       admin_photo_queue: {
         Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
         Returns: {
@@ -1745,16 +1872,24 @@ export type Database = {
           state: Database["public"]["Enums"]["report_state"]
         }[]
       }
+      admin_reset_photo: {
+        Args: { p_note: string; p_user: string }
+        Returns: undefined
+      }
       admin_resolve_no_show: {
         Args: { p_note: string; p_report_id: string; p_upheld: boolean }
         Returns: {
+          accused_admitted: boolean | null
           accused_id: string
           confirm_by: string
           created_at: string
           id: string
           meeting_id: string
           reporter_id: string
+          resolution_note: string | null
           resolved_at: string | null
+          responded_at: string | null
+          review_requested_at: string | null
           state: Database["public"]["Enums"]["report_state"]
         }
         SetofOptions: {
@@ -1763,10 +1898,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      admin_reset_photo: {
-        Args: { p_note: string; p_user: string }
-        Returns: undefined
       }
       admin_review_photo: {
         Args: { p_approve: boolean; p_note: string; p_user: string }
@@ -1792,6 +1923,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -1843,6 +1976,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -1905,13 +2040,17 @@ export type Database = {
       apply_no_show_confirmed: {
         Args: { p_report_id: string }
         Returns: {
+          accused_admitted: boolean | null
           accused_id: string
           confirm_by: string
           created_at: string
           id: string
           meeting_id: string
           reporter_id: string
+          resolution_note: string | null
           resolved_at: string | null
+          responded_at: string | null
+          review_requested_at: string | null
           state: Database["public"]["Enums"]["report_state"]
         }
         SetofOptions: {
@@ -2182,8 +2321,11 @@ export type Database = {
         Args: { p_confirmed: string; p_scheduled: string }
         Returns: string
       }
+      profile_candidate_ready: {
+        Args: { p: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: boolean
+      }
       promote_intro_queue: { Args: { p_male: string }; Returns: number }
-      request_notification_email: { Args: { p_email: string }; Returns: string }
       record_consent: {
         Args: { p_policy_version: string }
         Returns: {
@@ -2208,6 +2350,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -2283,13 +2427,17 @@ export type Database = {
       report_no_show: {
         Args: { p_meeting_id: string }
         Returns: {
+          accused_admitted: boolean | null
           accused_id: string
           confirm_by: string
           created_at: string
           id: string
           meeting_id: string
           reporter_id: string
+          resolution_note: string | null
           resolved_at: string | null
+          responded_at: string | null
+          review_requested_at: string | null
           state: Database["public"]["Enums"]["report_state"]
         }
         SetofOptions: {
@@ -2299,6 +2447,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      request_notification_email: { Args: { p_email: string }; Returns: string }
       resolve_content_report: {
         Args: {
           p_ban?: boolean
@@ -2329,13 +2478,17 @@ export type Database = {
       respond_no_show: {
         Args: { p_admit: boolean; p_report_id: string }
         Returns: {
+          accused_admitted: boolean | null
           accused_id: string
           confirm_by: string
           created_at: string
           id: string
           meeting_id: string
           reporter_id: string
+          resolution_note: string | null
           resolved_at: string | null
+          responded_at: string | null
+          review_requested_at: string | null
           state: Database["public"]["Enums"]["report_state"]
         }
         SetofOptions: {
@@ -2345,7 +2498,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      verify_notification_email: { Args: { p_code: string }; Returns: boolean }
       set_paused: {
         Args: { p_on: boolean }
         Returns: {
@@ -2370,6 +2522,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -2447,6 +2601,8 @@ export type Database = {
           match_tags: string[]
           mbti: string | null
           name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
           photo_reject_reason: string | null
@@ -2510,6 +2666,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      verify_notification_email: { Args: { p_code: string }; Returns: boolean }
       visible_profile_ids: {
         Args: never
         Returns: {

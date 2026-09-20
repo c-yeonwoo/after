@@ -311,14 +311,13 @@ function Td({
 /**
  * 노쇼 신고 — 콘텐츠 신고와 판정 방식이 다르다.
  *
- * s4 의 원칙: **단일 미검증 신고로 즉시 제명하지 않는다.** 확정은 상대의 인정
- * 또는 24시간 무응답으로만 일어난다. 운영자는 자동 판정을 앞지르는 사람이
- * 아니라 그 뒤에 오는 다툼을 판정하는 사람이다.
+ * s36 의 원칙: **단일 미검증 신고나 무응답으로 제명하지 않는다.** 인정·부인·
+ * 무응답은 모두 판정 자료일 뿐이고, 운영자가 양쪽 기록을 확인한 뒤 확정한다.
  *
  * 그래서 화면이 반드시 보여줘야 하는 것이 둘 있다.
  *   · **양쪽 후기** — 신고 사유는 feedbacks.body 에만 있고, 한쪽 말만 보이면
  *     운영자가 한쪽 말로 판정한다.
- *   · **확인 기한** — 지나면 무응답으로 자동 확정된다. 그 전에 볼 기회를 준다.
+ *   · **응답과 확인 기한** — 기한이 지나면 자동 제재가 아니라 검토 SLA가 지난다.
  */
 function NoShowList({ state }: { state?: ReportState }) {
   const navigate = useNavigate({ from: Route.fullPath });
@@ -372,6 +371,7 @@ function NoShowList({ state }: { state?: ReportState }) {
                   <Th>신고자</Th>
                   <Th>피신고자</Th>
                   <Th>확인 기한</Th>
+                  <Th>응답</Th>
                   <Th>상태</Th>
                   <Th />
                 </tr>
@@ -426,11 +426,20 @@ function NoShowRow({
           </span>
         </Td>
         <Td className="text-muted-foreground tabular-nums whitespace-nowrap">
-          {/* 기한이 지나면 크론이 무응답으로 자동 확정한다 — 그 사실을 표시한다. */}
+          {/* 기한은 자동 처벌이 아니라 운영 검토 SLA다. */}
           {overdue ? (
-            <span className="text-primary-strong">기한 지남 · 자동 확정 대기</span>
+            <span className="text-primary-strong">기한 지남 · 우선 검토</span>
           ) : (
             when(r.confirm_by)
+          )}
+        </Td>
+        <Td>
+          {r.responded_at === null ? (
+            <Tag tone={overdue ? "alert" : "muted"}>미응답</Tag>
+          ) : r.accused_admitted ? (
+            <Tag tone="alert">인정</Tag>
+          ) : (
+            <Tag tone="muted">부인</Tag>
           )}
         </Td>
         <Td>
@@ -454,7 +463,7 @@ function NoShowRow({
 
       {open ? (
         <tr>
-          <td colSpan={6} className="border-b border-border bg-muted/30 px-3 py-3">
+          <td colSpan={7} className="border-b border-border bg-muted/30 px-3 py-3">
             {/* 양쪽 후기를 나란히. 한쪽만 보이면 한쪽 말로 판정하게 된다. */}
             <div className="grid gap-3 sm:grid-cols-2">
               <Note who={r.reporter_name} label="신고자" body={r.reporter_note} />

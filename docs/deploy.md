@@ -39,11 +39,11 @@ Supabase 는 **프런트엔드를 호스팅하지 않는다** — DB·인증·�
 **IP 도 배포도 필요 없다.** SPF·DKIM 은 TXT 레코드일 뿐이다. 네임서버를 옮겼다면
 Cloudflare DNS 에, 아직이라면 가비아에 넣는다.
 
-| 타입 | 이름 | 값 |
-|---|---|---|
-| TXT | `@` | Resend 가 주는 SPF 문자열 |
-| TXT | `resend._domainkey` | Resend 가 주는 공개키 |
-| TXT | `_dmarc` | `v=DMARC1; p=none;` |
+| 타입 | 이름                | 값                        |
+| ---- | ------------------- | ------------------------- |
+| TXT  | `@`                 | Resend 가 주는 SPF 문자열 |
+| TXT  | `resend._domainkey` | Resend 가 주는 공개키     |
+| TXT  | `_dmarc`            | `v=DMARC1; p=none;`       |
 
 가비아는 이름 칸에 도메인을 다시 쓰면 `resend._domainkey.eclps.kr.eclps.kr`
 이 된다 — **`resend._domainkey` 만** 넣는다.
@@ -55,13 +55,13 @@ Cloudflare DNS 에 넣을 때는 이 레코드들의 **프록시를 끈다**(회
 
 배포 주소가 정해진 뒤에 맞춘다. 이게 어긋나면 메일 링크가 로컬을 가리킨다.
 
-| 위치 | 값 |
-|---|---|
-| Supabase → Authentication → URL Configuration → Site URL | `https://eclps.kr` |
-| 같은 화면 → Redirect URLs | `https://eclps.kr/**` |
-| Edge Functions 시크릿 → `APP_URL` | `https://eclps.kr` |
-| Vault → `edge_function_base_url` | 프로젝트의 함수 기본 URL |
-| Vault → `service_role_key` | 프로젝트 service_role 키 |
+| 위치                                                     | 값                       |
+| -------------------------------------------------------- | ------------------------ |
+| Supabase → Authentication → URL Configuration → Site URL | `https://eclps.kr`       |
+| 같은 화면 → Redirect URLs                                | `https://eclps.kr/**`    |
+| Edge Functions 시크릿 → `APP_URL`                        | `https://eclps.kr`       |
+| Vault → `edge_function_base_url`                         | 프로젝트의 함수 기본 URL |
+| Vault → `service_role_key`                               | 프로젝트 service_role 키 |
 
 마지막 둘이 없으면 알림 아웃박스가 쌓이기만 한다(`drain_notification_outbox` 가
 notice 를 남기고 건너뛴다).
@@ -73,10 +73,28 @@ notice 를 남기고 건너뛴다).
 ```bash
 npm run deploy       # 빌드 + 업로드
 npm run deploy:dry   # 업로드 없이 번들만 확인 (계정 없이도 된다)
+npm run release:check # 타입·린트·대비·AI 회귀·빌드·DB 전이 전체
 npm run preview:cf   # 실제 workerd 런타임으로 로컬 실행
 ```
 
 첫 배포는 `wrangler login` 을 한 번 요구한다.
+
+### main 자동 배포
+
+`.github/workflows/release.yml`은 PR과 main push마다 출시 게이트를 실행합니다.
+main 배포는 아래 GitHub production environment 값이 갖춰지고 저장소 변수
+`CLOUDFLARE_DEPLOY_ENABLED=true`일 때만 실행합니다.
+
+| 종류     | 이름                        | 설명                                        |
+| -------- | --------------------------- | ------------------------------------------- |
+| Secret   | `CLOUDFLARE_API_TOKEN`      | Eclipse Worker만 배포할 수 있게 제한한 토큰 |
+| Secret   | `CLOUDFLARE_ACCOUNT_ID`     | Cloudflare 계정 ID                          |
+| Secret   | `VITE_SUPABASE_URL`         | 운영 Supabase URL                           |
+| Secret   | `VITE_SUPABASE_ANON_KEY`    | 운영 공개 anon key                          |
+| Variable | `CLOUDFLARE_DEPLOY_ENABLED` | 준비가 끝난 뒤에만 `true`                   |
+
+출시 게이트가 통과한 커밋만 배포하고, 빌드에는 `GITHUB_SHA`가 버전으로 들어갑니다.
+토큰은 저장소 파일에 넣지 않습니다.
 
 ### 커스텀 도메인 연결
 
@@ -122,10 +140,10 @@ SSR 이 안 돌아가고, 랜딩의 SEO 를 잃는다(랜딩은 로그인 전 �
 
 ### 앱 빌드와 섞이지 않는다
 
-| | 명령 | 산출물 | 타깃 |
-|---|---|---|---|
-| 웹 | `npm run build` | `.output/` | Cloudflare Workers (SSR) |
-| 앱 | `npm run build:app` | `dist/client` | Capacitor iOS (SPA) |
+|     | 명령                | 산출물        | 타깃                     |
+| --- | ------------------- | ------------- | ------------------------ |
+| 웹  | `npm run build`     | `.output/`    | Cloudflare Workers (SSR) |
+| 앱  | `npm run build:app` | `dist/client` | Capacitor iOS (SPA)      |
 
 앱 번들에는 어드민이 들어가지 않는다(`vite.config.ts` 가 `^admin\.` 라우트를
 제외한다). 웹에는 들어간다 — 운영자는 웹으로만 접속한다.
@@ -135,7 +153,7 @@ SSR 이 안 돌아가고, 랜딩의 SEO 를 잃는다(랜딩은 로그인 전 �
 
 ---
 
-## 검증된 것 (2026-08-14)
+## 검증된 것 (2026-09-20)
 
 `npm run deploy:dry` + `wrangler dev` 로 실제 workerd 런타임에서 확인했다.
 
@@ -144,4 +162,6 @@ SSR 이 안 돌아가고, 랜딩의 SEO 를 잃는다(랜딩은 로그인 전 �
 - 정적 자산 200, `_headers` 의 `immutable` 캐시 규칙이 적용된다
 - `ASSETS` 바인딩 정상
 
-아직 안 한 것: 실제 업로드(계정 필요), 커스텀 도메인 연결(네임서버 이전 필요).
+실제 Worker와 커스텀 도메인은 연결돼 있습니다. 운영 URL의 버전은
+`npm run verify:deploy -- <git-sha>`로 확인합니다. GitHub 자동 배포는 위 production
+environment 값과 활성화 변수가 설정돼야 켜집니다.

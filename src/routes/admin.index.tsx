@@ -3,7 +3,12 @@ import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { CuratorTable } from "@/components/admin/CuratorTable";
-import { fetchDashboard, type AdminDashboard } from "@/lib/admin";
+import {
+  fetchDashboard,
+  fetchOperationalHealth,
+  type AdminDashboard,
+  type AdminOperationalHealth,
+} from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/")({ component: DashboardTab });
 
@@ -18,18 +23,22 @@ export const Route = createFileRoute("/admin/")({ component: DashboardTab });
  */
 function DashboardTab() {
   const [d, setD] = useState<AdminDashboard | null>(null);
+  const [health, setHealth] = useState<AdminOperationalHealth | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchDashboard().then((v) => {
-      if (!cancelled) setD(v);
+    Promise.all([fetchDashboard(), fetchOperationalHealth()]).then(([dashboard, ops]) => {
+      if (!cancelled) {
+        setD(dashboard);
+        setHealth(ops);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (!d) return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
+  if (!d || !health) return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
 
   const passRate =
     d.quality.intros_total > 0
@@ -38,6 +47,43 @@ function DashboardTab() {
 
   return (
     <>
+      <Group title="오늘 확인" hint="사람이 놓치면 사용자 경험이 멈추는 것">
+        <Stat
+          label="노쇼 검토 SLA 초과"
+          value={health.no_show.overdue}
+          alert={health.no_show.overdue > 0}
+          to="/admin/reports"
+          search={{ kind: "no_show" as const, state: "pending" as const }}
+        />
+        <Stat
+          label="일정 확정 48시간 지연"
+          value={health.scheduling.stale_confirmation}
+          alert={health.scheduling.stale_confirmation > 0}
+          to="/admin/meetings"
+          search={{ state: "active" as const }}
+        />
+        <Stat
+          label="알림 최종 실패"
+          value={health.notifications.failed}
+          alert={health.notifications.failed > 0}
+        />
+        <Stat
+          label="AI 실패 · 24시간"
+          value={health.ai.failures_24h}
+          alert={health.ai.failures_24h > 0}
+        />
+        <Stat
+          label="AI p95 응답"
+          value={
+            health.ai.p95_latency_ms === null
+              ? null
+              : Math.round(health.ai.p95_latency_ms / 100) / 10
+          }
+          unit="초"
+          alert={(health.ai.p95_latency_ms ?? 0) > 12_000}
+        />
+      </Group>
+
       <Group title="적체" hint="운영자가 밀리고 있는가">
         <Stat
           label="미처리 신고"
