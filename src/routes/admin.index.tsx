@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { CuratorTable } from "@/components/admin/CuratorTable";
 import {
   fetchDashboard,
+  fetchMarketplaceHealth,
   fetchOperationalHealth,
   type AdminDashboard,
+  type AdminMarketplaceHealth,
   type AdminOperationalHealth,
 } from "@/lib/admin";
 
@@ -24,21 +26,26 @@ export const Route = createFileRoute("/admin/")({ component: DashboardTab });
 function DashboardTab() {
   const [d, setD] = useState<AdminDashboard | null>(null);
   const [health, setHealth] = useState<AdminOperationalHealth | null>(null);
+  const [market, setMarket] = useState<AdminMarketplaceHealth | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchDashboard(), fetchOperationalHealth()]).then(([dashboard, ops]) => {
-      if (!cancelled) {
-        setD(dashboard);
-        setHealth(ops);
-      }
-    });
+    Promise.all([fetchDashboard(), fetchOperationalHealth(), fetchMarketplaceHealth()]).then(
+      ([dashboard, ops, marketplace]) => {
+        if (!cancelled) {
+          setD(dashboard);
+          setHealth(ops);
+          setMarket(marketplace);
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (!d || !health) return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
+  if (!d || !health || !market)
+    return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
 
   const passRate =
     d.quality.intros_total > 0
@@ -129,6 +136,68 @@ function DashboardTab() {
           value={d.backlog.oldest_like_hours}
           unit="시간"
           alert={(d.backlog.oldest_like_hours ?? 0) > 72}
+        />
+      </Group>
+
+      <Group title="수급" hint="한쪽이 오래 기다리기 전에 모집을 조절합니다">
+        <Stat label="활성 여성" value={market.pool.eligible_female} />
+        <Stat label="활성 남성" value={market.pool.eligible_male} />
+        <Stat
+          label="아직 노출 0회 남성"
+          value={market.pool.males_never_shown}
+          alert={market.pool.males_never_shown > 0}
+        />
+        <Stat
+          label="아직 호감 0건 남성"
+          value={market.pool.males_without_like}
+          alert={market.pool.males_without_like > 0}
+        />
+      </Group>
+
+      <Group title="실측 대기" hint="중앙값 · 느린 10% (표본이 적으면 방향만 봅니다)">
+        <Stat
+          label={`남성 가입→첫 노출 · n=${market.male_first_exposure.sample}`}
+          value={market.male_first_exposure.p50_hours}
+          unit="시간"
+        />
+        <Stat
+          label="남성 첫 노출 · p90"
+          value={market.male_first_exposure.p90_hours}
+          unit="시간"
+          alert={(market.male_first_exposure.p90_hours ?? 0) > 168}
+        />
+        <Stat
+          label={`여성 호감→큐 · n=${market.female_like_to_queue.sample}`}
+          value={market.female_like_to_queue.p50_hours}
+          unit="시간"
+        />
+        <Stat
+          label="여성 호감→큐 · p90"
+          value={market.female_like_to_queue.p90_hours}
+          unit="시간"
+          alert={(market.female_like_to_queue.p90_hours ?? 0) > 72}
+        />
+        <Stat
+          label={`남성 가입→첫 호감 · n=${market.male_first_like.sample}`}
+          value={market.male_first_like.p50_hours}
+          unit="시간"
+        />
+        <Stat
+          label="남성 첫 호감 · p90"
+          value={market.male_first_like.p90_hours}
+          unit="시간"
+          alert={(market.male_first_like.p90_hours ?? 0) > 336}
+        />
+        <Stat
+          label={`여성 호감→소개 열림 · n=${market.female_like_to_open.sample}`}
+          value={market.female_like_to_open.p50_hours}
+          unit="시간"
+        />
+        <Stat
+          label="여성 소개 열림 · p90"
+          value={market.female_like_to_open.p90_hours}
+          unit="시간"
+          alert={(market.female_like_to_open.p90_hours ?? 0) > 336}
         />
       </Group>
 

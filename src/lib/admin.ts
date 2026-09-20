@@ -160,6 +160,25 @@ export type AdminOperationalHealth = {
   };
 };
 
+type WaitDistribution = {
+  sample: number;
+  p50_hours: number | null;
+  p90_hours: number | null;
+};
+
+export type AdminMarketplaceHealth = {
+  pool: {
+    eligible_female: number;
+    eligible_male: number;
+    males_never_shown: number;
+    males_without_like: number;
+  };
+  male_first_exposure: WaitDistribution;
+  male_first_like: WaitDistribution;
+  female_like_to_queue: WaitDistribution;
+  female_like_to_open: WaitDistribution;
+};
+
 /** 내가 운영자인가. 화면 분기용 — 최종 판정은 항상 서버다. */
 export async function amIAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc("is_admin");
@@ -177,6 +196,12 @@ export async function fetchOperationalHealth(): Promise<AdminOperationalHealth> 
   const { data, error } = await supabase.rpc("admin_operational_health");
   if (error) throw error;
   return data as unknown as AdminOperationalHealth;
+}
+
+export async function fetchMarketplaceHealth(): Promise<AdminMarketplaceHealth> {
+  const { data, error } = await supabase.rpc("admin_marketplace_health");
+  if (error) throw error;
+  return data as unknown as AdminMarketplaceHealth;
 }
 
 export async function fetchReports(state?: ReportState): Promise<AdminReport[]> {
