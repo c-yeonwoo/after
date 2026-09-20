@@ -862,6 +862,17 @@ export async function requestNotificationEmail(email: string): Promise<string> {
     }
     throw error;
   }
+
+  // 운영은 DB cron 이 아웃박스를 5분마다 비운다. 로컬에는 Vault 키를 두지 않아
+  // cron 이 의도적으로 쉬므로, 개발환경에서만 함수를 바로 깨워 Mailpit으로 보낸다.
+  if (LOCAL_DEV_AUTH_BYPASS) {
+    const { error: dispatchError } = await supabase.functions.invoke("send-notifications", {
+      body: {},
+    });
+    if (dispatchError) {
+      throw new Error("로컬 알림 발송기를 실행하지 못했습니다. 개발 서버 상태를 확인해 주세요.");
+    }
+  }
   return data;
 }
 
