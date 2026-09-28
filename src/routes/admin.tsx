@@ -1,7 +1,20 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import {
+  CalendarCheck,
+  Camera,
+  HeartHandshake,
+  LayoutDashboard,
+  PackageCheck,
+  Search,
+  Settings2,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Logo } from "@/components/Logo";
+import { Input } from "@/components/ui/input";
 import { useMe } from "@/lib/me";
 import { amIAdmin } from "@/lib/admin";
 
@@ -27,18 +40,38 @@ export const Route = createFileRoute("/admin")({
   앱 빌드에서 제외한다. 파일명을 바꿀 때 이 규칙을 깨면 어드민이 앱 번들에
   섞인다.
 */
-const TABS: { to: string; label: string; exact?: boolean }[] = [
-  // 대시보드만 exact 다. 아니면 /admin/members 에서도 활성으로 잡힌다.
-  { to: "/admin", label: "대시보드", exact: true },
-  // 큐레이션이 매칭의 필수 경로다(v2) — 회원보다 앞에 둔다.
-  { to: "/admin/curation", label: "큐레이션" },
-  { to: "/admin/members", label: "회원" },
-  { to: "/admin/photos", label: "사진 검수" },
-  { to: "/admin/reports", label: "신고" },
-  { to: "/admin/meetings", label: "만남" },
-  // 베타에서는 주문이 곧 손으로 처리할 일이다(s27). 결제를 켜면 영수증이 된다.
-  { to: "/admin/orders", label: "주문" },
+type AdminNavItem = { to: string; label: string; exact?: boolean; icon: LucideIcon };
+
+const NAV: { label: string; items: AdminNavItem[] }[] = [
+  {
+    label: "오늘",
+    items: [{ to: "/admin", label: "운영 홈", exact: true, icon: LayoutDashboard }],
+  },
+  {
+    label: "매칭 운영",
+    items: [
+      { to: "/admin/curation", label: "큐레이션", icon: HeartHandshake },
+      { to: "/admin/meetings", label: "만남", icon: CalendarCheck },
+    ],
+  },
+  {
+    label: "회원과 안전",
+    items: [
+      { to: "/admin/members", label: "회원", icon: Users },
+      { to: "/admin/photos", label: "사진 검수", icon: Camera },
+      { to: "/admin/reports", label: "신고", icon: ShieldCheck },
+    ],
+  },
+  {
+    label: "거래와 시스템",
+    items: [
+      { to: "/admin/orders", label: "주문", icon: PackageCheck },
+      { to: "/admin/system", label: "시스템", icon: Settings2 },
+    ],
+  },
 ];
+
+const FLAT_NAV = NAV.flatMap((g) => g.items);
 
 function AdminLayout() {
   const { me, ready } = useMe();
@@ -76,6 +109,16 @@ function AdminLayout() {
 }
 
 function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: boolean }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  function searchMember(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    void navigate({ to: "/admin/members", search: { q } });
+  }
+
   /*
     스크롤을 여기서 직접 쥔다.
 
@@ -88,33 +131,82 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
     표를 보기에 나쁘고, 운영자는 데스크톱에서 본다.
   */
   return (
-    <div className="flex h-dvh flex-col bg-background">
-      <header
-        className="shrink-0 border-b border-border px-6"
-        style={{ paddingTop: "var(--safe-top)" }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center gap-3 pb-3">
-          <Logo size="sm" />
-          <span className="text-sm font-semibold text-muted-foreground">운영</span>
-        </div>
-        {showTabs ? (
-          <nav className="mx-auto -mb-px flex max-w-6xl gap-1 overflow-x-auto">
-            {TABS.map((t) => (
-              <Link
-                key={t.to}
-                to={t.to}
-                activeOptions={{ exact: t.exact ?? false }}
-                className="shrink-0 border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[status=active]:border-primary data-[status=active]:font-semibold data-[status=active]:text-foreground"
-              >
-                {t.label}
-              </Link>
+    <div className="flex h-dvh bg-background">
+      {showTabs ? (
+        <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card px-4 pb-5 pt-6 lg:flex">
+          <div className="flex items-center gap-3 px-2">
+            <Logo size="sm" />
+            <span className="text-sm font-semibold text-muted-foreground">운영</span>
+          </div>
+          <form onSubmit={searchMember} className="relative mt-6">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-9 pl-9"
+              placeholder="회원 검색"
+              aria-label="회원 검색"
+            />
+          </form>
+          <nav className="mt-5 min-h-0 flex-1 space-y-5 overflow-y-auto">
+            {NAV.map((group) => (
+              <div key={group.label}>
+                <p className="px-2 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {group.label}
+                </p>
+                <div className="mt-1 space-y-0.5">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        activeOptions={{ exact: item.exact ?? false }}
+                        className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[status=active]:bg-muted data-[status=active]:font-semibold data-[status=active]:text-foreground"
+                      >
+                        <Icon className="size-4" aria-hidden="true" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </nav>
-        ) : null}
-      </header>
-      <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
-      </main>
+        </aside>
+      ) : null}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header
+          className="shrink-0 border-b border-border px-4 lg:hidden"
+          style={{ paddingTop: "var(--safe-top)" }}
+        >
+          <div className="flex items-center gap-3 pb-3">
+            <Logo size="sm" />
+            <span className="text-sm font-semibold text-muted-foreground">운영</span>
+          </div>
+          {showTabs ? (
+            <nav className="-mb-px flex gap-1 overflow-x-auto">
+              {FLAT_NAV.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  activeOptions={{ exact: item.exact ?? false }}
+                  className="shrink-0 border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[status=active]:border-primary data-[status=active]:font-semibold data-[status=active]:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+        </header>
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

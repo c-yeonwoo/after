@@ -1870,6 +1870,11 @@ export type Database = {
         }[]
       }
       admin_operational_health: { Args: never; Returns: Json }
+      admin_retry_notifications: {
+        Args: { p_ids: string[]; p_note: string }
+        Returns: number
+      }
+      admin_system_overview: { Args: never; Returns: Json }
       admin_photo_queue: {
         Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
         Returns: {

@@ -179,6 +179,56 @@ export type AdminMarketplaceHealth = {
   female_like_to_open: WaitDistribution;
 };
 
+export type AdminSystemOverview = {
+  notifications: {
+    pending: number;
+    failed: number;
+    oldest_pending_minutes: number | null;
+    failed_rows: {
+      id: string;
+      user_id: string;
+      user_name: string | null;
+      notification_email: string | null;
+      kind: string;
+      attempts: number;
+      last_error: string | null;
+      created_at: string;
+    }[];
+  };
+  jobs: {
+    jobname: string;
+    schedule: string | null;
+    active: boolean;
+    last_status: string | null;
+    last_started_at: string | null;
+    last_finished_at: string | null;
+    last_message: string | null;
+  }[];
+  ai: {
+    id: number;
+    user_id: string | null;
+    user_name: string | null;
+    feature: string;
+    prompt_version: string;
+    model: string;
+    status: string;
+    latency_ms: number | null;
+    input_tokens: number | null;
+    output_tokens: number | null;
+    created_at: string;
+  }[];
+  activity: {
+    id: string;
+    actor_name: string | null;
+    kind: string;
+    target_user: string | null;
+    target_name: string | null;
+    target_ref: string | null;
+    note: string;
+    created_at: string;
+  }[];
+};
+
 /** 내가 운영자인가. 화면 분기용 — 최종 판정은 항상 서버다. */
 export async function amIAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc("is_admin");
@@ -202,6 +252,21 @@ export async function fetchMarketplaceHealth(): Promise<AdminMarketplaceHealth> 
   const { data, error } = await supabase.rpc("admin_marketplace_health");
   if (error) throw error;
   return data as unknown as AdminMarketplaceHealth;
+}
+
+export async function fetchSystemOverview(): Promise<AdminSystemOverview> {
+  const { data, error } = await supabase.rpc("admin_system_overview");
+  if (error) throw error;
+  return data as unknown as AdminSystemOverview;
+}
+
+export async function retryNotifications(ids: string[], note: string): Promise<number> {
+  const { data, error } = await supabase.rpc("admin_retry_notifications", {
+    p_ids: ids,
+    p_note: note,
+  });
+  if (error) throw error;
+  return data ?? 0;
 }
 
 export async function fetchReports(state?: ReportState): Promise<AdminReport[]> {

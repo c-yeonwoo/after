@@ -187,6 +187,13 @@ function Workbench({
     setOrder(next);
   }
 
+  function fillDeliveryWindow() {
+    const slots = Math.max(0, DELIVER_WINDOW - order.length);
+    if (slots === 0) return;
+    // 풀은 서버가 오래 기다린 순으로 준다. 자동 결정하지 않고 검토할 초안만 만든다.
+    setOrder([...order, ...available.slice(0, slots).map((p) => p.id)]);
+  }
+
   return (
     <div className="grid gap-8 xl:grid-cols-[1fr_22rem]">
       <div className="min-w-0">
@@ -210,9 +217,21 @@ function Workbench({
 
         {/* ── 큐 ── */}
         <section className="mt-4">
-          <p className="text-xs text-muted-foreground">
-            위 {DELIVER_WINDOW}장만 전송됩니다. 나머지는 자리가 비면 올라갑니다.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              위 {DELIVER_WINDOW}장만 전송됩니다. 나머지는 자리가 비면 올라갑니다.
+            </p>
+            {order.length < DELIVER_WINDOW && available.length > 0 ? (
+              <Button size="sm" variant="outline" onClick={fillDeliveryWindow}>
+                전송 슬롯 자동 채우기
+              </Button>
+            ) : null}
+          </div>
+          {order.length < DELIVER_WINDOW && available.length > 0 ? (
+            <p className="mt-1 text-2xs text-muted-foreground">
+              오래 기다린 호감부터 초안에 담습니다. 저장 전 프로필과 순서를 검토하세요.
+            </p>
+          ) : null}
           {order.length === 0 ? (
             <p className="mt-3 rounded-surface border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
               큐가 비어 있습니다. 아래 호감 목록에서 추가하세요.
