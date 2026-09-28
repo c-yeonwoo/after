@@ -92,6 +92,7 @@ export function NoteAction({
             key={a.label}
             size="sm"
             variant={a.variant ?? "default"}
+            aria-label={a.label}
             disabled={busy}
             onClick={() => void act(a)}
           >
