@@ -184,7 +184,7 @@ function IntroPage() {
                     className="mt-6 w-full"
                     onClick={() => navigate({ to: "/store", search: { kind: "intro" as const } })}
                   >
-                    소개 티켓 사기
+                    소개 티켓 신청하기
                   </Button>
                   <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
                     소개 프로필을 열려면 소개 티켓 1장이 필요합니다.

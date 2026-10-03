@@ -36,6 +36,9 @@ import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
 
+/** App Store 첫 버전에서는 소셜 로그인 연결 기능도 함께 감춘다. */
+const APP_BUILD = import.meta.env.VITE_APP_BUILD === "true";
+
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
@@ -93,6 +96,10 @@ function SettingsPage() {
     마운트되지 않는다. 그래서 창이 포커스를 되찾을 때도 한 번 읽는다.
   */
   useEffect(() => {
+    if (APP_BUILD) {
+      setProviders([]);
+      return;
+    }
     let alive = true;
     void (async () => {
       if (typeof window !== "undefined" && window.location.search.includes("code=")) {
@@ -377,45 +384,47 @@ function SettingsPage() {
         사람만 로그인 화면의 카카오 버튼으로 들어올 수 있다 — 카카오로 계정을
         만들 수 있게 하면 회사 메일 인증이라는 이 서비스의 전제가 무너진다.
       */}
-      <section className="mt-9">
-        <h2 className="text-sm font-semibold">카카오</h2>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-          {kakaoLinked
-            ? "카카오로 로그인하실 수 있습니다. 회사 메일과 비밀번호도 그대로 쓸 수 있습니다."
-            : "연결하면 다음부터 카카오 한 번으로 로그인하실 수 있습니다. 프로필에는 아무것도 공개되지 않습니다."}
-        </p>
-        <Button
-          variant="outline"
-          className="mt-3 w-full"
-          disabled={busy || providers === null}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              if (kakaoLinked) {
-                await unlinkKakao();
-                await refreshProviders();
-                toast.success("카카오 연결을 끊었습니다.");
-              } else {
-                /*
-                  웹은 리다이렉트에 맡기고(skip=false), 앱은 URL 만 받아
-                  시스템 브라우저로 연다 — 웹뷰 안에서 열면 제공자가 막는다.
-                */
-                const redirectTo = isNative
-                  ? NATIVE_REDIRECT
-                  : `${window.location.origin}/settings`;
-                const url = await linkKakao(redirectTo, isNative);
-                if (isNative && url) await openAuthUrl(url);
+      {!APP_BUILD ? (
+        <section className="mt-9">
+          <h2 className="text-sm font-semibold">카카오</h2>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            {kakaoLinked
+              ? "카카오로 로그인하실 수 있습니다. 회사 메일과 비밀번호도 그대로 쓸 수 있습니다."
+              : "연결하면 다음부터 카카오 한 번으로 로그인하실 수 있습니다. 프로필에는 아무것도 공개되지 않습니다."}
+          </p>
+          <Button
+            variant="outline"
+            className="mt-3 w-full"
+            disabled={busy || providers === null}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                if (kakaoLinked) {
+                  await unlinkKakao();
+                  await refreshProviders();
+                  toast.success("카카오 연결을 끊었습니다.");
+                } else {
+                  /*
+                    웹은 리다이렉트에 맡기고(skip=false), 앱은 URL 만 받아
+                    시스템 브라우저로 연다 — 웹뷰 안에서 열면 제공자가 막는다.
+                  */
+                  const redirectTo = isNative
+                    ? NATIVE_REDIRECT
+                    : `${window.location.origin}/settings`;
+                  const url = await linkKakao(redirectTo, isNative);
+                  if (isNative && url) await openAuthUrl(url);
+                }
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "처리하지 못했습니다.");
+              } finally {
+                setBusy(false);
               }
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "처리하지 못했습니다.");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {providers === null ? "불러오는 중…" : kakaoLinked ? "연결 끊기" : "카카오 연결하기"}
-        </Button>
-      </section>
+            }}
+          >
+            {providers === null ? "불러오는 중…" : kakaoLinked ? "연결 끊기" : "카카오 연결하기"}
+          </Button>
+        </section>
+      ) : null}
 
       {/* ── 탈퇴 ─────────────────────────────── */}
       <section className="mt-9 border-t border-border pt-6">

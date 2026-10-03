@@ -31,6 +31,9 @@ import {
   watchAuthDeepLinks,
 } from "@/lib/native";
 
+/** App Store 첫 버전은 Apple 정책 리스크를 피하기 위해 이메일 로그인만 노출한다. */
+const APP_BUILD = import.meta.env.VITE_APP_BUILD === "true";
+
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
@@ -113,6 +116,7 @@ function LoginPage() {
     둘 다 consumeAuthCode 로 교환하고 같은 land() 를 지난다.
   */
   useEffect(() => {
+    if (APP_BUILD) return;
     let alive = true;
     const finish = async () => {
       if (!alive) return;
@@ -358,7 +362,7 @@ function LoginPage() {
             카카오는 **연결해 둔 사람만** 들어온다(설정 → 카카오 연결). 안 한
             계정으로 누르면 프로필이 없어 land() 가 가입으로 돌려보낸다.
           */}
-          {!codeSent ? (
+          {!codeSent && !APP_BUILD ? (
             <>
               <div className="mt-6 flex items-center gap-3" aria-hidden="true">
                 <span className="h-px flex-1 bg-border" />

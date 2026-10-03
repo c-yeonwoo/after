@@ -112,6 +112,17 @@ function Landing() {
         <p className="mt-3 text-center text-3xs font-semibold tracking-[0.16em] uppercase text-muted-foreground">
           회사 이메일은 재직 확인에만 사용합니다.
         </p>
+        <nav className="mt-3 flex items-center justify-center gap-3 text-3xs text-muted-foreground">
+          <Link to="/support" className="underline underline-offset-2">
+            고객 지원
+          </Link>
+          <Link to="/privacy" className="underline underline-offset-2">
+            개인정보 처리방침
+          </Link>
+          <Link to="/delete-account" className="underline underline-offset-2">
+            계정 삭제
+          </Link>
+        </nav>
       </div>
 
       {origin ? (

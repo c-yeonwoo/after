@@ -12,6 +12,7 @@ import {
   getOpenIntroWithCandidate,
   getMeetingByIntro,
   myPendingTicketOrder,
+  paymentsEnabled,
   requestTicketOrder,
   unusedTicketCount,
   redeemMeetingTicket,
@@ -39,6 +40,7 @@ function TicketPage() {
   const [tickets, setTickets] = useState(0);
   const [order, setOrder] = useState<TicketOrder | null>(null);
   const [busy, setBusy] = useState(false);
+  const [paid, setPaid] = useState<boolean | null>(null);
 
   async function load() {
     const opened = await getOpenIntroWithCandidate();
@@ -47,7 +49,12 @@ function TicketPage() {
     // 종류를 반드시 넘긴다(s19). 안 넘기면 소개 티켓까지 세어, 만남 티켓이
     // 0장인데 "보유 1장" 이 뜨고 사용 버튼을 눌러야 P0002 를 만난다.
     setTickets(await unusedTicketCount("meeting"));
-    setOrder(await myPendingTicketOrder("meeting"));
+    const [pending, payments] = await Promise.all([
+      myPendingTicketOrder("meeting"),
+      paymentsEnabled(),
+    ]);
+    setOrder(pending);
+    setPaid(payments);
     setLoading(false);
   }
 
@@ -58,7 +65,7 @@ function TicketPage() {
   const waiting = Boolean(meeting) && !meeting?.prefs_submitted_at;
   const readyToSchedule = Boolean(meeting?.prefs_submitted_at) && !meeting?.confirmed_at;
 
-  if (loading) {
+  if (loading || paid === null) {
     return (
       <AppScreen title="만남 티켓" hideTabs back="/intro">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
@@ -86,7 +93,7 @@ function TicketPage() {
           <div className="mt-3 flex items-baseline justify-between gap-3">
             <p className="text-lg font-semibold text-primary-foreground">만남 티켓 1장</p>
             <p className="text-lg font-semibold text-primary-foreground">
-              {MEETING_TICKET_PRICE_LABEL}
+              {paid ? MEETING_TICKET_PRICE_LABEL : "베타 무료"}
             </p>
           </div>
           <p className="mt-1 text-xs text-primary-foreground/85">한 사람과의 만남을 조율합니다.</p>
@@ -187,8 +194,10 @@ function TicketPage() {
             {busy ? "신청하는 중…" : "만남 티켓 신청하기"}
           </Button>
           <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-            만남 티켓 한 장 {MEETING_TICKET_PRICE_LABEL}. 결제 수단을 여는 중이라 지금은 신청만 받고
-            있습니다. 신청해 두시면 이 소개는 넘어가지 않고 기다립니다.
+            {paid
+              ? `만남 티켓 한 장 ${MEETING_TICKET_PRICE_LABEL}. 결제가 끝나면 바로 사용하실 수 있습니다.`
+              : "베타 기간에는 결제를 받지 않습니다. 신청하시면 운영팀 확인 후 무료로 넣어 드립니다."}{" "}
+            신청해 두시면 이 소개는 넘어가지 않고 기다립니다.
           </p>
         </>
       )}

@@ -23,7 +23,8 @@
     "build:app": "BUILD_TARGET=app vite build",
     "build:app:dev": "BUILD_TARGET=app vite build --mode development",
     "shots:seed": "bun scripts/screenshot-seed.mjs",
-    "e2e:seed": "bun scripts/e2e-seed.mjs"
+    "e2e:seed": "bun scripts/e2e-seed.mjs",
+    "review:seed": "node scripts/review-seed.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",

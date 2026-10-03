@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ChatsRouteImport } from './routes/chats'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
@@ -25,6 +26,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketRouteImport } from './routes/ticket'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -51,6 +53,11 @@ const AdminRoute = AdminRouteImport.update({
 const ChatsRoute = ChatsRouteImport.update({
   id: '/chats',
   path: '/chats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbackRoute = FeedbackRouteImport.update({
@@ -118,6 +125,11 @@ const StoreRoute = StoreRouteImport.update({
   path: '/store',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -183,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
@@ -196,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/store': typeof StoreRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/admin/curation': typeof AdminCurationRoute
@@ -212,6 +226,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chats': typeof ChatsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
@@ -225,6 +240,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/store': typeof StoreRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/admin/curation': typeof AdminCurationRoute
@@ -243,6 +259,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
@@ -256,6 +273,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/store': typeof StoreRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
   '/admin/curation': typeof AdminCurationRoute
@@ -275,6 +293,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/chats'
+    | '/delete-account'
     | '/feedback'
     | '/home'
     | '/intro'
@@ -288,6 +307,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/store'
+    | '/support'
     | '/terms'
     | '/ticket'
     | '/admin/curation'
@@ -304,6 +324,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chats'
+    | '/delete-account'
     | '/feedback'
     | '/home'
     | '/intro'
@@ -317,6 +338,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/store'
+    | '/support'
     | '/terms'
     | '/ticket'
     | '/admin/curation'
@@ -334,6 +356,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/chats'
+    | '/delete-account'
     | '/feedback'
     | '/home'
     | '/intro'
@@ -347,6 +370,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/store'
+    | '/support'
     | '/terms'
     | '/ticket'
     | '/admin/curation'
@@ -365,6 +389,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ChatsRoute: typeof ChatsRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
   IntroRoute: typeof IntroRoute
@@ -378,6 +403,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   StoreRoute: typeof StoreRoute
+  SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   TicketRoute: typeof TicketRoute
   ChatIdRoute: typeof ChatIdRoute
@@ -404,6 +430,13 @@ declare module '@tanstack/react-router' {
       path: '/chats'
       fullPath: '/chats'
       preLoaderRoute: typeof ChatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedback': {
@@ -495,6 +528,13 @@ declare module '@tanstack/react-router' {
       path: '/store'
       fullPath: '/store'
       preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -624,6 +664,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ChatsRoute: ChatsRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,
   IntroRoute: IntroRoute,
@@ -637,6 +678,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   StoreRoute: StoreRoute,
+  SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   TicketRoute: TicketRoute,
   ChatIdRoute: ChatIdRoute,
