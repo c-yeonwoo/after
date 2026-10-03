@@ -27,8 +27,8 @@ export const Route = createFileRoute("/store")({
   }),
   head: () => ({
     meta: [
-      { title: `티켓 상점 — ${BRAND.name}` },
-      { name: "description", content: "소개 티켓과 만남 티켓을 구매합니다." },
+      { title: `티켓 받기 — ${BRAND.name}` },
+      { name: "description", content: "소개 티켓과 만남 티켓을 확인하고 신청합니다." },
     ],
   }),
   component: StorePage,
@@ -63,8 +63,8 @@ const KINDS: {
     guide: "티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 전액 돌려드립니다.",
     terms: [
       "티켓은 만료되지 않습니다",
-      "상대가 24시간 안에 답하지 않으면 전액 환불",
-      "상대 사유로 약속이 취소된 경우에도 환불",
+      "상대가 24시간 안에 답하지 않으면 티켓 자동 반환",
+      "상대 사유로 약속이 취소된 경우에도 반환",
     ],
   },
 ];
@@ -134,16 +134,16 @@ function StorePage() {
   const single = bundles.find((b) => b.quantity === 1)?.amount ?? 0;
 
   // 판정 전(또는 리다이렉트 직전)에는 가격을 그리지 않는다.
-  if (!ready || (me && me.gender !== "male")) {
+  if (!ready || paid === null || (me && me.gender !== "male")) {
     return (
-      <AppScreen title="티켓 상점" back="/me">
+      <AppScreen title="티켓 받기" back="/me">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen title="티켓 상점" back="/me">
+    <AppScreen title="티켓 받기" back="/me">
       <div className="mt-3 flex gap-2">
         {KINDS.map((k) => (
           <button
@@ -196,12 +196,15 @@ function StorePage() {
                     {spec.label} {quantity}장
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    장당 {won(perUnit)}
-                    {saved > 0 ? ` · ${won(saved)} 아낌` : ""}
+                    {paid
+                      ? `장당 ${won(perUnit)}${saved > 0 ? ` · ${won(saved)} 아낌` : ""}`
+                      : "베타 기간 무료"}
                   </span>
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="block text-base font-semibold tabular-nums">{won(amount)}</span>
+                  <span className="block text-base font-semibold tabular-nums">
+                    {paid ? won(amount) : "무료"}
+                  </span>
                 </span>
               </button>
             </li>
@@ -213,7 +216,7 @@ function StorePage() {
         <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
           <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            {spec.label} {order.quantity}장 · {won(order.amount)}.{" "}
+            {spec.label} {order.quantity}장{paid ? ` · ${won(order.amount)}` : ""}.{" "}
             {paid === false ? "확인이 끝나면" : "준비되면"} 보유 티켓에 바로 들어옵니다.
           </p>
         </div>

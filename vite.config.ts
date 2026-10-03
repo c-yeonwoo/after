@@ -44,6 +44,13 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
       JSON.stringify(value),
     ]),
   );
+  /*
+    iOS 첫 심사는 이메일·비밀번호 로그인만 제공한다. 웹에서는 기존 카카오
+    재로그인을 유지하되, Capacitor 번들에서는 관련 진입점을 렌더하지 않는다.
+    런타임의 isNative 판정만 쓰면 웹뷰가 뜬 뒤에야 갈리고 심사 빌드 자체의
+    계약이 흐려지므로 빌드 타깃을 상수로 주입한다.
+  */
+  envDefine["import.meta.env.VITE_APP_BUILD"] = JSON.stringify(forApp ? "true" : "false");
 
   // 실제 배포물이 어느 커밋에서 만들어졌는지 HTML과 설정 화면에 남긴다.
   // 자동 배포가 끊겨도 운영 URL의 버전과 origin/main 을 기계적으로 비교할 수 있다.

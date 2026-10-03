@@ -28,11 +28,17 @@ export const Route = createFileRoute("/me")({
  */
 const MENU = [
   { to: "/profile", icon: User, label: "내 프로필", hint: "상대에게 보이는 모습", male: false },
-  // 상점은 소개·만남 두 종류를 판다(s19). 부제가 한쪽만 말하면 소개 티켓을
-  // 사려는 사람이 여기로 들어올 이유를 못 찾는다.
-  { to: "/store", icon: Ticket, label: "티켓 상점", hint: "소개 · 만남 티켓 구매", male: true },
+  // 베타에는 결제를 받지 않으므로 구매·상점으로 부르지 않는다. 결제를 켠 뒤에도
+  // 티켓 보유량과 신청 상태를 확인하는 화면이라 중립적인 이름이 더 오래 간다.
+  { to: "/store", icon: Ticket, label: "티켓 받기", hint: "소개 · 만남 티켓", male: true },
   { to: "/settings", icon: Bell, label: "환경설정", hint: "화면 · 알림", male: false },
-  { to: "/terms", icon: FileText, label: "약관 · 문의", hint: "이용약관 · 개인정보", male: false },
+  {
+    to: "/support",
+    icon: FileText,
+    label: "도움 · 문의",
+    hint: "고객 지원 · 계정 삭제",
+    male: false,
+  },
 ] as const;
 
 /**
