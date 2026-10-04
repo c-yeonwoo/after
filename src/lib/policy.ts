@@ -25,7 +25,7 @@
  * 아직 실사용자가 없어 재동의 흐름은 만들지 않았다 —
  * **실사용자를 받은 뒤에 본문을 또 고치면 재동의를 받아야 한다.**
  */
-export const POLICY_VERSION = "2026-09-20";
+export const POLICY_VERSION = "2026-10-04";
 
 /**
  * 사업자 정보.
@@ -40,20 +40,20 @@ export const POLICY_VERSION = "2026-09-20";
  */
 export const BUSINESS = {
   name: "널디선데이",
-  /** 개인사업자이므로 대표자 = 본인. 법적 성명이 필요하다. */
-  owner: null as string | null,
+  /** 개인사업자 대표자 법적 성명. */
+  owner: "최연석" as string | null,
   registrationNo: "538-04-03325",
   /** 통신판매업 신고번호. 관할 구청 신고 후 부여된다(예: 제2026-강남-1234호). */
-  mailOrderNo: null as string | null,
-  address: null as string | null,
+  mailOrderNo: "2025-별내-1148" as string | null,
+  address: "별내5로 119" as string | null,
   /**
    * 문의 창구. 지금은 실제로 받는 주소를 쓴다 — 닿지 않는 주소를 적는 것이
    * 비워 두는 것보다 나쁘다. `help@eclps.kr` 로 옮기려면 Cloudflare Email
    * Routing(무료)에서 이 주소로 포워딩만 걸면 된다.
    */
   contactEmail: "aftersunset.officially@gmail.com",
-  /** 개인정보 보호책임자. 개인사업자는 통상 대표자 본인이다. */
-  privacyOfficer: null as string | null,
+  /** 개인정보 보호책임자. */
+  privacyOfficer: "최연석" as string | null,
 } as const;
 
 /** 화면에 "미확정" 으로 띄울 항목. BUSINESS 에서 파생되므로 어긋날 수 없다. */
