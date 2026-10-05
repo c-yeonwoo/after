@@ -83,17 +83,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: `${BRAND.name} — 직장인 1:1 소개 서비스` },
+      { title: `${BRAND.name} — 퇴근 후, 한 사람과의 약속` },
       {
         name: "description",
-        content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명. 스와이프 없는 1:1 소개 서비스.",
+        content: BRAND.description,
       },
-      { property: "og:title", content: `${BRAND.name} — 직장인 1:1 소개 서비스` },
-      {
-        property: "og:description",
-        content: "퇴근하고 만나기 좋은 거리에, 좋은 사람 한 명.",
-      },
-      { property: "og:site_name", content: "Eclipse" },
+      { property: "og:title", content: `${BRAND.name} — 퇴근 후, 한 사람과의 약속` },
+      { property: "og:description", content: BRAND.description },
+      { property: "og:site_name", content: BRAND.name },
       { name: "app-version", content: APP_VERSION },
 
       { property: "og:type", content: "website" },
@@ -110,20 +107,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
-      },
-      /*
-        라틴 서체 **둘**을 받는다. 역할이 다르다.
-
-        · Fraunces — 브랜드네임(워드마크). SOFT·WONK 축으로 세리프의 격식을 덜어
-          "딱딱하다" 는 지적을 해소한 자리다. 축 값은 styles.css 에서 정하지만,
-          폰트 URL 에 축 범위를 함께 요청해야 실제로 적용된다.
-        · Archivo Black — 랜딩 히어로. 한때 Fraunces 900 으로 통일했다가 되돌렸다.
-          히어로는 이름과 달리 **때려야** 하는 자리고, 세리프 900 은 우아해지면서
-          그 타격을 잃었다. wght 축을 더 안 받으므로 Fraunces 쪽 요청도 가벼워졌다.
-      */
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,SOFT,WONK@9..144,0..100,0..1&display=swap",
       },
       /*
         SVG 를 먼저 둔다 — 지원 브라우저는 이걸 쓰고 어느 크기에서도 선명하다.

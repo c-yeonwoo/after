@@ -26,7 +26,7 @@ export const Route = createFileRoute("/schedule")({
  * 남성이 상대가 보낸 날짜·지역을 보고 **확정**하는 화면.
  *
  * 예전에는 이 단계를 대화방 안에서 했다. 그런데 S7 이후 대화는 확정된 뒤에야
- * 열리므로(세라가 그 전까지 중개한다) 확정 화면이 대화 바깥에 있어야 한다.
+ * 열리므로(자동 안내가 그 전까지 중개한다) 확정 화면이 대화 바깥에 있어야 한다.
  */
 function SchedulePage() {
   const navigate = useNavigate();

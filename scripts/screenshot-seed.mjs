@@ -14,7 +14,7 @@
  *
  * ── 왜 실제 인물 사진이 아닌가 ──
  * 스톡 사진은 라이선스가 필요하고, 생성한 얼굴은 "실제 사용자처럼" 보이는 것이
- * 문제다. 그래서 **브랜드 색 그라디언트 + 이니셜**로 명백히 도안임을 드러낸다.
+ * 문제다. 그래서 **중립 배경 + 이니셜**로 명백히 도안임을 드러낸다.
  * 실제 제출 전에 라이선스 있는 사진으로 갈아끼우려면 avatarSvg 만 바꾸면 된다.
  */
 import { execFileSync } from "node:child_process";
@@ -48,20 +48,12 @@ function serviceKey() {
  * 계열 안에서 사람마다 색상을 돌려 서로 구분되게 한다.
  */
 function avatarSvg(initial, hueShift) {
-  const a = `hsl(${(345 + hueShift) % 360} 55% 62%)`;
-  const b = `hsl(${(316 + hueShift) % 360} 42% 26%)`;
+  const surfaces = ["#ECE9E2", "#F2E4D9", "#E8B99F"];
+  const background = surfaces[Math.abs(Math.round(hueShift / 12)) % surfaces.length];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${a}"/>
-      <stop offset="1" stop-color="${b}"/>
-    </linearGradient>
-  </defs>
-  <rect width="640" height="640" fill="url(#g)"/>
-  <circle cx="320" cy="250" r="96" fill="#ffffff" opacity="0.22"/>
-  <path d="M320 372c-104 0-188 70-188 156v112h376V528c0-86-84-156-188-156Z" fill="#ffffff" opacity="0.22"/>
+  <rect width="640" height="640" fill="${background}"/>
   <text x="320" y="352" text-anchor="middle" font-size="150" font-weight="700"
-        fill="#ffffff" opacity="0.92"
+        fill="#252A34"
         font-family="-apple-system, 'Apple SD Gothic Neo', sans-serif">${initial}</text>
 </svg>`;
 }

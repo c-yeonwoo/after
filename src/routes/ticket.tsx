@@ -24,7 +24,10 @@ export const Route = createFileRoute("/ticket")({
   head: () => ({
     meta: [
       { title: `만남 티켓 — ${BRAND.name}` },
-      { name: "description", content: "만남 티켓을 쓰면 세라가 약속 조율을 시작합니다." },
+      {
+        name: "description",
+        content: "만남 티켓을 쓰면 애프터 자동 안내가 약속 조율을 시작합니다.",
+      },
       { property: "og:title", content: `만남 티켓 — ${BRAND.name}` },
       { property: "og:description", content: "티켓 한 장으로 한 번의 만남을 준비합니다." },
     ],
@@ -88,7 +91,7 @@ function TicketPage() {
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-        <div className="bg-gradient-brand px-6 py-6">
+        <div className="bg-primary px-6 py-6 text-primary-foreground">
           <Ticket className="size-5 text-primary-foreground" aria-hidden="true" />
           <div className="mt-3 flex items-baseline justify-between gap-3">
             <p className="text-lg font-semibold text-primary-foreground">만남 티켓 1장</p>
@@ -145,7 +148,7 @@ function TicketPage() {
                 const created = await redeemMeetingTicket(introId);
                 setMeeting(created);
                 haptics.success();
-                toast.success("티켓을 사용했습니다. 세라가 상대에게 물어볼게요.");
+                toast.success("티켓을 사용했습니다. 애프터 자동 안내가 상대에게 전달할게요.");
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "티켓 사용에 실패했습니다.");
               } finally {

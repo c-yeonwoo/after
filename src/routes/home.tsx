@@ -11,6 +11,7 @@ import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
 import {
   homeState,
   markMet,
+  paymentsEnabled,
   setPaused,
   type Meeting,
   type NoShowReport,
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/home")({
 
 /**
  * 퍼널 4단계. 홈에서 상태를 말하는 곳은 (1) 헤드라인 (2) 이 진행바 뿐이다.
- * 예전에는 헤드라인·세라 카드·진행바·"다음 단계" 리스트 네 곳이 같은 변수를
+ * 예전에는 헤드라인·안내 카드·진행바·"다음 단계" 리스트 네 곳이 같은 변수를
  * 서로 다른 문장으로 반복했다 — 이 제품은 동시에 진행되는 일이 항상 하나이므로
  * (불변식 2) 요약할 것이 없고, 대시보드 패턴 자체가 맞지 않았다.
  */
@@ -63,6 +64,7 @@ function HomePage() {
   /** 큐에서 전송된 카드 수 · 소개 티켓 보유량(v2). 홈의 안내 근거다. */
   const [queued, setQueued] = useState(0);
   const [introTickets, setIntroTickets] = useState(0);
+  const [introPaymentsEnabled, setIntroPaymentsEnabled] = useState(false);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [noShow, setNoShow] = useState<NoShowReport | null>(null);
   // 여성은 동시에 여러 건을 받을 수 있다 — 개수를 세어 목록으로 보낸다.
@@ -85,7 +87,7 @@ function HomePage() {
     if (!ready || !me) return;
     let cancelled = false;
     (async () => {
-      const state = await homeState();
+      const [state, payments] = await Promise.all([homeState(), paymentsEnabled()]);
       /*
         **여기서 소개를 열지 않는다.** 예전에는 열린 소개가 없으면 openIntro() 를
         대신 불러줬는데, v2 부터 그 호출은 소개 티켓 1장을 차감한다 — 홈을 열기만
@@ -100,6 +102,7 @@ function HomePage() {
       setNoShow(state.pending_no_show?.responded_at ? null : state.pending_no_show);
       setQueued(state.queued_intros);
       setIntroTickets(state.intro_tickets);
+      setIntroPaymentsEnabled(payments);
       setLoading(false);
     })();
     return () => {
@@ -142,9 +145,11 @@ function HomePage() {
               : "평가할 프로필이 있어요."
             : isMale && queued > 0
               ? "소개가 도착했어요."
-              : isMale
-                ? "기다리는 단계예요."
-                : "지금은 쉬어가는 중이에요.";
+              : me?.paused_at
+                ? "소개를 잠시 쉬고 있어요."
+                : isMale
+                  ? "소개를 준비하고 있어요."
+                  : "새 소개를 기다리고 있어요.";
 
   return (
     <AppScreen>
@@ -157,8 +162,8 @@ function HomePage() {
         가장 크고 진한 색이 누를 수 없는 것을 가리키고 있었고, 바로 아래 카드와
         버튼까지 같은 분홍이라 화면 전체가 한 색으로 덮였다.
 
-        색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
-        상태 문장이 저절로 앞으로 나온다. 분홍은 **누를 수 있는 것**에만 남긴다.
+        강조색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
+        상태 문장이 저절로 앞으로 나온다. 살구색은 작은 포인트와 선택 상태에 쓴다.
       */}
       <h1 className="headline mt-2 text-3xl leading-[1.35]">
         <span className="text-muted-foreground">{me?.name ? `${me.name}님,` : "안녕하세요,"}</span>
@@ -183,9 +188,9 @@ function HomePage() {
       ) : null}
 
       {/*
-        세라의 말과 "지금 할 일"을 한 카드로 합쳤다.
+        안내와 "지금 할 일"을 한 카드로 합쳤다.
         따로 두면 같은 내용을 두 번 말하게 된다 — 예전 "다음 단계" 리스트와 같은 중복이었다.
-        확정 상태처럼 카드 자체가 정보를 다 담는 경우엔 세라가 굳이 말하지 않는다.
+        확정 상태처럼 카드 자체가 정보를 다 담는 경우엔 별도 안내를 보태지 않는다.
       */}
       <div className="mt-5">
         {loading ? (
@@ -201,7 +206,7 @@ function HomePage() {
         ) : meeting?.confirmed_at ? (
           <ConfirmedCard meeting={meeting} counterpart={candidate} />
         ) : meeting?.prefs_submitted_at ? (
-          // S7: 확정 전까지는 대화가 열리지 않는다 — 세라가 중개한다.
+          // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
           isMale ? (
             <GuideNote
               introduce
@@ -246,15 +251,23 @@ function HomePage() {
           <GuideNote
             introduce
             action={
-              <CardAction to="/intro">
-                {introTickets > 0 ? "소개 열어보기" : "소개 티켓 사기"}
-              </CardAction>
+              introTickets > 0 ? (
+                <CardAction to="/intro">소개 열어보기</CardAction>
+              ) : (
+                <CardAction to="/store" search={{ kind: "intro" }}>
+                  {introPaymentsEnabled ? "소개 티켓 구매하기" : "무료 티켓 신청하기"}
+                </CardAction>
+              )
             }
           >
             {queued > 1
               ? `소개 ${queued}건이 도착했어요. 한 번에 한 분씩 열어 보실 수 있습니다.`
               : "소개가 도착했어요. 프로필을 열면 만남으로 이어갈지 정하실 수 있습니다."}
-            {introTickets === 0 ? " 열람에는 소개 티켓 1장이 필요합니다." : ""}
+            {introTickets === 0
+              ? introPaymentsEnabled
+                ? " 프로필을 열려면 소개 티켓 1장이 필요합니다."
+                : " 프로필을 열기 전에 무료 티켓을 신청해 주세요."
+              : ""}
           </GuideNote>
         ) : null}
       </div>
@@ -268,6 +281,7 @@ function HomePage() {
           isMale={isMale}
           paused={me?.paused_at !== null && me?.paused_at !== undefined}
           introTickets={introTickets}
+          introPaymentsEnabled={introPaymentsEnabled}
           onToggle={async (next) => {
             try {
               await setPaused(next);
@@ -327,11 +341,13 @@ function ReadinessPanel({
   isMale,
   paused,
   introTickets,
+  introPaymentsEnabled,
   onToggle,
 }: {
   isMale: boolean;
   paused: boolean;
   introTickets: number;
+  introPaymentsEnabled: boolean;
   onToggle: (next: boolean) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -380,7 +396,9 @@ function ReadinessPanel({
             <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
               {introTickets > 0
                 ? `소개가 오면 바로 열 수 있습니다. 소개 티켓 ${introTickets}장 보유.`
-                : "소개를 열려면 소개 티켓 1장이 필요합니다."}
+                : introPaymentsEnabled
+                  ? "소개를 열려면 소개 티켓 1장이 필요합니다."
+                  : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
             </span>
             {introTickets === 0 ? (
               <Link
@@ -388,7 +406,7 @@ function ReadinessPanel({
                 search={{ kind: "intro" as const }}
                 className="shrink-0 text-xs font-semibold text-foreground underline underline-offset-4"
               >
-                티켓 보기
+                {introPaymentsEnabled ? "티켓 보기" : "무료로 신청"}
               </Link>
             ) : null}
           </div>
@@ -446,8 +464,8 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
         <Clock className="size-3.5" aria-hidden="true" />
         기다리는 중
       </p>
-      <p className="headline mt-2.5 text-lg">상대의 답변을 기다리고 있어요</p>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-2.5 text-xs font-semibold text-muted-foreground">티켓 반환 안내</p>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
         {left ? (
           <>
             <span className="font-semibold text-foreground">{left}</span> 안에 답이 없으면 티켓은
@@ -462,7 +480,7 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
 }
 
 /**
- * 약속 시각이 지난 만남 — 제품 이름이 '이클립스'인데 이 상태가 없었다(진단 UX-10).
+ * 약속 시각이 지난 만남 — 종료 후 상태를 분리해 다음 행동을 안내한다.
  *
  * 홈의 상태 기계가 confirmed_at 에서 끝나 있어서, 이틀 지난 약속에도 "만남이
  * 잡혔어요"와 지난 시각에 대한 "열립니다"가 그대로 남았다. 그리고 북극성인
@@ -539,7 +557,7 @@ function ConfirmedCard({
 }) {
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
-      <div className="bg-gradient-brand px-5 py-5">
+      <div className="bg-primary px-5 py-5 text-primary-foreground">
         <p className="flex items-center gap-1.5 text-3xs font-semibold tracking-[0.16em] text-primary-foreground/85 uppercase">
           <CalendarCheck className="size-3.5" aria-hidden="true" />
           만남 확정
@@ -577,7 +595,7 @@ function ConfirmedCard({
   );
 }
 
-/** 세라 카드 안에 들어가는 단일 행동 버튼. */
+/** 자동 안내 카드 안에 들어가는 단일 행동 버튼. */
 function CardAction({
   to,
   search,

@@ -95,7 +95,7 @@ function PrefsPage() {
   // 날짜 키가 YYYY-MM-DD 라 사전순 정렬이 곧 시간순이다.
   const pickedKeys = useMemo(() => Object.keys(picked).sort(), [picked]);
 
-  // 역은 선택 사항이다 — 날짜만 있으면 세라가 전달할 수 있다.
+  // 역은 선택 사항이다 — 날짜만 있으면 자동 안내로 전달할 수 있다.
   const canSubmit = pickedKeys.length > 0;
 
   const monthLabel = useMemo(() => {
@@ -366,7 +366,7 @@ function PrefsPage() {
               note: note.trim() || undefined,
             };
             await submitMeetingPrefs(meetingId, prefs);
-            // S7: 여기서 대화가 열리지 않는다 — 세라가 전달하고, 상대가 확정해야 열린다.
+            // S7: 여기서 대화가 열리지 않는다 — 자동 안내로 전달하고 상대가 확정해야 열린다.
             haptics.success();
             toast.success("전달했습니다. 상대가 날짜를 고르면 대화가 열려요.");
             navigate({ to: "/home" });
@@ -377,10 +377,10 @@ function PrefsPage() {
           }
         }}
       >
-        {busy ? "보내는 중…" : "세라에게 보내기"}
+        {busy ? "보내는 중…" : "애프터 자동 안내로 전달하기"}
       </Button>
       <p className="mt-3 text-center text-xs text-muted-foreground">
-        세라가 상대에게 그대로 전달합니다. 상대가 날짜와 장소를 정하면 대화가 열립니다.
+        애프터 자동 안내가 상대에게 그대로 전달합니다. 상대가 날짜와 장소를 정하면 대화가 열립니다.
       </p>
 
       {/*
