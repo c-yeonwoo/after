@@ -11,7 +11,7 @@ export const Route = createFileRoute("/delete-account")({
       { title: `계정 삭제 안내 — ${BRAND.name}` },
       {
         name: "description",
-        content: "이클립스 앱 안에서 계정을 삭제하는 방법과 삭제되는 데이터를 안내합니다.",
+        content: `${BRAND.name} 앱 안에서 계정을 삭제하는 방법과 삭제되는 데이터를 안내합니다.`,
       },
     ],
   }),
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/delete-account")({
 });
 
 function DeleteAccountPage() {
-  const subject = encodeURIComponent("[이클립스 계정 삭제 요청]");
+  const subject = encodeURIComponent(`[${BRAND.name} 계정 삭제 요청]`);
   return (
     <PublicInfoPage title="계정 삭제 안내">
       <InfoSection title="앱에서 바로 삭제하기">

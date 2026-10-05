@@ -1,6 +1,6 @@
 /**
  * 브랜드 컬러 대비 가드 — src/styles.css 의 실제 토큰 값을 파싱해
- * 역할별(텍스트·필·틴트 표면·그라디언트·포커스 링) WCAG 대비를 재계산한다.
+ * 역할별(텍스트·필·틴트 표면·말풍선·포커스 링) WCAG 대비를 재계산한다.
  *
  * 실행: bun scripts/check-contrast.mjs   (또는 node)
  *
@@ -40,7 +40,7 @@ const lightBlock = block(":root");
   한 벌로 통일하면서 합쳤다 — 따로 두면 반드시 어긋나고, 어긋난 쪽은 검사에
   안 걸린다. 그래서 여기서도 하나로 본다.
 */
-const darkBlock = block("\\.dark,\\n\\.brand-surface");
+const darkBlock = block("\\.dark");
 
 let scope = lightBlock;
 function readFrom(block, name) {
@@ -120,37 +120,14 @@ function audit(themeName, block) {
   const bg = toS(parseOklch(tokenRaw("background")));
   const card = toS(parseOklch(tokenRaw("card")));
 
-  // gradient-brand 의 두 정지점
-  const grad = scope.match(/--gradient-brand:[^;]+;/)[0];
-  const stops = [...grad.matchAll(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/g)].map((m) =>
-    toS([parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])]),
-  );
-
   console.log(`--primary          ${hex(primary)}`);
   console.log(`--primary-strong   ${hex(strong)}`);
-  console.log(`gradient stops     ${stops.map(hex).join(" → ")}\n`);
 
-  /*
-    역할을 나눠서 검사한다.
-
-    예전에는 --primary 를 텍스트로도 검사했다. 그때는 한 토큰이 채움과 글자를
-    겸했기 때문인데, 그 구속 때문에 채움을 밝힐 수 없었다(밝히면 글자가 미달).
-    이제 --primary 는 **채움 전용**이고 글자는 --primary-strong 이 맡는다.
-
-    검사를 느슨하게 한 것이 아니다 — 각 토큰을 **실제로 쓰이는 역할로** 본다.
-    채움은 그 위의 글자와, 글자는 뒤의 배경과 겨룬다. `text-primary` 가 남아 있는
-    곳은 랜딩·로그인뿐이고 거기는 항상 어두운 바탕이라, 다크 팔레트의 primary
-    검사가 그 자리를 덮는다.
-  */
+  // 토큰마다 실제 사용 역할에 맞춰 대비를 확인한다.
   console.log("── 글자 역할: primary-strong (AA 4.5) ──");
   chk("primary-strong / 배경", cr(strong, bg), 4.5);
   chk("primary-strong / 카드", cr(strong, card), 4.5);
 
-  /*
-    primary-strong 을 필로는 검사하지 않는다 — **채움으로 쓰는 곳이 없다.**
-    한 곳(랜딩 CTA 의 hover)에 있었는데, 밝은 테마에서 어두운 와인 위에 잉크
-    글자가 얹혀 2.15 였다. hover 는 primary/90 으로 바꿨다.
-  */
   console.log("\n── 채움 역할: primary (그 위의 글자, 4.5) ──");
   chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
 
@@ -169,15 +146,12 @@ function audit(themeName, block) {
     4.5,
   );
 
-  console.log("\n── 그라디언트 위 글자 (양 끝, 4.5) ──");
-  stops.forEach((s, i) => chk(`gradient stop ${i + 1} (${hex(s)})`, cr(s, primaryFg), 4.5));
-
   console.log("\n── 포커스 링 (비텍스트 3.0) ──");
   chk("ring / 배경", cr(toS(parseOklch(tokenRaw("ring"))), bg), 3.0);
 }
 
-audit("라이트 — 블러시 페이퍼", lightBlock);
-audit("자정의 자두 — 다크 & 브랜드 접점", darkBlock);
+audit("라이트 — 웜 페이퍼", lightBlock);
+audit("잉크 — 다크", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

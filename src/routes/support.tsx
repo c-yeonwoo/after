@@ -11,7 +11,7 @@ export const Route = createFileRoute("/support")({
       { title: `고객 지원 — ${BRAND.name}` },
       {
         name: "description",
-        content: "이클립스 이용 문의, 신고와 차단, 계정 삭제 방법을 안내합니다.",
+        content: `${BRAND.name} 이용 문의, 신고와 차단, 계정 삭제 방법을 안내합니다.`,
       },
     ],
   }),
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/support")({
 });
 
 function SupportPage() {
-  const subject = encodeURIComponent("[이클립스 문의]");
+  const subject = encodeURIComponent(`[${BRAND.name} 문의]`);
   return (
     <PublicInfoPage title="어떻게 도와드릴까요?">
       <InfoSection title="이메일 문의">

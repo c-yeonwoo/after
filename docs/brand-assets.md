@@ -1,246 +1,31 @@
-# 브랜드 자산
+# 애프터 브랜드 자산
 
-로고 마크를 고칠 때 함께 다시 뽑아야 하는 것들과, 뽑는 방법.
+현재 기준은 [리브랜딩 설계안](after-rebrand-plan.md)이다. 워드마크·심벌 SVG가 원본이며, 화면 마크는 [Logo.tsx](../src/components/Logo.tsx), 웹 아이콘은 [favicon.svg](../public/favicon.svg), iOS 아이콘은 [app-icon-ios.svg](../brand/app-icon-ios.svg), 실행 화면은 [splash.svg](../brand/splash.svg)에서 관리한다.
 
----
+## 래스터 자산 재생성
 
-## 마크
-
-**같은 크기의 원 둘. 하나는 채워져 있고 하나는 열려 있다.**
-
-이름을 그림으로 설명하지 않는다 — 앞선 마크(지평선에 걸린 해)가 올드하게 읽힌
-이유가 그것이었다. 대신 서비스가 하는 일을 그린다. 한 번에 **한 사람만**
-소개하고(원 둘, 그 이상 없음), 그중 한 사람은 **아직 열리지 않았다**(윤곽만).
-사선으로 놓아 하나는 내려가고 하나는 올라온다 — 저녁이라는 시간을 해를 그리지
-않고 리듬으로만 남긴 자리다.
-
-### 왜 면 + 선인가
-
-후보를 실제 크기로 렌더해 비교했다(16·20·24·32·56px, 명/암, 코럴 타일).
-
-| 안                    | 16px 결과                                               |
-| --------------------- | ------------------------------------------------------- |
-| 윤곽 원 둘            | 두 링이 붙어 뭉갠다. 앞서 접은 "누운 하트" 와 같은 실패 |
-| 면 둘                 | 이음선이 사라져 땅콩 하나로 읽힌다                      |
-| **면 하나 + 링 하나** | 두 요소의 성격이 달라 작아져도 둘로 읽힌다              |
-
-질량과 선을 대비시키는 것이 같은 것 둘을 나란히 두는 것보다 작은 크기에서 강하다.
-이 관찰이 형태를 결정했다.
-
-### 세 벌로 유지한다
-
-|           | 파일                      | 배경                 | 이음선              | 링 두께 |
-| --------- | ------------------------- | -------------------- | ------------------- | ------- |
-| 화면      | `src/components/Logo.tsx` | 없음(`currentColor`) | `mask`              | 3.2     |
-| 파비콘    | `public/favicon.svg`      | 둥근 타일(`rx=15`)   | 코럴 원 겹쳐 그리기 | 4.4     |
-| 앱 아이콘 | `brand/app-icon-ios.svg`  | **사각 전면**        | 코럴 원 겹쳐 그리기 | 4.4     |
-
-**앱 아이콘이 따로 있는 이유**: 파비콘은 스스로 둥근 타일이라 코너가 투명하다.
-iOS 는 투명을 검게 칠하고 그 위에 자기 스퀴클 마스크를 씌우므로, 같은 파일을 쓰면
-둥근 모서리 바깥에 **검은 삼각형 네 개**가 남는다. 앱스토어 심사도 아이콘의 투명을
-받지 않는다. 앱 아이콘은 모서리를 깎지 않고 배경을 전면으로 채운다 — 둥글리는 일은
-OS 가 한다.
-
-마크 위치도 다르다. bounding box 중심이 캔버스 중심과 어긋나 있어(아래 참고) scale
-만 주면 한쪽으로 몰린다.
-
-    마크 bbox(32 단위): x 4.4~28.8, y 3.2~27.6 → 중심 (16.6, 15.4)
-    translate = 32 - scale × (16.6, 15.4)
-
-앱 아이콘은 `scale 1.45` 로 마크가 캔버스의 **약 55%** 다. 처음 1.18 로 뽑았더니
-46% 로 작아 아이콘 안에서 겉돌았다(관례는 55~60%).
-
-- **치수가 다른 이유**: 파비콘이 실제로 그려지는 크기는 16px 이고, 타일 안쪽 여백을
-  빼면 마크에 10px 남짓만 남는다. 그 크기에서 3.2 두께 링은 사라진다.
-- **구현이 다른 이유**: `mask` 를 쓴 SVG 를 PNG 로 뽑으면 **링이 팔각형으로 깨진다**
-  (래스터라이저가 mask 를 낮은 해상도로 처리한다). 배경색을 아는 자산이라 겹쳐
-  그리기가 가능하고, 그 편이 어떤 변환기를 거쳐도 안전하다. 컴포넌트는
-  `currentColor` 라 배경을 모르므로 그쪽은 mask 가 맞다.
-
-하나로 맞추려면 큰 화면의 마크가 둔해지거나 파비콘이 뭉개지는 것 중 하나를
-골라야 했다. 두 벌 유지가 그보다 싸다.
-
----
-
-## 다시 뽑는 방법
-
-`public/favicon.svg` 가 모든 래스터 자산의 원본이다. 그것만 고친 뒤 아래를 돌린다.
+macOS의 Chrome과 `sips`를 사용한다. 벡터를 고친 뒤 저장소 루트에서 실행한다.
 
 ```bash
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-SVG="$PWD/public/favicon.svg"
-TMP=$(mktemp -d)
 
-# 큰 것은 Chrome 으로 직접 렌더한다.
-# ⚠️ 창 크기가 50px 아래면 Chrome 이 빈 이미지를 낸다 — 작은 것은 축소로 만든다.
-for S in 512 1024; do
-  "$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
-    --screenshot="$TMP/icon-$S.png" --window-size=$S,$S \
-    --default-background-color=00000000 "file://$SVG"
-done
-
-# 작은 것은 512 에서 축소한다(sips 는 macOS 기본 도구).
-for S in 16 32 48 180; do
-  cp "$TMP/icon-512.png" "$TMP/r-$S.png" && sips -z $S $S "$TMP/r-$S.png"
-done
-
-cp "$TMP/r-180.png"    public/apple-touch-icon.png
-cp "$TMP/icon-512.png" public/icon-512.png
-```
-
-앱 아이콘은 **원본이 다르다**(`brand/app-icon-ios.svg`). 투명이 없어야 하므로
-배경을 흰색으로 지정해 렌더한다 — `--default-background-color=00000000` 을 쓰면
-알파 채널이 생긴다.
-
-```bash
 "$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
-  --screenshot="$TMP/ios-1024.png" --window-size=1024,1024 \
+  --screenshot="$PWD/public/icon-512.png" --window-size=512,512 \
+  --default-background-color=00000000 "file://$PWD/public/favicon.svg"
+sips -z 180 180 public/icon-512.png --out public/apple-touch-icon.png
+
+"$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
+  --screenshot="$PWD/brand/app-store-1024.png" --window-size=1024,1024 \
   --default-background-color=ffffffff "file://$PWD/brand/app-icon-ios.svg"
+cp brand/app-store-1024.png ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
 
-cp "$TMP/ios-1024.png" brand/app-store-1024.png
-cp "$TMP/ios-1024.png" \
-   'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'
+"$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
+  --screenshot="$PWD/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png" \
+  --window-size=2732,2732 --default-background-color=ffffffff "file://$PWD/brand/splash.svg"
+cp ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-1.png
+cp ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-2.png
 ```
 
-`favicon.ico` 는 16·32·48 을 한 파일에 담아야 한다(윈도우·구형 브라우저가
-크기별로 골라 쓴다). 표준 라이브러리로 직접 조립한다.
+`public/favicon.ico`는 PNG 이미지가 포함된 ICO 컨테이너다. SVG나 색을 바꾸면 기존 아이콘들과 함께 다시 내보내야 하며, 파비콘·홈 화면 아이콘·스토어 아이콘·iOS 스플래시가 같은 시각 체계를 유지하는지 확인한다.
 
-```bash
-python3 - "$TMP" <<'PY'
-import struct, sys
-tmp = sys.argv[1]
-imgs = [(s, open(f'{tmp}/r-{s}.png', 'rb').read()) for s in (16, 32, 48)]
-head = struct.pack('<HHH', 0, 1, len(imgs))
-offset, entries, blobs = 6 + 16 * len(imgs), bytearray(), bytearray()
-for s, data in imgs:
-    entries += struct.pack('<BBBBHHII', s, s, 0, 0, 1, 32, len(data), offset)
-    blobs += data
-    offset += len(data)
-open('public/favicon.ico', 'wb').write(head + bytes(entries) + bytes(blobs))
-PY
-```
-
-### 확인
-
-- `favicon.ico` 안의 PNG 가 실제로 그려졌는지 본다 — 빈 이미지도 구조는 유효하다.
-  16x16 이 600바이트 아래면 의심한다(자두 타일이 있으므로 그보다 작아질 수 없다).
-- 밝은 탭바·어두운 탭바 양쪽에서 실루엣이 남는지 본다.
-- iOS·앱스토어 아이콘에 **알파 채널이 없어야 한다.** PNG color type 이 2(RGB)여야
-  하고 6(RGBA)이면 안 된다.
-
-  ```bash
-  python3 -c "
-  import struct; d=open('brand/app-store-1024.png','rb').read()
-  print('color type', struct.unpack('>IIBB', d[16:26])[3], '(2=RGB 정상, 6=RGBA 문제)')"
-  ```
-
-- 시뮬레이터 홈 화면에서 실제로 본다 — 코너에 검은 삼각형이 없어야 한다.
-
----
-
-## 워드마크
-
-`BRAND.nameEn` = **Eclipse**, 한국어는 **이클립스** 하나다. 두 층(정식/축약)으로
-나누지 않는다 — 근거는 `src/lib/brand.ts`.
-
-도메인은 `eclps.kr` 이다. `eclipse.kr`·`eclipse.co.kr` 은 2003·2007년부터 개인이
-보유 중이라 잡을 수 없었다. **이름과 도메인의 철자가 어긋나는 것이 이 선택의
-유일한 흠이고, 알고 택했다.**
-
----
-
-## 색
-
-브랜드 색은 **자정의 자두(midnight plum) 바탕 + 로즈**다. 팔레트는 **한 벌**이다.
-
-| 용도                                           | 값        |
-| ---------------------------------------------- | --------- |
-| 브랜드 바탕 (랜딩·로그인·**가입**·아이콘 타일) | `#1A0F1E` |
-| 로즈 (마크·강조·CTA, 어두운 바탕)              | `#E2708A` |
-| 로즈 (밝은 바탕의 강조·CTA)                    | `#A93758` |
-| 블러시 페이퍼 (라이트 배경)                    | `#FBF5F7` |
-| 잉크 (깊은 자두)                               | `#241426` |
-
-### 왜 바뀌었나
-
-이전에는 브랜드 접점이 **네이비 + 금**(`#0A0F1C` / `#F0B646`), 로그인 뒤 화면이
-**종이 + 코럴**(`#c72b10`) 로 갈라져 있었다. 둘 다 문제였다.
-
-- 네이비+금은 프라이빗뱅킹·위스키의 언어다. 소개 서비스의 언어가 아니다.
-- 랜딩에서 가입으로 넘어가는 순간 색 체계가 통째로 바뀌어, 같은 제품으로
-  읽히지 않았다.
-
-그래서 **자두(hue≈316) → 로즈(hue≈5)** 한 계열로 통일했다. 라이트는 블러시
-페이퍼, 다크와 브랜드 접점은 같은 자두 밤이다. `.brand-surface` 는 남아 있지만
-이제 **`.dark` 와 같은 규칙을 공유한다** — 값이 갈리면 반드시 어긋나기 때문이다.
-근거는 `src/styles.css` 주석에 있다.
-
-### 배경이 바뀌는 지점은 하나다
-
-`.brand-surface` 는 **셸(`MobileFrame`)이 라우트를 보고** 붙인다. 랜딩·로그인·가입은
-테마와 무관하게 자두 밤이고, 로그인 뒤부터 테마를 따른다.
-
-처음에는 랜딩·로그인만 어둡고 가입부터 테마를 따랐다. 그래서 밝은 테마 사용자는
-랜딩 → 가입에서 색이 뒤집혔는데 **그 지점에 아무 의미가 없었다** — 같은 흐름의
-연속이다. 원래 이유는 팔레트가 두 벌이라 섞을 수 없어서였고, 한 계열로 통일하면서
-그 이유가 사라졌다. 지금은 "밖 → 안" 이라는 뜻이 있는 자리에서 한 번만 바뀐다.
-
-예외가 하나 있다 — `/signup?edit=1`(프로필 수정)은 가입과 라우트를 공유하지만
-이미 회원인 사람의 화면이라 테마를 따른다.
-
-### 채움과 글자를 나눈다
-
-`--primary` 는 **채움 전용**(버튼·카드), `--primary-strong` 은 **글자·아이콘**이다.
-
-처음에는 한 토큰이 둘을 겸했다. 그래서 교착이 있었다 — 채움을 밝히면 글자가
-대비 미달이고, 글자를 지키면 화면에서 가장 큰 면적이 어두운 와인으로 남는다.
-실제로 "랜딩 핑크는 좋은데 이후 페이지는 자두색" 이라는 지적이 그 결과였다.
-
-역할을 나누면 둘 다 된다. 밝은 바탕에서 로즈를 **글자로** 쓸 수는 없지만
-(`#E2708A` / 종이 = 2.82), **채움으로는** 쓸 수 있다 — 그 위에 잉크 글자를
-얹으면 5.45 다. 다크 테마가 원래 이 방식이었고, 이제 두 테마가 같은 문법을 쓴다.
-
-글자 톤(`#B23A63`)은 **통과하는 가장 밝은 값**이다. 막히는 지점은 배경이 아니라
-틴트 표면 위(`bg-primary/8`)이고, 거기서 4.85 가 남는다. 한 단계 더 밝히면
-4.40 으로 미달한다.
-
-대비는 `npm run check:contrast` 가 **두 테마(라이트 · 자정의 자두)** 를 각각
-역할별로 검사한다. 아이콘 자산에는 hex 를 직접 쓴다 — SVG 는 CSS 변수를 읽을 수 없다.
-
----
-
-## 워드마크
-
-**Fraunces** 한 서체를 쓴다(가변). 두 역할을 한 파일이 덮는다.
-
-| 자리        | 클래스             | 값                                     |
-| ----------- | ------------------ | -------------------------------------- |
-| 브랜드네임  | `wordmark`         | wght 400 · opsz 100 · SOFT 60 · WONK 1 |
-| 랜딩 히어로 | `display-wordmark` | wght 900 · opsz 144 · SOFT 60 · WONK 1 |
-
-이전에는 Archivo Black 이었다. 기하 그로테스크라 딱딱했고, 단일 웨이트라 히어로에
-굵기를 줄 수도 없었다. Fraunces 의 **SOFT**(후리를 둥글게)·**WONK**(몇 글자를 살짝
-기울임) 축이 세리프의 격식을 덜어낸다.
-
-`opsz` 를 자동에 맡기지 않는다 — 워드마크는 18px 로도 48px 로도 쓰이는데, 광학
-사이즈 축은 크기에 따라 대비를 바꿔서 자리마다 다른 글자가 된다. 로고는 어디서나
-같아야 한다.
-
-### i 의 점이 마크다
-
-브랜드네임은 소문자 `eclipse` 이고, **`i` 의 점 자리에 마크를 얹는다**(`Logo.tsx`).
-마크를 옆에 세우지 않는다 — 그러면 마크와 글자가 각자 서 있어서 둘의 관계를 읽는
-사람이 만들어야 하고, 워드마크 자체는 폰트를 깐 것 이상이 아니다.
-
-글자는 점 없는 `ı`(U+0131)를 쓴다. 일반 `i` 를 두고 점을 가리는 것보다, 애초에
-점이 없는 글자를 쓰는 편이 서체가 바뀌어도 안전하다.
-
-점만 브랜드 색이고 글자는 주변 색을 물려받는다 — 랜딩에서는 흰 글자 + 분홍 점,
-밝은 화면에서는 잉크 글자 + 진한 로즈 점이다.
-
-> **폰트 없이 처음부터 그리는 것을 먼저 시도했고, 접었다.** 마크와 같은 반지름의
-> 원으로 소문자 `eclipse` 를 조립하는 생성기를 만들었는데(`e`·`c`·`p`·`s`·`e` 가
-> 모두 원에서 잘라낸 호), 자간 계산이 어긋나 글자가 겹치고 `s` 는 두 원의 교점을
-> 잘못 잡아 형태가 깨졌다. 몇 라운드 더 다듬어도 전문 서체 품질이 나올지 확실하지
-> 않았다. **좋은 서체 + 우리만의 디테일 하나**가 같은 목적을 더 확실하게 달성한다 —
-> 실제 브랜드들이 워드마크를 만드는 방식이기도 하다.
+스토어 스크린샷은 아이콘과 별도 산출물이다. UI 문구나 색이 바뀌면 [App Store 제출 자료](appstore-submission.md)의 캡처를 다시 만들고, 과거 화면을 제출하지 않는다.

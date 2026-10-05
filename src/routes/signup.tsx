@@ -55,12 +55,12 @@ export const Route = createFileRoute("/signup")({
     search.edit === "1" || search.edit === true ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: `가입 · 지역·직장 인증 — ${BRAND.name}` },
+      { title: `가입 · 지역·회사 이메일 인증 — ${BRAND.name}` },
       {
         name: "description",
         content: "활동 지역과 회사 이메일을 확인하고, 취향에 따라 달라지는 프로필을 작성합니다.",
       },
-      { property: "og:title", content: `가입 · 지역·직장 인증 — ${BRAND.name}` },
+      { property: "og:title", content: `가입 · 지역·회사 이메일 인증 — ${BRAND.name}` },
       {
         property: "og:description",
         content: "활동 지역 선택 · 회사 이메일 인증 · 적응형 프로필 작성",
@@ -603,7 +603,7 @@ function Onboarding() {
       <StepShell
         step={3}
         total={TOTAL}
-        eyebrow="직장 인증"
+        eyebrow="회사 이메일 인증"
         title="회사 이메일로 인증해 주세요"
         description="주소는 프로필에 노출되지 않습니다."
       >
