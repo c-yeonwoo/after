@@ -2739,6 +2739,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      unlink_my_kakao_identity: { Args: never; Returns: number }
       verify_notification_email: { Args: { p_code: string }; Returns: boolean }
       visible_profile_ids: {
         Args: never

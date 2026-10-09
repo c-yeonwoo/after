@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -390,8 +390,16 @@ function SettingsPage() {
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {kakaoLinked
               ? "카카오로 로그인하실 수 있습니다. 회사 메일과 비밀번호도 그대로 쓸 수 있습니다."
-              : "연결하면 다음부터 카카오 한 번으로 로그인하실 수 있습니다. 프로필에는 아무것도 공개되지 않습니다."}
+              : "연결하면 다음부터 카카오로 로그인하실 수 있습니다. 카카오 계정 이메일과 회원 식별자는 로그인·계정 연결에만 사용하며, 소개 상대에게 공개되지 않습니다."}
           </p>
+          {!kakaoLinked ? (
+            <Link
+              to="/privacy"
+              className="mt-1 inline-block text-xs text-muted-foreground underline underline-offset-2"
+            >
+              개인정보 처리방침 보기
+            </Link>
+          ) : null}
           <Button
             variant="outline"
             className="mt-3 w-full"
