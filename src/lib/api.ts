@@ -894,13 +894,56 @@ export async function verifyNotificationEmail(code: string): Promise<void> {
   if (!data) throw new Error("코드가 맞지 않거나 만료되었습니다. 새 코드를 받아 주세요.");
 }
 
-/** 아직 처리되지 않은 내 주문. 있으면 "접수됨" 상태로 보여준다. */
-export async function myPendingTicketOrder(kind?: TicketKind): Promise<TicketOrder | null> {
+/** 현재 모드에서 아직 처리되지 않은 내 주문. */
+export async function myPendingTicketOrder(
+  kind?: TicketKind,
+  paymentRequired?: boolean,
+): Promise<TicketOrder | null> {
   let q = supabase.from("ticket_orders").select("*").eq("state", "pending");
   if (kind) q = q.eq("kind", kind);
+  if (paymentRequired !== undefined) q = q.eq("payment_required", paymentRequired);
   const { data, error } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+export async function getTicketOrder(orderId: string): Promise<TicketOrder | null> {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function myPaidTicketOrders(): Promise<TicketOrder[]> {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*")
+    .eq("payment_required", true)
+    .in("state", ["confirmed", "canceling", "canceled"])
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function confirmTicketPayment(
+  orderId: string,
+  paymentKey: string,
+  amount: number,
+): Promise<void> {
+  const { error } = await supabase.functions.invoke("confirm-ticket-payment", {
+    body: { orderId, paymentKey, amount },
+  });
+  if (error) throw error;
+}
+
+export async function cancelTicketPayment(orderId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke("cancel-ticket-payment", {
+    body: { orderId },
+  });
+  if (error) throw error;
 }
 
 export async function unusedTicketCount(kind?: TicketKind): Promise<number> {

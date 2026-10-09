@@ -60,7 +60,7 @@ const KINDS: {
     v: "meeting",
     label: "만남 티켓",
     unit: "만남 주선 1회",
-    guide: "티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 전액 돌려드립니다.",
+    guide: "티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 티켓을 돌려드립니다.",
     terms: [
       "티켓은 만료되지 않습니다",
       "상대가 24시간 안에 답하지 않으면 티켓 자동 반환",
@@ -113,12 +113,12 @@ function StorePage() {
   }, [ready, me, navigate]);
 
   async function load(k: TicketKind) {
-    const [count, pending, list, payments] = await Promise.all([
+    const [count, list, payments] = await Promise.all([
       unusedTicketCount(k),
-      myPendingTicketOrder(k),
       ticketBundles(k),
       paymentsEnabled(),
     ]);
+    const pending = await myPendingTicketOrder(k, payments);
     setOwned(count);
     setOrder(pending);
     setBundles(list);
@@ -212,12 +212,24 @@ function StorePage() {
         })}
       </ul>
 
-      {order ? (
+      {order && paid ? (
+        <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
+          <p className="text-sm font-semibold text-foreground">결제를 기다리는 주문이 있습니다</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {spec.label} {order.quantity}장 · {won(order.amount)}
+          </p>
+          <Button
+            className="mt-4 w-full"
+            onClick={() => navigate({ to: "/checkout", search: { orderId: order.order_id } })}
+          >
+            결제 이어하기
+          </Button>
+        </div>
+      ) : order ? (
         <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
           <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            {spec.label} {order.quantity}장{paid ? ` · ${won(order.amount)}` : ""}.{" "}
-            {paid === false ? "확인이 끝나면" : "준비되면"} 보유 티켓에 바로 들어옵니다.
+            {spec.label} {order.quantity}장. 확인이 끝나면 보유 티켓에 들어옵니다.
           </p>
         </div>
       ) : (
@@ -233,12 +245,17 @@ function StorePage() {
           <Button
             className="mt-6 w-full"
             size="lg"
-            disabled={busy}
+            disabled={busy || (paid && !import.meta.env.VITE_TOSS_CLIENT_KEY)}
             onClick={async () => {
               setBusy(true);
               try {
-                setOrder(await requestTicketOrder(picked, kind));
-                toast.success("신청을 받았습니다.");
+                const created = await requestTicketOrder(picked, kind);
+                if (created.payment_required) {
+                  navigate({ to: "/checkout", search: { orderId: created.order_id } });
+                } else {
+                  setOrder(created);
+                  toast.success("신청을 받았습니다.");
+                }
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
               } finally {
@@ -246,12 +263,14 @@ function StorePage() {
               }
             }}
           >
-            {busy ? "신청하는 중…" : `${picked}장 신청하기`}
+            {busy ? "처리하는 중…" : paid ? `${picked}장 결제하기` : `${picked}장 신청하기`}
           </Button>
           {paid === null ? null : (
             <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
               {paid
-                ? "결제가 끝나면 티켓이 바로 들어옵니다."
+                ? import.meta.env.VITE_TOSS_CLIENT_KEY
+                  ? "결제를 마치면 티켓이 바로 들어옵니다."
+                  : "결제창을 준비하고 있습니다."
                 : "베타 기간이라 결제를 받지 않습니다. 신청하시면 확인 후 넣어 드립니다."}
             </p>
           )}

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, FileText, Ticket, User } from "lucide-react";
+import { ArrowRight, Bell, FileText, Receipt, Ticket, User } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
@@ -31,6 +31,7 @@ const MENU = [
   // 베타에는 결제를 받지 않으므로 구매·상점으로 부르지 않는다. 결제를 켠 뒤에도
   // 티켓 보유량과 신청 상태를 확인하는 화면이라 중립적인 이름이 더 오래 간다.
   { to: "/store", icon: Ticket, label: "티켓 받기", hint: "소개 · 만남 티켓", male: true },
+  { to: "/orders", icon: Receipt, label: "결제 내역", hint: "구매 · 취소 확인", male: true },
   { to: "/settings", icon: Bell, label: "환경설정", hint: "화면 · 알림", male: false },
   {
     to: "/support",
