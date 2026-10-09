@@ -9,7 +9,7 @@
 -- 그 내부 경로를 클라이언트에 직접 열지 않았다는 것도 함께 검증한다.
 
 begin;
-select plan(18);
+select plan(19);
 
 -- ═══════════════════════════ 픽스처 ═══════════════════════════
 
@@ -257,6 +257,14 @@ select is(
       and price_krw = 0 and kind = 'meeting'),
   1,
   'T18: 운영자가 확정하면 피해자에게 만남 티켓이 재발급된다'
+);
+
+select is(
+  (select expires_at from tickets where payment_id =
+    'noshow_reissue:' || (select id::text from no_show_reports
+      where reporter_id = 'cccc0002-0000-0000-0000-000000000002')),
+  (select expires_at from tickets where payment_id = 'pay_test_s4_0001'),
+  'T19: 노쇼 보상 티켓도 원래 사용기한을 넘기지 않는다'
 );
 
 

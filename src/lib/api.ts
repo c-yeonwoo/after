@@ -950,7 +950,8 @@ export async function unusedTicketCount(kind?: TicketKind): Promise<number> {
   let q = supabase
     .from("tickets")
     .select("*", { count: "exact", head: true })
-    .eq("state", "unused");
+    .eq("state", "unused")
+    .gt("expires_at", new Date().toISOString());
   if (kind) q = q.eq("kind", kind);
   const { count, error } = await q;
   if (error) throw error;

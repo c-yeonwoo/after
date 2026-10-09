@@ -71,7 +71,16 @@ function MemberDetail() {
 
       {/* 한눈 요약 — 아래 섹션을 열어보기 전에 "손댈 게 있나" 만 먼저 답한다. */}
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
-        <Summary label="미사용 티켓" v={d.tickets.filter((t) => t.state === "unused").length} />
+        <Summary
+          label="사용 가능 티켓"
+          v={
+            d.tickets.filter(
+              (t) =>
+                t.state === "unused" &&
+                (t.expires_at === "infinity" || new Date(t.expires_at) > new Date()),
+            ).length
+          }
+        />
         <Summary label="진행 중 만남" v={openMeetings} />
         <Summary label="미처리 신고" v={pendingAgainst} alert={pendingAgainst > 0} />
         <Summary label="운영자 개입" v={d.admin_actions.length} />
@@ -102,12 +111,21 @@ function MemberDetail() {
                     className="flex flex-wrap items-center gap-x-3 text-muted-foreground"
                   >
                     <Tag tone={t.state === "refunded" ? "alert" : "muted"}>
-                      {t.state === "unused" ? "미사용" : t.state === "used" ? "사용" : "환불"}
+                      {t.state === "unused"
+                        ? t.expires_at === "infinity" || new Date(t.expires_at) > new Date()
+                          ? "미사용"
+                          : "만료"
+                        : t.state === "used"
+                          ? "사용"
+                          : "반환"}
                     </Tag>
                     <span className="tabular-nums">{t.price_krw.toLocaleString()}원</span>
-                    <span>구매 {when(t.issued_at)}</span>
+                    <span>발급 {when(t.issued_at)}</span>
+                    <span>
+                      기한 {t.expires_at === "infinity" ? "없음 · 기존 무료" : when(t.expires_at)}
+                    </span>
                     {t.used_at ? <span>사용 {when(t.used_at)}</span> : null}
-                    {t.refunded_at ? <span>환불 {when(t.refunded_at)}</span> : null}
+                    {t.refunded_at ? <span>반환 {when(t.refunded_at)}</span> : null}
                   </li>
                 ))}
               </ul>

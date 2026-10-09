@@ -478,10 +478,10 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
         {left ? (
           <>
             <span className="font-semibold text-foreground">{left}</span> 안에 답이 없으면 티켓은
-            자동으로 환불됩니다.
+            자동으로 반환됩니다.
           </>
         ) : (
-          "곧 환불 처리됩니다. 티켓은 다시 사용하실 수 있습니다."
+          "곧 티켓이 반환됩니다. 다시 사용하실 수 있습니다."
         )}
       </p>
     </div>
