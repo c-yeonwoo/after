@@ -814,6 +814,11 @@ export async function setPaused(on: boolean): Promise<Profile> {
  * 순서가 곧 지워지느냐 마느냐다. 파일 삭제가 실패해도 탈퇴 자체는 진행한다.
  */
 export async function withdrawAccount(reason?: string): Promise<void> {
+  // The Auth user itself is intentionally retained after withdrawal. Remove
+  // the provider identity first so Kakao email/member ID are erased with it.
+  const { error: unlinkError } = await supabase.rpc("unlink_my_kakao_identity");
+  if (unlinkError) throw unlinkError;
+
   try {
     await deleteMyPhotos();
   } catch {

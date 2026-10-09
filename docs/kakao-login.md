@@ -75,7 +75,22 @@ kr.eclps.app://auth/callback
 > 대시보드 SMTP 설정이 날아간다. 로컬용 값은 `supabase/config.toml` 에 있고
 > 운영은 대시보드가 정본이다.
 
-### 3. 확인
+### 3. 연결 해제 웹훅
+
+카카오 개발자센터 → 앱 → **웹훅 → 연결 해제 웹훅**에 아래 주소를 등록한다.
+
+```
+https://tsytwxtuczceyojkiaty.supabase.co/functions/v1/kakao-unlink
+```
+
+Supabase Edge Function 에 `KAKAO_APP_ID=1602331` 과 카카오의 **대표 관리자 키**를
+`KAKAO_PRIMARY_ADMIN_KEY` 시크릿으로 등록해야 한다. REST API 키나 Client Secret 이
+아니다. 이 엔드포인트는 카카오가 보내는 `Authorization: KakaoAK ...` 를 검사하고,
+연결된 Supabase Kakao identity 만 제거한다. 회사 이메일 로그인과 After 프로필은
+보존한다. After 회원 탈퇴 시에도 카카오 identity 를 제거한다. Supabase Function
+배포 후 카카오 개발자센터의 웹훅 테스트 기능으로 200 응답을 확인한다.
+
+### 4. 확인
 
 - 웹: `https://aftersunset.kr/settings` → 카카오 연결하기 → 돌아와서 "연결 끊기" 로
   라벨이 바뀌면 성공.
@@ -95,6 +110,7 @@ kr.eclps.app://auth/callback
 | 로그인 화면 버튼               | `src/routes/login.tsx`                                                    |
 | 연결/해제 UI                   | `src/routes/settings.tsx`                                                 |
 | 커스텀 스킴 등록               | `ios/App/App/Info.plist` (`CFBundleURLTypes`)                             |
+| 외부 연결 해제 웹훅            | `supabase/functions/kakao-unlink/index.ts`                                |
 
 세 곳이 같은 문자열을 공유한다 — `kr.eclps.app`. 바꿀 일이 생기면
 `capacitor.config.ts`(appId) · `Info.plist` · `native.ts` 를 함께 고치고,
