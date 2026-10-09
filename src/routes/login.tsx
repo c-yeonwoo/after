@@ -103,10 +103,12 @@ function LoginPage() {
     [navigate],
   );
 
-  // 이미 로그인돼 있으면 로그인 화면을 보여줄 이유가 없다.
+  // 이미 로그인돼 있으면 가입 완료 여부에 맞는 화면으로 보낸다.
   // 카카오에 다녀오는 중에는 판정(land)이 끝나기 전이라 잠가 둔다.
   useEffect(() => {
-    if (ready && me && !oauthBusy) navigate({ to: "/home" });
+    if (ready && me && !oauthBusy) {
+      navigate({ to: me.onboarding_step < 7 ? "/signup" : "/home" });
+    }
   }, [ready, me, navigate, oauthBusy]);
 
   /*
