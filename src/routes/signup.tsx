@@ -274,6 +274,14 @@ function Onboarding() {
         eyebrow="가입"
         title="성별을 알려주세요"
         description="가입 후 변경할 수 없습니다."
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            이미 가입하셨나요?{" "}
+            <Link to="/login" className="font-semibold text-primary-strong underline">
+              로그인
+            </Link>
+          </p>
+        }
       >
         <div className="grid gap-3">
           <ChoiceCard

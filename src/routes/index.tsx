@@ -23,12 +23,12 @@ function Landing() {
   const navigate = useNavigate();
   const { me, ready } = useMe();
 
-  // 이미 로그인한 사용자를 가입 유도 랜딩에 세워두지 않는다.
+  // 이미 로그인한 사용자는 완료 상태에 맞는 화면으로 보낸다.
   useEffect(() => {
-    if (ready && me) navigate({ to: "/home" });
+    if (ready && me) navigate({ to: me.onboarding_step < 7 ? "/signup" : "/home" });
   }, [ready, me, navigate]);
   function start() {
-    navigate({ to: me ? "/home" : "/signup" });
+    navigate({ to: me && me.onboarding_step >= 7 ? "/home" : "/signup" });
   }
 
   return (
@@ -75,7 +75,7 @@ function Landing() {
           onClick={start}
           className="flex min-h-[52px] w-full items-center justify-center rounded-control bg-primary px-4 text-base font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          시작하기
+          가입하고 시작하기
         </button>
         <p className="mt-3 text-center text-xs text-muted-foreground">
           회사 이메일 주소는 상대에게 공개되지 않아요.

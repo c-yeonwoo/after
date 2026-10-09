@@ -74,6 +74,7 @@ function HomePage() {
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
+    if (ready && me && me.onboarding_step < 7) navigate({ to: "/signup" });
   }, [ready, me, navigate]);
 
   // 하이드레이션 불일치를 피하려고 마운트 후에만 시각을 잡는다.
@@ -84,7 +85,7 @@ function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!ready || !me) return;
+    if (!ready || !me || me.onboarding_step < 7) return;
     let cancelled = false;
     (async () => {
       const [state, payments] = await Promise.all([homeState(), paymentsEnabled()]);
@@ -150,6 +151,14 @@ function HomePage() {
                 : isMale
                   ? "소개를 준비하고 있어요."
                   : "새 소개를 기다리고 있어요.";
+
+  if (!ready || !me || me.onboarding_step < 7) {
+    return (
+      <AppScreen>
+        <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+      </AppScreen>
+    );
+  }
 
   return (
     <AppScreen>
