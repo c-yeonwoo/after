@@ -58,6 +58,8 @@
 **Authentication → URL Configuration → Redirect URLs** 에 세 줄을 추가한다:
 
 ```
+https://aftersunset.kr/login
+https://aftersunset.kr/settings
 https://eclps.kr/login
 https://eclps.kr/settings
 kr.eclps.app://auth/callback
@@ -75,7 +77,7 @@ kr.eclps.app://auth/callback
 
 ### 3. 확인
 
-- 웹: `https://eclps.kr/settings` → 카카오 연결하기 → 돌아와서 "연결 끊기" 로
+- 웹: `https://aftersunset.kr/settings` → 카카오 연결하기 → 돌아와서 "연결 끊기" 로
   라벨이 바뀌면 성공.
 - 앱: 같은 흐름. 사파리 시트가 뜨고, 끝나면 **시트가 저절로 닫혀야** 한다.
   안 닫히면 `Info.plist` 의 `CFBundleURLSchemes` 와

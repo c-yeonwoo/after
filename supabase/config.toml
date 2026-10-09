@@ -167,6 +167,7 @@ site_url = "http://127.0.0.1:3000"
 #   · 앱 커스텀 스킴 — Capacitor 빌드는 http 주소가 없다.
 # **운영은 이 파일이 아니라 대시보드에서 관리한다**(config push 를 쓰면 [auth]
 # 블록이 통째로 덮여 SMTP 설정이 날아간다). 대시보드에도 같은 목록을 넣어야 한다:
+#   https://aftersunset.kr/login, https://aftersunset.kr/settings,
 #   https://eclps.kr/login, https://eclps.kr/settings, kr.eclps.app://auth/callback
 additional_redirect_urls = [
   "https://127.0.0.1:3000",

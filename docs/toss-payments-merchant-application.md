@@ -9,11 +9,11 @@
 ### 1) 판매 상품/서비스 설명
 
 ① **결제 상품/서비스 확인 가능한 URL**  
-https://eclps.kr/store?kind=meeting  
+https://aftersunset.kr/store?kind=meeting
 로그인한 회원만 이용할 수 있습니다. 심사자가 확인할 수 있는 테스트 계정은 아직 준비되지 않았습니다.
 
 ② **환불 정책 확인 가능한 URL**  
-https://eclps.kr/terms  
+https://aftersunset.kr/terms
 현재 약관은 베타 무료 운영 기준이며, 유료 판매용 청약철회·환불 정책이 확정되어 있지 않습니다.
 유료 결제를 열기 전에 정책과 페이지를 먼저 업데이트해야 합니다.
 
@@ -47,7 +47,7 @@ https://eclps.kr/terms
 ### 3) 앱 다운로드 링크
 
 현재 앱스토어에 등록된 다운로드 앱은 없습니다. 모바일 웹 앱으로 제공 중입니다:  
-https://eclps.kr
+https://aftersunset.kr
 
 ### 4) 홈페이지 결제모듈 직접 연동 여부
 
