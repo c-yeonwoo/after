@@ -12,7 +12,7 @@ import {
   type OrderFilter,
 } from "@/lib/admin";
 
-const STATES: OrderFilter[] = ["pending", "confirmed", "failed"];
+const STATES: OrderFilter[] = ["pending", "confirmed", "canceling", "canceled", "failed"];
 
 export const Route = createFileRoute("/admin/orders")({
   validateSearch: (s: Record<string, unknown>): { state?: OrderFilter } => ({
@@ -24,6 +24,8 @@ export const Route = createFileRoute("/admin/orders")({
 const FILTERS: { v: OrderFilter; label: string }[] = [
   { v: "pending", label: "발급 대기" },
   { v: "confirmed", label: "발급됨" },
+  { v: "canceling", label: "취소 확인 중" },
+  { v: "canceled", label: "취소 완료" },
   { v: "failed", label: "실패" },
 ];
 
@@ -95,7 +97,12 @@ function OrdersTab() {
           ) : null}
         </div>
 
-        {paid !== null ? (
+        {paid === false && !import.meta.env.VITE_TOSS_CLIENT_KEY ? (
+          <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+            결제 클라이언트 키가 배포 환경에 없어 결제를 켤 수 없습니다. 토스 테스트 키와 서버
+            시크릿을 설정하고 샌드박스 승인·취소를 확인한 뒤 전환해 주세요.
+          </p>
+        ) : paid !== null ? (
           <div className="mt-3 border-t border-border pt-3">
             <NoteAction
               placeholder="전환 사유 (필수 — 기록에 남습니다)"
@@ -167,9 +174,12 @@ function OrderRow({ o, paid, onDone }: { o: AdminOrder; paid: boolean; onDone: (
         </span>
         <span className="text-xs text-muted-foreground">{when(o.created_at)}</span>
         {/* 돈을 낸 주문인지 운영자가 낸 주문인지 — 목록에서 섞이면 안 된다. */}
-        {o.state === "confirmed" ? (
-          <Tag tone={o.by_admin ? "alert" : "muted"}>{o.by_admin ? "무료 발급" : "결제"}</Tag>
-        ) : null}
+        <Tag tone={o.payment_required ? "muted" : "alert"}>
+          {o.payment_required ? "결제 주문" : "베타 신청"}
+        </Tag>
+        {o.state === "confirmed" ? <Tag tone="muted">발급 완료</Tag> : null}
+        {o.state === "canceling" ? <Tag tone="alert">취소 확인 중</Tag> : null}
+        {o.state === "canceled" ? <Tag tone="muted">취소 완료</Tag> : null}
         {o.state === "failed" ? <Tag tone="alert">실패</Tag> : null}
 
         {pending ? (
@@ -188,14 +198,16 @@ function OrderRow({ o, paid, onDone }: { o: AdminOrder; paid: boolean; onDone: (
 
       {open && pending ? (
         <div className="mt-3 border-t border-border pt-3">
-          {paid ? (
+          {o.payment_required || paid ? (
             /*
               결제가 켜져 있으면 서버가 42501 로 막는다. 눌러 보고 실패를 겪게 하는
               대신 왜 막히는지를 먼저 적는다 — 운영자가 할 일은 여기가 아니라
               결제 쪽을 확인하는 것이다.
             */
             <p className="text-sm text-muted-foreground">
-              결제가 켜져 있어 무료 발급은 할 수 없습니다. 결제가 끝나면 티켓이 자동으로 나갑니다.
+              {o.payment_required
+                ? "결제 대기 주문입니다. 무료 발급은 할 수 없습니다. 결제 상태를 확인해 주세요."
+                : "현재 결제가 켜져 있어 베타 신청을 무료 발급할 수 없습니다."}
             </p>
           ) : (
             <NoteAction

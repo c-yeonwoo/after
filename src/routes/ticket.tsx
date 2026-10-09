@@ -52,10 +52,8 @@ function TicketPage() {
     // 종류를 반드시 넘긴다(s19). 안 넘기면 소개 티켓까지 세어, 만남 티켓이
     // 0장인데 "보유 1장" 이 뜨고 사용 버튼을 눌러야 P0002 를 만난다.
     setTickets(await unusedTicketCount("meeting"));
-    const [pending, payments] = await Promise.all([
-      myPendingTicketOrder("meeting"),
-      paymentsEnabled(),
-    ]);
+    const payments = await paymentsEnabled();
+    const pending = await myPendingTicketOrder("meeting", payments);
     setOrder(pending);
     setPaid(payments);
     setLoading(false);
@@ -103,7 +101,7 @@ function TicketPage() {
         </div>
         <ul className="space-y-2.5 px-6 py-5 text-sm">
           {[
-            "답이 없으면 24시간 뒤 전액 돌려드립니다",
+            "답이 없으면 24시간 뒤 티켓을 돌려드립니다",
             "가능한 날짜를 받아 한 번에 고릅니다",
             "약속을 확정하면 대화가 열립니다",
           ].map((t) => (
@@ -162,6 +160,19 @@ function TicketPage() {
             보유 만남 티켓 {tickets}장
           </p>
         </>
+      ) : order && paid ? (
+        <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
+          <p className="text-sm font-semibold text-foreground">결제를 기다리는 주문이 있습니다</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            결제가 끝나면 만남 티켓을 바로 사용할 수 있습니다.
+          </p>
+          <Button
+            className="mt-4 w-full"
+            onClick={() => navigate({ to: "/checkout", search: { orderId: order.order_id } })}
+          >
+            결제 이어하기
+          </Button>
+        </div>
       ) : order ? (
         <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
           <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
@@ -181,12 +192,17 @@ function TicketPage() {
           <Button
             className="mt-7 w-full"
             size="lg"
-            disabled={busy}
+            disabled={busy || (paid === true && !import.meta.env.VITE_TOSS_CLIENT_KEY)}
             onClick={async () => {
               setBusy(true);
               try {
-                setOrder(await requestTicketOrder(1, "meeting"));
-                toast.success("신청을 받았습니다.");
+                const created = await requestTicketOrder(1, "meeting");
+                if (created.payment_required) {
+                  navigate({ to: "/checkout", search: { orderId: created.order_id } });
+                } else {
+                  setOrder(created);
+                  toast.success("신청을 받았습니다.");
+                }
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
               } finally {
@@ -194,13 +210,15 @@ function TicketPage() {
               }
             }}
           >
-            {busy ? "신청하는 중…" : "만남 티켓 신청하기"}
+            {busy ? "처리하는 중…" : paid ? "만남 티켓 결제하기" : "만남 티켓 신청하기"}
           </Button>
           <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
             {paid
-              ? `만남 티켓 한 장 ${MEETING_TICKET_PRICE_LABEL}. 결제가 끝나면 바로 사용하실 수 있습니다.`
+              ? import.meta.env.VITE_TOSS_CLIENT_KEY
+                ? `만남 티켓 한 장 ${MEETING_TICKET_PRICE_LABEL}. 결제가 끝나면 바로 사용하실 수 있습니다.`
+                : "결제창을 준비하고 있습니다."
               : "베타 기간에는 결제를 받지 않습니다. 신청하시면 운영팀 확인 후 무료로 넣어 드립니다."}{" "}
-            신청해 두시면 이 소개는 넘어가지 않고 기다립니다.
+            티켓을 기다리는 동안 이 소개는 그대로 열려 있습니다.
           </p>
         </>
       )}

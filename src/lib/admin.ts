@@ -564,7 +564,7 @@ export async function resolveReport(
 
 export type AdminOrder = Database["public"]["Functions"]["admin_ticket_orders"]["Returns"][number];
 
-export type OrderFilter = "pending" | "confirmed" | "failed";
+export type OrderFilter = "pending" | "confirmed" | "canceling" | "canceled" | "failed";
 
 /** 결제 전환. 사유는 서버에서 필수다 — admin_actions 에 남는다. */
 export async function setPayments(on: boolean, note: string): Promise<void> {

@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ChatsRouteImport } from './routes/chats'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PrefsRouteImport } from './routes/prefs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -38,6 +40,8 @@ import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
+import { Route as PaymentFailRouteImport } from './routes/payment.fail'
+import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as AdminMembersIdRouteImport } from './routes/admin.members.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +57,11 @@ const AdminRoute = AdminRouteImport.update({
 const ChatsRoute = ChatsRouteImport.update({
   id: '/chats',
   path: '/chats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
@@ -83,6 +92,11 @@ const LoginRoute = LoginRouteImport.update({
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrefsRoute = PrefsRouteImport.update({
@@ -185,6 +199,16 @@ const ChatIdRoute = ChatIdRouteImport.update({
   path: '/chat/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentFailRoute = PaymentFailRouteImport.update({
+  id: '/payment/fail',
+  path: '/payment/fail',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
+  id: '/payment/success',
+  path: '/payment/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -195,12 +219,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
+  '/checkout': typeof CheckoutRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/orders': typeof OrdersRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -220,18 +246,22 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/system': typeof AdminSystemRoute
   '/chat/$id': typeof ChatIdRoute
+  '/payment/fail': typeof PaymentFailRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chats': typeof ChatsRoute
+  '/checkout': typeof CheckoutRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/orders': typeof OrdersRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -251,6 +281,8 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/system': typeof AdminSystemRoute
   '/chat/$id': typeof ChatIdRoute
+  '/payment/fail': typeof PaymentFailRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
 }
@@ -259,12 +291,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
+  '/checkout': typeof CheckoutRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/orders': typeof OrdersRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -284,6 +318,8 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/system': typeof AdminSystemRoute
   '/chat/$id': typeof ChatIdRoute
+  '/payment/fail': typeof PaymentFailRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
 }
@@ -293,12 +329,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/chats'
+    | '/checkout'
     | '/delete-account'
     | '/feedback'
     | '/home'
     | '/intro'
     | '/login'
     | '/me'
+    | '/orders'
     | '/prefs'
     | '/privacy'
     | '/profile'
@@ -318,18 +356,22 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/system'
     | '/chat/$id'
+    | '/payment/fail'
+    | '/payment/success'
     | '/admin/'
     | '/admin/members/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/chats'
+    | '/checkout'
     | '/delete-account'
     | '/feedback'
     | '/home'
     | '/intro'
     | '/login'
     | '/me'
+    | '/orders'
     | '/prefs'
     | '/privacy'
     | '/profile'
@@ -349,6 +391,8 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/system'
     | '/chat/$id'
+    | '/payment/fail'
+    | '/payment/success'
     | '/admin'
     | '/admin/members/$id'
   id:
@@ -356,12 +400,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/chats'
+    | '/checkout'
     | '/delete-account'
     | '/feedback'
     | '/home'
     | '/intro'
     | '/login'
     | '/me'
+    | '/orders'
     | '/prefs'
     | '/privacy'
     | '/profile'
@@ -381,6 +427,8 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/system'
     | '/chat/$id'
+    | '/payment/fail'
+    | '/payment/success'
     | '/admin/'
     | '/admin/members/$id'
   fileRoutesById: FileRoutesById
@@ -389,12 +437,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ChatsRoute: typeof ChatsRoute
+  CheckoutRoute: typeof CheckoutRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
   IntroRoute: typeof IntroRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
+  OrdersRoute: typeof OrdersRoute
   PrefsRoute: typeof PrefsRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
@@ -407,6 +457,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TicketRoute: typeof TicketRoute
   ChatIdRoute: typeof ChatIdRoute
+  PaymentFailRoute: typeof PaymentFailRoute
+  PaymentSuccessRoute: typeof PaymentSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -430,6 +482,13 @@ declare module '@tanstack/react-router' {
       path: '/chats'
       fullPath: '/chats'
       preLoaderRoute: typeof ChatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delete-account': {
@@ -472,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prefs': {
@@ -614,6 +680,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payment/fail': {
+      id: '/payment/fail'
+      path: '/payment/fail'
+      fullPath: '/payment/fail'
+      preLoaderRoute: typeof PaymentFailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment/success': {
+      id: '/payment/success'
+      path: '/payment/success'
+      fullPath: '/payment/success'
+      preLoaderRoute: typeof PaymentSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/members/$id': {
       id: '/admin/members/$id'
       path: '/$id'
@@ -664,12 +744,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ChatsRoute: ChatsRoute,
+  CheckoutRoute: CheckoutRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,
   IntroRoute: IntroRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
+  OrdersRoute: OrdersRoute,
   PrefsRoute: PrefsRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
@@ -682,6 +764,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TicketRoute: TicketRoute,
   ChatIdRoute: ChatIdRoute,
+  PaymentFailRoute: PaymentFailRoute,
+  PaymentSuccessRoute: PaymentSuccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

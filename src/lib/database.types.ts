@@ -1362,36 +1362,54 @@ export type Database = {
       ticket_orders: {
         Row: {
           amount: number
+          cancel_reason: string | null
+          canceled_at: string | null
           confirmed_at: string | null
           created_at: string
           fulfill_note: string | null
           fulfilled_by: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
+          paid_at: string | null
+          payment_key: string | null
+          payment_method: string | null
+          payment_required: boolean
           quantity: number
           state: string
           user_id: string
         }
         Insert: {
           amount: number
+          cancel_reason?: string | null
+          canceled_at?: string | null
           confirmed_at?: string | null
           created_at?: string
           fulfill_note?: string | null
           fulfilled_by?: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
+          paid_at?: string | null
+          payment_key?: string | null
+          payment_method?: string | null
+          payment_required?: boolean
           quantity?: number
           state?: string
           user_id: string
         }
         Update: {
           amount?: number
+          cancel_reason?: string | null
+          canceled_at?: string | null
           confirmed_at?: string | null
           created_at?: string
           fulfill_note?: string | null
           fulfilled_by?: string | null
           kind?: Database["public"]["Enums"]["ticket_kind"]
           order_id?: string
+          paid_at?: string | null
+          payment_key?: string | null
+          payment_method?: string | null
+          payment_required?: boolean
           quantity?: number
           state?: string
           user_id?: string
@@ -1449,6 +1467,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
+          refund_locked: boolean
           refunded_at: string | null
           state: Database["public"]["Enums"]["ticket_state"]
           used_at: string | null
@@ -1461,6 +1480,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id?: string | null
           price_krw?: number
+          refund_locked?: boolean
           refunded_at?: string | null
           state?: Database["public"]["Enums"]["ticket_state"]
           used_at?: string | null
@@ -1473,6 +1493,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["ticket_kind"]
           payment_id?: string | null
           price_krw?: number
+          refund_locked?: boolean
           refunded_at?: string | null
           state?: Database["public"]["Enums"]["ticket_state"]
           used_at?: string | null
@@ -2103,6 +2124,7 @@ export type Database = {
           fulfill_note: string
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
+          payment_required: boolean
           quantity: number
           state: string
           user_gender: Database["public"]["Enums"]["gender"]
@@ -2175,12 +2197,18 @@ export type Database = {
         }
         Returns: {
           amount: number
+          cancel_reason: string | null
+          canceled_at: string | null
           confirmed_at: string | null
           created_at: string
           fulfill_note: string | null
           fulfilled_by: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
+          paid_at: string | null
+          payment_key: string | null
+          payment_method: string | null
+          payment_required: boolean
           quantity: number
           state: string
           user_id: string
@@ -2214,6 +2242,19 @@ export type Database = {
       expire_unanswered_meetings: { Args: never; Returns: number }
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
       fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
+      fulfill_paid_ticket_order: {
+        Args: { p_order_id: string; p_payment_key: string; p_method?: string }
+        Returns: number
+      }
+      reserve_paid_order_cancel: {
+        Args: { p_order_id: string }
+        Returns: Database["public"]["Tables"]["ticket_orders"]["Row"]
+      }
+      finalize_paid_order_cancel: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: number
+      }
+      release_paid_order_cancel: { Args: { p_order_id: string }; Returns: undefined }
       get_public_profile: {
         Args: { p_id: string }
         Returns: {
