@@ -2,7 +2,7 @@
 export const BRAND = {
   name: "애프터",
   nameEn: "after",
-  domain: "eclps.kr",
+  domain: "aftersunset.kr",
 
   tagline: "퇴근 후, 한 사람과의 약속.",
   description:

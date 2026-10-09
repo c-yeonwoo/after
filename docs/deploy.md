@@ -22,7 +22,7 @@ Supabase 는 **프런트엔드를 호스팅하지 않는다** — DB·인증·�
 도메인은 가비아에서 산 그대로 두고 **DNS 만 Cloudflare 가 맡는다.** 등록기관과 DNS
 호스팅은 별개라 도메인을 다시 살 필요가 없다.
 
-1. Cloudflare 에서 `eclps.kr` 을 사이트로 추가 → 배정된 네임서버 2개를 받는다
+1. Cloudflare 에서 도메인을 사이트로 추가 → 배정된 네임서버 2개를 받는다
    (`xxx.ns.cloudflare.com` 형태).
 2. 가비아 → My가비아 → 도메인 → 해당 도메인 → **네임서버 변경**에 그 2개를 넣는다.
 3. Cloudflare 가 확인하면 사이트 상태가 `Active` 가 된다.
@@ -57,9 +57,9 @@ Cloudflare DNS 에 넣을 때는 이 레코드들의 **프록시를 끈다**(회
 
 | 위치                                                     | 값                       |
 | -------------------------------------------------------- | ------------------------ |
-| Supabase → Authentication → URL Configuration → Site URL | `https://eclps.kr`       |
-| 같은 화면 → Redirect URLs                                | `https://eclps.kr/**`    |
-| Edge Functions 시크릿 → `APP_URL`                        | `https://eclps.kr`       |
+| Supabase → Authentication → URL Configuration → Site URL | `https://aftersunset.kr` |
+| 같은 화면 → Redirect URLs                                | `https://aftersunset.kr/**`, `https://eclps.kr/**` |
+| Edge Functions 시크릿 → `APP_URL`                        | `https://aftersunset.kr` |
 | Vault → `edge_function_base_url`                         | 프로젝트의 함수 기본 URL |
 | Vault → `service_role_key`                               | 프로젝트 service_role 키 |
 
@@ -103,10 +103,16 @@ main 배포는 아래 GitHub production environment 값이 갖춰지고 저장�
 
 ```jsonc
 "routes": [
+  { "pattern": "aftersunset.kr", "custom_domain": true },
+  { "pattern": "www.aftersunset.kr", "custom_domain": true },
   { "pattern": "eclps.kr", "custom_domain": true },
   { "pattern": "www.eclps.kr", "custom_domain": true }
 ]
 ```
+
+`aftersunset.kr` 로 전환할 때는 기존 주소도 병행 등록하고 로그인·카카오 OAuth 를 새
+도메인에서 검증한다. Cloudflare 가 새 존에 할당한 네임서버를 등록기관에 반영하기 전에는
+새 custom domain 배포가 활성화되지 않는다. 기존 DNS·메일 레코드를 먼저 확인하고 복원한다.
 
 `custom_domain: true` 면 wrangler 가 **DNS 레코드까지 만든다.** A 레코드를 손으로
 넣을 일이 없고, 그래서 **IP 를 알 필요도 없다** — 요즘 호스팅은 IP 를 주지 않는다.
