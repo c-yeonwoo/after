@@ -185,7 +185,22 @@ export type SignInResult =
   | { kind: "closed"; state: "banned" | "withdrawn" };
 
 async function landAfterSignIn(uid: string): Promise<SignInResult> {
-  return landAfterSignIn(uid);
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", uid)
+    .maybeSingle();
+  if (error) throw error;
+  if (!profile) return { kind: "no-profile" };
+
+  if (profile.account_state !== "active") {
+    await supabase.auth.signOut();
+    return { kind: "closed", state: profile.account_state };
+  }
+
+  await track("login");
+  if (profile.onboarding_step < 7) return { kind: "incomplete", profile };
+  return { kind: "ok", profile };
 }
 
 export async function signInExisting(email: string, token: string): Promise<SignInResult> {
@@ -226,18 +241,7 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (error) throw error;
   const uid = data.user?.id;
   if (!uid) throw new Error("로그인에 실패했습니다.");
-
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-  if (!profile) return { kind: "no-profile" };
-
-  if (profile.account_state !== "active") {
-    await supabase.auth.signOut();
-    return { kind: "closed", state: profile.account_state };
-  }
-
-  await track("login");
-  if (profile.onboarding_step < 7) return { kind: "incomplete", profile };
-  return { kind: "ok", profile };
+  return landAfterSignIn(uid);
 }
 
 /**
