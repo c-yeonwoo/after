@@ -145,7 +145,7 @@ function MeetingRow({
           )}
         </Td>
         <Td className="text-muted-foreground">
-          {m.ticket_state === "used" ? "사용" : m.ticket_state === "refunded" ? "환불" : "미사용"}
+          {m.ticket_state === "used" ? "사용" : m.ticket_state === "refunded" ? "반환" : "미사용"}
         </Td>
         <Td className="text-muted-foreground">
           {m.scheduled_at ? `${when(m.scheduled_at)} · ${m.place_name ?? "장소 미정"}` : "미확정"}
@@ -176,7 +176,7 @@ function MeetingRow({
             */}
             <NoteAction
               placeholder="취소 사유 (필수 — 기록에 남습니다)"
-              toggle={{ label: "티켓 환불", defaultOn: true }}
+              toggle={{ label: "티켓 반환", defaultOn: true }}
               onDone={onDone}
               actions={[
                 {

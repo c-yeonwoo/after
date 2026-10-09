@@ -1461,6 +1461,7 @@ export type Database = {
       }
       tickets: {
         Row: {
+          expires_at: string
           id: string
           intro_id: string | null
           issued_at: string
@@ -1469,11 +1470,13 @@ export type Database = {
           price_krw: number
           refund_locked: boolean
           refunded_at: string | null
+          restored_from_ticket_id: string | null
           state: Database["public"]["Enums"]["ticket_state"]
           used_at: string | null
           user_id: string
         }
         Insert: {
+          expires_at?: string
           id?: string
           intro_id?: string | null
           issued_at?: string
@@ -1482,11 +1485,13 @@ export type Database = {
           price_krw?: number
           refund_locked?: boolean
           refunded_at?: string | null
+          restored_from_ticket_id?: string | null
           state?: Database["public"]["Enums"]["ticket_state"]
           used_at?: string | null
           user_id: string
         }
         Update: {
+          expires_at?: string
           id?: string
           intro_id?: string | null
           issued_at?: string
@@ -1495,6 +1500,7 @@ export type Database = {
           price_krw?: number
           refund_locked?: boolean
           refunded_at?: string | null
+          restored_from_ticket_id?: string | null
           state?: Database["public"]["Enums"]["ticket_state"]
           used_at?: string | null
           user_id?: string
@@ -1505,6 +1511,13 @@ export type Database = {
             columns: ["intro_id"]
             isOneToOne: false
             referencedRelation: "intros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_restored_from_ticket_id_fkey"
+            columns: ["restored_from_ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
           {
@@ -1891,11 +1904,6 @@ export type Database = {
         }[]
       }
       admin_operational_health: { Args: never; Returns: Json }
-      admin_retry_notifications: {
-        Args: { p_ids: string[]; p_note: string }
-        Returns: number
-      }
-      admin_system_overview: { Args: never; Returns: Json }
       admin_photo_queue: {
         Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
         Returns: {
@@ -1992,6 +2000,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_retry_notifications: {
+        Args: { p_ids: string[]; p_note: string }
+        Returns: number
       }
       admin_review_photo: {
         Args: { p_approve: boolean; p_note: string; p_user: string }
@@ -2114,6 +2126,7 @@ export type Database = {
         Args: { p_female_ids: string[]; p_male: string; p_note: string }
         Returns: number
       }
+      admin_system_overview: { Args: never; Returns: Json }
       admin_ticket_orders: {
         Args: { p_state?: string }
         Returns: {
@@ -2241,20 +2254,15 @@ export type Database = {
       expire_intro_queue: { Args: never; Returns: number }
       expire_unanswered_meetings: { Args: never; Returns: number }
       expire_unanswered_no_show_reports: { Args: never; Returns: number }
-      fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
-      fulfill_paid_ticket_order: {
-        Args: { p_order_id: string; p_payment_key: string; p_method?: string }
-        Returns: number
-      }
-      reserve_paid_order_cancel: {
-        Args: { p_order_id: string }
-        Returns: Database["public"]["Tables"]["ticket_orders"]["Row"]
-      }
       finalize_paid_order_cancel: {
         Args: { p_order_id: string; p_reason: string }
         Returns: number
       }
-      release_paid_order_cancel: { Args: { p_order_id: string }; Returns: undefined }
+      fulfill_paid_ticket_order: {
+        Args: { p_method?: string; p_order_id: string; p_payment_key: string }
+        Returns: number
+      }
+      fulfill_ticket_order: { Args: { p_order_id: string }; Returns: number }
       get_public_profile: {
         Args: { p_id: string }
         Returns: {
@@ -2332,13 +2340,16 @@ export type Database = {
           p_user_id: string
         }
         Returns: {
+          expires_at: string
           id: string
           intro_id: string | null
           issued_at: string
           kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
+          refund_locked: boolean
           refunded_at: string | null
+          restored_from_ticket_id: string | null
           state: Database["public"]["Enums"]["ticket_state"]
           used_at: string | null
           user_id: string
@@ -2492,13 +2503,16 @@ export type Database = {
       refund_ticket: {
         Args: { p_reason: string; p_ticket_id: string }
         Returns: {
+          expires_at: string
           id: string
           intro_id: string | null
           issued_at: string
           kind: Database["public"]["Enums"]["ticket_kind"]
           payment_id: string | null
           price_krw: number
+          refund_locked: boolean
           refunded_at: string | null
+          restored_from_ticket_id: string | null
           state: Database["public"]["Enums"]["ticket_state"]
           used_at: string | null
           user_id: string
@@ -2509,6 +2523,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      release_paid_order_cancel: {
+        Args: { p_order_id: string }
+        Returns: undefined
       }
       remaining_candidates: { Args: never; Returns: number }
       report_content: {
@@ -2562,6 +2580,33 @@ export type Database = {
         }
       }
       request_notification_email: { Args: { p_email: string }; Returns: string }
+      reserve_paid_order_cancel: {
+        Args: { p_order_id: string }
+        Returns: {
+          amount: number
+          cancel_reason: string | null
+          canceled_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          fulfill_note: string | null
+          fulfilled_by: string | null
+          kind: Database["public"]["Enums"]["ticket_kind"]
+          order_id: string
+          paid_at: string | null
+          payment_key: string | null
+          payment_method: string | null
+          payment_required: boolean
+          quantity: number
+          state: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolve_content_report: {
         Args: {
           p_ban?: boolean
@@ -2754,6 +2799,11 @@ export type Database = {
           quantity: number
         }[]
       }
+      unlink_kakao_identity_by_provider_id: {
+        Args: { p_provider_id: string }
+        Returns: number
+      }
+      unlink_my_kakao_identity: { Args: never; Returns: number }
       use_meeting_ticket: {
         Args: { p_intro_id: string }
         Returns: {
@@ -2780,7 +2830,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      unlink_my_kakao_identity: { Args: never; Returns: number }
       verify_notification_email: { Args: { p_code: string }; Returns: boolean }
       visible_profile_ids: {
         Args: never

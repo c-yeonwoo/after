@@ -71,6 +71,7 @@ export type AdminMemberDetail = {
     kind: string;
     state: Database["public"]["Enums"]["ticket_state"];
     price_krw: number;
+    expires_at: string;
     issued_at: string;
     used_at: string | null;
     refunded_at: string | null;

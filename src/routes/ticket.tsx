@@ -118,7 +118,7 @@ function TicketPage() {
           <p className="text-sm font-medium">답변을 기다리는 중입니다</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             답이 도착하면 날짜를 고를 수 있습니다. 24시간 안에 응답이 없으면 티켓은 자동으로
-            환불됩니다.
+            반환됩니다.
           </p>
         </div>
       ) : readyToSchedule && meeting ? (
