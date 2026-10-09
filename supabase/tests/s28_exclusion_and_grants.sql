@@ -103,12 +103,18 @@ select lives_ok(
   $$ select block_user('28000000-0000-0000-0000-0000000000f2', 'test') $$,
   'T7 차단할 수 있다'
 );
+/*
+  큐는 s48 부터 함수로만 읽힌다. 남성 본인 권한으로 세면 정책에 가려진 카드
+  (아직 전송 안 된 뒷줄)를 0 으로 잘못 셀 수 있었으므로, 테이블 전체를 본다.
+*/
+reset role;
 select is(
   (select count(*)::int from intro_queue
     where male_id = '28000000-0000-0000-0000-0000000000a2'
       and female_id = '28000000-0000-0000-0000-0000000000f2'),
   0, 'T8 차단하면 아직 열리지 않은 큐 카드가 사라진다'
 );
+set local role authenticated;
 
 set local request.jwt.claims = '{"sub":"28000000-0000-0000-0000-0000000000f1"}';
 select lives_ok(
