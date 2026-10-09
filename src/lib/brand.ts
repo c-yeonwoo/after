@@ -124,7 +124,10 @@ export const MEETING_TICKET_PRICE_LABEL = `${MEETING_TICKET_PRICE_KRW.toLocaleSt
 export const INTRO_TICKET_PRICE_KRW = 5000;
 export const INTRO_TICKET_PRICE_LABEL = `${INTRO_TICKET_PRICE_KRW.toLocaleString("ko-KR")}원`;
 
-/** 회사 이메일 인증에서 거부하는 개인 메일 도메인 */
+/**
+ * 회사 이메일 인증에서 거부하는 개인 메일 도메인 — 입력 안내용이다.
+ * 거절의 권위는 서버의 is_company_email()(s48)에 있고, 두 목록은 같아야 한다.
+ */
 export const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
   "naver.com",

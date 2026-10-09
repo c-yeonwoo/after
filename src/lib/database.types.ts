@@ -2203,6 +2203,58 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_my_profile: {
+        Args: {
+          p_gender: Database["public"]["Enums"]["gender"]
+          p_hub_id: string
+        }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string | null
+          job: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
+          onboarding_step: number
+          paused_at: string | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_ticket_order: {
         Args: {
           p_kind?: Database["public"]["Enums"]["ticket_kind"]
@@ -2326,6 +2378,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_company_email: { Args: { p_email: string }; Returns: boolean }
       is_eligible_candidate: { Args: { p_id: string }; Returns: boolean }
       is_excluded: { Args: { a: string; b: string }; Returns: boolean }
       is_meeting_participant: {
@@ -3025,3 +3078,4 @@ export const Constants = {
     },
   },
 } as const
+

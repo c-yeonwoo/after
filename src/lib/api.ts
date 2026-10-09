@@ -62,8 +62,20 @@ const LOCAL_DEV_PASSWORD = "eclipse-local-dev-auth-only";
  * ("Token has expired or is invalid" 이 한국어 화면에 그대로 떴다)
  */
 export function authErrorMessage(err: unknown): string {
-  const raw = err instanceof Error ? err.message : String(err ?? "");
+  // PostgREST 에러는 Error 인스턴스가 아니라 { message, code } 객체다. String() 에
+  // 넘기면 "[object Object]" 가 화면에 그대로 떴다.
+  const raw =
+    err instanceof Error
+      ? err.message
+      : typeof err === "object" &&
+          err !== null &&
+          typeof (err as { message?: unknown }).message === "string"
+        ? (err as { message: string }).message
+        : String(err ?? "");
   const m = raw.toLowerCase();
+  if (m.includes("personal email")) {
+    return "개인 메일은 사용할 수 없습니다. 회사 이메일로 인증해 주세요.";
+  }
   if (m.includes("expired") || m.includes("invalid")) {
     return "코드가 맞지 않거나 만료되었습니다. 코드를 다시 받아 주세요.";
   }
@@ -371,30 +383,17 @@ export async function verifyEmailCode(
   }
   if (!uid) throw new Error("인증에 실패했습니다.");
 
-  // 재인증(재로그인) 시 이미 프로필이 있을 수 있다 — upsert 로 멱등하게 처리.
-  // gender/hub_id 는 최초 생성 시에만 의미가 있고, 이후엔 컬럼 권한상 클라이언트가 못 바꾼다.
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", uid)
-    .maybeSingle();
-
-  if (!existing) {
-    const { error: insertError } = await supabase
-      .from("profiles")
-      .insert({ id: uid, gender, hub_id: hubId, company_email: email });
-    if (insertError) throw insertError;
-  }
-
-  // email_verified_at 은 서버 전용 컬럼이라 클라이언트가 직접 못 쓴다.
-  // verifyOtp() 가 방금 auth.users.email_confirmed_at 을 채웠으니, 그 값을
-  // SECURITY DEFINER 함수로 profiles 에 반영한다 (버그: 이 호출이 빠져 있어서
-  // 온보딩을 끝까지 마쳐도 아무도 매칭 대상이 되지 못했다).
-  const { data: synced, error: syncError } = await supabase.rpc("sync_email_verified");
-  if (syncError) throw syncError;
+  // 프로필은 서버가 만든다(s48). 회사 메일과 인증 시각은 auth.users 에서 읽고, 개인
+  // 도메인은 서버가 거절한다. 예전에는 여기서 profiles 에 직접 insert 했는데, 그 경로로
+  // role·email_verified_at 까지 자기 선언할 수 있었다. 재인증이면 기존 프로필을 돌려준다.
+  const { data: profile, error: createError } = await supabase.rpc("create_my_profile", {
+    p_gender: gender,
+    p_hub_id: hubId,
+  });
+  if (createError) throw createError;
 
   await track("signup_verified");
-  return synced;
+  return profile;
 }
 
 export async function signOut() {
