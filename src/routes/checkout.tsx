@@ -29,6 +29,7 @@ function CheckoutPage() {
   const [widgets, setWidgets] = useState<Widgets | null>(null);
   const [widgetReady, setWidgetReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -155,6 +156,11 @@ function CheckoutPage() {
               </div>
               <div id="payment-methods" className="mt-4 min-h-32" />
               <div id="payment-agreement" className="mt-2 min-h-16" />
+              {paymentError ? (
+                <p role="alert" className="mt-3 text-sm text-destructive">
+                  {paymentError}
+                </p>
+              ) : null}
               <Button
                 size="lg"
                 className="mt-5 w-full"
@@ -162,6 +168,7 @@ function CheckoutPage() {
                 onClick={async () => {
                   if (!widgets) return;
                   setBusy(true);
+                  setPaymentError(null);
                   try {
                     await widgets.requestPayment({
                       orderId: order.order_id,
@@ -172,7 +179,13 @@ function CheckoutPage() {
                       failUrl: `${window.location.origin}/payment/fail`,
                     });
                   } catch (cause) {
-                    setError(cause instanceof Error ? cause.message : "결제창을 열지 못했습니다.");
+                    const code =
+                      cause && typeof cause === "object" && "code" in cause ? cause.code : null;
+                    if (code === "NEED_CARD_PAYMENT_DETAIL") {
+                      setPaymentError("카드사를 선택한 뒤 다시 결제해 주세요.");
+                    } else if (code !== "USER_CANCEL") {
+                      setPaymentError("결제창을 열지 못했습니다. 다시 시도해 주세요.");
+                    }
                     setBusy(false);
                   }
                 }}
