@@ -274,6 +274,12 @@ function StorePage() {
                 : "베타 기간이라 결제를 받지 않습니다. 신청하시면 확인 후 넣어 드립니다."}
             </p>
           )}
+          {paid ? (
+            <p className="mt-2 text-center text-xs leading-relaxed text-muted-foreground">
+              미사용분은 법정 청약철회가 가능합니다. 묶음 상품의 일부 사용 후 남은 분량은 문의해
+              주세요.
+            </p>
+          ) : null}
         </>
       )}
 

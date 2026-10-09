@@ -100,6 +100,11 @@ function OrdersPage() {
                   {order.state === "canceling" ? "취소 결과 다시 확인" : "미사용 주문 취소"}
                 </Button>
               ) : null}
+              {order.state === "confirmed" && order.quantity > 1 ? (
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  일부 사용 후 남은 티켓의 청약철회는 문의 메일로 주문번호를 보내주세요.
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
