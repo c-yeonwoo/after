@@ -130,6 +130,9 @@ function CheckoutPage() {
                 ? "도착한 소개 프로필을 여는 데 1장씩 사용합니다."
                 : "상대와 만남을 조율할 때 1장씩 사용합니다."}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              결제 후 발급되는 티켓의 사용기한은 12개월입니다.
+            </p>
           </div>
 
           {order.state === "confirmed" ? (
