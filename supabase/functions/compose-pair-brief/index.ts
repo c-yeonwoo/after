@@ -18,7 +18,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODEL = "claude-opus-5";
-const PROMPT_VERSION = "pair-brief-v3";
+const PROMPT_VERSION = "pair-brief-v4";
 const DAILY_LIMIT = 60;
 
 const Brief = z.object({
@@ -38,6 +38,10 @@ type Profile = {
   match_tags: string[] | null;
   topics: string[] | null;
   details: unknown;
+  evening_note: string | null;
+  known_as: string | null;
+  topic_note: string | null;
+  match_note: string | null;
 };
 
 const SYSTEM = `당신은 소개팅 서비스의 큐레이터를 돕는 편집자입니다.
@@ -86,6 +90,23 @@ function profileFacts(tag: "person_a" | "person_b", profile: Profile) {
   ${profile.job ? `<job>${escapeXml(clip(profile.job, 60))}</job>` : ""}
   ${profile.headline ? `<headline>${escapeXml(clip(profile.headline, 120))}</headline>` : ""}
   ${profile.intro ? `<intro>${escapeXml(clip(profile.intro, 800))}</intro>` : ""}
+  ${
+    /*
+      본인이 직접 쓴 인터뷰 답(s52·리부팅 C). intro 는 모델이 다듬은 글일 수 있어서,
+      공통점의 근거는 이쪽 원문에서 찾는 편이 사실에 가깝다(2026-10 진단).
+    */
+    [
+      ["evening_note", profile.evening_note],
+      ["known_as", profile.known_as],
+      ["topic_note", profile.topic_note],
+      ["match_note", profile.match_note],
+    ]
+      .map(([tag, value]) => {
+        const text = clip(value, 300);
+        return text ? `<${tag}>${escapeXml(text)}</${tag}>` : "";
+      })
+      .join("")
+  }
   <interests>${notes}</interests>
   <match_tags>${escapeXml(
     (profile.match_tags ?? [])
@@ -136,7 +157,9 @@ Deno.serve(async (req) => {
     await Promise.all([
       db
         .from("profiles")
-        .select("id, gender, hub_id, job, headline, intro, interests, match_tags, topics, details")
+        .select(
+          "id, gender, hub_id, job, headline, intro, interests, match_tags, topics, details, evening_note, known_as, topic_note, match_note",
+        )
         .in("id", [body.maleId, body.femaleId]),
       db
         .from("affinities")

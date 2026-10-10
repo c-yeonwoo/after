@@ -470,6 +470,8 @@ export async function completeOnboarding(
       religion: basics.religion,
       headline: profile.headline,
       intro,
+      evening_note: profile.eveningNote.trim() || null,
+      known_as: profile.knownAs.trim() || null,
       interests: profile.interests,
       details:
         profile.details as unknown as Database["public"]["Tables"]["profiles"]["Row"]["details"],
@@ -794,6 +796,9 @@ export type ComposedProfile = {
 
 export async function composeProfile(input: {
   job?: string | null;
+  /** 인터뷰 ①② (s52). 소개장의 뼈대가 되는 본인 문장. */
+  eveningNote?: string;
+  knownAs?: string;
   interests: { label: string; note?: string }[];
   matchTags: string[];
   matchNote?: string;

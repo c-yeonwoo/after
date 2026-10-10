@@ -1327,6 +1327,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -1335,6 +1336,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null
@@ -1367,6 +1369,7 @@ export type Database = {
           details?: Json
           drinking?: string | null
           email_verified_at?: string | null
+          evening_note?: string | null
           feedback_emails?: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline?: string | null
@@ -1375,6 +1378,7 @@ export type Database = {
           interests?: string[]
           intro?: string | null
           job?: string | null
+          known_as?: string | null
           match_note?: string | null
           match_tags?: string[]
           mbti?: string | null
@@ -1407,6 +1411,7 @@ export type Database = {
           details?: Json
           drinking?: string | null
           email_verified_at?: string | null
+          evening_note?: string | null
           feedback_emails?: boolean
           gender?: Database["public"]["Enums"]["gender"]
           headline?: string | null
@@ -1415,6 +1420,7 @@ export type Database = {
           interests?: string[]
           intro?: string | null
           job?: string | null
+          known_as?: string | null
           match_note?: string | null
           match_tags?: string[]
           mbti?: string | null
@@ -2169,6 +2175,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -2177,6 +2184,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null
@@ -2222,6 +2230,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -2230,6 +2239,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null
@@ -2430,6 +2440,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -2438,6 +2449,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null
@@ -2772,6 +2784,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -2780,6 +2793,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null
@@ -3014,6 +3028,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -3022,6 +3037,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null
@@ -3098,6 +3114,7 @@ export type Database = {
           details: Json
           drinking: string | null
           email_verified_at: string | null
+          evening_note: string | null
           feedback_emails: boolean
           gender: Database["public"]["Enums"]["gender"]
           headline: string | null
@@ -3106,6 +3123,7 @@ export type Database = {
           interests: string[]
           intro: string | null
           job: string | null
+          known_as: string | null
           match_note: string | null
           match_tags: string[]
           mbti: string | null

@@ -1,7 +1,73 @@
 /**
- * 적응형 프로필 작성 — 직접 적은 관심사에 따라 후속 질문이 달라집니다.
- * (Step 3에서 실제 AI 생성으로 교체 예정. 지금은 규칙 기반 초안.)
+ * 소개장 인터뷰 (2026-10-10 리부팅 C).
+ *
+ * 예전 가입은 관심사 칩·대화 주제 칩·잘 맞는 사람 칩을 고르게 하고, 그 칩으로
+ * 소개글을 만들었다. 소개장(D3)은 "문장이 주인공"인데 본인 문장이 거의 들어가지
+ * 않았다. 이제 질문 네 개에 한두 문장씩 답을 받고, 그 문장을 뼈대로 소개장을 쓴다.
+ * 칩은 답 아래로 들어가 선택 보조가 된다 — 티저의 "같이 적은 것"(s50)과 운영자
+ * 화면이 칩 값을 그대로 쓰기 때문에 없애지 않는다.
  */
+
+export type InterviewKey = "eveningNote" | "knownAs" | "topicNote" | "matchNote";
+
+export type InterviewQuestion = {
+  key: InterviewKey;
+  title: string;
+  description: string;
+  placeholder: string;
+  examples: string[];
+  /** 최소 글자 수. 0 이면 선택 답변이다. */
+  min: number;
+};
+
+export const INTERVIEW_MAX = 300;
+
+export const INTERVIEW: InterviewQuestion[] = [
+  {
+    key: "eveningNote",
+    title: "퇴근하고 요즘 가장 기다려지는 시간은요?",
+    description: "한두 문장이면 충분해요. 소개장의 첫 문단이 돼요.",
+    placeholder: "예) 수요일 저녁엔 한강까지 뛰어요. 돌아오는 길에 듣는 음악이 좋아요.",
+    examples: [
+      "금요일 퇴근길에 동네 서점에 들러 한 권 고르는 시간이요.",
+      "요즘은 저녁마다 30분씩 베이킹을 해요. 주말 아침에 먹을 빵이에요.",
+    ],
+    min: 10,
+  },
+  {
+    key: "knownAs",
+    title: "주변에서는 나를 어떤 사람이라고 해요?",
+    description: "친구나 동료가 나를 소개할 때 하는 말을 떠올려 보세요.",
+    placeholder: "예) 친구들은 제가 약속 장소를 제일 잘 고른대요.",
+    examples: [
+      "말수는 적은데 한번 웃기면 오래 웃긴다는 말을 들어요.",
+      "회사에서는 뭐든 끝까지 챙기는 사람으로 통해요.",
+    ],
+    min: 10,
+  },
+  {
+    key: "topicNote",
+    title: "처음 만나는 자리에서 나누고 싶은 이야기는요?",
+    description: "상대가 소개장을 읽고 먼저 꺼낼 수 있는 이야기면 좋아요.",
+    placeholder: "예) 최근에 다녀온 여행이나, 요즘 읽는 책 이야기요.",
+    examples: [
+      "서로 자주 가는 동네 맛집을 하나씩 알려 주면 좋겠어요.",
+      "요즘 보고 있는 드라마 이야기를 하고 싶어요.",
+    ],
+    min: 10,
+  },
+  {
+    key: "matchNote",
+    title: "어떤 사람과 함께 있을 때 편한가요?",
+    description: "조건이 아니라 같이 있을 때의 느낌을 적어 주세요.",
+    placeholder: "예) 말이 빠르지 않고, 제 이야기를 끝까지 들어 주는 사람이요.",
+    examples: [
+      "계획 없이 걷다가 마음에 드는 가게에 들어가는 걸 좋아하는 사람이요.",
+      "농담을 주고받을 수 있는 사람이면 금방 편해져요.",
+    ],
+    min: 0,
+  },
+];
 
 /** 입력을 막지 않는 가벼운 예시 (플레이스홀더 용도) */
 export const INTEREST_PLACEHOLDERS = [
@@ -66,6 +132,8 @@ export const TOPIC_TAGS = [
 
 export type ProfileDraft = {
   headline: string;
+  eveningNote: string;
+  knownAs: string;
   interests: string[];
   details: Record<string, string>;
   matchTags: string[];
@@ -76,6 +144,8 @@ export type ProfileDraft = {
 
 export const emptyProfile: ProfileDraft = {
   headline: "",
+  eveningNote: "",
+  knownAs: "",
   interests: [],
   details: {},
   matchTags: [],
@@ -135,9 +205,25 @@ function josa(word: string, withBatchim: string, withoutBatchim: string) {
   return `${word}${(code - 0xac00) % 28 === 0 ? withoutBatchim : withBatchim}`;
 }
 
-export function buildIntro(p: ProfileDraft) {
-  const labels = p.interests.map((v) => v.trim()).filter(Boolean);
+/** 문장 끝에 마침표가 없으면 붙인다. 문단으로 이어 붙일 때 문장이 뭉개지지 않게. */
+function sentence(text: string) {
+  const t = text.trim();
+  if (!t) return "";
+  return /[.?!]$/.test(t) ? t : `${t}.`;
+}
 
+/**
+ * 규칙 기반 소개글 — 모델 호출이 실패해도 화면이 비지 않게 하는 초안이다.
+ *
+ * 인터뷰 답이 있으면 **본인 문장을 그대로** 문단으로 잇는다. 고쳐 쓰지 않는다 —
+ * 규칙으로 다듬은 문장은 어색하고, 어색한 남의 말보다 투박한 내 말이 낫다.
+ * 답이 없는 예전 회원(인터뷰 전 가입)은 키워드·칩으로 만든 예전 초안을 쓴다.
+ */
+export function buildIntro(p: ProfileDraft) {
+  const own = [p.eveningNote, p.knownAs, p.topicNote, p.matchNote].map(sentence).filter(Boolean);
+  if (own.length) return own.join("\n\n");
+
+  const labels = p.interests.map((v) => v.trim()).filter(Boolean);
   const details = p.interests
     .map((label) => p.details[label]?.trim())
     .filter((v): v is string => Boolean(v));

@@ -70,8 +70,15 @@ export function basicsValid(b: Basics) {
     age !== null &&
     age >= 19 &&
     age <= 79 &&
-    b.job.trim().length >= 2 &&
-    Boolean(b.smoking) &&
-    Boolean(b.drinking)
+    b.job.trim().length >= 2
   );
+}
+
+/**
+ * 흡연·음주는 인터뷰 뒤 "만나기 전에 알아 두면 좋은 것" 화면에서 받는다(리부팅 C).
+ * 조건을 먼저 물으면 가입이 스펙 비교로 시작한다. 그래도 흡연은 실제로 많은 사람이
+ * 거르는 조건이라 필수로 둔다. MBTI·종교는 선택.
+ */
+export function conditionsValid(b: Basics) {
+  return Boolean(b.smoking) && Boolean(b.drinking);
 }
