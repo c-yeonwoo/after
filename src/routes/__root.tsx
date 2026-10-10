@@ -109,13 +109,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
       },
       /*
-        소개장(D3)의 세리프. 사람 이름·한 줄 소개·소개글·랜딩 제목에만 쓴다.
-        Google Fonts 가 한글을 unicode-range 조각으로 나눠 주므로 화면에 나온 글자만
-        받는다. SIL OFL 1.1.
+        소개장(D3)의 세리프. 사람 이름·한 줄 소개·소개글·화면 제목에 쓴다.
+        Noto Serif KR 은 획 끝이 날카로워 "궁서체 같다" 는 반응이 나왔다(2026-10-10).
+        고운바탕은 획이 둥글고 가벼운 현대 명조다. 400·700 두 굵기뿐이라 600 은
+        700 으로 그려진다. Google Fonts 가 한글을 unicode-range 조각으로 나눠 주므로
+        화면에 나온 글자만 받는다. SIL OFL 1.1.
       */
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap",
       },
       /*
         SVG 를 먼저 둔다 — 지원 브라우저는 이걸 쓰고 어느 크기에서도 선명하다.
