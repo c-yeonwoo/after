@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
   useRouterState,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -15,7 +16,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { BRAND } from "@/lib/brand";
 import { MobileFrame } from "@/components/MobileFrame";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
-import { MeProvider } from "@/lib/me";
+import { MeProvider, useMe } from "@/lib/me";
+import { splitAppPath } from "@/lib/appPath";
+import { watchPush } from "@/lib/push";
 import { watchKeyboard } from "@/lib/keyboard";
 import { hideSplash } from "@/lib/native";
 import { APP_VERSION } from "@/lib/version";
@@ -183,6 +186,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <ThemeProvider>
         <MeProvider>
+          <PushBridge />
           {isAdminRoute ? (
             <Outlet />
           ) : (
@@ -195,4 +199,22 @@ function RootComponent() {
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
+}
+
+/**
+ * 앱 푸시(s55). 로그인한 동안만 토큰을 등록하고, 알림을 눌러 열리면 그 화면으로 보낸다.
+ * 웹에서는 watchPush 가 아무것도 하지 않는다.
+ */
+function PushBridge() {
+  const { me } = useMe();
+  const navigate = useNavigate();
+  const signedIn = Boolean(me?.id);
+  useEffect(() => {
+    if (!signedIn) return;
+    return watchPush((path) => {
+      const { to, search } = splitAppPath(path);
+      void navigate({ to, search });
+    });
+  }, [signedIn, navigate]);
+  return null;
 }

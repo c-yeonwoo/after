@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
+import { NotificationBell } from "@/components/app/NotificationBell";
 import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Switch } from "@/components/ui/switch";
@@ -152,7 +153,7 @@ function HomePage() {
   }
 
   return (
-    <AppScreen>
+    <AppScreen action={<NotificationBell />}>
       <p className="mt-4 text-2xs font-medium text-muted-foreground">
         {hub?.label ?? PRIMARY_HUB.label}
       </p>
@@ -207,16 +208,6 @@ function HomePage() {
             </span>
           </span>
           <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
-        </Link>
-      ) : null}
-
-      {me && !me.notification_email_verified_at ? (
-        <Link
-          to="/settings"
-          className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary-strong underline-offset-4 hover:underline"
-        >
-          <span>소개 알림 받을 이메일 설정</span>
-          <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       ) : null}
 
