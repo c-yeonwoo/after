@@ -28,9 +28,7 @@ export function PolicyPage({ title, sections }: { title: string; sections: Polic
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-6"
         style={{ paddingBottom: "calc(var(--safe-bottom) + 1.5rem)" }}
       >
-        <p className="text-2xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-          버전 {POLICY_VERSION}
-        </p>
+        <p className="text-2xs font-semibold text-muted-foreground">버전 {POLICY_VERSION}</p>
 
         {/*
           미확정 항목이 남아 있을 때만 띄운다. LEGAL_TODO 는 BUSINESS 에서
@@ -72,9 +70,7 @@ export function PolicyPage({ title, sections }: { title: string; sections: Polic
 
         {/* 사업자 정보 — 전자상거래법이 공개를 요구한다. 확정된 항목만 나온다. */}
         <section className="mt-10 border-t border-border pt-5">
-          <h2 className="text-2xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            사업자 정보
-          </h2>
+          <h2 className="text-2xs font-semibold text-muted-foreground">사업자 정보</h2>
           <ul className="mt-2.5 space-y-1">
             {BUSINESS_LINES.map((line) => (
               <li key={line} className="text-xs leading-relaxed text-muted-foreground">

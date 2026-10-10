@@ -151,7 +151,7 @@ function HomePage() {
 
   return (
     <AppScreen>
-      <p className="mt-4 text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+      <p className="mt-4 text-3xs font-semibold text-muted-foreground">
         {hub?.label ?? PRIMARY_HUB.label}
       </p>
       {/*
@@ -401,11 +401,11 @@ function ReadinessPanel({
 function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isMale: boolean }) {
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
-      <div className="bg-gradient-to-br from-accent/40 via-card to-card px-5 pt-5 pb-6">
-        <p className="text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+      <div className="px-5 pt-5 pb-6">
+        <p className="text-3xs font-semibold text-muted-foreground">
           {isMale ? "오늘의 소개" : "살펴볼 소개"}
         </p>
-        <p className="headline mt-3 text-2xl">
+        <p className="serif mt-3 text-2xl leading-[1.3] font-bold">
           {candidate.name}
           {candidate.age !== null ? (
             <span className="ml-2 text-base text-muted-foreground">{candidate.age}</span>
@@ -413,8 +413,9 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
         {candidate.headline ? (
-          <p className="mt-3 line-clamp-2 text-sm leading-snug text-foreground/90">
-            “{candidate.headline}”
+          <p className="serif mt-3 line-clamp-2 text-base leading-[1.5] text-foreground">
+            <span className="text-primary-strong">“</span>
+            {candidate.headline}
           </p>
         ) : null}
       </div>
@@ -441,7 +442,7 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
 
   return (
     <div className="rounded-surface border border-border bg-card px-5 py-5 shadow-card">
-      <p className="flex items-center gap-1.5 text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+      <p className="flex items-center gap-1.5 text-3xs font-semibold text-muted-foreground">
         <Clock className="size-3.5" aria-hidden="true" />
         기다리는 중
       </p>
@@ -484,9 +485,7 @@ function AfterMeetingCard({
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
       <div className="px-5 pt-5 pb-4">
-        <p className="text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-          지난 만남
-        </p>
+        <p className="text-3xs font-semibold text-muted-foreground">지난 만남</p>
         <p className="headline mt-2 text-xl">{who ? `${who} 만나셨나요?` : "만나셨나요?"}</p>
         {meeting.scheduled_at ? (
           <p className="mt-1.5 text-sm text-muted-foreground">
@@ -539,7 +538,7 @@ function ConfirmedCard({
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
       <div className="bg-primary px-5 py-5 text-primary-foreground">
-        <p className="flex items-center gap-1.5 text-3xs font-semibold tracking-[0.16em] text-primary-foreground/85 uppercase">
+        <p className="flex items-center gap-1.5 text-3xs font-semibold text-primary-foreground/85">
           <CalendarCheck className="size-3.5" aria-hidden="true" />
           만남 확정
         </p>

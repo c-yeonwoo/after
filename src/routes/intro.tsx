@@ -220,11 +220,12 @@ function IntroPage() {
   */
   const actions = maleAnswered ? null : (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      {/* 그리드로 반씩 나눈다 — flex-1 은 글자 폭에 밀려 오른쪽 버튼이 카드 밖으로 8px 나갔다. */}
+      <div className="grid grid-cols-2 gap-2">
         <Button
           variant="outline"
           size="lg"
-          className="flex-1"
+          className="w-full min-w-0"
           disabled={busy}
           onClick={async () => {
             if (isMale) {
@@ -251,20 +252,21 @@ function IntroPage() {
           {isMale ? "이 소개 넘기기" : "관심 없어요"}
         </Button>
         {isMale ? (
-          <Button size="lg" className="flex-1" onClick={() => navigate({ to: "/ticket" })}>
+          <Button size="lg" className="w-full min-w-0" onClick={() => navigate({ to: "/ticket" })}>
             <Ticket className="size-4" aria-hidden="true" />
             만남 티켓 쓰기
           </Button>
         ) : (
           <Button
             size="lg"
-            className="flex-1"
+            className="w-full min-w-0"
             disabled={busy}
             onClick={async () => {
               setBusy(true);
               try {
                 await submitAffinity(candidate.id!, "like");
-                toast.success("호감을 전달했습니다.");
+                // "전달했습니다" 는 과한 약속이었다 — 실제로는 운영팀 검토를 거친다.
+                toast.success("좋아요를 남겼어요.");
                 await load();
               } finally {
                 setBusy(false);
