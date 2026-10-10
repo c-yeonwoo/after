@@ -391,6 +391,20 @@ export async function fetchQueue(maleId: string): Promise<QueueCard[]> {
  * 큐를 순서째 덮어쓴다. 부분 수정이 아니다 — 화면에서 순서를 마음껏 바꾸고
  * 한 번에 저장한다. 서버가 호감 풀 밖의 사람을 거절하므로 불변식은 안전하다.
  */
+/** 카드별 운영팀 한 줄(s50). 남성에게 열기 전·후로 보인다. 빈 문자열이면 지운다. */
+export async function setQueueReason(
+  maleId: string,
+  femaleId: string,
+  reason: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_set_queue_reason", {
+    p_male: maleId,
+    p_female: femaleId,
+    p_reason: reason,
+  });
+  if (error) throw error;
+}
+
 export async function setQueue(maleId: string, femaleIds: string[], note: string): Promise<number> {
   const { data, error } = await supabase.rpc("admin_set_queue", {
     p_male: maleId,

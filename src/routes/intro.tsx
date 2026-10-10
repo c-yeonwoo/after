@@ -24,11 +24,13 @@ import {
   ensureOpenIntro,
   getOpenIntroWithCandidate,
   homeState,
+  introTeaser,
   getMeetingByIntro,
   myPendingCandidate,
   passIntro,
   remainingCandidates,
   submitAffinity,
+  type IntroTeaser,
   type Meeting,
   type PublicProfile,
 } from "@/lib/api";
@@ -66,7 +68,13 @@ function IntroPage() {
     열람 게이트(v2). 진입만으로 소개 티켓이 빠지면 안 되므로, 열린 소개가 없을
     때는 큐·티켓 상태만 읽어 두고 사용자가 누를 때 비로소 open_intro() 를 부른다.
   */
-  const [gate, setGate] = useState<{ queued: number; tickets: number } | null>(null);
+  const [gate, setGate] = useState<{
+    queued: number;
+    tickets: number;
+    teaser: IntroTeaser | null;
+  } | null>(null);
+  /** 연 소개에 운영팀이 남긴 한 줄(s50). */
+  const [reason, setReason] = useState<string | null>(null);
 
   async function load() {
     if (!me) return;
@@ -81,10 +89,11 @@ function IntroPage() {
         setGate(null);
         setCandidate(existing.candidate);
         setIntroId(existing.intro.id);
+        setReason(existing.intro.reason ?? null);
         setMeeting(await getMeetingByIntro(existing.intro.id));
       } else {
-        const h = await homeState();
-        setGate({ queued: h.queued_intros, tickets: h.intro_tickets });
+        const [h, teaser] = await Promise.all([homeState(), introTeaser()]);
+        setGate({ queued: h.queued_intros, tickets: h.intro_tickets, teaser });
         setCandidate(null);
         setIntroId(null);
         setMeeting(null);
@@ -139,11 +148,19 @@ function IntroPage() {
               </p>
             </div>
           ) : (
-            <div className="mt-10 rounded-2xl border border-border bg-card px-6 py-8 text-center">
-              <p className="text-sm font-medium">소개 {gate.queued}건이 도착했습니다</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                한 번에 한 분씩 열어 보실 수 있습니다.
-              </p>
+            <div className="mt-6 rounded-surface border border-border bg-card px-5 py-6">
+              {/*
+                열기 전 공개(D2 ①). 예전에는 상대 정보가 0개인 채로 "소개 티켓 1장 쓰고 열기"
+                만 있었다 — 5,000원짜리 뽑기였다. 이제 무엇을 여는지 알고 연다. 이름·사진·
+                소개글은 열어야 보인다. "먼저 관심" 같은 말은 쓰지 않는다(D4).
+              */}
+              {gate.teaser ? (
+                <TeaserCard teaser={gate.teaser} />
+              ) : (
+                <p className="text-center text-sm font-medium">
+                  소개 {gate.queued}건이 도착했습니다
+                </p>
+              )}
 
               {gate.tickets > 0 ? (
                 <>
@@ -320,13 +337,17 @@ function IntroPage() {
       }
     >
       <div className="mb-4">
-        <GuideNote>
-          {maleAnswered
-            ? "답을 받았습니다. 다음 단계는 제가 안내하겠습니다."
-            : isMale
-              ? "오늘 소개할 한 분입니다. 편하게 읽어 보세요."
-              : "오늘 살펴볼 한 분입니다. 편하게 읽고 답해 주세요."}
-        </GuideNote>
+        {isMale && reason && !maleAnswered ? (
+          <ReasonNote reason={reason} />
+        ) : (
+          <GuideNote>
+            {maleAnswered
+              ? "답을 받았습니다. 다음 단계는 제가 안내하겠습니다."
+              : isMale
+                ? "오늘 소개할 한 분입니다. 편하게 읽어 보세요."
+                : "오늘 살펴볼 한 분입니다. 편하게 읽고 답해 주세요."}
+          </GuideNote>
+        )}
       </div>
 
       <ProfileDetail p={view} />
@@ -400,5 +421,52 @@ function IntroPage() {
         </AlertDialogContent>
       </AlertDialog>
     </AppScreen>
+  );
+}
+
+/** 운영팀이 남긴 한 줄. 자동 안내와 구분해 "운영팀" 이 화자다. */
+function ReasonNote({ reason }: { reason: string }) {
+  return (
+    <div className="rounded-surface border border-border bg-card px-5 py-4">
+      <p className="text-xs font-medium text-muted-foreground">애프터 운영팀이 전하는 말</p>
+      <p data-selectable className="serif mt-2 text-base leading-[1.7] text-foreground">
+        {reason}
+      </p>
+    </div>
+  );
+}
+
+/** 열기 전 공개 — 나이·직업·한 줄 소개·같이 적은 것·운영팀 한 줄. */
+function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
+  const meta = [teaser.age !== null ? `${teaser.age}세` : null, teaser.job]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground">
+        도착한 소개
+        {teaser.delivered > 1 ? ` · 한 번에 한 분씩, ${teaser.delivered}건 중 첫 번째` : ""}
+      </p>
+      {meta ? <p className="mt-3 text-base font-semibold text-foreground">{meta}</p> : null}
+      {teaser.headline ? (
+        <p className="serif mt-2 text-lg leading-[1.5] text-foreground">
+          <span className="text-primary-strong">“</span>
+          {teaser.headline}
+        </p>
+      ) : null}
+      {teaser.shared.length > 0 ? (
+        <div className="mt-4">
+          <p className="text-xs font-medium text-muted-foreground">두 분이 같이 적은 것</p>
+          <p className="mt-1 text-sm text-foreground">{teaser.shared.join(" · ")}</p>
+        </div>
+      ) : null}
+      {teaser.reason ? (
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="text-xs font-medium text-muted-foreground">애프터 운영팀이 전하는 말</p>
+          <p className="serif mt-1.5 text-base leading-[1.7] text-foreground">{teaser.reason}</p>
+        </div>
+      ) : null}
+      <p className="mt-4 text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>
+    </div>
   );
 }
