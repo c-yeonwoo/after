@@ -17,7 +17,7 @@ values
   ('53000000-0000-0000-0000-0000000000ad','male','gangnam','admin53@corp.example',now(),'운영','1990-01-01','운영',7,now(),now(),'admin');
 
 -- 두 장만 올리고 승인된 남성
-update profiles set photo_paths = array['53000000-0000-0000-0000-0000000000a1/1.webp',
+update profiles set phone_verified_at = now(), photo_paths = array['53000000-0000-0000-0000-0000000000a1/1.webp',
                                         '53000000-0000-0000-0000-0000000000a1/2.webp']
  where id = '53000000-0000-0000-0000-0000000000a1';
 
@@ -39,7 +39,7 @@ select ok(exists (select 1 from eligible_profiles where id = '53000000-0000-0000
   'T5 승인된 세 장이면 소개 대상이다');
 
 select throws_ok(
-  $$ update profiles set photo_paths = array['a','b','c','d','e','f','g']
+  $$ update profiles set phone_verified_at = now(), photo_paths = array['a','b','c','d','e','f','g']
       where id = '53000000-0000-0000-0000-0000000000f1' $$,
   '23514', null, 'T6 일곱 장은 받지 않는다');
 
@@ -52,7 +52,7 @@ select is(
 
 set local request.jwt.claims = '{"sub":"53000000-0000-0000-0000-0000000000ad","role":"authenticated"}';
 reset role;
-update profiles set photo_paths = array['53000000-0000-0000-0000-0000000000f1/1.webp',
+update profiles set phone_verified_at = now(), photo_paths = array['53000000-0000-0000-0000-0000000000f1/1.webp',
                                         '53000000-0000-0000-0000-0000000000f1/2.webp',
                                         '53000000-0000-0000-0000-0000000000f1/3.webp']
  where id = '53000000-0000-0000-0000-0000000000f1';
