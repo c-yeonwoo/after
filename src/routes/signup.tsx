@@ -4,11 +4,13 @@ import { AlertCircle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationEmailForm } from "@/components/app/NotificationEmailForm";
+import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
   MBTI_AXES,
+  MIN_PHOTOS,
   RELIGION_OPTIONS,
   SMOKING_OPTIONS,
   ageFrom,
@@ -51,7 +53,7 @@ import {
   type Profile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
-import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
+import { pruneMyPhotos, usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
@@ -155,9 +157,6 @@ function Onboarding() {
   const [saving, setSaving] = useState(false);
   /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
   const [resumed, setResumed] = useState(false);
-  /** 방금 고른 파일의 blob URL. 업로드가 끝나기 전에도 보여주기 위한 것. */
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoBusy, setPhotoBusy] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
@@ -207,7 +206,8 @@ function Onboarding() {
     setEmail(me.company_email);
     const nextBasics: Basics = {
       name: me.name ?? "",
-      photo: me.photo_url ?? "",
+      // 예전 회원(한 장)은 photo_paths 가 [photo_url] 로 옮겨져 있다(s53 백필).
+      photos: me.photo_paths ?? (me.photo_url ? [me.photo_url] : []),
       birth: me.birth ?? "",
       job: me.job ?? "",
       mbti: me.mbti ?? "",
@@ -234,9 +234,8 @@ function Onboarding() {
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
   }, [editing, ready, me, navigate, resumed]);
 
-  // 저장된 값은 Storage 경로라 그대로 <img src> 에 넣을 수 없다.
-  const savedPhoto = usePhotoUrl(basics.photo);
-  const shownPhoto = photoPreview ?? savedPhoto;
+  // 저장된 값은 Storage 경로라 그대로 <img src> 에 넣을 수 없다. 확인 화면은 대표 사진만.
+  const shownPhoto = usePhotoUrl(basics.photos[0]);
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
@@ -398,71 +397,14 @@ function Onboarding() {
       >
         <div className="space-y-5">
           <div>
-            <p className="text-sm font-semibold text-foreground">프로필 사진 (필수)</p>
-            <div className="mt-3 flex items-center gap-4">
-              <div className="size-24 shrink-0 overflow-hidden rounded-surface border border-border bg-muted">
-                {shownPhoto ? (
-                  <img
-                    src={shownPhoto}
-                    alt="선택한 프로필 사진 미리보기"
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
-                    미등록
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <label
-                  htmlFor="photo"
-                  className="inline-flex min-h-11 cursor-pointer items-center rounded-control border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
-                >
-                  {photoBusy ? "올리는 중…" : basics.photo ? "사진 변경" : "사진 선택"}
-                  <input
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      // 미리보기는 즉시(blob), 실제 값은 Storage 경로다.
-                      // 예전에는 base64 를 행에 넣어 모든 select 에 딸려 나왔다(UX-3).
-                      setPhotoPreview(URL.createObjectURL(file));
-                      setPhotoBusy(true);
-                      try {
-                        setB({ photo: await uploadProfilePhoto(file) });
-                      } catch (err) {
-                        setPhotoPreview(null);
-                        toast.error(
-                          err instanceof Error ? err.message : "사진을 올리지 못했습니다.",
-                        );
-                      } finally {
-                        setPhotoBusy(false);
-                      }
-                    }}
-                  />
-                </label>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  얼굴이 잘 보이는 사진 한 장이면 충분합니다.
-                </p>
-              </div>
-            </div>
-
-            {/*
-              검수 상태를 사용자에게 돌려준다.
-
-              s18 이후 사진은 승인 전까지 후보 풀에서 빠진다. 그런데 그 사실이
-              어디에도 안 적혀 있어서, 반려당한 사람은 **아무에게도 안 보이는
-              상태로 이유도 모른 채** 남았다(출시 전 검증 B5). 사유는 이미
-              profiles.photo_reject_reason 에 있고 본인만 읽을 수 있다 —
-              화면이 그걸 안 읽었을 뿐이다.
-
-              사진을 새로 고르면 트리거가 pending 으로 되돌리므로(s18), 여기서
-              할 일은 "지금 어느 상태이고 무엇을 하면 되는지" 를 말하는 것이다.
-            */}
-            {!photoPreview && me?.photo_url && me.photo_state !== "approved" ? (
+            <p className="text-sm font-semibold text-foreground">
+              프로필 사진 ({MIN_PHOTOS}장 이상)
+            </p>
+            <p className="mt-1 mb-3 text-sm text-muted-foreground">
+              얼굴이 잘 보이는 사진과 평소 모습이 담긴 사진을 섞어 주세요.
+            </p>
+            <PhotoSetEditor photos={basics.photos} onChange={(photos) => setB({ photos })} />
+            {me?.photo_url && me.photo_state !== "approved" ? (
               <p
                 className={`mt-3 text-xs leading-relaxed ${
                   me.photo_state === "rejected" ? "text-destructive" : "text-muted-foreground"
@@ -559,8 +501,10 @@ function Onboarding() {
                     name: basics.name,
                     birth: basics.birth,
                     job: basics.job,
-                    photo_url: basics.photo || null,
+                    photo_paths: basics.photos,
                   });
+                  // 묶음에서 뺀 사진 파일을 치운다. 저장이 끝난 뒤라야 안전하다.
+                  void pruneMyPhotos(basics.photos);
                 } finally {
                   setSaving(false);
                 }

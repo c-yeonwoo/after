@@ -74,7 +74,13 @@ export async function deleteMyPhotos(): Promise<void> {
   await supabase.storage.from(BUCKET).remove(paths);
 }
 
-/** 업로드하고 저장할 **경로**를 돌려준다. 행에는 이 경로만 들어간다. */
+/**
+ * 업로드하고 저장할 **경로**를 돌려준다. 행에는 이 경로만 들어간다.
+ *
+ * 사진이 여러 장(s53)이라 올릴 때 다른 파일을 지우지 않는다. 예전에는 한 장뿐이라
+ * 업로드 직후 폴더의 나머지를 지웠다 — 지금 그러면 방금 올린 두 번째 사진이 첫
+ * 번째를 지운다. 안 쓰는 파일은 묶음을 저장한 뒤 pruneMyPhotos 가 치운다.
+ */
 export async function uploadProfilePhoto(file: File): Promise<string> {
   const {
     data: { session },
@@ -85,22 +91,29 @@ export async function uploadProfilePhoto(file: File): Promise<string> {
   // 경로 첫 폴더가 소유자여야 한다 — Storage 정책이 그걸로 판정한다.
   const path = `${session.user.id}/${crypto.randomUUID()}.webp`;
 
-  // 파일명에 uuid 를 쓰므로 교체해도 새 파일이 생긴다. 예전 파일을 안 지우면
-  // 사람이 사진을 바꿀 때마다 **지난 얼굴이 버킷에 영구히 쌓인다** — 화면에는
-  // 안 보이고 삭제 경로도 없는, 가장 방어하기 어려운 종류의 잔존이다.
-  const stale = await myPhotoPaths(session.user.id);
-
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
     contentType: "image/webp",
     upsert: false,
   });
   if (error) throw error;
-
-  // 새 파일이 올라간 뒤에 지운다. 순서가 반대면 업로드가 실패했을 때 사진이
-  // 하나도 없는 상태가 된다.
-  if (stale.length > 0) await supabase.storage.from(BUCKET).remove(stale);
-
   return path;
+}
+
+/**
+ * 저장한 묶음에 없는 내 사진 파일을 지운다.
+ *
+ * 파일명에 uuid 를 쓰므로 바꾼 사진은 새 파일이 된다. 치우지 않으면 사람이 사진을
+ * 바꿀 때마다 **지난 얼굴이 버킷에 영구히 쌓인다** — 화면에는 안 보이고 삭제 경로도
+ * 없는, 가장 방어하기 어려운 종류의 잔존이다. 묶음을 **저장한 뒤에** 부른다. 순서가
+ * 반대면 저장이 실패했을 때 행이 가리키는 파일이 사라진다.
+ */
+export async function pruneMyPhotos(keep: string[]): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return;
+  const stale = (await myPhotoPaths(session.user.id)).filter((p) => !keep.includes(p));
+  if (stale.length > 0) await supabase.storage.from(BUCKET).remove(stale);
 }
 
 /**

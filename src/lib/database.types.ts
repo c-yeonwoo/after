@@ -1345,6 +1345,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -1387,6 +1388,7 @@ export type Database = {
           notification_email_verified_at?: string | null
           onboarding_step?: number
           paused_at?: string | null
+          photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
           photo_reviewed_by?: string | null
@@ -1429,6 +1431,7 @@ export type Database = {
           notification_email_verified_at?: string | null
           onboarding_step?: number
           paused_at?: string | null
+          photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
           photo_reviewed_by?: string | null
@@ -1678,6 +1681,7 @@ export type Database = {
           name: string | null
           onboarding_step: number | null
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -1716,6 +1720,7 @@ export type Database = {
           name?: string | null
           onboarding_step?: number | null
           paused_at?: string | null
+          photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
           photo_reviewed_by?: string | null
@@ -1754,6 +1759,7 @@ export type Database = {
           name?: string | null
           onboarding_step?: number | null
           paused_at?: string | null
+          photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
           photo_reviewed_by?: string | null
@@ -1806,6 +1812,7 @@ export type Database = {
           match_tags: string[] | null
           mbti: string | null
           name: string | null
+          photo_paths: string[] | null
           photo_url: string | null
           religion: string | null
           smoking: string | null
@@ -1824,6 +1831,7 @@ export type Database = {
           match_tags?: string[] | null
           mbti?: string | null
           name?: string | null
+          photo_paths?: string[] | null
           photo_url?: string | null
           religion?: string | null
           smoking?: string | null
@@ -1842,6 +1850,7 @@ export type Database = {
           match_tags?: string[] | null
           mbti?: string | null
           name?: string | null
+          photo_paths?: string[] | null
           photo_url?: string | null
           religion?: string | null
           smoking?: string | null
@@ -2078,6 +2087,7 @@ export type Database = {
           id: string
           name: string
           onboarding_step: number
+          photo_paths: string[]
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string
           reject_reason: string
@@ -2193,6 +2203,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -2248,6 +2259,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -2458,6 +2470,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -2554,6 +2567,7 @@ export type Database = {
           match_tags: string[] | null
           mbti: string | null
           name: string | null
+          photo_paths: string[] | null
           photo_url: string | null
           religion: string | null
           smoking: string | null
@@ -2581,6 +2595,7 @@ export type Database = {
           match_tags: string[] | null
           mbti: string | null
           name: string | null
+          photo_paths: string[] | null
           photo_url: string | null
           religion: string | null
           smoking: string | null
@@ -2709,6 +2724,7 @@ export type Database = {
           match_tags: string[] | null
           mbti: string | null
           name: string | null
+          photo_paths: string[] | null
           photo_url: string | null
           religion: string | null
           smoking: string | null
@@ -2802,6 +2818,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -3046,6 +3063,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null
@@ -3132,6 +3150,7 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
           photo_reviewed_by: string | null

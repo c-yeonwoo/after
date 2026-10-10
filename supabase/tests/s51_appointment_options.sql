@@ -18,7 +18,7 @@ values
   ('51000000-0000-0000-0000-0000000000f1','female','gangnam','f51@corp.example',now(),'여오일','1994-01-01','회계',7,now(),now(),'member'),
   ('51000000-0000-0000-0000-0000000000ad','male','gangnam','admin51@corp.example',now(),'운영','1990-01-01','운영',7,now(),now(),'admin');
 
-update profiles set photo_url = id::text || '/portrait.png' where id::text like '51000000-%';
+update profiles set photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where id::text like '51000000-%';
 update profiles set photo_state = 'approved', photo_reviewed_at = now()
  where photo_url = id::text || '/portrait.png' and id::text like '51000000-%';
 

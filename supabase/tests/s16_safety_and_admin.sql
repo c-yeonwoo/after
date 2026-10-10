@@ -30,6 +30,10 @@ values
   ('50000000-0000-0000-0000-00000000000a','female','gangnam','sf@t.co',now(),'에스여','1994-02-02','디자이너',7,now(),now(),'member','50000000-0000-0000-0000-00000000000a/approved.jpg','approved'),
   ('50000000-0000-0000-0000-00000000000b','male',  'gangnam','sm@t.co',now(),'에스남','1992-03-03','엔지니어',7,now(),now(),'member',null,'pending'),
   ('50000000-0000-0000-0000-00000000000c','male',  'gangnam','sa@t.co',now(),'운영자','1990-01-01','운영',   7,now(),now(),'admin', null,'pending');
+-- s53: 자격은 승인된 사진 3장 이상이다. 묶음을 채우면 트리거가 대기로 돌리므로 다시 승인한다.
+update profiles set photo_paths = array[photo_url, photo_url || '#2', photo_url || '#3']
+ where id = '50000000-0000-0000-0000-00000000000a';
+update profiles set photo_state = 'approved' where id = '50000000-0000-0000-0000-00000000000a';
 
 -- ─────────────── is_admin ───────────────
 

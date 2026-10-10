@@ -30,6 +30,8 @@ export type ProfileSource = {
   // public_profiles 뷰는 nullable 로 나온다(뷰의 컬럼은 not null 이 안 붙는다).
   hub_id: string | null;
   photo_url: string | null;
+  /** s53 사진 묶음. 운영자 화면처럼 이 컬럼을 안 싣는 곳은 photo_url 한 장으로 그린다. */
+  photo_paths?: string[] | null;
   headline: string | null;
   intro: string | null;
   interests: string[] | null;
@@ -51,7 +53,7 @@ export function toProfileView(p: ProfileSource): ProfileView {
     drinking: DRINKING_OPTIONS.find((o) => o.id === p.drinking)?.label,
     religion: RELIGION_OPTIONS.find((o) => o.id === p.religion)?.label,
     area: HUBS.find((h) => h.id === p.hub_id)?.label,
-    photo: p.photo_url || undefined,
+    photos: p.photo_paths?.length ? p.photo_paths : p.photo_url ? [p.photo_url] : [],
     headline: p.headline ?? "",
     intro: p.intro ?? "",
     interests,
