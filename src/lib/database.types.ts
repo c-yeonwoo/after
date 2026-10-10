@@ -1273,6 +1273,61 @@ export type Database = {
           },
         ]
       }
+      phone_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phone_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phone_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preference_answers: {
         Row: {
           answered_at: string
@@ -1345,6 +1400,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -1388,6 +1445,8 @@ export type Database = {
           notification_email_verified_at?: string | null
           onboarding_step?: number
           paused_at?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
           photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
@@ -1431,6 +1490,8 @@ export type Database = {
           notification_email_verified_at?: string | null
           onboarding_step?: number
           paused_at?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
           photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
@@ -1681,6 +1742,7 @@ export type Database = {
           name: string | null
           onboarding_step: number | null
           paused_at: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -1720,6 +1782,7 @@ export type Database = {
           name?: string | null
           onboarding_step?: number | null
           paused_at?: string | null
+          phone_verified_at?: string | null
           photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
@@ -1759,6 +1822,7 @@ export type Database = {
           name?: string | null
           onboarding_step?: number | null
           paused_at?: string | null
+          phone_verified_at?: string | null
           photo_paths?: string[] | null
           photo_reject_reason?: string | null
           photo_reviewed_at?: string | null
@@ -2203,6 +2267,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -2259,6 +2325,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -2470,6 +2538,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -2635,6 +2705,10 @@ export type Database = {
         Args: { p_meeting_id: string }
         Returns: boolean
       }
+      issue_phone_code: {
+        Args: { p_phone: string; p_user: string }
+        Returns: string
+      }
       issue_ticket: {
         Args: {
           p_kind?: Database["public"]["Enums"]["ticket_kind"]
@@ -2779,6 +2853,10 @@ export type Database = {
         }
       }
       pass_intro: { Args: { p_intro_id: string }; Returns: undefined }
+      phone_code_hash: {
+        Args: { p_code: string; p_user: string }
+        Returns: string
+      }
       private_open_at: {
         Args: { p_confirmed: string; p_scheduled: string }
         Returns: string
@@ -2818,6 +2896,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -3063,6 +3143,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -3150,6 +3232,8 @@ export type Database = {
           notification_email_verified_at: string | null
           onboarding_step: number
           paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
           photo_paths: string[] | null
           photo_reject_reason: string | null
           photo_reviewed_at: string | null
@@ -3223,6 +3307,60 @@ export type Database = {
         }
       }
       verify_notification_email: { Args: { p_code: string }; Returns: boolean }
+      verify_phone_code: {
+        Args: { p_code: string; p_phone: string }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          evening_note: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          interests: string[]
+          intro: string | null
+          job: string | null
+          known_as: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
+          onboarding_step: number
+          paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          photo_paths: string[] | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       visible_profile_ids: {
         Args: never
         Returns: {
