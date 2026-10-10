@@ -42,7 +42,7 @@
    * 사람 이름·한 줄 소개·소개글·랜딩 제목에만 쓴다. 버튼·라벨·폼은 Pretendard 다.
    * 세리프를 UI 전체에 깔면 "청첩장·결정사" 로 미끄러진다(진단 디자인 C 리스크).
    */
-  --font-serif: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
+  --font-serif: "Gowun Batang", "Nanum Myeongjo", "AppleMyungjo", serif;
 
   /*
    * 타입 스케일 — Tailwind 기본 스텝(xs .75 / sm .875 / base 1 / lg 1.125 …)은
