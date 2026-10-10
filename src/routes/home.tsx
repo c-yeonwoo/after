@@ -18,7 +18,6 @@ import {
   type PublicProfile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -31,14 +30,6 @@ export const Route = createFileRoute("/home")({
   }),
   component: HomePage,
 });
-
-/**
- * 퍼널 4단계. 홈에서 상태를 말하는 곳은 (1) 헤드라인 (2) 이 진행바 뿐이다.
- * 예전에는 헤드라인·안내 카드·진행바·"다음 단계" 리스트 네 곳이 같은 변수를
- * 서로 다른 문장으로 반복했다 — 이 제품은 동시에 진행되는 일이 항상 하나이므로
- * (불변식 2) 요약할 것이 없고, 대시보드 패턴 자체가 맞지 않았다.
- */
-const STEPS = ["소개 도착", "서로 확인", "날짜 조율", "만남 확정 · 대화 오픈"] as const;
 
 function formatWhen(iso: string) {
   const d = new Date(iso);
@@ -126,8 +117,6 @@ function HomePage() {
     new Date(meeting.scheduled_at).getTime() < now,
   );
 
-  const step = meeting?.confirmed_at ? 3 : meeting?.prefs_submitted_at ? 2 : meeting ? 1 : 0;
-
   const headline = awaitingOutcome
     ? "어떠셨어요?"
     : meeting?.confirmed_at
@@ -143,7 +132,7 @@ function HomePage() {
           : candidate
             ? isMale
               ? "오늘 소개가 도착했어요."
-              : "평가할 프로필이 있어요."
+              : "살펴볼 소개가 있어요."
             : isMale && queued > 0
               ? "소개가 도착했어요."
               : me?.paused_at
@@ -218,7 +207,6 @@ function HomePage() {
           // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
           isMale ? (
             <GuideNote
-              introduce
               action={
                 <CardAction to="/schedule" search={{ meetingId: meeting.id }}>
                   날짜 고르기
@@ -228,14 +216,12 @@ function HomePage() {
               가능한 날짜를 받아왔어요. 하나를 고르시면 대화가 열립니다.
             </GuideNote>
           ) : (
-            <GuideNote introduce>
-              보내주신 날짜를 전달했어요. 상대가 고르면 대화가 열립니다.
-            </GuideNote>
+            <GuideNote>보내주신 날짜를 전달했어요. 상대가 고르면 대화가 열립니다.</GuideNote>
           )
         ) : !isMale && requestCount > 0 ? (
           // 여러 남성이 동시에 티켓을 쓸 수 있다 — 한 건만 보여주면 나머지는
           // 답을 못 받고 24시간 뒤 자동 환불된다.
-          <GuideNote introduce action={<CardAction to="/requests">요청 확인하기</CardAction>}>
+          <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
             {requestCount > 1
               ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
               : "만나고 싶다는 요청이 도착했어요. 가능한 날짜만 알려 주시면 됩니다."}
@@ -243,11 +229,18 @@ function HomePage() {
         ) : meeting ? (
           <WaitingCard meeting={meeting} now={now} />
         ) : candidate ? (
+          /*
+            "답은 상대에게 바로 보이지 않습니다" 는 여성의 평가에만 맞는 말이다. 남성에게
+            여기 오는 candidate 는 이미 연 소개라 답할 것이 없다 — 예전에는 둘 다에게
+            같은 안내가 붙어 남성 화면이 사실과 다른 말을 했다.
+          */
           <>
-            <GuideNote introduce>
-              천천히 읽어보고 답해 주세요. 답은 상대에게 바로 보이지 않습니다.
-            </GuideNote>
-            <div className="mt-4">
+            {isMale ? null : (
+              <GuideNote>
+                천천히 읽어보고 답해 주세요. 답은 상대에게 바로 보이지 않습니다.
+              </GuideNote>
+            )}
+            <div className={isMale ? undefined : "mt-4"}>
               <CandidatePreview candidate={candidate} isMale={isMale} />
             </div>
           </>
@@ -258,7 +251,6 @@ function HomePage() {
             링크 한 번으로 일으키지 않는다.
           */
           <GuideNote
-            introduce
             action={
               introTickets > 0 ? (
                 <CardAction to="/intro">소개 열어보기</CardAction>
@@ -271,7 +263,7 @@ function HomePage() {
           >
             {queued > 1
               ? `소개 ${queued}건이 도착했어요. 한 번에 한 분씩 열어 보실 수 있습니다.`
-              : "소개가 도착했어요. 프로필을 열면 만남으로 이어갈지 정하실 수 있습니다."}
+              : "프로필을 열면 만남으로 이어갈지 정하실 수 있습니다."}
             {introTickets === 0
               ? introPaymentsEnabled
                 ? " 프로필을 열려면 소개 티켓 1장이 필요합니다."
@@ -285,7 +277,11 @@ function HomePage() {
         진행 중인 만남이 없을 때만 띄운다. 약속이 잡혀 있으면 화면에 이미 할 일이
         있고, 그때 "소개 받기" 스위치는 지금 하는 일과 무관한 잡음이다.
       */}
-      {!loading && !meeting && !noShow ? (
+      {/*
+        소개가 도착한 상태에서는 띄우지 않는다. 같은 화면에서 "도착했어요" 와 "준비되면
+        알려드릴게요" 가 함께 보였다 — 도착했으면 할 일은 위 카드 하나다.
+      */}
+      {!loading && !meeting && !noShow && !candidate && !(isMale && queued > 0) ? (
         <ReadinessPanel
           isMale={isMale}
           paused={me?.paused_at !== null && me?.paused_at !== undefined}
@@ -302,30 +298,6 @@ function HomePage() {
           }}
         />
       ) : null}
-
-      {/*
-        진행 위치 — 며칠 걸리는 과정이라 위치 정보는 남기되, 부수적으로 다룬다.
-        만남이 끝난 뒤에는 감춘다. 이 퍼널은 "만남 확정"에서 끝나므로 그 이후에도
-        4/4 를 띄우면 아직 진행 중인 일이 남은 것처럼 읽힌다.
-      */}
-      {awaitingOutcome ? null : (
-        <section className="mt-8" aria-label="진행 단계">
-          <div className="flex items-center gap-1.5">
-            {STEPS.map((label, i) => (
-              <div
-                key={label}
-                className={cn(
-                  "h-1 flex-1 rounded-full transition-colors",
-                  i <= step ? "bg-primary" : "bg-foreground/10",
-                )}
-              />
-            ))}
-          </div>
-          <p className="mt-2 text-2xs text-muted-foreground">
-            {step + 1}/4 · <span className="font-semibold text-foreground">{STEPS[step]}</span>
-          </p>
-        </section>
-      )}
     </AppScreen>
   );
 }
@@ -431,7 +403,7 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
       <div className="bg-gradient-to-br from-accent/40 via-card to-card px-5 pt-5 pb-6">
         <p className="text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-          {isMale ? "오늘의 소개" : "평가할 프로필"}
+          {isMale ? "오늘의 소개" : "살펴볼 소개"}
         </p>
         <p className="headline mt-3 text-2xl">
           {candidate.name}

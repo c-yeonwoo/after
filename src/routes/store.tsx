@@ -162,7 +162,7 @@ function StorePage() {
       </div>
 
       <div className="mt-3">
-        <GuideNote introduce>{spec.guide}</GuideNote>
+        <GuideNote>{spec.guide}</GuideNote>
       </div>
 
       <p className="mt-5 text-sm text-muted-foreground">

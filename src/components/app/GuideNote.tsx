@@ -37,8 +37,11 @@ export const GUIDE_ROLE = "자동 안내";
  * 게다가 홈 화면에서 이 카드가 가장 큰 요소라, 분홍 틴트가 화면 절반을 덮었다.
  * 브랜드 색이 큰 면적을 먹으면 색이 기억되는 게 아니라 싸 보인다.
  *
- * 지금은 다른 카드와 같은 중립 표면이고, 자동 안내라는 사실은 **작은 라벨 한 줄**로만
- * 남는다. 눈에 띄어야 하는 것은 안내자가 아니라 안내 내용이다.
+ * 지금은 다른 카드와 같은 중립 표면이다. 예전에는 모든 카드 맨 위에 "애프터 · 자동
+ * 안내" 라벨이 붙었는데, 홈·소개·상점·티켓 화면마다 같은 라벨과 "예약을 대신 잡지
+ * 않습니다" 고지가 반복되어 안내 내용보다 안내자가 먼저 읽혔다(2026-10-10 진단).
+ * 정체를 밝히는 문장은 결제 직전 한 곳(/ticket, `introduce`)에만 둔다 — PRD F6 이
+ * 요구하는 것은 "결제 전에 한 번" 이다.
  */
 export function GuideNote({
   children,
@@ -62,12 +65,8 @@ export function GuideNote({
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
       <div className="px-5 pt-4 pb-5">
-        <p className="text-3xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-          {GUIDE_NAME} · {GUIDE_ROLE}
-        </p>
-
         {lines ? (
-          <div className="mt-2.5 space-y-1.5">
+          <div className="space-y-1.5">
             {lines.map((line) => (
               <p key={line} className="text-sm leading-relaxed text-foreground">
                 {line}
@@ -75,12 +74,12 @@ export function GuideNote({
             ))}
           </div>
         ) : (
-          <p className="mt-2.5 text-sm leading-relaxed text-foreground">{children}</p>
+          <p className="text-sm leading-relaxed text-foreground">{children}</p>
         )}
 
         {introduce ? (
           <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-            애프터 자동 안내는 약속 조율을 돕지만, 예약을 대신 잡지는 않습니다.
+            {GUIDE_NAME} {GUIDE_ROLE}는 약속 조율을 돕지만, 예약을 대신 잡지는 않습니다.
           </p>
         ) : null}
       </div>
