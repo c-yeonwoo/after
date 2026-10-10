@@ -13,10 +13,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { NotificationEmailForm } from "@/components/app/NotificationEmailForm";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { enablePush, pushPermission, type PushPermission } from "@/lib/push";
 import { BRAND } from "@/lib/brand";
 import {
   KAKAO_PROVIDER,
@@ -156,12 +156,8 @@ function SettingsPage() {
 
       <section className="mt-9">
         <h2 className="text-sm font-semibold">알림</h2>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          회사 인증 메일에는 소개 내용을 보내지 않습니다. 개인 메일을 한 번 확인해 주세요.
-        </p>
-
-        <div className="mt-4">
-          <NotificationEmailForm />
+        <div className="mt-3">
+          <PushStatus />
         </div>
 
         <label className="mt-4 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
@@ -184,7 +180,7 @@ function SettingsPage() {
             }}
           />
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">만남 후 후기 요청</span>
+            <span className="block text-sm font-medium">만남 후 후기 요청 알림</span>
             <span className="block text-xs text-muted-foreground">
               만나신 다음 날 한 번만 보냅니다.
             </span>
@@ -398,5 +394,45 @@ function SettingsPage() {
 
       <p className="mt-8 text-center text-3xs text-muted-foreground">버전 {APP_VERSION}</p>
     </AppScreen>
+  );
+}
+
+/**
+ * 앱 알림 상태(s55). 메일 알림은 없어졌다 — 앱은 푸시, 웹은 종 아이콘 목록이다.
+ * 한 번 거절한 권한은 앱이 다시 물을 수 없어서 기기 설정으로 안내한다.
+ */
+function PushStatus() {
+  const [state, setState] = useState<PushPermission | null>(null);
+  useEffect(() => {
+    void pushPermission().then(setState);
+  }, []);
+
+  if (state === null) return null;
+  if (state === "unsupported") {
+    return (
+      <p className="rounded-surface bg-surface-subtle px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+        웹에서는 푸시 알림이 오지 않아요. 상단 종 아이콘에서 확인하실 수 있고, 앱을 쓰시면 바로 알려
+        드려요.
+      </p>
+    );
+  }
+  return (
+    <div className="flex min-h-14 items-center justify-between gap-3 rounded-surface border border-border bg-card px-5 py-3">
+      <span className="min-w-0">
+        <span className="block text-sm font-medium">앱 알림</span>
+        <span className="block text-xs text-muted-foreground">
+          {state === "granted"
+            ? "켜져 있어요."
+            : state === "denied"
+              ? "꺼져 있어요. 기기 설정 → 애프터 → 알림에서 켤 수 있어요."
+              : "새 소개와 약속 소식을 바로 받아 보세요."}
+        </span>
+      </span>
+      {state === "prompt" ? (
+        <Button size="sm" onClick={async () => setState(await enablePush())}>
+          켜기
+        </Button>
+      ) : null}
+    </div>
   );
 }
