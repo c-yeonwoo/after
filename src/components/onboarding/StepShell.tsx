@@ -42,12 +42,12 @@ export function StepShell({
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
-          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-2xs font-medium text-muted-foreground tabular-nums">
+          <span className="shrink-0 text-2xs font-medium text-muted-foreground tabular-nums">
             {step} / {total}
           </span>
         </div>
         <div
-          className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted"
+          className="mt-3 h-0.5 w-full overflow-hidden rounded-full bg-muted"
           role="progressbar"
           aria-valuenow={step}
           aria-valuemin={1}
@@ -55,15 +55,15 @@ export function StepShell({
           aria-label="가입 진행률"
         >
           <div
-            className="h-full rounded-full bg-primary transition-all duration-500"
+            className="h-full rounded-full bg-foreground transition-all duration-500"
             style={{ width: `${(step / total) * 100}%` }}
           />
         </div>
       </header>
 
-      <main className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-10">
-        <p className="text-sm font-semibold tracking-wide text-muted-foreground">{eyebrow}</p>
-        <h1 className="mt-3 text-2xl leading-snug font-semibold">{title}</h1>
+      <main className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-8 pb-10">
+        <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
+        <h1 className="serif mt-2 text-[1.625rem] leading-[1.35] font-semibold">{title}</h1>
         {description ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
         ) : null}

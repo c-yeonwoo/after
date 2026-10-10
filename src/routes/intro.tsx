@@ -141,7 +141,7 @@ function IntroPage() {
         */}
         {isMale && gate ? (
           gate.queued === 0 ? (
-            <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
+            <div className="mt-16 rounded-surface bg-surface-subtle px-6 py-12 text-center">
               <p className="text-sm font-medium">아직 도착한 소개가 없습니다</p>
               <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                 소개가 준비되면 알려드릴게요.
@@ -211,7 +211,7 @@ function IntroPage() {
             </div>
           )
         ) : (
-          <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
+          <div className="mt-16 rounded-surface bg-surface-subtle px-6 py-12 text-center">
             <p className="text-sm font-medium">평가할 분을 모두 보셨습니다</p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
               새로 가입한 분이 생기면 이어서 보여드릴게요.
@@ -342,7 +342,7 @@ function IntroPage() {
         ) : (
           <GuideNote>
             {maleAnswered
-              ? "답을 받았습니다. 다음 단계는 제가 안내하겠습니다."
+              ? "답을 받았어요. 다음 단계가 생기면 알려 드릴게요."
               : isMale
                 ? "오늘 소개할 한 분입니다. 편하게 읽어 보세요."
                 : "오늘 살펴볼 한 분입니다. 편하게 읽고 답해 주세요."}
@@ -353,7 +353,7 @@ function IntroPage() {
       <ProfileDetail p={view} />
 
       {maleAnswered ? (
-        <div className="mt-8 rounded-xl border border-border bg-card px-4 py-4 text-sm">
+        <div className="mt-8 rounded-control border border-border bg-card px-4 py-4 text-sm">
           <p className="font-semibold text-foreground">
             {meeting?.confirmed_at
               ? "대화가 열렸습니다"

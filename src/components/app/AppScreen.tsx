@@ -120,7 +120,9 @@ export function AppScreen({
             </Link>
           ) : null}
           {title ? (
-            <h1 className="headline min-w-0 flex-1 truncate text-xl">{title}</h1>
+            <h1 className="serif min-w-0 flex-1 truncate text-[1.3125rem] font-semibold">
+              {title}
+            </h1>
           ) : (
             <Logo size="sm" className="min-w-0 flex-1 shrink" />
           )}
@@ -162,7 +164,7 @@ export function AppScreen({
 
       {hideTabs ? null : (
         <nav
-          className="z-30 shrink-0 border-t-2 border-foreground/10 bg-background"
+          className="z-30 shrink-0 border-t border-border bg-background"
           style={{ paddingBottom: "var(--safe-bottom)" }}
           aria-label="주요 메뉴"
         >

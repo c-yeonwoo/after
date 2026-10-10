@@ -80,7 +80,7 @@ function RequestsPage() {
   if (requests.length === 0) {
     return (
       <AppScreen title="만남 요청" back="/home">
-        <div className="mt-16 rounded-surface border-2 border-dashed border-foreground/20 px-6 py-12 text-center">
+        <div className="mt-16 px-6 py-12 text-center">
           <p className="headline text-base">아직 받은 요청이 없습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             좋아요를 보낸 분이 만남 티켓을 사용하면 여기에 도착합니다.

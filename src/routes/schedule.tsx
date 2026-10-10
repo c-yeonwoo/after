@@ -67,7 +67,7 @@ function SchedulePage() {
   if (!meeting || !meeting.prefs_submitted_at) {
     return (
       <AppScreen title="날짜 정하기" hideTabs back="/home">
-        <div className="mt-16 rounded-surface border-2 border-dashed border-foreground/20 px-6 py-12 text-center">
+        <div className="mt-16 px-6 py-12 text-center">
           <p className="headline text-base">아직 정할 날짜가 없습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             상대가 가능한 날짜를 보내오면 여기서 고르실 수 있습니다.
