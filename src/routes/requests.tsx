@@ -1,12 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Clock, MapPin } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
 import { BRAND } from "@/lib/brand";
-import { listMeetingsAwaitingMyPrefs, type MeetingRequest } from "@/lib/api";
+import {
+  acceptMeetingSlot,
+  listMeetingsAwaitingMyPrefs,
+  type Meeting,
+  type MeetingRequest,
+} from "@/lib/api";
+import { formatMeetTime } from "@/lib/meet";
 
 export const Route = createFileRoute("/requests")({
   head: () => ({
@@ -138,19 +145,81 @@ function RequestsPage() {
                     }
                   />
                 </div>
-                <Link
-                  to="/prefs"
-                  search={{ meetingId: meeting.id }}
-                  className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
-                  가능한 날짜 보내기
-                  <ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
+                {meeting.proposed_slots?.length ? (
+                  <SlotChoices meeting={meeting} />
+                ) : (
+                  <Link
+                    to="/prefs"
+                    search={{ meetingId: meeting.id }}
+                    className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    가능한 날짜 보내기
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
+                )}
               </div>
             </li>
           );
         })}
       </ul>
     </AppScreen>
+  );
+}
+
+/**
+ * 남성이 보낸 평일 저녁 후보(s51). 하나를 누르면 그 자리에서 약속이 확정된다 — 날짜를
+ * 다시 보내고 상대가 고르기를 기다리던 왕복이 없다. 결정은 마지막까지 그녀의 몫이다:
+ * 맞는 날이 없으면 다른 날을 제안하고, 원치 않으면 위에서 거절한다.
+ */
+function SlotChoices({ meeting }: { meeting: Meeting }) {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState<number | null>(null);
+  const slots = meeting.proposed_slots ?? [];
+
+  return (
+    <div className="border-t border-border px-5 pt-4 pb-5">
+      {meeting.proposed_place_name ? (
+        <p className="flex items-start gap-1.5 text-sm text-foreground">
+          <MapPin className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+          <span>{meeting.proposed_place_name}</span>
+        </p>
+      ) : null}
+      <p className="mt-3 text-xs font-medium text-muted-foreground">
+        편한 시간을 하나 고르시면 바로 약속이 정해져요
+      </p>
+      <div className="mt-2 grid gap-2">
+        {slots.map((iso, i) => (
+          <button
+            key={iso}
+            type="button"
+            disabled={busy !== null}
+            onClick={async () => {
+              setBusy(i);
+              try {
+                await acceptMeetingSlot(meeting.id, i);
+                toast.success("약속이 정해졌어요. 대화가 열렸습니다.");
+                navigate({ to: "/home" });
+              } catch {
+                toast.error("이 시간으로 정하지 못했습니다. 다시 시도해 주세요.");
+                setBusy(null);
+              }
+            }}
+            className="flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+          >
+            <span>{formatMeetTime(iso)}</span>
+            <span className="text-xs font-medium text-primary-strong">
+              {busy === i ? "정하는 중…" : "이 날로 정하기"}
+            </span>
+          </button>
+        ))}
+      </div>
+      <Link
+        to="/prefs"
+        search={{ meetingId: meeting.id }}
+        className="mt-3 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
+      >
+        다른 날이 좋아요
+      </Link>
+    </div>
   );
 }

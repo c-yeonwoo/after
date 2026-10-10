@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { GuideNote } from "@/components/app/GuideNote";
+import { MeetRequestForm } from "@/components/app/MeetRequestForm";
 import { Button } from "@/components/ui/button";
 import { BRAND, MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
 import { haptics } from "@/lib/native";
@@ -15,7 +16,6 @@ import {
   paymentsEnabled,
   requestTicketOrder,
   unusedTicketCount,
-  redeemMeetingTicket,
   type Meeting,
   type TicketOrder,
 } from "@/lib/api";
@@ -39,6 +39,7 @@ function TicketPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [introId, setIntroId] = useState<string | null>(null);
+  const [counterpartName, setCounterpartName] = useState<string | null>(null);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [tickets, setTickets] = useState(0);
   const [order, setOrder] = useState<TicketOrder | null>(null);
@@ -48,6 +49,7 @@ function TicketPage() {
   async function load() {
     const opened = await getOpenIntroWithCandidate();
     setIntroId(opened?.intro.id ?? null);
+    setCounterpartName(opened?.candidate.name ?? null);
     setMeeting(opened ? await getMeetingByIntro(opened.intro.id) : null);
     // 종류를 반드시 넘긴다(s19). 안 넘기면 소개 티켓까지 세어, 만남 티켓이
     // 0장인데 "보유 1장" 이 뜨고 사용 버튼을 눌러야 P0002 를 만난다.
@@ -79,12 +81,14 @@ function TicketPage() {
       <div className="mt-3">
         <GuideNote introduce>
           {waiting
-            ? "가능한 날을 여쭤보았습니다. 답이 오면 알려드릴게요."
+            ? meeting?.proposed_slots?.length
+              ? "후보를 보냈어요. 상대가 하나를 고르면 바로 알려드릴게요."
+              : "가능한 날을 여쭤보았습니다. 답이 오면 알려드릴게요."
             : readyToSchedule
               ? "가능한 날짜가 도착했습니다. 하나를 정하면 대화가 열립니다."
               : meeting?.confirmed_at
                 ? "약속이 확정되었습니다. 대화에서 세부 내용을 나눠 보세요."
-                : "티켓을 쓰시면 제가 가능한 날을 여쭤보고 전달해 드립니다."}
+                : "평일 저녁 후보와 장소를 보내면, 상대가 하나를 고르는 순간 약속이 정해져요."}
         </GuideNote>
       </div>
 
@@ -103,8 +107,8 @@ function TicketPage() {
           {[
             // 거절 반환이 빠져 있었다 — 서버는 거절 즉시 돌려준다(decline_meeting).
             "상대가 거절하거나 24시간 안에 답이 없으면 티켓을 돌려드립니다",
-            "가능한 날짜를 받아 한 번에 고릅니다",
-            "약속을 확정하면 대화가 열립니다",
+            "평일 저녁 후보와 장소를 한 번에 보냅니다",
+            "상대가 하나를 고르면 약속이 정해지고 대화가 열립니다",
           ].map((t) => (
             <li key={t} className="flex gap-2.5 text-foreground">
               <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -118,8 +122,8 @@ function TicketPage() {
         <div className="mt-7 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
           <p className="text-sm font-medium">답변을 기다리는 중입니다</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            답이 도착하면 날짜를 고를 수 있습니다. 24시간 안에 응답이 없으면 티켓은 자동으로
-            반환됩니다.
+            상대가 후보 하나를 고르면 약속이 정해집니다. 거절하거나 24시간 안에 답이 없으면 티켓은
+            자동으로 반환됩니다.
           </p>
         </div>
       ) : readyToSchedule && meeting ? (
@@ -134,33 +138,24 @@ function TicketPage() {
         <Button className="mt-7 w-full" size="lg" onClick={() => navigate({ to: "/chats" })}>
           대화방으로 이동
         </Button>
-      ) : tickets > 0 ? (
-        <>
-          <Button
-            className="mt-7 w-full"
-            size="lg"
-            disabled={busy || !introId}
-            onClick={async () => {
-              if (!introId) return;
-              setBusy(true);
-              try {
-                const created = await redeemMeetingTicket(introId);
-                setMeeting(created);
-                haptics.success();
-                toast.success("티켓을 사용했습니다. 애프터 자동 안내가 상대에게 전달할게요.");
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : "티켓 사용에 실패했습니다.");
-              } finally {
-                setBusy(false);
-              }
+      ) : tickets > 0 && introId ? (
+        /*
+          D1-B(s51): 티켓을 쓰는 순간 평일 저녁 후보와 장소를 같이 보낸다. 예전엔 티켓만
+          쓰고 여성이 날짜를 보내기를 기다린 뒤 남성이 장소를 빈칸에 적었다.
+        */
+        <div className="mt-7">
+          <MeetRequestForm
+            introId={introId}
+            counterpartName={counterpartName}
+            onRequested={(m) => {
+              setMeeting(m);
+              haptics.success();
             }}
-          >
-            만남 티켓 사용하기
-          </Button>
-          <p className="mt-3 text-center text-xs text-muted-foreground">
+          />
+          <p className="mt-2 text-center text-xs text-muted-foreground">
             보유 만남 티켓 {tickets}장
           </p>
-        </>
+        </div>
       ) : order && paid ? (
         <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
           <p className="text-sm font-semibold text-foreground">결제를 기다리는 주문이 있습니다</p>

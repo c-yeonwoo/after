@@ -37,6 +37,7 @@ import { Route as AdminMeetingsRouteImport } from './routes/admin.meetings'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
+import { Route as AdminPlacesRouteImport } from './routes/admin.places'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
@@ -184,6 +185,11 @@ const AdminPhotosRoute = AdminPhotosRouteImport.update({
   path: '/photos',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPlacesRoute = AdminPlacesRouteImport.update({
+  id: '/places',
+  path: '/places',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/places': typeof AdminPlacesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/system': typeof AdminSystemRoute
   '/chat/$id': typeof ChatIdRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/places': typeof AdminPlacesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/system': typeof AdminSystemRoute
   '/chat/$id': typeof ChatIdRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/places': typeof AdminPlacesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/system': typeof AdminSystemRoute
   '/chat/$id': typeof ChatIdRoute
@@ -353,6 +362,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/orders'
     | '/admin/photos'
+    | '/admin/places'
     | '/admin/reports'
     | '/admin/system'
     | '/chat/$id'
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/orders'
     | '/admin/photos'
+    | '/admin/places'
     | '/admin/reports'
     | '/admin/system'
     | '/chat/$id'
@@ -424,6 +435,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/orders'
     | '/admin/photos'
+    | '/admin/places'
     | '/admin/reports'
     | '/admin/system'
     | '/chat/$id'
@@ -659,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPhotosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/places': {
+      id: '/admin/places'
+      path: '/places'
+      fullPath: '/admin/places'
+      preLoaderRoute: typeof AdminPlacesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -722,6 +741,7 @@ interface AdminRouteChildren {
   AdminMembersRoute: typeof AdminMembersRouteWithChildren
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
+  AdminPlacesRoute: typeof AdminPlacesRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSystemRoute: typeof AdminSystemRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -733,6 +753,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMembersRoute: AdminMembersRouteWithChildren,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPhotosRoute: AdminPhotosRoute,
+  AdminPlacesRoute: AdminPlacesRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminSystemRoute: AdminSystemRoute,
   AdminIndexRoute: AdminIndexRoute,

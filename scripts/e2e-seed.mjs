@@ -361,7 +361,14 @@ sql(`
   delete from affinities;
   delete from ticket_orders;
   delete from tickets;
+  delete from meet_places;
 `);
+
+/* 약속 장소 추천 목록(s51). 로컬 확인용 가짜 가게다 — 운영에는 운영자가 직접 넣는다. */
+sql(`insert into meet_places (hub_id, name, station, kind, note, map_url) values
+  ('gangnam', '예시 커피 역삼점', '역삼', 'cafe', '조용한 2층', 'https://map.example/sample-1'),
+  ('gangnam', '예시 식당 선릉', '선릉', 'restaurant', '칸막이 자리', null),
+  ('gangnam', '예시 와인바 강남', '강남', 'bar', null, null);`);
 
 const as = (id) => `set local "request.jwt.claims" to '{"sub":"${id}","role":"authenticated"}';`;
 const give = (who, kind) => {
@@ -427,7 +434,16 @@ give("m3", "intro");
 give("m3", "meeting");
 queueUp("m3", "f3", "둘 다 조용한 저녁을 좋아합니다.");
 const i3 = openIntro("m3");
-sql(`begin; ${as(byKey.m3)} select use_meeting_ticket('${i3}'); commit;`);
+// 평일 저녁 후보 2개 + 추천 장소로 요청 — f3 는 하나만 누르면 확정된다(s51).
+const weekdayEvening = (n) =>
+  `(select (date_trunc('day', (now() at time zone 'Asia/Seoul')) + make_interval(days => d)
+            + interval '19 hours 30 minutes') at time zone 'Asia/Seoul'
+      from generate_series(2, 14) d
+     where extract(isodow from (now() at time zone 'Asia/Seoul') + make_interval(days => d)) < 6
+     order by d offset ${n} limit 1)`;
+sql(`begin; ${as(byKey.m3)} select request_meeting('${i3}',
+      array[${weekdayEvening(0)}, ${weekdayEvening(2)}]::timestamptz[],
+      (select id from meet_places where station = '역삼'), null); commit;`);
 
 // 응답을 기다리는 동안에도 상점을 볼 수 있게 여유 티켓 한 장.
 give("m3", "meeting");
@@ -452,11 +468,11 @@ sql(
 const rows = [
   ["m1@verify.local", "연우 (남)", "만남 확정 · 대화 열림", "대화, 만남 후 피드백, 신고·차단"],
   ["m2@verify.local", "민수 (남)", "소개 도착, 티켓 2장", "소개 읽기 → 만남 티켓 쓰기"],
-  ["m3@verify.local", "지호 (남)", "티켓 씀, 상대 응답 대기", "24시간 환불 카운트다운"],
+  ["m3@verify.local", "지호 (남)", "후보 2개로 요청, 응답 대기", "24시간 환불 카운트다운"],
   ["m4@verify.local", "태오 (남)", "소개 티켓 1장, 큐 대기", "소개 열기부터 끝까지"],
   ["f1@verify.local", "서연 (여)", "연우와 확정됨", "여성 쪽 확정 화면 · 대화"],
   ["f2@verify.local", "지우 (여)", "민수에게 호감 줬음", "민수 소개 카드의 상대"],
-  ["f3@verify.local", "하람 (여)", "지호의 만남 선호 답할 차례", "만남 선호 입력"],
+  ["f3@verify.local", "하람 (여)", "지호가 보낸 후보 중 고를 차례", "한 번에 약속 확정"],
   ["f4@verify.local", "나윤 (여)", "평가할 후보 여러 명", "호감/패스 평가 큐"],
   ["f5@verify.local", "예린 (여)", "사진 검수 대기", "운영자 승인/반려가 반영되는지"],
   ["admin@verify.local", "운영자", "신고 1 · 주문 1 · 사진 1 대기", "/admin 전체"],

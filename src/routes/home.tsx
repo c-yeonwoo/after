@@ -11,6 +11,7 @@ import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
 import {
   homeState,
   markMet,
+  meetPlacesForMe,
   paymentsEnabled,
   setPaused,
   type Meeting,
@@ -224,7 +225,7 @@ function HomePage() {
           <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
             {requestCount > 1
               ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
-              : "만나고 싶다는 요청이 도착했어요. 가능한 날짜만 알려 주시면 됩니다."}
+              : "만나고 싶다는 요청이 도착했어요. 보내 준 시간 중 하나만 고르시면 약속이 정해져요."}
           </GuideNote>
         ) : meeting ? (
           <WaitingCard meeting={meeting} now={now} />
@@ -535,6 +536,21 @@ function ConfirmedCard({
   meeting: Meeting;
   counterpart: PublicProfile | null;
 }) {
+  /* 운영팀 장소로 정한 약속이면 지도 링크를 붙인다(s51). 직접 적은 장소엔 없다. */
+  const [mapUrl, setMapUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!meeting.place_id) return;
+    let alive = true;
+    meetPlacesForMe()
+      .then((list) => {
+        if (alive) setMapUrl(list.find((p) => p.id === meeting.place_id)?.map_url ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [meeting.place_id]);
+
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
       <div className="bg-primary px-5 py-5 text-primary-foreground">
@@ -552,6 +568,16 @@ function ConfirmedCard({
           {meeting.place_name}
           {counterpart?.name ? ` · ${counterpart.name}님과` : ""}
         </p>
+        {mapUrl ? (
+          <a
+            href={mapUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary-foreground underline underline-offset-4"
+          >
+            지도에서 보기
+          </a>
+        ) : null}
       </div>
       <div className="px-5 py-4">
         {meeting.private_opens_at ? (

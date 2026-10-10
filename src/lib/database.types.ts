@@ -840,8 +840,76 @@ export type Database = {
           },
         ]
       }
+      meet_places: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          created_by: string | null
+          hub_id: string
+          id: string
+          kind: string
+          map_url: string | null
+          name: string
+          note: string | null
+          station: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          hub_id: string
+          id?: string
+          kind?: string
+          map_url?: string | null
+          name: string
+          note?: string | null
+          station: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          hub_id?: string
+          id?: string
+          kind?: string
+          map_url?: string | null
+          name?: string
+          note?: string | null
+          station?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meet_places_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meet_places_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meet_places_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
+          accepted_slot: number | null
           cancel_reason: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -850,15 +918,20 @@ export type Database = {
           created_at: string
           id: string
           intro_id: string
+          place_id: string | null
           place_kind: string | null
           place_name: string | null
           prefs: Json | null
           prefs_submitted_at: string | null
           private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
           scheduled_at: string | null
           ticket_id: string
         }
         Insert: {
+          accepted_slot?: number | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
@@ -867,15 +940,20 @@ export type Database = {
           created_at?: string
           id?: string
           intro_id: string
+          place_id?: string | null
           place_kind?: string | null
           place_name?: string | null
           prefs?: Json | null
           prefs_submitted_at?: string | null
           private_opens_at?: string | null
+          proposed_place_id?: string | null
+          proposed_place_name?: string | null
+          proposed_slots?: string[] | null
           scheduled_at?: string | null
           ticket_id: string
         }
         Update: {
+          accepted_slot?: number | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
@@ -884,11 +962,15 @@ export type Database = {
           created_at?: string
           id?: string
           intro_id?: string
+          place_id?: string | null
           place_kind?: string | null
           place_name?: string | null
           prefs?: Json | null
           prefs_submitted_at?: string | null
           private_opens_at?: string | null
+          proposed_place_id?: string | null
+          proposed_place_name?: string | null
+          proposed_slots?: string[] | null
           scheduled_at?: string | null
           ticket_id?: string
         }
@@ -898,6 +980,20 @@ export type Database = {
             columns: ["intro_id"]
             isOneToOne: true
             referencedRelation: "intros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "meet_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_proposed_place_id_fkey"
+            columns: ["proposed_place_id"]
+            isOneToOne: false
+            referencedRelation: "meet_places"
             referencedColumns: ["id"]
           },
           {
@@ -1749,9 +1845,10 @@ export type Database = {
       }
     }
     Functions: {
-      admin_cancel_meeting: {
-        Args: { p_meeting: string; p_note: string; p_refund?: boolean }
+      accept_meeting_slot: {
+        Args: { p_index: number; p_meeting_id: string }
         Returns: {
+          accepted_slot: number | null
           cancel_reason: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -1760,11 +1857,46 @@ export type Database = {
           created_at: string
           id: string
           intro_id: string
+          place_id: string | null
           place_kind: string | null
           place_name: string | null
           prefs: Json | null
           prefs_submitted_at: string | null
           private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
+          scheduled_at: string | null
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_cancel_meeting: {
+        Args: { p_meeting: string; p_note: string; p_refund?: boolean }
+        Returns: {
+          accepted_slot: number | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          completed_by: string[]
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          intro_id: string
+          place_id: string | null
+          place_kind: string | null
+          place_name: string | null
+          prefs: Json | null
+          prefs_submitted_at: string | null
+          private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
           scheduled_at: string | null
           ticket_id: string
         }
@@ -1836,6 +1968,29 @@ export type Database = {
         }[]
       }
       admin_marketplace_health: { Args: never; Returns: Json }
+      admin_meet_places: {
+        Args: never
+        Returns: {
+          active: boolean
+          address: string | null
+          created_at: string
+          created_by: string | null
+          hub_id: string
+          id: string
+          kind: string
+          map_url: string | null
+          name: string
+          note: string | null
+          station: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "meet_places"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_meetings: {
         Args: { p_state?: string }
         Returns: {
@@ -2164,6 +2319,39 @@ export type Database = {
           user_name: string
         }[]
       }
+      admin_upsert_meet_place: {
+        Args: {
+          p_active: boolean
+          p_address: string
+          p_hub_id: string
+          p_id: string
+          p_kind: string
+          p_map_url: string
+          p_name: string
+          p_note: string
+          p_station: string
+        }
+        Returns: {
+          active: boolean
+          address: string | null
+          created_at: string
+          created_by: string | null
+          hub_id: string
+          id: string
+          kind: string
+          map_url: string | null
+          name: string
+          note: string | null
+          station: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meet_places"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       apply_no_show_confirmed: {
         Args: { p_report_id: string }
         Returns: {
@@ -2199,6 +2387,7 @@ export type Database = {
           p_scheduled_at: string
         }
         Returns: {
+          accepted_slot: number | null
           cancel_reason: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -2207,11 +2396,15 @@ export type Database = {
           created_at: string
           id: string
           intro_id: string
+          place_id: string | null
           place_kind: string | null
           place_name: string | null
           prefs: Json | null
           prefs_submitted_at: string | null
           private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
           scheduled_at: string | null
           ticket_id: string
         }
@@ -2447,6 +2640,7 @@ export type Database = {
       mark_met: {
         Args: { p_meeting_id: string }
         Returns: {
+          accepted_slot: number | null
           cancel_reason: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -2455,11 +2649,15 @@ export type Database = {
           created_at: string
           id: string
           intro_id: string
+          place_id: string | null
           place_kind: string | null
           place_name: string | null
           prefs: Json | null
           prefs_submitted_at: string | null
           private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
           scheduled_at: string | null
           ticket_id: string
         }
@@ -2469,6 +2667,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      meet_places_for_me: {
+        Args: never
+        Returns: {
+          address: string
+          id: string
+          kind: string
+          map_url: string
+          name: string
+          note: string
+          station: string
+        }[]
       }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
@@ -2678,6 +2888,42 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      request_meeting: {
+        Args: {
+          p_intro_id: string
+          p_place_id: string
+          p_place_name: string
+          p_slots: string[]
+        }
+        Returns: {
+          accepted_slot: number | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          completed_by: string[]
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          intro_id: string
+          place_id: string | null
+          place_kind: string | null
+          place_name: string | null
+          prefs: Json | null
+          prefs_submitted_at: string | null
+          private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
+          scheduled_at: string | null
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       request_notification_email: { Args: { p_email: string }; Returns: string }
       reserve_paid_order_cancel: {
         Args: { p_order_id: string }
@@ -2812,6 +3058,7 @@ export type Database = {
       submit_meeting_prefs: {
         Args: { p_meeting_id: string; p_prefs: Json }
         Returns: {
+          accepted_slot: number | null
           cancel_reason: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -2820,11 +3067,15 @@ export type Database = {
           created_at: string
           id: string
           intro_id: string
+          place_id: string | null
           place_kind: string | null
           place_name: string | null
           prefs: Json | null
           prefs_submitted_at: string | null
           private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
           scheduled_at: string | null
           ticket_id: string
         }
@@ -2906,6 +3157,7 @@ export type Database = {
       use_meeting_ticket: {
         Args: { p_intro_id: string }
         Returns: {
+          accepted_slot: number | null
           cancel_reason: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -2914,11 +3166,15 @@ export type Database = {
           created_at: string
           id: string
           intro_id: string
+          place_id: string | null
           place_kind: string | null
           place_name: string | null
           prefs: Json | null
           prefs_submitted_at: string | null
           private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
           scheduled_at: string | null
           ticket_id: string
         }
