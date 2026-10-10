@@ -13,7 +13,8 @@ export type ProfileView = {
   drinking?: string;
   religion?: string;
   area?: string;
-  photo?: string;
+  /** Storage 경로들. 첫 장이 대표. */
+  photos: string[];
   headline: string;
   intro: string;
   interests: string[];
@@ -60,30 +61,47 @@ function Lines({ items }: { items: string[] }) {
   );
 }
 
-function Photo({ src, name }: { src: string | null; name: string }) {
+function PhotoTile({ path, name, index }: { path: string; name: string; index: number }) {
+  // 비공개 버킷이라 표시할 때마다 서명 URL 을 받는다(S11).
+  const src = usePhotoUrl(path);
   return (
-    /*
-      사진은 소개장의 삽화다. 화면 폭을 다 쓰던 4:5 사진이 한 화면을 통째로 차지해
-      글보다 사진이 먼저 읽혔다(2026-10-10). 글 줄 폭의 3/5 로 줄인다.
-    */
-    <figure className="w-3/5 max-w-60">
-      <div className="aspect-[4/5] w-full overflow-hidden rounded-surface bg-muted">
-        {src ? (
-          <img src={src} alt={`${name} 프로필 사진`} className="size-full object-cover" />
-        ) : (
-          <div className="grid size-full place-items-center">
-            <UserRound className="size-10 text-muted-foreground" aria-hidden="true" />
-          </div>
-        )}
-      </div>
-    </figure>
+    <div className="aspect-[3/4] w-[44%] shrink-0 snap-start overflow-hidden rounded-surface bg-muted">
+      {src ? (
+        <img
+          src={src}
+          alt={`${name} 프로필 사진 ${index + 1}`}
+          loading={index > 1 ? "lazy" : "eager"}
+          className="size-full object-cover"
+        />
+      ) : (
+        <div className="grid size-full place-items-center">
+          <UserRound className="size-8 text-muted-foreground" aria-hidden="true" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/*
+  사진은 소개장의 삽화다. 한 장이 화면 폭을 다 쓰면 글보다 사진이 먼저 읽힌다
+  (2026-10-10). 3장 이상(s53)을 한 줄에 두 장 남짓 보이게 가로로 넘긴다 — 다음
+  사진이 살짝 보여야 넘길 수 있다는 걸 안다.
+*/
+function Photos({ paths, name }: { paths: string[]; name: string }) {
+  if (paths.length === 0) return null;
+  return (
+    <div
+      className="-mx-5 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]"
+      aria-label={`${name} 사진 ${paths.length}장`}
+    >
+      {paths.map((path, i) => (
+        <PhotoTile key={path} path={path} name={name} index={i} />
+      ))}
+    </div>
   );
 }
 
 export function ProfileDetail({ p }: { p: ProfileView }) {
-  // 비공개 버킷이라 표시할 때마다 서명 URL 을 받는다(S11).
-  const photo = usePhotoUrl(p.photo);
-
   const paragraphs = (p.intro || "")
     .split(/\n\s*\n/)
     .map((x) => x.trim())
@@ -145,7 +163,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </p>
       ) : null}
 
-      <Photo src={photo} name={p.name} />
+      <Photos paths={p.photos} name={p.name} />
 
       {rest.map((para) => (
         <p

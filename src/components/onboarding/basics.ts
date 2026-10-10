@@ -28,10 +28,14 @@ export const RELIGION_OPTIONS = [
   { id: "other", label: "기타" },
 ] as const;
 
+/** 사진 장수. 서버 CHECK(s53)는 최대 6장, 자격은 승인된 3장 이상이다. */
+export const MIN_PHOTOS = 3;
+export const MAX_PHOTOS = 6;
+
 export type Basics = {
   name: string;
-  /** 프로필 사진 1장 (data URL) */
-  photo: string;
+  /** 프로필 사진 Storage 경로. 순서 = 보여 줄 순서, 첫 장이 대표(s53). */
+  photos: string[];
   birth: string; // YYYY-MM-DD
   job: string;
   mbti: string;
@@ -42,7 +46,7 @@ export type Basics = {
 
 export const emptyBasics: Basics = {
   name: "",
-  photo: "",
+  photos: [],
   birth: "",
   job: "",
   mbti: "",
@@ -63,9 +67,9 @@ export function ageFrom(birth: string) {
 
 export function basicsValid(b: Basics) {
   const age = ageFrom(b.birth);
-  // 사진 필수(D5, 2026-10-10). 서버의 후보 조건도 승인된 사진을 요구한다.
+  // 사진 3장 이상(D5 → s53). 서버의 후보 조건도 승인된 3장을 요구한다.
   return (
-    Boolean(b.photo) &&
+    b.photos.length >= MIN_PHOTOS &&
     b.name.trim().length >= 2 &&
     age !== null &&
     age >= 19 &&

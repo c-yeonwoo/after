@@ -295,35 +295,40 @@ const avatarSvg = (initial, hue) => `<svg xmlns="http://www.w3.org/2000/svg" vie
 
 console.log("· 프로필 사진");
 const tmp = mkdtempSync(join(tmpdir(), "eclipse-e2e-"));
+/* 사진 3장(s53). 같은 사람이라는 걸 알아보게 이니셜은 그대로 두고 색만 돌린다. */
+const PHOTO_FILES = ["portrait.png", "2.png", "3.png"];
 for (const p of PEOPLE) {
   const id = byKey[p.key];
-  const svg = join(tmp, `${p.key}.svg`);
-  const png = join(tmp, `${p.key}.png`);
-  writeFileSync(svg, avatarSvg(p.initial, p.hue));
-  execFileSync(CHROME, [
-    "--headless",
-    "--disable-gpu",
-    "--force-device-scale-factor=1",
-    `--screenshot=${png}`,
-    "--window-size=640,640",
-    "--default-background-color=ffffffff",
-    `file://${svg}`,
-  ]);
-  execFileSync("curl", [
-    "-s",
-    "-X",
-    "POST",
-    `${API}/storage/v1/object/profile-photos/${id}/portrait.png`,
-    "-H",
-    `Authorization: Bearer ${KEY}`,
-    "-H",
-    "Content-Type: image/png",
-    "-H",
-    "x-upsert: true",
-    "--data-binary",
-    `@${png}`,
-  ]);
-  sql(`update profiles set photo_url = '${id}/portrait.png' where id = '${id}'`);
+  PHOTO_FILES.forEach((file, i) => {
+    const svg = join(tmp, `${p.key}-${i}.svg`);
+    const png = join(tmp, `${p.key}-${i}.png`);
+    writeFileSync(svg, avatarSvg(p.initial, p.hue + i * 40));
+    execFileSync(CHROME, [
+      "--headless",
+      "--disable-gpu",
+      "--force-device-scale-factor=1",
+      `--screenshot=${png}`,
+      "--window-size=640,640",
+      "--default-background-color=ffffffff",
+      `file://${svg}`,
+    ]);
+    execFileSync("curl", [
+      "-s",
+      "-X",
+      "POST",
+      `${API}/storage/v1/object/profile-photos/${id}/${file}`,
+      "-H",
+      `Authorization: Bearer ${KEY}`,
+      "-H",
+      "Content-Type: image/png",
+      "-H",
+      "x-upsert: true",
+      "--data-binary",
+      `@${png}`,
+    ]);
+  });
+  sql(`update profiles set photo_paths = array[${PHOTO_FILES.map((f) => `'${id}/${f}'`).join(", ")}]
+        where id = '${id}'`);
 }
 
 /*

@@ -26,7 +26,7 @@ values
   ('49000000-0000-0000-0000-0000000000ad','male',  'gangnam','admin49@corp.example',now(),'운영','1990-01-01','운영',7,now(),now(),'admin');
 
 -- a2 만 사진이 없다.
-update profiles set photo_url = id::text || '/portrait.png'
+update profiles set photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png']
  where id::text like '49000000-%' and id <> '49000000-0000-0000-0000-0000000000a2';
 update profiles set photo_state = 'approved', photo_reviewed_at = now()
  where photo_url = id::text || '/portrait.png' and id::text like '49000000-%';

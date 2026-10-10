@@ -38,6 +38,11 @@ values
   -- 다른 권역 남성 — 보이면 안 된다
   ('30000000-0000-0000-0000-0000000000a2','male',  'pangyo', 'y30a2@t.co',now(),'판교남','1991-01-01','변호사', 7,now(),now(),'member',null,'pending');
 
+-- s53: 자격은 승인된 사진 3장 이상이다. 묶음을 채우면 트리거가 대기로 돌리므로 다시 승인한다.
+update profiles set photo_paths = array[photo_url, photo_url || '#2', photo_url || '#3']
+ where id = '30000000-0000-0000-0000-0000000000a1';
+update profiles set photo_state = 'approved' where id = '30000000-0000-0000-0000-0000000000a1';
+
 insert into storage.objects (bucket_id, name, owner_id)
 values ('profile-photos', '30000000-0000-0000-0000-0000000000a1/portrait.png',
         '30000000-0000-0000-0000-0000000000a1');

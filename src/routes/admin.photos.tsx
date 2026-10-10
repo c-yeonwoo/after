@@ -116,8 +116,20 @@ function PhotosTab() {
   );
 }
 
+function ReviewThumb({ path, index }: { path: string; index: number }) {
+  const url = usePhotoUrl(path);
+  return (
+    <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-background">
+      {url ? <img src={url} alt="" className="size-full object-cover" /> : null}
+      <span className="absolute top-1 left-1 rounded bg-foreground/70 px-1 text-2xs text-background">
+        {index + 1}
+      </span>
+    </div>
+  );
+}
+
 function PhotoCard({ r, onDone }: { r: PhotoReviewItem; onDone: () => void }) {
-  const url = usePhotoUrl(r.photo_url);
+  const paths = r.photo_paths?.length ? r.photo_paths : r.photo_url ? [r.photo_url] : [];
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = r.photo_state === "pending";
@@ -152,9 +164,14 @@ function PhotoCard({ r, onDone }: { r: PhotoReviewItem; onDone: () => void }) {
 
   return (
     <li className="overflow-hidden rounded-surface border border-border">
-      {/* 사용자 화면과 같은 4:5 — 잘리는 방식까지 같아야 판단이 맞는다. */}
-      <div className="relative aspect-[4/5] bg-muted">
-        {url ? <img src={url} alt="" className="size-full object-cover" /> : null}
+      {/*
+        묶음 단위 검수(s53) — 한 장이라도 기준에 못 미치면 묶음 전체를 반려하고
+        사유에 몇 번째 사진인지 적는다. 사용자 화면과 같은 3:4 로 자른다.
+      */}
+      <div className="grid grid-cols-3 gap-1 bg-muted p-1">
+        {paths.map((path, i) => (
+          <ReviewThumb key={path} path={path} index={i} />
+        ))}
       </div>
 
       <div className="p-3">

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
+import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
@@ -172,6 +173,26 @@ function HomePage() {
         {me?.name ? `${me.name}님,` : "안녕하세요,"}
       </p>
       <h1 className="serif mt-1 text-[1.75rem] leading-[1.35] font-semibold">{headline}</h1>
+
+      {/*
+        사진 3장(s53) 이전에 가입한 회원은 한 장뿐이라 소개 대상에서 빠져 있다.
+        말해 주지 않으면 "왜 소개가 안 오지" 만 남는다.
+      */}
+      {me && me.onboarding_step >= 7 && (me.photo_paths?.length ?? 0) < MIN_PHOTOS ? (
+        <Link
+          to="/signup"
+          search={{ edit: true }}
+          className="mt-4 flex items-center justify-between gap-3 rounded-surface bg-surface-subtle px-4 py-3.5 text-sm text-foreground"
+        >
+          <span>
+            사진을 {MIN_PHOTOS}장 이상 올려야 소개가 시작돼요.
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              지금 {me.photo_paths?.length ?? 0}장 · 프로필 수정에서 더할 수 있어요
+            </span>
+          </span>
+          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
+      ) : null}
 
       {me && !me.notification_email_verified_at ? (
         <Link
