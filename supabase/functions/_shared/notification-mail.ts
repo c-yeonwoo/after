@@ -16,7 +16,8 @@ export type NotificationKind =
   | "notification_email_verify"
   | "intro_delivered"
   | "candidates_refilled"
-  | "no_show_response_required";
+  | "no_show_response_required"
+  | "meeting_released";
 
 export type MailContext = {
   /** 받는 사람 이름 */
@@ -143,6 +144,24 @@ export function renderNotification(kind: NotificationKind, ctx: MailContext): Re
         ].join("\n"),
       };
 
+    /*
+      거절과 24시간 무응답을 같은 문장으로 쓴다. 어느 쪽이었는지는 받는 사람에게
+      도움이 되지 않고, 거절 사실은 상대에게 알리지 않는다는 약속(DeclineRequest)과도
+      맞지 않는다. 사실 하나만 말한다 — 티켓은 이미 돌아와 있다.
+    */
+    case "meeting_released":
+      return {
+        subject: `만남 티켓을 돌려드렸어요 — ${BRAND}`,
+        text: [
+          greet(ctx.name),
+          "",
+          "이번 소개는 약속으로 이어지지 않았습니다.",
+          "사용하신 만남 티켓은 돌려드렸고, 다음 소개에 그대로 쓰실 수 있어요.",
+          "",
+          ctx.url,
+        ].join("\n"),
+      };
+
     case "feedback_due":
       return {
         subject: `어제 만남은 어떠셨어요? — ${BRAND}`,
@@ -169,6 +188,7 @@ export function pathFor(kind: NotificationKind, meetingId: string | null): strin
     case "candidates_refilled":
       return "/intro";
     case "no_show_response_required":
+    case "meeting_released":
       return "/home";
     case "meeting_requested":
       return "/requests";

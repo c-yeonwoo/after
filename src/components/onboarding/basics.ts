@@ -63,7 +63,9 @@ export function ageFrom(birth: string) {
 
 export function basicsValid(b: Basics) {
   const age = ageFrom(b.birth);
+  // 사진 필수(D5, 2026-10-10). 서버의 후보 조건도 승인된 사진을 요구한다.
   return (
+    Boolean(b.photo) &&
     b.name.trim().length >= 2 &&
     age !== null &&
     age >= 19 &&

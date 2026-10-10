@@ -330,33 +330,11 @@ export type CurationTarget =
   Database["public"]["Functions"]["admin_curation_targets"]["Returns"][number];
 export type LikePoolItem = Database["public"]["Functions"]["admin_like_pool"]["Returns"][number];
 
-export type PreferenceCompareRow =
-  Database["public"]["Functions"]["admin_preference_compare"]["Returns"][number];
-
-/**
- * 두 사람의 취향 문답을 문항별로 나란히.
- *
- * 사용자 쪽에는 이런 조회가 없다 — preference_answers 의 SELECT 정책은 본인 행만
- * 연다. 서로의 취향을 대조하는 일은 큐레이터의 몫이고, 사용자에게 열면 "나랑 몇
- * 개 맞나" 를 보려고 프로필을 뒤지는 화면이 된다.
- */
-export async function fetchPreferenceCompare(
-  maleId: string,
-  femaleId: string,
-): Promise<PreferenceCompareRow[]> {
-  const { data, error } = await supabase.rpc("admin_preference_compare", {
-    p_male: maleId,
-    p_female: femaleId,
-  });
-  if (error) throw error;
-  return data ?? [];
-}
-
 /**
  * 큐레이터 보조 브리프. 자동 소개·점수·순위와 분리한다.
  *
  * Edge Function이 현재 호감 관계를 다시 확인하고, 이름·나이·사진·회사 이메일은
- * 보내지 않은 채 공개 프로필 재료와 취향 문답만 요약한다.
+ * 보내지 않은 채 공개 프로필 재료만 요약한다.
  */
 export type PairBrief = {
   commonGround: { insight: string; basis: string }[];

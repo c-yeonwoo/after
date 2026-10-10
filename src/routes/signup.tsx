@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
+import { NotificationEmailForm } from "@/components/app/NotificationEmailForm";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
 import {
@@ -28,7 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { BRAND, HUBS, isCompanyEmail } from "@/lib/brand";
+import { BRAND, HUBS, isCompanyEmail, OPEN_HUBS } from "@/lib/brand";
 import {
   authErrorMessage,
   completeOnboarding,
@@ -70,7 +71,15 @@ export const Route = createFileRoute("/signup")({
   component: Onboarding,
 });
 
-const TOTAL = 7;
+/*
+  권역이 하나뿐이면 고를 것이 없다. 2단계를 건너뛰고 그 권역으로 정한다
+  (2026-10-10 진단: 고를 수 있는 값 1개와 비활성 "준비 중" 3개를 보여 주던 단계).
+  권역을 하나 더 열면(brand.ts available) 단계가 저절로 돌아온다.
+*/
+const SKIP_HUB_STEP = OPEN_HUBS.length === 1;
+const TOTAL = SKIP_HUB_STEP ? 6 : 7;
+/** 화면에 보이는 단계 번호. 권역 단계를 건너뛰면 그 뒤 번호가 하나씩 당겨진다. */
+const shown = (n: number) => (SKIP_HUB_STEP && n > 2 ? n - 1 : n);
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 5;
 type Gender = "female" | "male";
@@ -88,7 +97,7 @@ function Onboarding() {
   const { me, ready, refresh } = useMe();
   const [step, setStep] = useState(editing ? 2 : 1);
   const [gender, setGender] = useState<Gender | null>(null);
-  const [hubId, setHubId] = useState<string | null>(null);
+  const [hubId, setHubId] = useState<string | null>(SKIP_HUB_STEP ? OPEN_HUBS[0].id : null);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -266,6 +275,25 @@ function Onboarding() {
     setProfile((prev) => ({ ...prev, ...next }));
   }
 
+  if (step === 10) {
+    return (
+      <StepShell
+        step={TOTAL}
+        total={TOTAL}
+        eyebrow="알림"
+        title="소개가 오면 어디로 알려드릴까요?"
+        description="회사 메일함에는 소개 내용을 보내지 않아요. 알림을 받을 개인 메일을 한 번만 확인해 주세요."
+      >
+        <NotificationEmailForm onVerified={() => navigate({ to: "/home" })} />
+        <div className="mt-8">
+          <Button variant="ghost" className="w-full" onClick={() => navigate({ to: "/home" })}>
+            나중에 할게요
+          </Button>
+        </div>
+      </StepShell>
+    );
+  }
+
   if (step === 1) {
     return (
       <StepShell
@@ -292,7 +320,12 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!gender}
+            onClick={() => setStep(SKIP_HUB_STEP ? 4 : 3)}
+          >
             다음
           </Button>
         </div>
@@ -312,7 +345,7 @@ function Onboarding() {
 
     return (
       <StepShell
-        step={4}
+        step={shown(4)}
         total={TOTAL}
         eyebrow="기본 정보"
         title="기본적인 것부터"
@@ -320,7 +353,7 @@ function Onboarding() {
       >
         <div className="space-y-5">
           <div>
-            <p className="text-sm font-semibold text-foreground">프로필 사진 (1장)</p>
+            <p className="text-sm font-semibold text-foreground">프로필 사진 (필수)</p>
             <div className="mt-3 flex items-center gap-4">
               <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
                 {shownPhoto ? (
@@ -609,7 +642,7 @@ function Onboarding() {
   if (step === 4) {
     return (
       <StepShell
-        step={3}
+        step={shown(3)}
         total={TOTAL}
         eyebrow="회사 이메일 인증"
         title="회사 이메일로 인증해 주세요"
@@ -754,7 +787,7 @@ function Onboarding() {
         ) : null}
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(3)}>
+          <Button variant="ghost" onClick={() => setStep(SKIP_HUB_STEP ? 1 : 3)}>
             이전
           </Button>
           {codeSent ? (
@@ -865,7 +898,7 @@ function Onboarding() {
 
     return (
       <StepShell
-        step={5}
+        step={shown(5)}
         total={TOTAL}
         eyebrow="프로필"
         title="요즘 시간 쓰는 것들"
@@ -991,7 +1024,7 @@ function Onboarding() {
     const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
     return (
       <StepShell
-        step={6}
+        step={shown(6)}
         total={TOTAL}
         eyebrow="프로필"
         title="어떤 사람과, 무슨 이야기를"
@@ -1091,7 +1124,7 @@ function Onboarding() {
 
   return (
     <StepShell
-      step={7}
+      step={shown(7)}
       total={TOTAL}
       eyebrow="프로필 확인"
       title="이렇게 소개해도 될까요?"
@@ -1260,7 +1293,13 @@ function Onboarding() {
               // /profile 이 소개글 없이 그려져 새로고침해야만 방금 쓴 내용이 보인다.
               await refresh();
               toast.success("프로필이 저장되었습니다");
-              navigate({ to: "/me" });
+              /*
+                예전에는 '나' 화면에 내려놓았다. 가입을 막 끝낸 사람이 볼 곳은 "다음에
+                일어나는 일" 이 있는 홈이다. 알림 메일이 없으면 그 전에 한 화면 들른다 —
+                없으면 소개가 와도 메일이 한 통도 나가지 않는다.
+              */
+              if (me?.notification_email_verified_at) navigate({ to: "/home" });
+              else setStep(10);
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
             } finally {
