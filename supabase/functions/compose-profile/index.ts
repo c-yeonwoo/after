@@ -36,7 +36,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODEL = "claude-opus-5";
-const PROMPT_VERSION = "profile-copy-v2";
+const PROMPT_VERSION = "profile-copy-v3";
 const DAILY_LIMIT = 5;
 
 /*
@@ -64,6 +64,12 @@ const Composed = z.object({
 */
 const SYSTEM = `당신은 소개팅 서비스의 프로필 문장을 다듬는 편집자입니다.
 가입자가 적은 답변을 재료로, 그 사람의 한 줄 소개 후보 3개와 소개글 1편을 한국어로 씁니다.
+
+## 재료 (profile-copy-v3, 소개장 인터뷰)
+- evening_note, known_as, topic_note, match_note 는 가입자가 직접 쓴 문장입니다.
+- 소개글은 이 문장들을 뼈대로 씁니다. 가입자의 표현을 최대한 그대로 살리고, 어색한 곳만 다듬으세요.
+- 문단 순서: 퇴근 후 시간(evening_note), 주변에서 듣는 말(known_as), 처음 만나면 나누고 싶은 이야기(topic_note)와 편한 사람(match_note).
+- 직접 쓴 문장이 없으면 interests, match_tags, topics 로 씁니다.
 
 ## 사실 규칙
 - 주어진 답변에 없는 사실을 만들지 마세요. 직업, 취미, 성향을 지어내면 안 됩니다.
@@ -124,6 +130,8 @@ Deno.serve(async (req) => {
 
   let body: {
     job?: string;
+    eveningNote?: string;
+    knownAs?: string;
     interests?: { label: string; note?: string }[];
     matchTags?: string[];
     matchNote?: string;
@@ -155,7 +163,12 @@ Deno.serve(async (req) => {
     .map((t) => clip(t, 40))
     .filter(Boolean);
 
-  if (interests.length === 0) return json({ error: "interests are required" }, 400);
+  const eveningNote = clip(body.eveningNote, 300);
+  const knownAs = clip(body.knownAs, 300);
+  // 인터뷰 답(s52) 또는 예전 키워드 중 하나는 있어야 쓸 재료가 있다.
+  if (interests.length === 0 && !eveningNote) {
+    return json({ error: "answers are required" }, 400);
+  }
 
   /*
     가입자가 적은 문장도 지시문이 아니라 **재료**다. 태그 안에 이스케이프해 넣고
@@ -164,6 +177,8 @@ Deno.serve(async (req) => {
   */
   const answers = `<profile_facts>
   ${body.job ? `<job>${escapeXml(clip(body.job, 60))}</job>` : ""}
+  ${eveningNote ? `<evening_note>${escapeXml(eveningNote)}</evening_note>` : ""}
+  ${knownAs ? `<known_as>${escapeXml(knownAs)}</known_as>` : ""}
   <interests>
   ${interests
     .map(

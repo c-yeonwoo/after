@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationEmailForm } from "@/components/app/NotificationEmailForm";
@@ -13,13 +13,15 @@ import {
   SMOKING_OPTIONS,
   ageFrom,
   basicsValid,
+  conditionsValid,
   emptyBasics,
   type Basics,
 } from "@/components/onboarding/basics";
 import {
   INTEREST_PLACEHOLDERS,
+  INTERVIEW,
+  INTERVIEW_MAX,
   MATCH_TAGS,
-  followUpFor,
   TOPIC_TAGS,
   buildIntro,
   suggestHeadlines,
@@ -46,6 +48,7 @@ import {
   track,
   verifyEmailCode,
   type ComposedProfile,
+  type Profile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
@@ -56,15 +59,15 @@ export const Route = createFileRoute("/signup")({
     search.edit === "1" || search.edit === true ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: `가입 · 지역·회사 이메일 인증 — ${BRAND.name}` },
+      { title: `가입 — ${BRAND.name}` },
       {
         name: "description",
-        content: "활동 지역과 회사 이메일을 확인하고, 취향에 따라 달라지는 프로필을 작성합니다.",
+        content: "회사 이메일을 확인하고, 질문 네 개에 답해 나를 소개하는 글을 함께 써요.",
       },
-      { property: "og:title", content: `가입 · 지역·회사 이메일 인증 — ${BRAND.name}` },
+      { property: "og:title", content: `가입 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "활동 지역 선택 · 회사 이메일 인증 · 적응형 프로필 작성",
+        content: "회사 이메일 인증 · 소개장 인터뷰",
       },
     ],
   }),
@@ -77,11 +80,49 @@ export const Route = createFileRoute("/signup")({
   권역을 하나 더 열면(brand.ts available) 단계가 저절로 돌아온다.
 */
 const SKIP_HUB_STEP = OPEN_HUBS.length === 1;
-const TOTAL = SKIP_HUB_STEP ? 6 : 7;
-/** 화면에 보이는 단계 번호. 권역 단계를 건너뛰면 그 뒤 번호가 하나씩 당겨진다. */
-const shown = (n: number) => (SKIP_HUB_STEP && n > 2 ? n - 1 : n);
-const MIN_INTERESTS = 3;
+
+/*
+  단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
+  두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
+
+    성별 → (권역) → 회사 이메일 → 기본 정보 → 인터뷰 ①~④ → 소개장 확인 → 알아 두면 좋은 것
+
+  조건(흡연·음주·종교·MBTI)을 맨 뒤로 뺐다. 예전에는 기본 정보 화면에서 먼저 물어서
+  가입이 스펙 비교로 시작했다. 소개장은 "문장이 주인공"이다(D3).
+*/
+const Q_FIRST = 11;
+const CONDITIONS = 15;
+const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, 2, 11, 12, 13, 14, 9, CONDITIONS];
+const TOTAL = ORDER.length;
+/** 화면에 보이는 단계 번호. */
+const shown = (id: number) => ORDER.indexOf(id) + 1;
+const MIN_INTERESTS = 1;
 const MAX_INTERESTS = 5;
+
+/** 인터뷰 질문 i 를 다 채웠는가. 답 + 그 아래 칩까지. */
+function questionDone(p: ProfileDraft, i: number) {
+  const q = INTERVIEW[i];
+  const answered = p[q.key].trim().length >= q.min;
+  if (q.key === "eveningNote") return answered && p.interests.some((v) => v.trim());
+  if (q.key === "topicNote") return answered && p.topics.length >= 1;
+  if (q.key === "matchNote") return answered && p.matchTags.length >= 1;
+  return answered;
+}
+
+/**
+ * 재개할 단계. 저장된 값에서 거꾸로 찾는다 — onboarding_step 만 보면 인터뷰 도중
+ * 어디까지 답했는지 모른다. 예전 흐름(칩)으로 관심사까지 저장하고 멈춘 사람은
+ * 인터뷰 답이 없어도 소개장 확인으로 보낸다. 키워드로 초안을 만들 수 있다.
+ */
+function resumeStep(me: Profile, p: ProfileDraft) {
+  if (me.onboarding_step < 4) return 2;
+  const missing = INTERVIEW.findIndex((_, i) => !questionDone(p, i));
+  if (missing >= 0 && me.onboarding_step < 5) return Q_FIRST + missing;
+  if (!me.headline || !me.intro) {
+    return missing >= 0 && p.interests.length === 0 ? Q_FIRST + missing : 9;
+  }
+  return CONDITIONS;
+}
 type Gender = "female" | "male";
 
 function toggle(list: string[], id: string, max?: number) {
@@ -130,7 +171,16 @@ function Onboarding() {
   /* 같은 답변으로 두 번 부르지 않는다. 호출마다 돈이 나간다. */
   const composedKey = useRef<string | null>(null);
   const [seedInput, setSeedInput] = useState("");
-  const [activeSeed, setActiveSeed] = useState(0);
+  /*
+    저장할 onboarding_step. **내려가지 않는다.** 완료된 회원(7)이 수정하면서 4·5 를
+    쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다. 예전 수정 흐름은 관심사·
+    매치 단계에서 5·6 을 써서, 수정 도중에 자격이 빠졌다.
+  */
+  const savedStep = useRef(0);
+  const keepStep = (n: number) => {
+    savedStep.current = Math.max(savedStep.current, n);
+    return savedStep.current;
+  };
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
 
   /**
@@ -151,13 +201,7 @@ function Onboarding() {
     if (resumed) return;
     setResumed(true);
     setUserId(me.id);
-    if (!editing) {
-      // 이미 진행한 단계로 착지시킨다. 저장 시점과 같은 번호를 쓴다:
-      // 4=기본정보 저장됨 → 관심사, 5=관심사 저장됨 → 매치/토픽, 6 → 확인.
-      setStep(
-        me.onboarding_step >= 6 ? 9 : me.onboarding_step >= 5 ? 8 : me.onboarding_step >= 4 ? 6 : 2,
-      );
-    }
+    savedStep.current = me.onboarding_step;
     setGender(me.gender);
     setHubId(me.hub_id);
     setEmail(me.company_email);
@@ -172,15 +216,20 @@ function Onboarding() {
       religion: me.religion ?? "",
     };
     setBasics(nextBasics);
-    setProfile({
+    const loaded: ProfileDraft = {
       headline: me.headline ?? "",
+      eveningNote: me.evening_note ?? "",
+      knownAs: me.known_as ?? "",
       interests: me.interests,
       details: (me.details as Record<string, string>) ?? {},
       matchTags: me.match_tags,
       matchNote: me.match_note ?? "",
       topics: me.topics,
       topicNote: me.topic_note ?? "",
-    });
+    };
+    setProfile(loaded);
+    // 수정은 기본 정보부터 차례로 다시 본다. 가입 재개는 멈춘 곳으로 착지시킨다.
+    if (!editing) setStep(resumeStep(me, loaded));
     setIntro(me.intro ?? me.headline ?? "");
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
   }, [editing, ready, me, navigate, resumed]);
@@ -215,10 +264,12 @@ function Onboarding() {
     좋아지지 않았다고 가입을 막을 이유가 없다.
   */
   useEffect(() => {
-    if (step !== 9 || selectedInterests.length === 0) return;
+    if (step !== 9 || (selectedInterests.length === 0 && !profile.eveningNote.trim())) return;
 
     const payload = {
       job: basics.job,
+      eveningNote: profile.eveningNote.trim() || undefined,
+      knownAs: profile.knownAs.trim() || undefined,
       interests: selectedInterests.map((label) => ({
         label,
         note: profile.details[label]?.trim() || undefined,
@@ -336,16 +387,10 @@ function Onboarding() {
   if (step === 2) {
     const age = ageFrom(basics.birth);
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
-    const pickMbti = (i: number, letter: string) => {
-      const next = [...mbtiParts];
-      next[i] = next[i] === letter ? "" : letter;
-      setMbtiParts(next);
-      setB({ mbti: next.every(Boolean) ? next.join("") : "" });
-    };
 
     return (
       <StepShell
-        step={shown(4)}
+        step={shown(2)}
         total={TOTAL}
         eyebrow="기본 정보"
         title="기본적인 것부터"
@@ -492,76 +537,6 @@ function Onboarding() {
               onChange={(e) => setB({ job: e.target.value })}
             />
           </div>
-
-          <div>
-            <p className="text-sm font-semibold text-foreground">MBTI (선택)</p>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {[0, 1].map((row) =>
-                MBTI_AXES.map((axis, i) => {
-                  const letter = row === 0 ? axis.left : axis.right;
-                  const selected = mbtiParts[i] === letter;
-                  return (
-                    <Chip
-                      key={`${axis.key}-${letter}`}
-                      selected={selected}
-                      onClick={() => pickMbti(i, letter)}
-                      className="w-full justify-center py-2.5 text-sm font-semibold"
-                    >
-                      {letter}
-                    </Chip>
-                  );
-                }),
-              )}
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {basics.mbti ? `선택한 유형 ${basics.mbti}` : "네 축 모두 고르면 유형이 완성됩니다."}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold text-foreground">흡연</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {SMOKING_OPTIONS.map((o) => (
-                <Chip
-                  key={o.id}
-                  selected={basics.smoking === o.id}
-                  onClick={() => setB({ smoking: o.id })}
-                >
-                  {o.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold text-foreground">음주</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {DRINKING_OPTIONS.map((o) => (
-                <Chip
-                  key={o.id}
-                  selected={basics.drinking === o.id}
-                  onClick={() => setB({ drinking: o.id })}
-                >
-                  {o.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold text-foreground">종교 (선택)</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {RELIGION_OPTIONS.map((o) => (
-                <Chip
-                  key={o.id}
-                  selected={basics.religion === o.id}
-                  onClick={() => setB({ religion: basics.religion === o.id ? "" : o.id })}
-                >
-                  {o.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="mt-8 flex gap-2">
@@ -580,23 +555,17 @@ function Onboarding() {
               if (userId) {
                 setSaving(true);
                 try {
-                  // 수정 모드에서는 단계를 **내리지 않는다.** 완료된 프로필(7)에
-                  // 4 를 쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다.
-                  await saveOnboardingStep(userId, editing ? (me?.onboarding_step ?? 4) : 4, {
+                  await saveOnboardingStep(userId, keepStep(4), {
                     name: basics.name,
                     birth: basics.birth,
                     job: basics.job,
-                    mbti: basics.mbti,
-                    smoking: basics.smoking,
-                    drinking: basics.drinking,
-                    religion: basics.religion,
                     photo_url: basics.photo || null,
                   });
                 } finally {
                   setSaving(false);
                 }
               }
-              setStep(6);
+              setStep(Q_FIRST);
             }}
           >
             {saving ? "저장 중…" : "다음"}
@@ -609,7 +578,7 @@ function Onboarding() {
   if (step === 3) {
     return (
       <StepShell
-        step={2}
+        step={shown(3)}
         total={TOTAL}
         eyebrow="활동 지역"
         title="주로 어디서 만나시겠어요?"
@@ -642,7 +611,7 @@ function Onboarding() {
   if (step === 4) {
     return (
       <StepShell
-        step={shown(3)}
+        step={shown(4)}
         total={TOTAL}
         eyebrow="회사 이메일 인증"
         title="회사 이메일로 인증해 주세요"
@@ -877,119 +846,150 @@ function Onboarding() {
     );
   }
 
-  // (한 줄 소개는 마지막 확인 화면에서 답변 기반으로 제안합니다)
-
-  // 5 — 요즘 시간 쓰는 것들 (키워드 + 선택 후속 답변)
-  if (step === 6) {
+  // 인터뷰 ①~④ — 한 화면에 질문 하나 (리부팅 C)
+  const qIndex = step - Q_FIRST;
+  if (qIndex >= 0 && qIndex < INTERVIEW.length) {
+    const q = INTERVIEW[qIndex];
+    const value = profile[q.key];
+    const length = value.trim().length;
+    const ok = questionDone(profile, qIndex);
     const seeds = profile.interests.map((v) => v.trim()).filter(Boolean);
-    const filled = seeds.length;
-    const grown = seeds.filter((s) => profile.details[s]?.trim()).length;
-    const ok = filled >= MIN_INTERESTS;
-    const active = seeds[activeSeed] ?? "";
-    const canAdd = profile.interests.length < MAX_INTERESTS;
+    const canAdd = seeds.length < MAX_INTERESTS;
+    const last = qIndex === INTERVIEW.length - 1;
 
     const addSeed = () => {
-      const value = seedInput.trim();
-      if (!value || !canAdd || profile.interests.includes(value)) return;
-      patch({ interests: [...profile.interests, value] });
+      const v = seedInput.trim();
+      if (!v || !canAdd || seeds.includes(v)) return;
+      patch({ interests: [...seeds, v] });
       setSeedInput("");
-      setActiveSeed(profile.interests.length);
+    };
+
+    /* 질문마다 바로 저장한다. 중간에 닫아도 쓴 문장이 남아야 한다. */
+    const save = async () => {
+      if (!userId) return;
+      const text = value.trim() || null;
+      const fields: Partial<Profile> =
+        q.key === "eveningNote"
+          ? { evening_note: text, interests: seeds }
+          : q.key === "knownAs"
+            ? { known_as: text }
+            : q.key === "topicNote"
+              ? { topic_note: text, topics: profile.topics }
+              : { match_note: text, match_tags: profile.matchTags };
+      await saveOnboardingStep(userId, keepStep(last ? 5 : 4), fields);
     };
 
     return (
       <StepShell
-        step={shown(5)}
+        step={shown(step)}
         total={TOTAL}
-        eyebrow="프로필"
-        title="요즘 시간 쓰는 것들"
-        description={`${MIN_INTERESTS}~${MAX_INTERESTS}개를 적어주세요. 아래 한 줄 메모는 선택이고, 적으면 소개글이 더 좋아집니다.`}
+        eyebrow={`소개장 인터뷰 ${qIndex + 1}/${INTERVIEW.length}`}
+        title={q.title}
+        description={q.description}
       >
-        <div className="flex items-center gap-2">
-          <Input
-            value={seedInput}
-            aria-label="요즘 시간 쓰는 것 추가"
-            placeholder={INTEREST_PLACEHOLDERS[filled] ?? "직접 적기"}
-            disabled={!canAdd}
-            onChange={(e) => setSeedInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-                e.preventDefault();
-                addSeed();
-              }
-            }}
-          />
-          <Button variant="outline" disabled={!seedInput.trim() || !canAdd} onClick={addSeed}>
-            추가
-          </Button>
-        </div>
+        <Textarea
+          rows={4}
+          aria-label={q.title}
+          aria-describedby={`${q.key}-help`}
+          placeholder={q.placeholder}
+          maxLength={INTERVIEW_MAX}
+          value={value}
+          onChange={(e) => patch({ [q.key]: e.target.value } as Partial<ProfileDraft>)}
+        />
+        <p id={`${q.key}-help`} aria-live="polite" className="mt-2 text-sm text-muted-foreground">
+          {q.min && length < q.min
+            ? `${q.min}자 이상 적어 주세요 (${length}자)`
+            : `${q.min ? "" : "선택 · "}${length}/${INTERVIEW_MAX}자`}
+        </p>
 
-        {seeds.length ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {seeds.map((label, i) => {
-              const selected = i === activeSeed;
-              const hasLeaf = Boolean(profile.details[label]?.trim());
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setActiveSeed(i)}
-                  className={`min-h-11 rounded-full border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-                    selected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {label}
-                  {hasLeaf ? <span className="ml-1.5 opacity-70">·</span> : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">하나 적으면 여기에 모입니다.</p>
-        )}
+        <details className="mt-2 text-sm">
+          <summary className="flex min-h-11 cursor-pointer items-center text-primary-strong">
+            예시 보기
+          </summary>
+          <ul className="space-y-2 pb-2 text-muted-foreground">
+            {q.examples.map((ex) => (
+              <li key={ex} className="rounded-surface bg-muted/50 px-3 py-2 leading-relaxed">
+                {ex}
+              </li>
+            ))}
+          </ul>
+        </details>
 
-        {active ? (
-          <div className="mt-5 rounded-surface border border-border bg-muted/40 p-4">
+        {q.key === "eveningNote" ? (
+          <div className="mt-6">
             <p className="text-sm font-semibold text-foreground">
-              {followUpFor(active)}
-              <span className="ml-1.5 font-normal text-muted-foreground">선택</span>
+              키워드로도 남겨 주세요 ({MIN_INTERESTS}~{MAX_INTERESTS}개)
             </p>
-            <Textarea
-              rows={3}
-              className="mt-3 bg-card"
-              aria-label={`${active} 후속 답변`}
-              placeholder="한두 문장이면 충분합니다 (선택)"
-              value={profile.details[active] ?? ""}
-              onChange={(e) => patch({ details: { ...profile.details, [active]: e.target.value } })}
-            />
-            <button
-              type="button"
-              className="mt-2 min-h-11 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              onClick={() => {
-                const nextDetails = { ...profile.details };
-                delete nextDetails[active];
-                patch({
-                  interests: profile.interests.filter((v) => v.trim() !== active),
-                  details: nextDetails,
-                });
-                setActiveSeed(0);
-              }}
-            >
-              이 항목 지우기
-            </button>
+            <p className="mt-1 text-sm text-muted-foreground">소개장에 함께 실려요.</p>
+            <div className="mt-3 flex items-center gap-2">
+              <Input
+                value={seedInput}
+                aria-label="키워드 추가"
+                placeholder={INTEREST_PLACEHOLDERS[seeds.length] ?? "직접 적기"}
+                disabled={!canAdd}
+                onChange={(e) => setSeedInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                    e.preventDefault();
+                    addSeed();
+                  }
+                }}
+              />
+              <Button variant="outline" disabled={!seedInput.trim() || !canAdd} onClick={addSeed}>
+                추가
+              </Button>
+            </div>
+            {seeds.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {seeds.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-label={`${label} 지우기`}
+                    onClick={() => patch({ interests: seeds.filter((v) => v !== label) })}
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-sm text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    {label}
+                    <X className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        <p aria-live="polite" className="mt-4 text-sm text-muted-foreground">
-          {filled} / {MAX_INTERESTS}
-          {grown ? ` · 메모 ${grown}개` : ""}
-        </p>
+        {q.key === "topicNote" || q.key === "matchNote" ? (
+          <div className="mt-6">
+            <p className="text-sm font-semibold text-foreground">
+              {q.key === "topicNote" ? "가까운 주제를 골라 주세요" : "가까운 사람을 골라 주세요"}{" "}
+              (1~4개)
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(q.key === "topicNote" ? TOPIC_TAGS : MATCH_TAGS).map((tag) => {
+                const list = q.key === "topicNote" ? profile.topics : profile.matchTags;
+                return (
+                  <Chip
+                    key={tag}
+                    selected={list.includes(tag)}
+                    onClick={() =>
+                      patch(
+                        q.key === "topicNote"
+                          ? { topics: toggle(profile.topics, tag, 4) }
+                          : { matchTags: toggle(profile.matchTags, tag, 4) },
+                      )
+                    }
+                  >
+                    {tag}
+                  </Chip>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
-        <div className="mt-6 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(2)}>
+        <div className="mt-8 flex gap-2">
+          <Button variant="ghost" onClick={() => setStep(qIndex === 0 ? 2 : step - 1)}>
             이전
           </Button>
           <Button
@@ -997,124 +997,155 @@ function Onboarding() {
             size="lg"
             disabled={!ok || saving}
             onClick={async () => {
-              patch({ interests: seeds });
-              if (userId) {
-                setSaving(true);
-                try {
-                  await saveOnboardingStep(userId, 5, {
-                    interests: seeds,
-                    details: profile.details as never,
-                  });
-                } finally {
-                  setSaving(false);
-                }
+              setSaving(true);
+              try {
+                await save();
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "저장하지 못했습니다.");
+                return;
+              } finally {
+                setSaving(false);
               }
-              setStep(8);
+              if (last) setIntro(draft);
+              setStep(last ? 9 : step + 1);
             }}
           >
-            {saving ? "저장 중…" : "다음"}
+            {saving ? "저장 중…" : last ? "소개장 만들기" : "다음"}
           </Button>
         </div>
       </StepShell>
     );
   }
 
-  // 6 — 잘 맞는 사람 + 이번 만남 대화 주제
-  if (step === 8) {
-    const ok = profile.matchTags.length >= 2 && profile.topics.length >= 2;
+  // 마지막 — 만나기 전에 알아 두면 좋은 것 (조건은 인터뷰 뒤로, 리부팅 C)
+  if (step === CONDITIONS) {
+    const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
+    const pickMbti = (i: number, letter: string) => {
+      const next = [...mbtiParts];
+      next[i] = next[i] === letter ? "" : letter;
+      setMbtiParts(next);
+      setB({ mbti: next.every(Boolean) ? next.join("") : "" });
+    };
+
     return (
       <StepShell
-        step={shown(6)}
+        step={shown(CONDITIONS)}
         total={TOTAL}
-        eyebrow="프로필"
-        title="어떤 사람과, 무슨 이야기를"
-        description="상대를 고르는 기준과, 만나면 꺼내고 싶은 주제."
+        eyebrow="마지막"
+        title="만나기 전에 알아 두면 좋은 것"
+        description="소개장 맨 아래에 작게 실려요."
       >
-        <div>
-          <p className="text-sm font-semibold text-foreground">잘 맞았던 사람 (2개 이상)</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {MATCH_TAGS.map((tag) => (
-              <Chip
-                key={tag}
-                selected={profile.matchTags.includes(tag)}
-                onClick={() => patch({ matchTags: toggle(profile.matchTags, tag, 4) })}
-              >
-                {tag}
-              </Chip>
-            ))}
+        <div className="space-y-5">
+          <div>
+            <p className="text-sm font-semibold text-foreground">MBTI (선택)</p>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {[0, 1].map((row) =>
+                MBTI_AXES.map((axis, i) => {
+                  const letter = row === 0 ? axis.left : axis.right;
+                  const selected = mbtiParts[i] === letter;
+                  return (
+                    <Chip
+                      key={`${axis.key}-${letter}`}
+                      selected={selected}
+                      onClick={() => pickMbti(i, letter)}
+                      className="w-full justify-center py-2.5 text-sm font-semibold"
+                    >
+                      {letter}
+                    </Chip>
+                  );
+                }),
+              )}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {basics.mbti ? `선택한 유형 ${basics.mbti}` : "네 축 모두 고르면 유형이 완성됩니다."}
+            </p>
           </div>
-          <Textarea
-            rows={3}
-            className="mt-3"
-            aria-label="이상형 자유 입력"
-            placeholder="덧붙이고 싶은 말이 있다면 (선택)"
-            value={profile.matchNote}
-            onChange={(e) => patch({ matchNote: e.target.value })}
-          />
-        </div>
 
-        <div className="mt-8">
-          <p className="text-sm font-semibold text-foreground">
-            이번 만남에서 이야기하고 싶은 주제 (2개 이상)
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">상대에게도 그대로 보여집니다.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {TOPIC_TAGS.map((tag) => (
-              <Chip
-                key={tag}
-                selected={profile.topics.includes(tag)}
-                onClick={() => patch({ topics: toggle(profile.topics, tag, 4) })}
-              >
-                {tag}
-              </Chip>
-            ))}
+          <div>
+            <p className="text-sm font-semibold text-foreground">흡연</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {SMOKING_OPTIONS.map((o) => (
+                <Chip
+                  key={o.id}
+                  selected={basics.smoking === o.id}
+                  onClick={() => setB({ smoking: o.id })}
+                >
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
           </div>
-          <Input
-            className="mt-3"
-            aria-label="직접 적는 대화 주제"
-            placeholder="직접 적기 (선택)"
-            value={profile.topicNote}
-            onChange={(e) => patch({ topicNote: e.target.value })}
-          />
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">음주</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DRINKING_OPTIONS.map((o) => (
+                <Chip
+                  key={o.id}
+                  selected={basics.drinking === o.id}
+                  onClick={() => setB({ drinking: o.id })}
+                >
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">종교 (선택)</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {RELIGION_OPTIONS.map((o) => (
+                <Chip
+                  key={o.id}
+                  selected={basics.religion === o.id}
+                  onClick={() => setB({ religion: basics.religion === o.id ? "" : o.id })}
+                >
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(6)}>
+          <Button variant="ghost" onClick={() => setStep(9)}>
             이전
           </Button>
           <Button
             className="flex-1"
             size="lg"
-            disabled={!ok || saving}
+            disabled={!conditionsValid(basics) || saving || !userId}
             onClick={async () => {
-              setIntro(draft);
-              if (userId) {
-                setSaving(true);
-                try {
-                  await saveOnboardingStep(userId, 6, {
-                    match_tags: profile.matchTags,
-                    match_note: profile.matchNote || null,
-                    topics: profile.topics,
-                    topic_note: profile.topicNote || null,
-                  });
-                } finally {
-                  setSaving(false);
-                }
+              if (!userId) return;
+              setSaving(true);
+              try {
+                await completeOnboarding(userId, basics, profile, intro.trim());
+                // 완료 직전까지 읽고 있던 me 는 프로필을 쓰기 전 값이다. 갱신하지 않으면
+                // /profile 이 소개글 없이 그려져 새로고침해야만 방금 쓴 내용이 보인다.
+                await refresh();
+                toast.success(editing ? "소개장을 고쳤어요." : "소개장이 완성됐어요.");
+                /*
+                  가입을 막 끝낸 사람이 볼 곳은 "다음에 일어나는 일" 이 있는 홈이다.
+                  알림 메일이 없으면 그 전에 한 화면 들른다 — 없으면 소개가 와도 메일이
+                  한 통도 나가지 않는다.
+                */
+                if (editing) navigate({ to: "/profile" });
+                else if (me?.notification_email_verified_at) navigate({ to: "/home" });
+                else setStep(10);
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
+              } finally {
+                setSaving(false);
               }
-              setStep(9);
             }}
           >
-            {saving ? "저장 중…" : "프로필 만들기"}
+            {saving ? "저장 중…" : editing ? "저장" : "가입 마치기"}
           </Button>
         </div>
       </StepShell>
     );
   }
 
-  const topics = [
-    ...profile.topics,
-    ...(profile.topicNote.trim() ? [profile.topicNote.trim()] : []),
-  ];
   /*
     모델이 쓴 문장이 있으면 그걸 쓰고, 없으면 규칙 기반 후보를 쓴다.
     화면 구조는 하나다 — 두 경로를 따로 그리면 실패했을 때만 보이는 화면이
@@ -1124,61 +1155,34 @@ function Onboarding() {
 
   return (
     <StepShell
-      step={shown(7)}
+      step={shown(9)}
       total={TOTAL}
-      eyebrow="프로필 확인"
+      eyebrow="소개장 확인"
       title="이렇게 소개해도 될까요?"
-      description="적은 내용으로 만든 초안입니다."
+      description="적어 주신 답으로 만든 초안이에요. 고쳐 써도 돼요."
     >
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {shownPhoto ? (
           <img src={shownPhoto} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
         ) : null}
         <div className="p-5">
-          <p className="text-base font-semibold">
+          <p className="serif text-lg font-semibold">
             {basics.name}
             {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {[
-              basics.job,
-              basics.mbti,
-              SMOKING_OPTIONS.find((o) => o.id === basics.smoking)?.label,
-              `음주 ${DRINKING_OPTIONS.find((o) => o.id === basics.drinking)?.label ?? ""}`.trim(),
-              RELIGION_OPTIONS.find((o) => o.id === basics.religion)?.label,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-
-          <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">
-            요즘 시간 쓰는 것들
-          </p>
-
-          <div className="mt-2 space-y-2">
-            {selectedInterests.map((label) => (
-              <div
-                key={label}
-                className="rounded-surface border border-border bg-muted/30 px-3 py-2"
-              >
-                <p className="text-sm font-semibold text-foreground">{label}</p>
-                {profile.details[label]?.trim() ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{profile.details[label]}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-5 text-xs font-semibold tracking-wide text-primary-strong">
-            이번 만남에서 나누고 싶은 이야기
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {topics.map((t) => (
-              <span key={t} className="rounded-full bg-accent/40 px-3 py-1 text-xs text-foreground">
-                {t}
-              </span>
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{basics.job}</p>
+          {[...selectedInterests, ...profile.topics].length ? (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {[...selectedInterests, ...profile.topics].map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -1264,7 +1268,7 @@ function Onboarding() {
       </p>
 
       <div className="mt-8 flex gap-2">
-        <Button variant="ghost" onClick={() => setStep(8)}>
+        <Button variant="ghost" onClick={() => setStep(Q_FIRST + INTERVIEW.length - 1)}>
           이전
         </Button>
         <Button
@@ -1277,7 +1281,10 @@ function Onboarding() {
             if (!userId) return;
             setSaving(true);
             try {
-              await completeOnboarding(userId, basics, profile, intro.trim());
+              await saveOnboardingStep(userId, keepStep(6), {
+                headline: profile.headline.trim(),
+                intro: intro.trim(),
+              });
               if (composed) {
                 const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
                 await track("profile_composition_saved", {
@@ -1289,17 +1296,7 @@ function Onboarding() {
               } else {
                 await track("profile_composition_saved", { source: "rule_based_fallback" });
               }
-              // 완료 직전까지 읽고 있던 me 는 프로필을 쓰기 전 값이다. 갱신하지 않으면
-              // /profile 이 소개글 없이 그려져 새로고침해야만 방금 쓴 내용이 보인다.
-              await refresh();
-              toast.success("프로필이 저장되었습니다");
-              /*
-                예전에는 '나' 화면에 내려놓았다. 가입을 막 끝낸 사람이 볼 곳은 "다음에
-                일어나는 일" 이 있는 홈이다. 알림 메일이 없으면 그 전에 한 화면 들른다 —
-                없으면 소개가 와도 메일이 한 통도 나가지 않는다.
-              */
-              if (me?.notification_email_verified_at) navigate({ to: "/home" });
-              else setStep(10);
+              setStep(CONDITIONS);
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
             } finally {
@@ -1307,7 +1304,7 @@ function Onboarding() {
             }
           }}
         >
-          {saving ? "저장 중…" : "프로필 확정"}
+          {saving ? "저장 중…" : "다음"}
         </Button>
       </div>
     </StepShell>
