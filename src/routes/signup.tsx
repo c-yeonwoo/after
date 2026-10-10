@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { NotificationEmailForm } from "@/components/app/NotificationEmailForm";
 import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
@@ -54,7 +53,9 @@ import {
   type Profile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
+import { isNative } from "@/lib/native";
 import { pruneMyPhotos, usePhotoUrl } from "@/lib/photo";
+import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
@@ -335,11 +336,24 @@ function Onboarding() {
         step={TOTAL}
         total={TOTAL}
         eyebrow="알림"
-        title="소개가 오면 어디로 알려드릴까요?"
-        description="회사 메일함에는 소개 내용을 보내지 않아요. 알림을 받을 개인 메일을 한 번만 확인해 주세요."
+        title="소개가 오면 알려 드릴까요?"
+        description="새 소개, 만남 요청과 약속 확정을 알림으로 보내 드려요. 소개 내용은 알림에 담지 않아요."
       >
-        <NotificationEmailForm onVerified={() => navigate({ to: "/home" })} />
-        <div className="mt-8">
+        {/*
+          앱에서만 오는 단계다(s55). 메일 알림은 없어졌고, 웹은 종 아이콘으로만 본다.
+          권한 창은 이 버튼을 누를 때 처음 뜬다 — 가입 첫 화면에서 묻지 않는다.
+        */}
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={async () => {
+            await enablePush();
+            navigate({ to: "/home" });
+          }}
+        >
+          알림 받기
+        </Button>
+        <div className="mt-3">
           <Button variant="ghost" className="w-full" onClick={() => navigate({ to: "/home" })}>
             나중에 할게요
           </Button>
@@ -1098,8 +1112,9 @@ function Onboarding() {
                   한 통도 나가지 않는다.
                 */
                 if (editing) navigate({ to: "/profile" });
-                else if (me?.notification_email_verified_at) navigate({ to: "/home" });
-                else setStep(10);
+                // 앱이면 알림 허용을 한 번 묻는다. 웹은 푸시가 없어 바로 홈으로.
+                else if (isNative && (await pushPermission()) === "prompt") setStep(10);
+                else navigate({ to: "/home" });
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
               } finally {
