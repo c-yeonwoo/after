@@ -594,6 +594,20 @@ export async function getOpenIntroWithCandidate(): Promise<{
 }
 
 /**
+ * 열기 전 공개(s50, D2 ①). 열 수 있는 맨 앞 카드의 나이·직업·한 줄 소개·두 사람이
+ * 같이 적은 것·운영팀 한 줄. 이름·사진·소개글은 열어야 보인다.
+ * 서버가 open_intro 와 같은 규칙(next_openable_card)으로 고르므로, 여기서 본 사람이
+ * 실제로 열린다. 열 카드가 없으면 null.
+ */
+export type IntroTeaser = Database["public"]["Functions"]["intro_teaser"]["Returns"][number];
+
+export async function introTeaser(): Promise<IntroTeaser | null> {
+  const { data, error } = await supabase.rpc("intro_teaser");
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+/**
  * 남성 전용: 열린 소개가 없으면 큐의 맨 앞 카드를 연다.
  *
  * **v2 부터 이 호출은 소개 티켓 1장을 쓴다.** 그래서 실패 두 가지를 반드시

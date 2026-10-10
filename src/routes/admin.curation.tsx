@@ -8,6 +8,7 @@ import { Tag } from "@/components/admin/ui";
 import { hubLabel } from "@/components/admin/labels";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { usePhotoUrl } from "@/lib/photo";
 import { toProfileView } from "@/lib/profileView";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ import {
   fetchLikePool,
   fetchQueue,
   setQueue,
+  setQueueReason,
   composePairBrief,
   type CurationTarget,
   type LikePoolItem,
@@ -242,52 +244,63 @@ function Workbench({
                 return (
                   <li
                     key={id}
-                    className={`flex items-center gap-3 rounded-surface border px-3 py-2 ${
+                    className={`rounded-surface border px-3 py-2 ${
                       delivering ? "border-border" : "border-dashed border-border bg-muted/30"
                     }`}
                   >
-                    <span className="w-5 text-center text-sm font-semibold tabular-nums text-muted-foreground">
-                      {i + 1}
-                    </span>
-                    <Thumb path={c?.photo_url ?? null} />
-                    <button
-                      onClick={() => setPreview(c)}
-                      className="min-w-0 flex-1 text-left"
-                      title="프로필 보기"
-                    >
-                      <span className="text-sm font-semibold underline-offset-2 hover:underline">
-                        {c ? (c.name ?? "(이름 없음)") : "(불러오는 중)"}
+                    <div className="flex items-center gap-3">
+                      <span className="w-5 text-center text-sm font-semibold tabular-nums text-muted-foreground">
+                        {i + 1}
                       </span>
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {delivering ? (
-                          stored?.delivered_at ? (
-                            <>전송됨 · {day(stored.expires_at)} 만료</>
+                      <Thumb path={c?.photo_url ?? null} />
+                      <button
+                        onClick={() => setPreview(c)}
+                        className="min-w-0 flex-1 text-left"
+                        title="프로필 보기"
+                      >
+                        <span className="text-sm font-semibold underline-offset-2 hover:underline">
+                          {c ? (c.name ?? "(이름 없음)") : "(불러오는 중)"}
+                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {delivering ? (
+                            stored?.delivered_at ? (
+                              <>전송됨 · {day(stored.expires_at)} 만료</>
+                            ) : (
+                              <>저장하면 전송</>
+                            )
                           ) : (
-                            <>저장하면 전송</>
-                          )
-                        ) : (
-                          "대기"
-                        )}
-                      </span>
-                    </button>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <IconBtn label="위로" disabled={i === 0} onClick={() => move(i, -1)}>
-                        <ArrowUp className="size-4" />
-                      </IconBtn>
-                      <IconBtn
-                        label="아래로"
-                        disabled={i === order.length - 1}
-                        onClick={() => move(i, 1)}
-                      >
-                        <ArrowDown className="size-4" />
-                      </IconBtn>
-                      <IconBtn
-                        label="큐에서 빼기"
-                        onClick={() => setOrder(order.filter((x) => x !== id))}
-                      >
-                        <X className="size-4" />
-                      </IconBtn>
+                            "대기"
+                          )}
+                        </span>
+                      </button>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <IconBtn label="위로" disabled={i === 0} onClick={() => move(i, -1)}>
+                          <ArrowUp className="size-4" />
+                        </IconBtn>
+                        <IconBtn
+                          label="아래로"
+                          disabled={i === order.length - 1}
+                          onClick={() => move(i, 1)}
+                        >
+                          <ArrowDown className="size-4" />
+                        </IconBtn>
+                        <IconBtn
+                          label="큐에서 빼기"
+                          onClick={() => setOrder(order.filter((x) => x !== id))}
+                        >
+                          <X className="size-4" />
+                        </IconBtn>
+                      </div>
                     </div>
+                    {stored ? (
+                      <ReasonEditor
+                        key={`${id}:${stored.reason ?? ""}`}
+                        maleId={maleId}
+                        femaleId={id}
+                        initial={stored.reason ?? ""}
+                        onSaved={() => void load()}
+                      />
+                    ) : null}
                   </li>
                 );
               })}
@@ -532,6 +545,59 @@ function Thumb({ path }: { path: string | null }) {
   return (
     <div className="size-10 shrink-0 overflow-hidden rounded-full bg-muted">
       {url ? <img src={url} alt="" className="size-full object-cover" /> : null}
+    </div>
+  );
+}
+
+/**
+ * 남성에게 보이는 운영팀 한 줄(s50). 열기 전 티저와 연 뒤 소개 맨 위에 나온다.
+ * 감사용 사유(note)와 다르다 — 이건 받는 사람이 읽는 문장이다. 점수·궁합·"먼저 관심"은
+ * 쓰지 않는다. 두 사람이 직접 적은 것에서 겹치는 이야기를 사실대로 한 줄.
+ */
+function ReasonEditor({
+  maleId,
+  femaleId,
+  initial,
+  onSaved,
+}: {
+  maleId: string;
+  femaleId: string;
+  initial: string;
+  onSaved: () => void;
+}) {
+  const [value, setValue] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const changed = value.trim() !== initial.trim();
+  return (
+    <div className="mt-2 flex items-center gap-2 pl-8">
+      <Input
+        aria-label="남성에게 보이는 한 줄"
+        placeholder="남성에게 보이는 한 줄 (선택, 120자) — 예: 두 분 다 퇴근 후 러닝을 적으셨어요."
+        maxLength={120}
+        value={value}
+        disabled={busy}
+        onChange={(e) => setValue(e.target.value)}
+        className="h-9 text-xs"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={busy || !changed}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await setQueueReason(maleId, femaleId, value);
+            toast.success("한 줄을 저장했습니다.");
+            onSaved();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "저장하지 못했습니다.");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        저장
+      </Button>
     </div>
   );
 }

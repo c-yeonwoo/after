@@ -649,6 +649,7 @@ export type Database = {
           note: string | null
           opened_at: string | null
           position: number
+          reason: string | null
         }
         Insert: {
           created_at?: string
@@ -661,6 +662,7 @@ export type Database = {
           note?: string | null
           opened_at?: string | null
           position: number
+          reason?: string | null
         }
         Update: {
           created_at?: string
@@ -673,6 +675,7 @@ export type Database = {
           note?: string | null
           opened_at?: string | null
           position?: number
+          reason?: string | null
         }
         Relationships: [
           {
@@ -749,6 +752,7 @@ export type Database = {
           male_id: string
           opened_at: string
           outcome: Database["public"]["Enums"]["intro_outcome"] | null
+          reason: string | null
         }
         Insert: {
           closed_at?: string | null
@@ -758,6 +762,7 @@ export type Database = {
           male_id: string
           opened_at?: string
           outcome?: Database["public"]["Enums"]["intro_outcome"] | null
+          reason?: string | null
         }
         Update: {
           closed_at?: string | null
@@ -767,6 +772,7 @@ export type Database = {
           male_id?: string
           opened_at?: string
           outcome?: Database["public"]["Enums"]["intro_outcome"] | null
+          reason?: string | null
         }
         Relationships: [
           {
@@ -1939,6 +1945,7 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string
           queue_position: number
+          reason: string
           religion: string
           smoking: string
           topics: string[]
@@ -2115,6 +2122,28 @@ export type Database = {
       admin_set_queue: {
         Args: { p_female_ids: string[]; p_male: string; p_note: string }
         Returns: number
+      }
+      admin_set_queue_reason: {
+        Args: { p_female: string; p_male: string; p_reason: string }
+        Returns: {
+          created_at: string
+          curated_by: string
+          delivered_at: string | null
+          expires_at: string | null
+          female_id: string
+          id: string
+          male_id: string
+          note: string | null
+          opened_at: string | null
+          position: number
+          reason: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "intro_queue"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_system_overview: { Args: never; Returns: Json }
       admin_ticket_orders: {
@@ -2360,6 +2389,17 @@ export type Database = {
         }
       }
       home_state: { Args: never; Returns: Json }
+      intro_teaser: {
+        Args: never
+        Returns: {
+          age: number
+          delivered: number
+          headline: string
+          job: string
+          reason: string
+          shared: string[]
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_channel_open: {
         Args: {
@@ -2459,6 +2499,28 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      next_openable_card: {
+        Args: { p_male: string }
+        Returns: {
+          created_at: string
+          curated_by: string
+          delivered_at: string | null
+          expires_at: string | null
+          female_id: string
+          id: string
+          male_id: string
+          note: string | null
+          opened_at: string | null
+          position: number
+          reason: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "intro_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       open_intro: {
         Args: never
         Returns: {
@@ -2469,6 +2531,7 @@ export type Database = {
           male_id: string
           opened_at: string
           outcome: Database["public"]["Enums"]["intro_outcome"] | null
+          reason: string | null
         }
         SetofOptions: {
           from: "*"
