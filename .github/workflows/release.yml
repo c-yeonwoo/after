@@ -8,9 +8,11 @@ on:
 permissions:
   contents: read
 
+# PR 은 새 커밋이 오면 이전 실행을 끊어도 된다. main 배포는 끊으면 안 된다 —
+# db push 가 반쯤 끝난 상태에서 멈추면 DB 와 프론트가 어긋난 채로 남는다.
 concurrency:
   group: eclipse-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -30,12 +32,19 @@ jobs:
       - run: supabase start
       - run: npm run release:check
 
+  # main 머지 = 운영 배포. 순서가 중요하다: DB → edge function → 프론트.
+  # 새 화면은 새 RPC 를 부르므로, 프론트가 먼저 나가면 DB 가 따라올 때까지 화면이 깨진다
+  # (2026-10-10 리부팅 배포에서 CI 가 프론트만 올리게 되어 있던 것을 고쳤다).
   deploy:
     needs: quality
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: tsytwxtuczceyojkiaty
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -43,14 +52,41 @@ jobs:
           node-version: 22
           cache: npm
       - uses: oven-sh/setup-bun@v2
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
       - run: npm ci
+
+      # 빌드를 먼저 끝내 둔다. 빌드가 실패하면 DB 를 건드리기 전에 멈춘다.
       - run: npm run check
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: Deploy verified commit
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Pending migrations
+        run: supabase db push --dry-run
+
+      - name: Apply migrations
+        run: supabase db push --yes
+
+      # 전부 다시 올린다. verify_jwt 는 config.toml 을 따른다(kakao-unlink 만 false).
+      - name: Deploy edge functions
+        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy frontend
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+
+      - name: Verify deployed commit
+        run: |
+          for i in 1 2 3 4 5 6; do
+            npm run -s verify:deploy && exit 0
+            sleep 10
+          done
+          exit 1
