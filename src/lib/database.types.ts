@@ -465,6 +465,55 @@ export type Database = {
           },
         ]
       }
+      device_tokens: {
+        Row: {
+          apns_env: string | null
+          created_at: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apns_env?: string | null
+          created_at?: string
+          platform?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apns_env?: string | null
+          created_at?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -1215,6 +1264,7 @@ export type Database = {
           last_error: string | null
           meeting_id: string | null
           payload: Json
+          read_at: string | null
           sent_at: string | null
           user_id: string
         }
@@ -1227,6 +1277,7 @@ export type Database = {
           last_error?: string | null
           meeting_id?: string | null
           payload?: Json
+          read_at?: string | null
           sent_at?: string | null
           user_id: string
         }
@@ -1239,6 +1290,7 @@ export type Database = {
           last_error?: string | null
           meeting_id?: string | null
           payload?: Json
+          read_at?: string | null
           sent_at?: string | null
           user_id?: string
         }
@@ -2769,6 +2821,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mark_notifications_read: { Args: never; Returns: undefined }
       meet_places_for_me: {
         Args: never
         Returns: {
@@ -2783,6 +2836,17 @@ export type Database = {
       }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
+      my_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          counterpart_name: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          meeting_id: string
+          read_at: string
+        }[]
+      }
       next_candidate: {
         Args: never
         Returns: {
@@ -2944,6 +3008,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      register_device_token: { Args: { p_token: string }; Returns: undefined }
       release_paid_order_cancel: {
         Args: { p_order_id: string }
         Returns: undefined
@@ -3275,6 +3340,8 @@ export type Database = {
         Returns: number
       }
       unlink_my_kakao_identity: { Args: never; Returns: number }
+      unread_notification_count: { Args: never; Returns: number }
+      unregister_device_token: { Args: { p_token: string }; Returns: undefined }
       use_meeting_ticket: {
         Args: { p_intro_id: string }
         Returns: {
@@ -3556,5 +3623,4 @@ export const Constants = {
       ticket_state: ["unused", "used", "refunded"],
     },
   },
-} as const
-
+} as const;

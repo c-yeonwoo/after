@@ -19,6 +19,7 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PrefsRouteImport } from './routes/prefs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -94,6 +95,11 @@ const LoginRoute = LoginRouteImport.update({
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/intro': typeof IntroRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/intro': typeof IntroRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/intro': typeof IntroRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
@@ -354,6 +363,7 @@ export interface FileRouteTypes {
     | '/intro'
     | '/login'
     | '/me'
+    | '/notifications'
     | '/orders'
     | '/prefs'
     | '/privacy'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/intro'
     | '/login'
     | '/me'
+    | '/notifications'
     | '/orders'
     | '/prefs'
     | '/privacy'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/intro'
     | '/login'
     | '/me'
+    | '/notifications'
     | '/orders'
     | '/prefs'
     | '/privacy'
@@ -468,6 +480,7 @@ export interface RootRouteChildren {
   IntroRoute: typeof IntroRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
+  NotificationsRoute: typeof NotificationsRoute
   OrdersRoute: typeof OrdersRoute
   PrefsRoute: typeof PrefsRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -556,6 +569,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -792,6 +812,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntroRoute: IntroRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
+  NotificationsRoute: NotificationsRoute,
   OrdersRoute: OrdersRoute,
   PrefsRoute: PrefsRoute,
   PrivacyRoute: PrivacyRoute,

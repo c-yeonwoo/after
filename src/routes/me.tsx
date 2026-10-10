@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Bell, FileText, Receipt, Ticket, User } from "lucide-react";
 
+import { NotificationBell } from "@/components/app/NotificationBell";
 import { AppScreen } from "@/components/app/AppScreen";
 import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
 import { myStats, remainingCandidates, signOut, type MyStats } from "@/lib/api";
@@ -85,7 +86,7 @@ function MePage() {
 
   if (!me) {
     return (
-      <AppScreen title="나">
+      <AppScreen title="나" action={<NotificationBell />}>
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       </AppScreen>
     );
@@ -94,7 +95,7 @@ function MePage() {
   const hub = HUBS.find((h) => h.id === me.hub_id);
 
   return (
-    <AppScreen title="나">
+    <AppScreen title="나" action={<NotificationBell />}>
       {/* ── 대시보드 ────────────────────────────────
         진행 상황(소개 도착·확정 등)은 넣지 않는다 — 홈이 소유하는 정보이고,
         같은 상태를 두 화면이 서로 다른 문장으로 말하는 게 홈 재설계로 걷어낸

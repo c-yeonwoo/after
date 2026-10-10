@@ -138,7 +138,8 @@ select is_empty(
          'mark_met','meet_places_for_me','next_candidate','open_intro','pass_intro','record_consent','remaining_candidates',
          'report_content','report_no_show','request_meeting','request_notification_email','resolve_content_report',
          'respond_no_show','set_paused','submit_meeting_prefs','sync_email_verified','ticket_bundles',
-         'unlink_my_kakao_identity','use_meeting_ticket','verify_notification_email','verify_phone_code','withdraw_account'
+         'unlink_my_kakao_identity','use_meeting_ticket','verify_notification_email','verify_phone_code','withdraw_account',
+         'register_device_token','unregister_device_token','my_notifications','unread_notification_count','mark_notifications_read'
        ]) as fe(n)
       where not exists (
         select 1 from pg_proc p
@@ -146,7 +147,7 @@ select is_empty(
            and p.proname = fe.n
            and has_function_privilege('authenticated', p.oid, 'EXECUTE')
       ) $$,
-  'T14 화면이 부르는 RPC 60개는 모두 로그인 사용자가 실행할 수 있다'
+  'T14 화면이 부르는 RPC 65개는 모두 로그인 사용자가 실행할 수 있다'
 );
 
 select * from finish();

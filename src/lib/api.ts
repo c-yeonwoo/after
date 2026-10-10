@@ -8,6 +8,7 @@
  */
 import type { Basics } from "@/components/onboarding/basics";
 import type { ProfileDraft } from "@/components/onboarding/profile";
+import { forgetPushToken } from "@/lib/push";
 import type { MeetPrefs } from "@/lib/meet";
 import { deleteMyPhotos } from "@/lib/photo";
 import { POLICY_VERSION } from "@/lib/policy";
@@ -397,6 +398,8 @@ export async function verifyEmailCode(
 }
 
 export async function signOut() {
+  // 세션이 살아 있을 때 지워야 한다 — 토큰 삭제 RPC 는 로그인한 본인만 부를 수 있다.
+  await forgetPushToken().catch(() => undefined);
   await supabase.auth.signOut();
 }
 
@@ -787,6 +790,27 @@ export async function myStats(): Promise<MyStats | null> {
  * 이미 손에 들고 있고, 문장이 더 좋아지지 않았다고 가입을 막을 이유가 없습니다.
  * 모델이 거절했든, 시간이 초과됐든, 키가 없든 화면은 같게 동작합니다.
  */
+// ─────────────────────── 화면 속 알림 (s55) ───────────────────────
+
+export type MyNotification = Database["public"]["Functions"]["my_notifications"]["Returns"][number];
+
+export async function myNotifications(limit = 50): Promise<MyNotification[]> {
+  const { data, error } = await supabase.rpc("my_notifications", { p_limit: limit });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function unreadNotificationCount(): Promise<number> {
+  const { data, error } = await supabase.rpc("unread_notification_count");
+  if (error) throw error;
+  return data ?? 0;
+}
+
+export async function markNotificationsRead(): Promise<void> {
+  const { error } = await supabase.rpc("mark_notifications_read");
+  if (error) throw error;
+}
+
 // ─────────────────────── 휴대폰 인증 (s54) ───────────────────────
 
 export type PhoneCodeResult = { phone: string; sent: boolean; devCode?: string };
