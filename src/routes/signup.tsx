@@ -4,6 +4,7 @@ import { AlertCircle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationEmailForm } from "@/components/app/NotificationEmailForm";
+import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
@@ -94,7 +95,9 @@ const SKIP_HUB_STEP = OPEN_HUBS.length === 1;
 */
 const Q_FIRST = 11;
 const CONDITIONS = 15;
-const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, 2, 11, 12, 13, 14, 9, CONDITIONS];
+/** 휴대폰 인증(s54). 회사 메일 다음, 기본 정보 앞. 프로필 행이 생긴 뒤라야 저장할 곳이 있다. */
+const PHONE = 5;
+const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, PHONE, 2, 11, 12, 13, 14, 9, CONDITIONS];
 const TOTAL = ORDER.length;
 /** 화면에 보이는 단계 번호. */
 const shown = (id: number) => ORDER.indexOf(id) + 1;
@@ -117,6 +120,7 @@ function questionDone(p: ProfileDraft, i: number) {
  * 인터뷰 답이 없어도 소개장 확인으로 보낸다. 키워드로 초안을 만들 수 있다.
  */
 function resumeStep(me: Profile, p: ProfileDraft) {
+  if (!me.phone_verified_at) return PHONE;
   if (me.onboarding_step < 4) return 2;
   const missing = INTERVIEW.findIndex((_, i) => !questionDone(p, i));
   if (missing >= 0 && me.onboarding_step < 5) return Q_FIRST + missing;
@@ -340,6 +344,25 @@ function Onboarding() {
             나중에 할게요
           </Button>
         </div>
+      </StepShell>
+    );
+  }
+
+  if (step === PHONE) {
+    return (
+      <StepShell
+        step={shown(PHONE)}
+        total={TOTAL}
+        eyebrow="휴대폰 인증"
+        title="휴대폰 번호를 확인할게요"
+        description="한 사람이 한 계정만 쓰도록 하기 위해서예요."
+      >
+        <PhoneVerifyForm
+          onVerified={async () => {
+            await refresh();
+            setStep(2);
+          }}
+        />
       </StepShell>
     );
   }
@@ -735,7 +758,8 @@ function Onboarding() {
                   }
                   await recordConsent();
                   setUserId(created.id);
-                  setStep(2);
+                  // 다시 인증하는 사람(이미 번호를 확인한 계정)은 건너뛴다.
+                  setStep(created.phone_verified_at ? 2 : PHONE);
                 } catch (err) {
                   setAuthError(authErrorMessage(err));
                 } finally {

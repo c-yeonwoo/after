@@ -331,6 +331,12 @@ for (const p of PEOPLE) {
         where id = '${id}'`);
 }
 
+/* 휴대폰 인증(s54). 자격 조건이라 표본 전원을 인증된 상태로 둔다. 번호는 가짜다. */
+PEOPLE.forEach((p, i) => {
+  sql(`update profiles set phone = '+8210000000${String(i).padStart(2, "0")}', phone_verified_at = now()
+        where id = '${byKey[p.key]}'`);
+});
+
 /*
   photo_url 을 건드리면 트리거(profiles_photo_review)가 검수 상태를 pending 으로
   되돌린다 — 새 사진은 다시 봐야 한다는 뜻이고 앱 동작으로는 맞다. 다만 표본에서
