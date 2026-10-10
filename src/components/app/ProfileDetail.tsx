@@ -62,8 +62,12 @@ function Lines({ items }: { items: string[] }) {
 
 function Photo({ src, name }: { src: string | null; name: string }) {
   return (
-    <figure className="rounded-[14px] border border-border bg-card p-2 shadow-card">
-      <div className="aspect-[4/5] w-full overflow-hidden rounded-[8px] bg-muted">
+    /*
+      사진은 소개장의 삽화다. 화면 폭을 다 쓰던 4:5 사진이 한 화면을 통째로 차지해
+      글보다 사진이 먼저 읽혔다(2026-10-10). 글 줄 폭의 3/5 로 줄인다.
+    */
+    <figure className="w-3/5 max-w-60">
+      <div className="aspect-[4/5] w-full overflow-hidden rounded-surface bg-muted">
         {src ? (
           <img src={src} alt={`${name} 프로필 사진`} className="size-full object-cover" />
         ) : (

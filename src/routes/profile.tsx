@@ -51,7 +51,7 @@ function ProfilePage() {
         <Link
           to="/signup"
           search={{ edit: true as const }}
-          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border px-3 text-xs font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="inline-flex min-h-11 items-center gap-1 rounded-control border border-border px-3 text-xs font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Pencil className="size-3.5" aria-hidden="true" />
           수정

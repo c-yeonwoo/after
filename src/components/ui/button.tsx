@@ -12,22 +12,22 @@ import { cn } from "@/lib/utils";
 // PRD 완료조건 286: 터치 타깃 44px 이상 → 모든 사이즈에 min-h-11(=44px).
 //   글자 크기는 작게 두더라도 탭 영역은 44px 를 확보한다.
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none disabled:border-transparent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control text-sm font-semibold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none disabled:border-transparent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        // 부 행동. 진한 입력칸 테두리(input) 대신 옅은 선을 써서 주 버튼과 위계를 가른다.
+        outline: "border border-border bg-transparent text-foreground hover:bg-muted",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
         link: "text-primary-strong underline-offset-4 hover:underline",
       },
       size: {
         default: "min-h-11 px-4 py-2",
         sm: "min-h-11 rounded-control px-3 text-xs",
-        lg: "min-h-12 rounded-control px-8",
+        lg: "min-h-12 rounded-control px-6 text-[0.9375rem]",
         icon: "size-11",
       },
     },

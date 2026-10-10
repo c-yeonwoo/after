@@ -400,7 +400,7 @@ function Onboarding() {
           <div>
             <p className="text-sm font-semibold text-foreground">프로필 사진 (필수)</p>
             <div className="mt-3 flex items-center gap-4">
-              <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
+              <div className="size-24 shrink-0 overflow-hidden rounded-surface border border-border bg-muted">
                 {shownPhoto ? (
                   <img
                     src={shownPhoto}
@@ -416,7 +416,7 @@ function Onboarding() {
               <div className="min-w-0">
                 <label
                   htmlFor="photo"
-                  className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
+                  className="inline-flex min-h-11 cursor-pointer items-center rounded-control border border-border px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-ring"
                 >
                   {photoBusy ? "올리는 중…" : basics.photo ? "사진 변경" : "사진 선택"}
                   <input
@@ -948,7 +948,7 @@ function Onboarding() {
                     type="button"
                     aria-label={`${label} 지우기`}
                     onClick={() => patch({ interests: seeds.filter((v) => v !== label) })}
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-sm text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-border bg-card px-4 text-sm text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     {label}
                     <X className="size-3.5 text-muted-foreground" aria-hidden="true" />
@@ -1161,7 +1161,7 @@ function Onboarding() {
       title="이렇게 소개해도 될까요?"
       description="적어 주신 답으로 만든 초안이에요. 고쳐 써도 돼요."
     >
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-surface border border-border bg-card">
         {shownPhoto ? (
           <img src={shownPhoto} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
         ) : null}
@@ -1221,7 +1221,7 @@ function Onboarding() {
                   if (!composed) setIntro(buildIntro({ ...profile, headline: line }));
                 }}
                 className={cn(
-                  "w-full rounded-xl border border-border bg-card p-4 text-left text-sm leading-relaxed transition-colors",
+                  "w-full rounded-control border border-border bg-card p-4 text-left text-sm leading-relaxed transition-colors",
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   selected
                     ? "border-primary-strong bg-primary/10"
@@ -1333,7 +1333,7 @@ function ChoiceCard({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        "min-h-11 rounded-xl border border-border bg-card p-5 text-left transition-colors",
+        "min-h-11 rounded-control border border-border bg-card p-5 text-left transition-colors",
         "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         selected && "border-primary-strong bg-primary/10 ring-1 ring-primary-strong",
         disabled ? "cursor-not-allowed opacity-60" : "hover:border-primary-strong/60",

@@ -92,7 +92,7 @@ function TicketPage() {
         </GuideNote>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="mt-6 overflow-hidden rounded-surface border border-border bg-card shadow-card">
         <div className="bg-primary px-6 py-6 text-primary-foreground">
           <Ticket className="size-5 text-primary-foreground" aria-hidden="true" />
           <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -119,7 +119,7 @@ function TicketPage() {
       </div>
 
       {waiting ? (
-        <div className="mt-7 rounded-2xl border border-dashed border-border px-6 py-8 text-center">
+        <div className="mt-7 rounded-surface bg-surface-subtle px-6 py-8 text-center">
           <p className="text-sm font-medium">답변을 기다리는 중입니다</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             상대가 후보 하나를 고르면 약속이 정해집니다. 거절하거나 24시간 안에 답이 없으면 티켓은
@@ -157,7 +157,7 @@ function TicketPage() {
           </p>
         </div>
       ) : order && paid ? (
-        <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
+        <div className="mt-7 rounded-surface border border-primary/30 bg-primary/8 px-6 py-7 text-center">
           <p className="text-sm font-semibold text-foreground">결제를 기다리는 주문이 있습니다</p>
           <p className="mt-2 text-xs text-muted-foreground">
             결제가 끝나면 만남 티켓을 바로 사용할 수 있습니다.
@@ -170,7 +170,7 @@ function TicketPage() {
           </Button>
         </div>
       ) : order ? (
-        <div className="mt-7 rounded-2xl border border-primary/30 bg-primary/8 px-6 py-7 text-center">
+        <div className="mt-7 rounded-surface border border-primary/30 bg-primary/8 px-6 py-7 text-center">
           <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             만남 티켓이 준비되면 이 화면에서 바로 사용하실 수 있습니다. 그때까지 소개는 그대로 열려

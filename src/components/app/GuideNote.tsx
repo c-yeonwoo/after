@@ -63,7 +63,11 @@ export function GuideNote({
   const lines = splitSentences(children);
 
   return (
-    <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
+    /*
+      안내는 상자가 아니라 옅은 바탕 한 장이다. 테두리 친 카드와 같은 모양이면
+      "읽을 것" 과 "누를 것" 이 구분되지 않는다(2026-10-10 디자인 정리).
+    */
+    <div className="overflow-hidden rounded-surface bg-surface-subtle">
       <div className="px-5 pt-4 pb-5">
         {lines ? (
           <div className="space-y-1.5">
@@ -88,7 +92,7 @@ export function GuideNote({
         행동은 카드 아래 끝에 붙인다. 안쪽 여백 안에 버튼을 넣으면 카드 안에 또
         카드가 있는 모양이 되어, 눌러야 할 것과 읽어야 할 것의 경계가 흐려진다.
       */}
-      {action ? <div className="border-t border-border">{action}</div> : null}
+      {action ? <div className="border-t border-border/70">{action}</div> : null}
     </div>
   );
 }

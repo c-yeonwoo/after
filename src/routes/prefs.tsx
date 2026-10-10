@@ -130,7 +130,7 @@ function PrefsPage() {
   if (!meetingId) {
     return (
       <AppScreen title="만남 선호" hideTabs back="/requests">
-        <div className="mt-16 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
+        <div className="mt-16 rounded-surface bg-surface-subtle px-6 py-12 text-center">
           <p className="text-sm font-medium">지금 답할 선호가 없습니다</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             상대가 만남 티켓을 사용하면 이곳에서 답할 수 있습니다.
@@ -245,7 +245,7 @@ function PrefsPage() {
             })}
           </ul>
         ) : (
-          <p className="mt-3 rounded-surface border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+          <p className="mt-3 rounded-surface bg-surface-subtle px-4 py-6 text-center text-xs text-muted-foreground">
             위 달력에서 편한 날을 눌러 주세요.
           </p>
         )}

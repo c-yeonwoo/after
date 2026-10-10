@@ -196,7 +196,7 @@ function SettingsPage() {
           조용히 환불되므로 편의가 아니라 상대에 대한 의무다. 대신 아래
           "잠시 쉬기"로 새 소개 자체를 멈출 수 있다 — 그게 진짜 필요한 것이었다.
         */}
-        <div className="mt-3 rounded-surface border border-dashed border-border px-5 py-4">
+        <div className="mt-3 rounded-surface bg-surface-subtle px-5 py-4">
           <p className="text-sm font-medium">만남 진행 알림</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             소개 도착 · 요청 · 답변 · 만남 확정은 끌 수 없습니다. 당분간 소개를 받지 않으시려면 아래

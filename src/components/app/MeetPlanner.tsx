@@ -36,7 +36,7 @@ export function MeetPlanner({
 
   if (confirmed) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+      <div className="rounded-surface border border-border bg-card p-5 shadow-card">
         <div className="flex items-center gap-2">
           <CalendarCheck className="size-4 text-primary" aria-hidden="true" />
           <p className="text-sm font-semibold">만남 확정</p>
@@ -51,7 +51,7 @@ export function MeetPlanner({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+    <div className="rounded-surface border border-border bg-card p-5 shadow-card">
       <div className="flex items-center gap-2">
         <CalendarCheck className="size-4 text-primary" aria-hidden="true" />
         <p className="text-sm font-semibold">약속 정하기</p>
@@ -73,7 +73,7 @@ export function MeetPlanner({
             aria-pressed={date === iso}
             onClick={() => setDate(iso)}
             className={cn(
-              "min-h-12 w-full rounded-xl border px-4 text-left text-sm transition-colors",
+              "min-h-12 w-full rounded-control border px-4 text-left text-sm transition-colors",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               date === iso
                 ? "border-primary bg-primary font-semibold text-primary-foreground"
@@ -103,7 +103,7 @@ export function MeetPlanner({
             aria-pressed={placeKind === h}
             onClick={() => setPlaceKind((prev) => (prev === h ? null : h))}
             className={cn(
-              "min-h-11 rounded-full border px-3 text-xs transition-colors",
+              "min-h-11 rounded-control border px-3 text-xs transition-colors",
               placeKind === h
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background",

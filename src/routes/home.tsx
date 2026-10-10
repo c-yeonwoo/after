@@ -152,7 +152,7 @@ function HomePage() {
 
   return (
     <AppScreen>
-      <p className="mt-4 text-3xs font-semibold text-muted-foreground">
+      <p className="mt-4 text-2xs font-medium text-muted-foreground">
         {hub?.label ?? PRIMARY_HUB.label}
       </p>
       {/*
@@ -164,16 +164,19 @@ function HomePage() {
         강조색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
         상태 문장이 저절로 앞으로 나온다. 살구색은 작은 포인트와 선택 상태에 쓴다.
       */}
-      <h1 className="headline mt-2 text-3xl leading-[1.35]">
-        <span className="text-muted-foreground">{me?.name ? `${me.name}님,` : "안녕하세요,"}</span>
-        <br />
-        {headline}
-      </h1>
+      {/*
+        인사와 상태를 두 색·두 줄 39px 로 쌓던 것을 나눈다(2026-10-10 디자인 정리).
+        화면에서 가장 큰 글자는 상태 한 문장이고, 소개장과 같은 명조로 쓴다.
+      */}
+      <p className="mt-1 text-sm text-muted-foreground">
+        {me?.name ? `${me.name}님,` : "안녕하세요,"}
+      </p>
+      <h1 className="serif mt-1 text-[1.75rem] leading-[1.35] font-semibold">{headline}</h1>
 
       {me && !me.notification_email_verified_at ? (
         <Link
           to="/settings"
-          className="mt-4 flex min-h-11 items-center justify-between rounded-control border border-border bg-card px-4 text-xs font-medium text-foreground"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary-strong underline-offset-4 hover:underline"
         >
           <span>소개 알림 받을 이메일 설정</span>
           <ArrowRight className="size-4" aria-hidden="true" />
@@ -191,7 +194,7 @@ function HomePage() {
         따로 두면 같은 내용을 두 번 말하게 된다 — 예전 "다음 단계" 리스트와 같은 중복이었다.
         확정 상태처럼 카드 자체가 정보를 다 담는 경우엔 별도 안내를 보태지 않는다.
       */}
-      <div className="mt-5">
+      <div className="mt-7">
         {loading ? (
           <div className="rounded-surface border border-border bg-card px-6 py-10 text-center">
             <p className="text-sm text-muted-foreground">불러오는 중입니다…</p>
@@ -559,7 +562,7 @@ function ConfirmedCard({
           만남 확정
         </p>
         {meeting.scheduled_at ? (
-          <p className="headline mt-2.5 text-xl text-primary-foreground">
+          <p className="serif mt-2 text-2xl font-semibold text-primary-foreground">
             {formatWhen(meeting.scheduled_at)}
           </p>
         ) : null}

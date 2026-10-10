@@ -103,7 +103,7 @@ function MePage() {
       */}
       <div className="mt-3 rounded-surface border border-border bg-card p-5 shadow-card">
         <div className="flex items-center gap-4">
-          <div className="size-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
+          <div className="size-16 shrink-0 overflow-hidden rounded-surface border border-border bg-muted">
             {photo ? (
               <img src={photo} alt="" className="size-full object-cover" />
             ) : (
