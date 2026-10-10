@@ -130,7 +130,7 @@ select is_empty(
          'admin_cancel_meeting','admin_curation_targets','admin_curator_stats','admin_dashboard',
          'admin_fulfill_order','admin_like_pool','admin_marketplace_health','admin_meetings',
          'admin_member_detail','admin_members','admin_no_show_reports','admin_operational_health',
-         'admin_photo_queue','admin_preference_compare','admin_queue','admin_reports',
+         'admin_photo_queue','admin_queue','admin_reports',
          'admin_reset_photo','admin_resolve_no_show','admin_retry_notifications','admin_review_photo',
          'admin_set_account_state','admin_set_payments','admin_set_queue','admin_system_overview',
          'admin_ticket_orders','block_user','confirm_meeting','create_my_profile','create_ticket_order',
@@ -146,7 +146,7 @@ select is_empty(
            and p.proname = fe.n
            and has_function_privilege('authenticated', p.oid, 'EXECUTE')
       ) $$,
-  'T14 화면이 부르는 RPC 53개는 모두 로그인 사용자가 실행할 수 있다'
+  'T14 화면이 부르는 RPC 52개는 모두 로그인 사용자가 실행할 수 있다'
 );
 
 select * from finish();

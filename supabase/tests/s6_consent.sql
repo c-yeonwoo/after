@@ -31,6 +31,11 @@ select is(
 );
 
 -- ═════════ T2 — RLS: 여성에게 미동의 남성이 보이지 않는다 (버그 3 재발 방지) ═════════
+-- s49b: 후보·소개 자격에 승인된 사진이 필요하다(D5). 이 파일의 픽스처에만 사진을 채운다.
+-- photo_url 을 바꾸면 트리거가 검수를 pending 으로 되돌리므로 승인은 따로 한다.
+update profiles set photo_url = id::text || '/portrait.png' where photo_url is null and (id::text like 'eeee0001-%' or id::text like 'eeee0002-%');
+update profiles set photo_state = 'approved', photo_reviewed_at = now() where photo_url = id::text || '/portrait.png' and (id::text like 'eeee0001-%' or id::text like 'eeee0002-%');
+
 set local "request.jwt.claims" to '{"sub":"eeee0001-0000-0000-0000-000000000001","role":"authenticated"}';
 set local role authenticated;
 select is(

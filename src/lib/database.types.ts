@@ -1823,8 +1823,6 @@ export type Database = {
           name: string
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string
-          pref_agree: number
-          pref_both: number
           religion: string
           smoking: string
           topics: string[]
@@ -1917,14 +1915,6 @@ export type Database = {
           photo_url: string
           reject_reason: string
           updated_at: string
-        }[]
-      }
-      admin_preference_compare: {
-        Args: { p_female: string; p_male: string }
-        Returns: {
-          female_choice: number
-          male_choice: number
-          question_id: number
         }[]
       }
       admin_queue: {
@@ -2488,13 +2478,6 @@ export type Database = {
         }
       }
       pass_intro: { Args: { p_intro_id: string }; Returns: undefined }
-      preference_agreement: {
-        Args: { p_a: string; p_b: string }
-        Returns: {
-          agree: number
-          answered_both: number
-        }[]
-      }
       private_open_at: {
         Args: { p_confirmed: string; p_scheduled: string }
         Returns: string
@@ -2913,6 +2896,7 @@ export type Database = {
         | "intro_delivered"
         | "candidates_refilled"
         | "no_show_response_required"
+        | "meeting_released"
       photo_state: "pending" | "approved" | "rejected"
       report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
@@ -3069,6 +3053,7 @@ export const Constants = {
         "intro_delivered",
         "candidates_refilled",
         "no_show_response_required",
+        "meeting_released",
       ],
       photo_state: ["pending", "approved", "rejected"],
       report_kind: ["profile", "message"],

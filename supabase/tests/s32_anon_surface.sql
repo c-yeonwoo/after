@@ -9,7 +9,7 @@
 -- 검사로만 잡을 수 있다.
 
 begin;
-select plan(3);
+select plan(2);
 
 select is_empty(
   $$ select c.relname::text
@@ -35,15 +35,6 @@ select is_empty(
   'T2 anon 이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
 );
 
-/*
-  취향 겹침은 로그인 사용자에게도 닫혀 있어야 한다. 답을 못 읽어도 "몇 개
-  맞는지" 를 알면 상대의 답이 대부분 복원된다.
-*/
-select ok(
-  not has_function_privilege('authenticated',
-    'preference_agreement(uuid,uuid)'::regprocedure, 'EXECUTE'),
-  'T3 취향 겹침 계산은 로그인 사용자에게도 닫혀 있다'
-);
 
 select * from finish();
 rollback;

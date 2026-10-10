@@ -41,6 +41,11 @@ insert into affinities (from_id, to_id, verdict) values
 select issue_ticket('bbbb0001-0000-0000-0000-000000000001', 'pay_test_0001', 30000);
 
 -- M1 의 소개를 연다 (auth.uid() 는 GUC 를 읽으므로 superuser 로도 함수 경로를 그대로 탄다)
+-- s49b: 후보·소개 자격에 승인된 사진이 필요하다(D5). 이 파일의 픽스처에만 사진을 채운다.
+-- photo_url 을 바꾸면 트리거가 검수를 pending 으로 되돌리므로 승인은 따로 한다.
+update profiles set photo_url = id::text || '/portrait.png' where photo_url is null and (id::text like 'aaaa0001-%' or id::text like 'bbbb0001-%' or id::text like 'bbbb0002-%');
+update profiles set photo_state = 'approved', photo_reviewed_at = now() where photo_url = id::text || '/portrait.png' and (id::text like 'aaaa0001-%' or id::text like 'bbbb0001-%' or id::text like 'bbbb0002-%');
+
 set local "request.jwt.claims" to '{"sub":"bbbb0001-0000-0000-0000-000000000001","role":"authenticated"}';
 /*
   v2(s20): 소개는 운영자 큐에서 나오고 열람에 **소개 티켓 1장**을 쓴다.

@@ -27,6 +27,11 @@ values
   ('d0000000-0000-0000-0000-000000000003','male',  'pangyo','nc3@t.co',now(),'디남2','1993-01-05','기획자',  7,now(),now(), now() - interval '8 day'),
   ('d0000000-0000-0000-0000-000000000004','male',  'pangyo','nc4@t.co',now(),'디남3','1994-02-02','마케터',  4,now(),now(), now() - interval '7 day');
 
+-- s49b: 후보·소개 자격에 승인된 사진이 필요하다(D5). 이 파일의 픽스처에만 사진을 채운다.
+-- photo_url 을 바꾸면 트리거가 검수를 pending 으로 되돌리므로 승인은 따로 한다.
+update profiles set photo_url = id::text || '/portrait.png' where photo_url is null and (id::text like 'd0000000-%');
+update profiles set photo_state = 'approved', photo_reviewed_at = now() where photo_url = id::text || '/portrait.png' and (id::text like 'd0000000-%');
+
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"d0000000-0000-0000-0000-000000000001","role":"authenticated"}';
 
