@@ -787,6 +787,61 @@ export async function myStats(): Promise<MyStats | null> {
  * 이미 손에 들고 있고, 문장이 더 좋아지지 않았다고 가입을 막을 이유가 없습니다.
  * 모델이 거절했든, 시간이 초과됐든, 키가 없든 화면은 같게 동작합니다.
  */
+// ─────────────────────── 휴대폰 인증 (s54) ───────────────────────
+
+export type PhoneCodeResult = { phone: string; sent: boolean; devCode?: string };
+
+/** 서버가 정한 거절 사유 → 화면 문장. */
+export function phoneErrorMessage(reason: string | undefined) {
+  switch (reason) {
+    case "invalid phone":
+      return "휴대폰 번호를 다시 확인해 주세요.";
+    case "phone in use":
+      return "이미 다른 계정에서 인증한 번호예요.";
+    case "too soon":
+      return "1분 뒤에 다시 받을 수 있어요.";
+    case "daily limit":
+      return "오늘은 더 받을 수 없어요. 내일 다시 시도해 주세요.";
+    case "wrong code":
+      return "인증번호가 맞지 않아요.";
+    case "code expired":
+      return "인증번호가 만료됐어요. 다시 받아 주세요.";
+    case "not configured":
+      return "지금은 문자를 보낼 수 없어요. 잠시 후 다시 시도해 주세요.";
+    default:
+      return "인증하지 못했어요. 잠시 후 다시 시도해 주세요.";
+  }
+}
+
+/** 인증번호 문자를 보낸다(Edge Function phone-otp). 실패하면 사유 문자열로 throw. */
+export async function sendPhoneCode(phone: string): Promise<PhoneCodeResult> {
+  const { data, error } = await supabase.functions.invoke<PhoneCodeResult>("phone-otp", {
+    body: { phone },
+  });
+  if (error) {
+    // FunctionsHttpError 는 응답 본문을 context 에 들고 있다.
+    let reason: string | undefined;
+    try {
+      reason = (await (error as { context?: Response }).context?.json())?.error;
+    } catch {
+      reason = undefined;
+    }
+    throw new Error(reason ?? "send failed");
+  }
+  return data!;
+}
+
+export async function verifyPhoneCode(phone: string, code: string): Promise<Profile> {
+  const { data, error } = await supabase.rpc("verify_phone_code", { p_phone: phone, p_code: code });
+  if (error) {
+    const known = ["wrong code", "code expired", "phone in use"].find((k) =>
+      error.message?.includes(k),
+    );
+    throw new Error(known ?? "verify failed");
+  }
+  return data;
+}
+
 export type ComposedProfile = {
   headlines: string[];
   intro: string;

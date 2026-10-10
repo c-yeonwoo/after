@@ -47,7 +47,7 @@ select ok(
 
 -- s49b: 후보·소개 자격에 승인된 사진이 필요하다(D5). 이 파일의 픽스처에만 사진을 채운다.
 -- photo_url 을 바꾸면 트리거가 검수를 pending 으로 되돌리므로 승인은 따로 한다.
-update profiles set photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where photo_url is null and (id::text like 'a0000000-%');
+update profiles set phone_verified_at = now(), photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where photo_url is null and (id::text like 'a0000000-%');
 update profiles set photo_state = 'approved', photo_reviewed_at = now() where photo_url = id::text || '/portrait.png' and (id::text like 'a0000000-%');
 
 set local role authenticated;

@@ -27,7 +27,7 @@ values
   ('50000000-0000-0000-0000-0000000000ad','male','gangnam','admin50@corp.example',now(),'운영','1990-01-01','운영',
    null, '{}', '{}', 7,now(),now(),'admin');
 
-update profiles set photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where id::text like '50000000-%';
+update profiles set phone_verified_at = now(), photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where id::text like '50000000-%';
 update profiles set photo_state = 'approved', photo_reviewed_at = now()
  where photo_url = id::text || '/portrait.png' and id::text like '50000000-%';
 

@@ -31,6 +31,7 @@ import { Route as StoreRouteImport } from './routes/store'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketRouteImport } from './routes/ticket'
+import { Route as VerifyPhoneRouteImport } from './routes/verify-phone'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCurationRouteImport } from './routes/admin.curation'
 import { Route as AdminMeetingsRouteImport } from './routes/admin.meetings'
@@ -155,6 +156,11 @@ const TicketRoute = TicketRouteImport.update({
   path: '/ticket',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyPhoneRoute = VerifyPhoneRouteImport.update({
+  id: '/verify-phone',
+  path: '/verify-phone',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/verify-phone': typeof VerifyPhoneRoute
   '/admin/curation': typeof AdminCurationRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/verify-phone': typeof VerifyPhoneRoute
   '/admin/curation': typeof AdminCurationRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/ticket': typeof TicketRoute
+  '/verify-phone': typeof VerifyPhoneRoute
   '/admin/curation': typeof AdminCurationRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/ticket'
+    | '/verify-phone'
     | '/admin/curation'
     | '/admin/meetings'
     | '/admin/members'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/ticket'
+    | '/verify-phone'
     | '/admin/curation'
     | '/admin/meetings'
     | '/admin/members'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/ticket'
+    | '/verify-phone'
     | '/admin/curation'
     | '/admin/meetings'
     | '/admin/members'
@@ -468,6 +480,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   TicketRoute: typeof TicketRoute
+  VerifyPhoneRoute: typeof VerifyPhoneRoute
   ChatIdRoute: typeof ChatIdRoute
   PaymentFailRoute: typeof PaymentFailRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
@@ -629,6 +642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TicketRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify-phone': {
+      id: '/verify-phone'
+      path: '/verify-phone'
+      fullPath: '/verify-phone'
+      preLoaderRoute: typeof VerifyPhoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -784,6 +804,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   TicketRoute: TicketRoute,
+  VerifyPhoneRoute: VerifyPhoneRoute,
   ChatIdRoute: ChatIdRoute,
   PaymentFailRoute: PaymentFailRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
