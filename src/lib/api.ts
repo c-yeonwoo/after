@@ -649,6 +649,47 @@ export async function ensureOpenIntro(): Promise<OpenIntroResult> {
 export type TicketKind = "intro" | "meeting";
 
 /** 티켓 차감 + 만남 생성. 이름이 "use"로 시작하면 React 훅으로 오인되므로 redeem 을 쓴다. */
+// ─────────── 확정 약속 (s51, D1-B) ───────────
+
+/** 운영팀이 내 권역에 골라 둔 약속 장소. 예약이 아니라 "가기 좋은 곳" 목록이다. */
+export type MeetPlace = Database["public"]["Functions"]["meet_places_for_me"]["Returns"][number];
+
+export async function meetPlacesForMe(): Promise<MeetPlace[]> {
+  const { data, error } = await supabase.rpc("meet_places_for_me");
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * 만남 티켓을 쓰면서 평일 저녁 후보 1~3개와 장소 하나를 같이 보낸다.
+ * 장소는 목록에서 고르거나(placeId), 목록이 비었으면 직접 적는다(placeName).
+ * 티켓 사용과 후보 저장은 서버에서 한 트랜잭션이다.
+ */
+export async function requestMeeting(
+  introId: string,
+  slots: string[],
+  place: { placeId: string } | { placeName: string },
+): Promise<Meeting> {
+  const { data, error } = await supabase.rpc("request_meeting", {
+    p_intro_id: introId,
+    p_slots: slots,
+    p_place_id: "placeId" in place ? place.placeId : (null as unknown as string),
+    p_place_name: "placeName" in place ? place.placeName : (null as unknown as string),
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** 여성: 후보 하나를 고르면 그 자리에서 약속이 확정된다. */
+export async function acceptMeetingSlot(meetingId: string, index: number): Promise<Meeting> {
+  const { data, error } = await supabase.rpc("accept_meeting_slot", {
+    p_meeting_id: meetingId,
+    p_index: index,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function redeemMeetingTicket(introId: string): Promise<Meeting> {
   const { data, error } = await supabase.rpc("use_meeting_ticket", { p_intro_id: introId });
   if (error) throw error;

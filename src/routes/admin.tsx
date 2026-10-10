@@ -9,6 +9,7 @@ import {
   Settings2,
   ShieldCheck,
   Users,
+  MapPin,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -52,6 +53,7 @@ const NAV: { label: string; items: AdminNavItem[] }[] = [
     items: [
       { to: "/admin/curation", label: "큐레이션", icon: HeartHandshake },
       { to: "/admin/meetings", label: "만남", icon: CalendarCheck },
+      { to: "/admin/places", label: "약속 장소", icon: MapPin },
     ],
   },
   {

@@ -586,3 +586,41 @@ export async function fulfillOrder(orderId: string, note: string): Promise<void>
   });
   if (error) throw error;
 }
+
+// ─────────────────── 약속 장소 (s51) ───────────────────
+
+export type MeetPlaceRow = Database["public"]["Tables"]["meet_places"]["Row"];
+
+export async function fetchMeetPlaces(): Promise<MeetPlaceRow[]> {
+  const { data, error } = await supabase.rpc("admin_meet_places");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export type MeetPlaceInput = {
+  id: string | null;
+  hubId: string;
+  name: string;
+  station: string;
+  kind: string;
+  address: string;
+  mapUrl: string;
+  note: string;
+  active: boolean;
+};
+
+export async function upsertMeetPlace(p: MeetPlaceInput): Promise<MeetPlaceRow> {
+  const { data, error } = await supabase.rpc("admin_upsert_meet_place", {
+    p_id: p.id as string,
+    p_hub_id: p.hubId,
+    p_name: p.name,
+    p_station: p.station,
+    p_kind: p.kind,
+    p_address: p.address,
+    p_map_url: p.mapUrl,
+    p_note: p.note,
+    p_active: p.active,
+  });
+  if (error) throw error;
+  return data;
+}
