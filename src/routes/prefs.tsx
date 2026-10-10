@@ -157,9 +157,7 @@ function PrefsPage() {
         </p>
 
         <div className="mt-3 rounded-surface border border-border bg-card px-4 pt-4 pb-3">
-          <p className="text-3xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            {monthLabel}
-          </p>
+          <p className="text-3xs font-semibold text-muted-foreground">{monthLabel}</p>
           <div className="mt-2.5 grid grid-cols-7 gap-1">
             {WEEKDAYS.map((w) => (
               <span

@@ -38,15 +38,27 @@
   --font-hero: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
 
   /*
+   * 소개장(D3, 2026-10-10) — 사람의 문장을 읽히게 하는 세리프.
+   * 사람 이름·한 줄 소개·소개글·랜딩 제목에만 쓴다. 버튼·라벨·폼은 Pretendard 다.
+   * 세리프를 UI 전체에 깔면 "청첩장·결정사" 로 미끄러진다(진단 디자인 C 리스크).
+   */
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
+
+  /*
    * 타입 스케일 — Tailwind 기본 스텝(xs .75 / sm .875 / base 1 / lg 1.125 …)은
    * 그대로 쓰고, 그 아래 마이크로 단계만 추가한다. 기존 코드에 0.6~0.7rem 사이
    * 임의값이 6종(0.6·0.62·0.65·0.66·0.68·0.7)이나 흩어져 있었는데 서로 구분이
    * 안 되는 수치였다 — 두 단계로 정리한다.
    */
-  --text-3xs: 0.625rem; /* 10px — 아이브로우, 대문자 라벨 */
-  --text-3xs--line-height: 1.4;
-  --text-2xs: 0.6875rem; /* 11px — 마이크로 캡션·칩 */
-  --text-2xs--line-height: 1.45;
+  /*
+   * 두 마이크로 단계를 12px 로 올렸다(2026-10-10). 10px 대문자 라벨이 17곳, 12px
+   * 미만이 39곳이었고 리브랜딩 계획의 "작은 레이블 12px 이상" 이 미이행이었다.
+   * 이름은 그대로 둔다 — 쓰는 곳 수십 곳을 한 번에 키우는 가장 작은 변경이다.
+   */
+  --text-3xs: 0.75rem; /* 12px — 라벨 */
+  --text-3xs--line-height: 1.45;
+  --text-2xs: 0.75rem; /* 12px — 캡션·칩 */
+  --text-2xs--line-height: 1.5;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -146,9 +158,12 @@
 }
 
 /*
- * 애프터 — 종이·잉크·절제된 살구.
+ * 애프터 — 소개장 (D3, 2026-10-10).
  *
- * 라이트·다크 모두 종이색과 차콜 잉크를 바탕으로, 살구색을 작은 강조에 쓴다.
+ * 크림 종이 위에 만년필 잉크(짙은 녹회색)로 쓰고, 봉랍색 하나를 작은 강조에 쓴다.
+ * 다크는 같은 잉크를 밤 종이 위에 뒤집는다. 성별 색 구분·금색·그라데이션은 없다.
+ * 이전 팔레트(따뜻한 종이 #F7F5F0 + 잉크 #252A34 + 살구)는 화면 골격을 그대로 둔 채
+ * 색만 바꿨다는 진단을 받았다 — 이번엔 글자(세리프)와 프로필 구성도 함께 바꾼다.
  *
  * 값은 hex 로 정하고 대비를 검증한 뒤 oklch 로 옮겼다 — 주석의 hex 가 원본이다.
  * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
@@ -166,40 +181,39 @@
   /* 입력폼은 한 단계 더 각지게 */
   --radius-field-value: 0.5rem;
 
-  /* ── 브랜드 원천 값 (single source of truth) — 웜 뉴트럴 & 살구 ── */
-  --brand-50: oklch(0.985 0.004 75);
-  --brand-100: oklch(0.970 0.007 75);
-  --brand-200: oklch(0.948 0.011 75);
-  --brand-300: oklch(0.910 0.024 58);
-  --brand-400: oklch(0.821 0.065 50); /* #E8B99F */
-  --brand-500: oklch(0.702 0.106 47); /* #D58A64 */
-  --brand-600: oklch(0.637 0.103 44); /* #BF7656 */
-  /* 진한 살구 갈색은 밝은 표면의 작은 강조 텍스트에 사용한다. */
-  --brand-700: oklch(0.543 0.117 41); /* #A75536 */
-  --brand-800: oklch(0.513 0.111 40); /* #9B4E32 */
+  /* ── 브랜드 원천 값 — 봉랍(seal) 한 색 ── */
+  --brand-50: oklch(0.98 0.009 84.6); /* #FBF8F2 */
+  --brand-100: oklch(0.957 0.015 80.7); /* #F6F0E6 */
+  --brand-200: oklch(0.929 0.024 77.5); /* #F1E6D6 */
+  --brand-300: oklch(0.883 0.031 49.4); /* #EAD3C7 */
+  --brand-400: oklch(0.711 0.084 39.8); /* #D0907A */
+  --brand-500: oklch(0.562 0.133 36); /* #B5543A */
+  --brand-600: oklch(0.518 0.132 35.8); /* #A6472E */
+  --brand-700: oklch(0.487 0.133 35.7); /* #9C3D24 — 봉랍 */
+  --brand-800: oklch(0.434 0.12 35.1); /* #86321D */
 
-  /* 따뜻한 포인트는 장식·선택 상태에만 제한해 쓴다. */
-  --brand-signature: var(--brand-500);
-  --brand-text: var(--brand-800);
-  --brand-tint: oklch(0.927 0.021 61); /* #F2E4D9 */
+  /* 봉랍: 로고 점·인용부호·링크·선택 표시. 큰 면으로 쓰지 않는다. */
+  --brand-signature: var(--brand-700);
+  --brand-text: var(--brand-700);
+  --brand-tint: oklch(0.929 0.024 77.5); /* #F1E6D6 — 선택 면·내 말풍선 */
   --peach-300: var(--brand-tint);
   --peach-500: var(--brand-signature);
 
-  /* 잉크는 순검정 대신 차콜을 쓴다. */
-  --ink: oklch(0.284 0.020 264); /* #252A34 */
-  --ink-muted: oklch(0.522 0.011 253); /* #656A70 */
-  /* 배경은 따뜻한 종이색, 카드는 깨끗한 흰색으로 구분한다. */
-  --surface: oklch(1 0 0); /* #FFFFFF */
-  --surface-subtle: oklch(0.934 0.010 87); /* #ECE9E2 */
-  --success: oklch(0.492 0.060 164); /* #3F6C58 */
+  /* 만년필 잉크 */
+  --ink: oklch(0.295 0.02 169.4); /* #23302B */
+  --ink-muted: oklch(0.513 0.016 162); /* #5F6A64 — 크림 5.22 · 카드 5.53 · 보조면 4.66 */
+
+  --surface: oklch(0.994 0.007 88.6); /* #FFFDF8 */
+  --surface-subtle: oklch(0.936 0.016 82.8); /* #EFE9DE */
+  --success: oklch(0.492 0.06 164); /* #3F6C58 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
 
-  --shadow-frame: 0 0 70px -24px oklch(0.221 0.02 264 / 18%);
-  --shadow-card: 0 12px 32px -22px oklch(0.221 0.02 264 / 18%);
-  --shadow-brand: 0 14px 34px -18px oklch(0.585 0.09 48 / 25%);
+  --shadow-frame: 0 0 70px -24px oklch(0.295 0.02 169 / 16%);
+  --shadow-card: 0 12px 32px -24px oklch(0.295 0.02 169 / 16%);
+  --shadow-brand: 0 14px 34px -18px oklch(0.487 0.133 36 / 20%);
 
-  /* ── 시맨틱 토큰 (브랜드 값에서 파생) ── */
-  --background: oklch(0.970 0.007 88.6); /* #F7F5F0 */
+  /* ── 시맨틱 (shadcn) ── */
+  --background: oklch(0.974 0.011 84.6); /* #FAF6EE 크림 */
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
@@ -207,31 +221,14 @@
   --popover-foreground: var(--ink);
   /*
     ── 두 토큰의 역할이 갈린다 ──
-    --primary        = **채움**. 버튼·카드처럼 면으로 쓰는 자리.
-    --primary-strong = **글자·아이콘**. 밝은 배경 위에 얹는 자리.
-
-    예전에는 하나가 둘을 겸했다. 그래서 채움을 밝히려면 글자가 안 읽히고, 글자를
-    지키려면 화면이 어두워지는 교착이 있었다. 역할을 나누면 채움은 로즈로 밝히고
-    글자는 진한 로즈로 남길 수 있다 — 다크 테마가 원래 이렇게 되어 있었다.
-
-    `text-primary` 를 쓰던 자리는 `text-primary-strong` 으로 옮겼다. 남겨 둔 곳은
-    랜딩·로그인뿐이고, 거기는 항상 어두운 바탕이라 로즈가 그대로 읽힌다.
+    --primary        = **채움**. 버튼처럼 면으로 쓰는 자리 — 잉크.
+    --primary-strong = **글자·아이콘·선택 표시** — 봉랍.
   */
-  --primary: var(--ink); /* #252A34 */
-  /*
-    글자 역할은 **통과하는 가장 밝은 쪽**으로 잡는다(#B23A63).
+  --primary: var(--ink); /* #23302B — 크림 글자 12.74 */
+  --primary-strong: var(--brand-text); /* #9B3D24 봉랍 — 크림 6.27 · 카드 6.65 · 선택면 5.48 */
+  --primary-foreground: oklch(0.974 0.011 84.6); /* #FAF6EE */
 
-    처음엔 brand-800(#8E2A4A)을 썼는데, 그러면 채움을 로즈로 밝혀 놓고 글자만
-    예전보다 더 어두워진다 — 홈 헤드라인이 실제로 그렇게 나왔다. 밝기를 올리다
-    막히는 지점은 **틴트 표면 위**다(bg-primary/8). 거기서 4.85 가 남는 값이
-    여기까지고, 한 단계 더(#BC4066) 가면 4.40 으로 미달한다.
-  */
-  --primary-strong: var(--brand-text); /* #9B4E32 */
-
-  /* 로즈 채움 위에는 흰 글자가 아니라 **잉크**가 올라간다(5.45). */
-  --primary-foreground: oklch(1 0 0); /* #FFFFFF */
-
-  /* 내 말풍선은 엷은 살구 틴트로 구분한다. */
+  /* 내 말풍선·선택 면은 엷은 종이 틴트, 글자는 잉크(11.14). */
   --bubble-mine: var(--brand-tint);
   --bubble-mine-foreground: var(--ink);
   --secondary: var(--surface-subtle);
@@ -243,8 +240,8 @@
   /* 브랜드가 로즈(h≈5)라 경고색은 hue 를 벌려 둔다 — 안 그러면 "위험"이 브랜드로 읽힌다. */
   --destructive: oklch(0.532 0.151 22.4); /* #B33F42 */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.889 0.012 84.6); /* #DEDAD2 */
-  --input: oklch(0.611 0.010 84.6); /* #86837D */
+  --border: oklch(0.896 0.019 83.1); /* #E3DCCF */
+  --input: oklch(0.632 0.012 149.8); /* #858C86 — 크림 3.20 */
   /* 포커스 링은 얇은 선이라 채움색으로는 안 보인다(2.14). 글자 역할과 같은 톤을 쓴다. */
   --ring: var(--brand-text);
 
@@ -266,17 +263,18 @@
 .dark {
   color-scheme: dark;
 
-  --ink: oklch(0.963 0.012 84); /* #F6F2EB */
-  --ink-muted: oklch(0.790 0.010 84); /* #B9B7B2 */
+  /* 밤 종이 위의 같은 잉크 */
+  --ink: oklch(0.947 0.014 84.6); /* #F2EDE3 — 배경 14.82 */
+  --ink-muted: oklch(0.75 0.012 149.8); /* #A9B0AA — 배경 7.81 · 카드 6.90 · 보조면 5.97 */
 
-  --surface: oklch(0.318 0.014 263); /* #2B3039 */
-  --surface-subtle: oklch(0.365 0.014 263); /* #353B45 */
+  --surface: oklch(0.263 0.014 163.7); /* #1F2723 */
+  --surface-subtle: oklch(0.307 0.015 161.1); /* #29322D */
 
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 60%);
   --shadow-card: 0 12px 32px -22px oklch(0 0 0 / 50%);
-  --shadow-brand: 0 12px 34px -16px oklch(0.780 0.065 54 / 25%);
+  --shadow-brand: 0 12px 34px -16px oklch(0.813 0.074 66.5 / 18%);
 
-  --background: oklch(0.260 0.014 263); /* #20242C */
+  --background: oklch(0.219 0.011 163.8); /* #161C19 */
   --foreground: var(--ink);
 
   --card: var(--surface);
@@ -284,9 +282,10 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  --primary: oklch(0.790 0.075 54); /* #E7B69A */
-  --primary-foreground: oklch(0.260 0.014 263); /* #20242C */
-  --primary-strong: oklch(0.790 0.075 54);
+  /* 라이트와 같은 몸짓: 버튼은 잉크↔종이를 뒤집는다(14.82). */
+  --primary: var(--ink);
+  --primary-foreground: oklch(0.219 0.011 163.8); /* #161C19 */
+  --primary-strong: oklch(0.813 0.074 66.5); /* #E3B98F 밤의 봉랍 — 배경 9.56 · 카드 8.45 */
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -295,27 +294,27 @@
   --accent: var(--surface-subtle);
   --accent-foreground: var(--ink);
 
-  --destructive: oklch(0.760 0.090 20); /* #F1A1A0 */
-  --destructive-foreground: oklch(0.260 0.014 263);
+  --destructive: oklch(0.76 0.09 20); /* #F1A1A0 */
+  --destructive-foreground: oklch(0.219 0.011 163.8);
 
-  --success: oklch(0.770 0.070 158); /* #95C5AC */
-  --warning: oklch(0.820 0.080 82); /* #E4C285 */
+  --success: oklch(0.77 0.07 158); /* #95C5AC */
+  --warning: oklch(0.82 0.08 82); /* #E4C285 */
 
-  --border: oklch(0.440 0.014 263); /* #484E58 */
-  --input: oklch(0.630 0.010 263); /* #85898F */
-  --ring: var(--primary);
+  --border: oklch(0.349 0.016 163.9); /* #333D38 */
+  --input: oklch(0.614 0.014 156.8); /* #7E8781 — 배경 4.67 */
+  --ring: var(--primary-strong);
 
-  --bubble-mine: oklch(0.360 0.018 58); /* #42362F */
+  --bubble-mine: oklch(0.287 0.015 84.6); /* #2E2A22 — 글자 12.24 */
   --bubble-mine-foreground: var(--ink);
-  --brand-signature: oklch(0.790 0.075 54);
-  --brand-text: oklch(0.790 0.075 54);
-  --brand-tint: oklch(0.360 0.018 58);
+  --brand-signature: oklch(0.813 0.074 66.5);
+  --brand-text: oklch(0.813 0.074 66.5);
+  --brand-tint: oklch(0.287 0.015 84.6);
 
   --chart-1: var(--brand-signature);
   --chart-2: var(--success);
   --chart-3: var(--warning);
-  --chart-4: oklch(0.720 0.070 245);
-  --chart-5: oklch(0.830 0.060 45);
+  --chart-4: oklch(0.72 0.07 245);
+  --chart-5: oklch(0.83 0.06 45);
 
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink);
@@ -324,7 +323,7 @@
   --sidebar-accent: var(--surface-subtle);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--border);
-  --sidebar-ring: var(--primary);
+  --sidebar-ring: var(--primary-strong);
 }
 
 @layer base {
@@ -439,13 +438,20 @@
   }
 }
 
-/* 헤드라인 — Pretendard Bold, 타이트한 자간/행간. 한글·라틴·숫자가 한 서체로 나온다. */
+/* 헤드라인 — Pretendard Bold. 한글은 0.98 행간이면 두 줄이 붙어서 1.25 로 연다. */
 @utility headline {
   font-family: var(--font-display);
   font-weight: 700;
   font-synthesis-weight: none;
-  letter-spacing: -0.03em;
-  line-height: 0.98;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* 소개장 — 사람의 문장(이름·한 줄 소개·소개글·랜딩 제목). */
+@utility serif {
+  font-family: var(--font-serif);
+  font-synthesis-weight: none;
+  letter-spacing: -0.01em;
 }
 
 /* 워드마크 — 소문자 after와 살구 포인트를 사용한다. */

@@ -10,7 +10,7 @@ export function LogoMark({ className }: { className?: string }) {
       viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
-      className={cn("size-6 text-primary-strong", className)}
+      className={cn("size-6 text-foreground", className)}
     >
       <circle cx="13" cy="17" r="7.1" stroke="currentColor" strokeWidth="4.1" />
       <path d="M20.1 17v7" stroke="currentColor" strokeWidth="4.1" strokeLinecap="round" />

@@ -540,8 +540,8 @@ function Cover({ path, name }: { path: string | null; name: string | null }) {
   const url = usePhotoUrl(path);
   if (url) return <img src={url} alt="" className="size-full object-cover" />;
   return (
-    <div className="grid size-full place-items-center bg-gradient-to-br from-primary/70 to-accent">
-      <span className="text-3xl text-background/90">{(name ?? "?").slice(0, 1)}</span>
+    <div className="grid size-full place-items-center bg-muted">
+      <span className="text-3xl text-muted-foreground">{(name ?? "?").slice(0, 1)}</span>
     </div>
   );
 }

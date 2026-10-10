@@ -146,12 +146,27 @@ function audit(themeName, block) {
     4.5,
   );
 
-  console.log("\n── 포커스 링 (비텍스트 3.0) ──");
+  /*
+    본문·보조 글자와 입력 경계는 2026-10-10 까지 검사 밖이었다. 보조 글자가 보조 면
+    위에서 4.50 으로 기준선에 붙어 있었는데 아무도 몰랐다(진단 디자인).
+  */
+  const fg = toS(parseOklch(tokenRaw("foreground")));
+  const mutedFg = toS(parseOklch(tokenRaw("muted-foreground")));
+  const muted = toS(parseOklch(tokenRaw("muted")));
+  console.log("\n── 본문·보조 글자 (4.5) ──");
+  chk("foreground / 배경", cr(fg, bg), 4.5);
+  chk("foreground / 카드", cr(fg, card), 4.5);
+  chk("muted-foreground / 배경", cr(mutedFg, bg), 4.5);
+  chk("muted-foreground / 카드", cr(mutedFg, card), 4.5);
+  chk("muted-foreground / muted", cr(mutedFg, muted), 4.5);
+
+  console.log("\n── 포커스 링·입력 경계 (비텍스트 3.0) ──");
   chk("ring / 배경", cr(toS(parseOklch(tokenRaw("ring"))), bg), 3.0);
+  chk("input / 배경", cr(toS(parseOklch(tokenRaw("input"))), bg), 3.0);
 }
 
-audit("라이트 — 웜 페이퍼", lightBlock);
-audit("잉크 — 다크", darkBlock);
+audit("라이트 — 소개장 크림", lightBlock);
+audit("다크 — 밤 종이", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

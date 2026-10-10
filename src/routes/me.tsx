@@ -141,9 +141,7 @@ function MePage() {
           */}
           {isMale ? (
             <div>
-              <dt className="text-3xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                보유 티켓
-              </dt>
+              <dt className="text-3xs font-semibold text-muted-foreground">보유 티켓</dt>
               <dd className="headline mt-1 text-2xl tabular-nums">
                 {stats ? stats.introTickets : "—"}
                 <span className="ml-1 text-sm font-normal text-muted-foreground">장 소개</span>
@@ -155,9 +153,7 @@ function MePage() {
             </div>
           ) : (
             <div>
-              <dt className="text-3xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                평가 남은 분
-              </dt>
+              <dt className="text-3xs font-semibold text-muted-foreground">평가 남은 분</dt>
               <dd className="headline mt-1 text-2xl tabular-nums">
                 {remaining === null ? "—" : remaining}
                 <span className="ml-1 text-sm font-normal text-muted-foreground">명</span>
@@ -165,9 +161,7 @@ function MePage() {
             </div>
           )}
           <div>
-            <dt className="text-3xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-              만난 횟수
-            </dt>
+            <dt className="text-3xs font-semibold text-muted-foreground">만난 횟수</dt>
             <dd className="headline mt-1 text-2xl tabular-nums">
               {stats ? stats.metCount : "—"}
               <span className="ml-1 text-sm font-normal text-muted-foreground">번</span>

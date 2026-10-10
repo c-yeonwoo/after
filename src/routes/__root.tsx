@@ -109,6 +109,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
       },
       /*
+        소개장(D3)의 세리프. 사람 이름·한 줄 소개·소개글·랜딩 제목에만 쓴다.
+        Google Fonts 가 한글을 unicode-range 조각으로 나눠 주므로 화면에 나온 글자만
+        받는다. SIL OFL 1.1.
+      */
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&display=swap",
+      },
+      /*
         SVG 를 먼저 둔다 — 지원 브라우저는 이걸 쓰고 어느 크기에서도 선명하다.
         ico 는 그걸 못 읽는 브라우저용 폴백이라 뒤에 온다(16·32·48 3종 내장).
         예전 ico 는 256px 한 장 20KB 였는데, 탭에서 쓰는 16px 로 축소될 때
