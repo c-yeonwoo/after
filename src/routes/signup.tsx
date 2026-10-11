@@ -1142,29 +1142,28 @@ function Onboarding() {
       total={TOTAL}
       eyebrow="소개장 확인"
       title="이렇게 소개해도 될까요?"
-      description="적어 주신 답으로 만든 초안이에요. 고쳐 써도 돼요."
+      description="마음에 드는 문장만 남겨 주세요."
     >
-      <div className="overflow-hidden rounded-surface border border-border bg-card">
-        {shownPhoto ? (
-          <img src={shownPhoto} alt="내 프로필 사진" className="aspect-[4/5] w-full object-cover" />
-        ) : null}
-        <div className="p-5">
-          <p className="serif text-lg font-semibold">
-            {basics.name}
-            {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">{basics.job}</p>
-          {[...selectedInterests, ...profile.topics].length ? (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {[...selectedInterests, ...profile.topics].map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
+      <div className="rounded-surface border border-border bg-card p-5">
+        <div className="flex items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="serif text-lg font-semibold">
+              {basics.name}
+              {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{basics.job}</p>
+            {profile.eveningNote ? (
+              <p className="serif mt-3 line-clamp-2 text-sm leading-relaxed text-foreground">
+                {profile.eveningNote}
+              </p>
+            ) : null}
+          </div>
+          {shownPhoto ? (
+            <img
+              src={shownPhoto}
+              alt="내 대표 사진"
+              className="aspect-[3/4] w-[4.5rem] shrink-0 rounded-control object-cover"
+            />
           ) : null}
         </div>
       </div>
@@ -1183,9 +1182,6 @@ function Onboarding() {
             </span>
           ) : null}
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          적어주신 답변을 바탕으로 만든 문장입니다. 마음에 드는 것을 고르거나 직접 고쳐 쓰세요.
-        </p>
         <div className="mt-3 space-y-2">
           {headlineOptions.map((line) => {
             const selected = profile.headline === line;

@@ -159,6 +159,18 @@ export const emptyProfile: ProfileDraft = {
  * (지금은 규칙 기반 초안 — 이후 AI 생성으로 교체)
  */
 export function suggestHeadlines(p: ProfileDraft, job?: string): string[] {
+  // 인터뷰에서 직접 쓴 문장이 있으면 템플릿보다 그 사람의 표현을 먼저 보여 준다.
+  const own = [p.eveningNote, p.knownAs, p.topicNote, p.matchNote]
+    .map((answer) =>
+      answer
+        .trim()
+        .split(/[,.!?]/)[0]
+        ?.trim(),
+    )
+    .filter((answer): answer is string =>
+      Boolean(answer && answer.length >= 8 && answer.length <= 45),
+    )
+    .map((answer) => `${answer}.`);
   const labels = p.interests.map((v) => v.trim()).filter(Boolean);
   const first = labels[0];
   const second = labels[1];
@@ -166,25 +178,25 @@ export function suggestHeadlines(p: ProfileDraft, job?: string): string[] {
   const topic = p.topics[0];
   const role = job?.trim();
 
-  const out = [
+  const fallback = [
     first && second
-      ? `${first}과 ${second} 사이에서 평일 저녁을 채우는 사람.`
+      ? `${josa(first, "과", "와")} ${josa(second, "을", "를")} 좋아해요.`
       : first
-        ? `${first}에 시간을 쓰는 걸 아까워하지 않는 사람.`
-        : "평일 저녁을 잘 쓰는 사람이 되고 싶어요.",
+        ? `${josa(first, "을", "를")} 좋아해요.`
+        : "퇴근 후엔 좋아하는 일을 하며 쉬어요.",
     role && first
-      ? `낮에는 ${role}, 저녁에는 ${first}에 진심입니다.`
+      ? `${role}로 일하고, ${josa(first, "을", "를")} 좋아해요.`
       : first
-        ? `일이 끝나면 ${first}으로 하루를 마무리합니다.`
-        : "하루의 끝을 조용히 정리하는 걸 좋아합니다.",
+        ? `요즘 ${josa(first, "을", "를")} 자주 해요.`
+        : "쉬는 날엔 새로운 곳을 걸어 봐요.",
     match
-      ? `${match}과 오래 이야기하는 저녁을 좋아합니다.`
+      ? `${josa(match, "과", "와")} 있으면 편해요.`
       : topic
-        ? `${topic}에 대해 오래 이야기할 수 있는 사람.`
-        : "말이 잘 통하는 저녁 한 번이면 충분합니다.",
+        ? `${topic} 이야기를 나누고 싶어요.`
+        : "처음 만나면 서로의 이야기를 듣고 싶어요.",
   ];
 
-  return Array.from(new Set(out.filter(Boolean))).slice(0, 3);
+  return Array.from(new Set([...own, ...fallback].filter(Boolean))).slice(0, 3);
 }
 
 /**

@@ -863,6 +863,8 @@ export async function verifyPhoneCode(phone: string, code: string): Promise<Prof
     );
     throw new Error(known ?? "verify failed");
   }
+  // 틀린 코드는 NULL로 돌려줘야 DB의 실패 횟수가 롤백되지 않는다.
+  if (data === null) throw new Error("wrong code");
   return data;
 }
 
@@ -936,7 +938,8 @@ export async function withdrawAccount(reason?: string): Promise<void> {
   }
   const { error } = await supabase.rpc("withdraw_account", { p_reason: reason });
   if (error) throw error;
-  await supabase.auth.signOut();
+  // DB는 모든 기기 토큰을 파기하고, 여기서는 이 기기의 저장 토큰도 지운다.
+  await signOut();
 }
 
 /**
