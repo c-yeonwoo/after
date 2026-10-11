@@ -3,7 +3,7 @@
 -- 남성이 후보 1~3개와 장소 하나로 요청하고, 여성이 하나를 누르면 확정된다.
 
 begin;
-select plan(15);
+select plan(17);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -31,6 +31,18 @@ insert into intros (id, male_id, female_id)
 values ('51000000-0000-0000-0000-0000000000e1','51000000-0000-0000-0000-0000000000a1','51000000-0000-0000-0000-0000000000f1');
 insert into tickets (user_id, kind, price_krw) values ('51000000-0000-0000-0000-0000000000a1','meeting',30000);
 
+-- 현재 요일에 관계없이 3시간~21일 안의 평일 저녁을 사용한다.
+create temp table valid_slots as
+select (date_trunc('week', now() at time zone 'Asia/Seoul') + interval '8 days 19 hours')
+         at time zone 'Asia/Seoul' as tuesday,
+       (date_trunc('week', now() at time zone 'Asia/Seoul') + interval '9 days 19 hours')
+         at time zone 'Asia/Seoul' as wednesday,
+       (date_trunc('week', now() at time zone 'Asia/Seoul') + interval '12 days 19 hours')
+         at time zone 'Asia/Seoul' as saturday,
+       (date_trunc('week', now() at time zone 'Asia/Seoul') + interval '8 days 12 hours')
+         at time zone 'Asia/Seoul' as tuesday_noon;
+grant select on valid_slots to authenticated;
+
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"51000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
 
@@ -56,25 +68,35 @@ select throws_ok(
 select throws_ok(
   format($$ select request_meeting('51000000-0000-0000-0000-0000000000e1', array[%L]::timestamptz[],
                                    '51000000-0000-0000-0000-00000000c002', null) $$,
-         now() + interval '2 days'),
+         (select tuesday from valid_slots)),
   '22023', 'place not available', 'T5 숨긴 장소는 고를 수 없다');
 select throws_ok(
   format($$ select request_meeting('51000000-0000-0000-0000-0000000000e1', array[%L]::timestamptz[],
                                    '51000000-0000-0000-0000-00000000c003', null) $$,
-         now() + interval '2 days'),
+         (select tuesday from valid_slots)),
   '22023', 'place not available', 'T6 다른 권역 장소는 고를 수 없다');
 select throws_ok(
   format($$ select request_meeting('51000000-0000-0000-0000-0000000000e1', array[%L]::timestamptz[],
                                    null, '   ') $$,
-         now() + interval '2 days'),
+         (select tuesday from valid_slots)),
   '22023', 'place required', 'T7 장소 목록을 안 쓰면 직접 적어야 한다');
+select throws_ok(
+  format($$ select request_meeting('51000000-0000-0000-0000-0000000000e1', array[%L]::timestamptz[],
+                                   '51000000-0000-0000-0000-00000000c001', null) $$,
+         (select saturday from valid_slots)),
+  '22023', 'slots must be weekday evenings', 'T7b 주말 후보는 API에서도 거절한다');
+select throws_ok(
+  format($$ select request_meeting('51000000-0000-0000-0000-0000000000e1', array[%L]::timestamptz[],
+                                   '51000000-0000-0000-0000-00000000c001', null) $$,
+         (select tuesday_noon from valid_slots)),
+  '22023', 'slots must be weekday evenings', 'T7c 평일 낮 후보는 API에서도 거절한다');
 
 -- ─────────── 요청 ───────────
 
 select is(
   (select proposed_place_name from request_meeting(
      '51000000-0000-0000-0000-0000000000e1',
-     array[now() + interval '3 days', now() + interval '2 days']::timestamptz[],
+     array[(select wednesday from valid_slots), (select tuesday from valid_slots)]::timestamptz[],
      '51000000-0000-0000-0000-00000000c001', null)),
   '예시 카페 · 역삼역', 'T8 후보와 장소로 요청한다 (장소 이름은 서버가 만든다)');
 

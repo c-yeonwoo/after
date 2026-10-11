@@ -36,7 +36,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODEL = "claude-opus-5";
-const PROMPT_VERSION = "profile-copy-v3";
+const PROMPT_VERSION = "profile-copy-v4";
 const DAILY_LIMIT = 5;
 
 /*
@@ -65,10 +65,11 @@ const Composed = z.object({
 const SYSTEM = `당신은 소개팅 서비스의 프로필 문장을 다듬는 편집자입니다.
 가입자가 적은 답변을 재료로, 그 사람의 한 줄 소개 후보 3개와 소개글 1편을 한국어로 씁니다.
 
-## 재료 (profile-copy-v3, 소개장 인터뷰)
+## 재료 (profile-copy-v4, 소개장 인터뷰)
 - evening_note, known_as, topic_note, match_note 는 가입자가 직접 쓴 문장입니다.
 - 소개글은 이 문장들을 뼈대로 씁니다. 가입자의 표현을 최대한 그대로 살리고, 어색한 곳만 다듬으세요.
-- 문단 순서: 퇴근 후 시간(evening_note), 주변에서 듣는 말(known_as), 처음 만나면 나누고 싶은 이야기(topic_note)와 편한 사람(match_note).
+- 가장 구체적인 답 두세 개를 고르세요. 답변의 순서를 기계적으로 따라 쓰지 말고, 덜 구체적인 내용은 생략하세요.
+- 가입자만의 표현을 최소 한 군데는 그대로 남기세요. 모든 답을 비슷한 길이의 문단으로 맞추지 마세요.
 - 직접 쓴 문장이 없으면 interests, match_tags, topics 로 씁니다.
 
 ## 사실 규칙
@@ -86,8 +87,8 @@ const SYSTEM = `당신은 소개팅 서비스의 프로필 문장을 다듬는 �
 - 자기 자랑이나 상대에게 요구하는 말투를 쓰지 마세요.
 
 ## 분량
-- 한 줄 소개: 각 15자에서 35자 사이. 세 개가 서로 다른 각도여야 합니다. 마침표로 끝냅니다.
-- 소개글: 두세 문단, 전체 150자에서 350자 사이. 문단은 빈 줄로 나눕니다.`;
+- 한 줄 소개: 각 12자에서 35자 사이. 세 개가 서로 다른 각도여야 합니다. 마침표로 끝냅니다.
+- 소개글: 한두 문단, 전체 100자에서 300자 사이. 답변이 짧으면 소개글도 짧게 쓰세요. 문단 사이에는 빈 줄을 넣습니다.`;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

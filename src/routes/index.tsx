@@ -75,14 +75,18 @@ function Landing() {
 
       <main className="min-h-0 flex-1 overflow-y-auto px-6">
         <section className="flex min-h-[calc(100svh-14rem)] flex-col justify-center pt-6 pb-10">
-          <p className="text-sm font-medium text-muted-foreground">{COVERAGE_LABEL} 직장인 소개</p>
+          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-primary-strong" aria-hidden="true" />
+            {COVERAGE_LABEL} 직장인 소개
+          </p>
           <h1 className="serif mt-4 text-[clamp(2rem,9.6vw,2.5rem)] leading-[1.28] font-bold text-foreground">
             퇴근 후,
             <br />한 사람과의 약속.
           </h1>
           <p className="mt-5 text-[1.0625rem] leading-[1.65] text-foreground">
-            회사 근처, 평일 저녁.
-            <br />한 사람을 소개하고, 만날 약속까지 함께 정해요.
+            회사 근처에서 한 사람씩.
+            <br />
+            소개부터 약속 조율까지 함께해요.
           </p>
           <button
             type="button"
@@ -110,16 +114,13 @@ function Landing() {
           <ol className="mt-5 space-y-5">
             {[
               [
-                "회사 이메일과 휴대폰으로 확인하고, 소개장을 써요.",
-                "사진 세 장을 올리고 짧은 질문 네 개에 답하면, 그 문장으로 소개장 초안을 함께 다듬어요.",
+                "나를 소개해요",
+                "회사 이메일·휴대폰을 확인하고, 사진과 짧은 답변으로 소개장을 만들어요.",
               ],
+              ["한 사람씩 소개받아요", "운영팀이 확인한 소개를 읽고, 더 알아갈지 결정해요."],
               [
-                "한 번에 한 사람의 소개가 도착해요.",
-                "운영팀이 확인한 소개를 한 분씩 천천히 읽어요. 넘기는 피드는 없어요.",
-              ],
-              [
-                "회사 근처 평일 저녁으로 약속을 정해요.",
-                "약속이 확정되면 대화가 열려요. 채팅만 하다 흐지부지되지 않게요.",
+                "만날 시간을 정해요",
+                "가까운 장소와 평일 저녁 시간을 제안하면 상대가 고를 수 있어요.",
               ],
             ].map(([title, body], i) => (
               <li key={title} className="grid grid-cols-[1.75rem_1fr] gap-x-2">
@@ -137,46 +138,55 @@ function Landing() {
 
         <section aria-labelledby="cost-title" className="border-t border-border py-10">
           <h2 id="cost-title" className="text-base font-semibold text-foreground">
-            비용과 반환
+            무료 베타 안내
           </h2>
-          <ul className="mt-4 space-y-3 text-base leading-relaxed text-foreground">
-            <li>지금은 무료 베타예요. 결제를 받지 않아요.</li>
-            <li>
-              만남을 요청했는데 상대가 거절하거나 24시간 안에 답하지 않으면, 쓰신 만남 티켓을
-              돌려드려요.
-            </li>
-            <li>
-              만남이나 기간을 보장하지는 않아요. 소개는 참여하는 분들과 서로의 선택에 따라 와요.
-            </li>
-          </ul>
+          <p className="mt-4 text-base leading-relaxed text-foreground">
+            지금은 결제를 받지 않아요.
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            만남 요청이 거절되거나 24시간 안에 답이 없으면 티켓은 돌아옵니다. 소개와 만남은 보장되지
+            않아요.
+          </p>
+          <button
+            type="button"
+            onClick={start}
+            className="mt-8 flex min-h-[52px] w-full items-center justify-center rounded-control bg-primary px-4 text-base font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            가입하고 시작하기
+          </button>
         </section>
+        <footer
+          className="border-t border-border pt-3"
+          style={{ paddingBottom: "var(--safe-bottom)" }}
+        >
+          <nav className="flex flex-wrap items-center justify-center gap-x-1 text-xs text-muted-foreground">
+            <Link
+              to="/support"
+              className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
+            >
+              고객 지원
+            </Link>
+            <Link
+              to="/terms"
+              className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
+            >
+              이용약관
+            </Link>
+            <Link
+              to="/privacy"
+              className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
+            >
+              개인정보 처리방침
+            </Link>
+            <Link
+              to="/delete-account"
+              className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
+            >
+              계정 삭제
+            </Link>
+          </nav>
+        </footer>
       </main>
-
-      <footer
-        className="z-10 shrink-0 border-t border-border bg-background px-6 pt-3"
-        style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}
-      >
-        <nav className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-          <Link
-            to="/support"
-            className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
-          >
-            고객 지원
-          </Link>
-          <Link
-            to="/privacy"
-            className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
-          >
-            개인정보 처리방침
-          </Link>
-          <Link
-            to="/delete-account"
-            className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
-          >
-            계정 삭제
-          </Link>
-        </nav>
-      </footer>
     </div>
   );
 }

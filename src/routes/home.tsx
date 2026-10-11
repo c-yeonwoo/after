@@ -107,6 +107,9 @@ function HomePage() {
 
   const hub = HUBS.find((h) => h.id === me?.hub_id);
   const isMale = me?.gender === "male";
+  const needsPhone = Boolean(me && !me.phone_verified_at);
+  const photoCount = me?.photo_paths?.length ?? 0;
+  const needsPhotos = Boolean(me && photoCount < MIN_PHOTOS);
 
   /**
    * 약속 시각이 지났는데 아직 성사 여부를 답하지 않은 상태.
@@ -140,9 +143,11 @@ function HomePage() {
               ? "소개가 도착했어요."
               : me?.paused_at
                 ? "소개를 잠시 쉬고 있어요."
-                : isMale
-                  ? "소개를 준비하고 있어요."
-                  : "새 소개를 기다리고 있어요.";
+                : needsPhone || needsPhotos
+                  ? "소개받을 준비가 남았어요."
+                  : isMale
+                    ? "소개를 준비하고 있어요."
+                    : "새 소개를 기다리고 있어요.";
 
   if (!ready || !me || me.onboarding_step < 7) {
     return (
@@ -174,42 +179,6 @@ function HomePage() {
         {me?.name ? `${me.name}님,` : "안녕하세요,"}
       </p>
       <h1 className="serif mt-1 text-[1.75rem] leading-[1.35] font-semibold">{headline}</h1>
-
-      {/* 휴대폰 인증(s54) 전에 가입한 회원은 소개 대상에서 빠져 있다. */}
-      {me && me.onboarding_step >= 7 && !me.phone_verified_at ? (
-        <Link
-          to="/verify-phone"
-          className="mt-4 flex items-center justify-between gap-3 rounded-surface bg-surface-subtle px-4 py-3.5 text-sm text-foreground"
-        >
-          <span>
-            휴대폰 인증을 마쳐 주세요.
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              인증 전에는 새 소개가 오지 않아요 · 1분이면 끝나요
-            </span>
-          </span>
-          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
-        </Link>
-      ) : null}
-
-      {/*
-        사진 3장(s53) 이전에 가입한 회원은 한 장뿐이라 소개 대상에서 빠져 있다.
-        말해 주지 않으면 "왜 소개가 안 오지" 만 남는다.
-      */}
-      {me && me.onboarding_step >= 7 && (me.photo_paths?.length ?? 0) < MIN_PHOTOS ? (
-        <Link
-          to="/signup"
-          search={{ edit: true }}
-          className="mt-4 flex items-center justify-between gap-3 rounded-surface bg-surface-subtle px-4 py-3.5 text-sm text-foreground"
-        >
-          <span>
-            사진을 {MIN_PHOTOS}장 이상 올려 주세요.
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              지금 {me.photo_paths?.length ?? 0}장 · 그 전에는 새 소개가 오지 않아요
-            </span>
-          </span>
-          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
-        </Link>
-      ) : null}
 
       {noShow ? (
         <div className="mt-5">
@@ -294,16 +263,48 @@ function HomePage() {
             }
           >
             {queued > 1
-              ? `소개 ${queued}건이 도착했어요. 한 번에 한 분씩 열어 보실 수 있습니다.`
-              : "프로필을 열면 만남으로 이어갈지 정하실 수 있습니다."}
+              ? `${queued}건의 소개가 기다리고 있어요. 한 분씩 확인해 보세요.`
+              : "한 분의 소개가 기다리고 있어요."}
             {introTickets === 0
               ? introPaymentsEnabled
-                ? " 프로필을 열려면 소개 티켓 1장이 필요합니다."
-                : " 프로필을 열기 전에 무료 티켓을 신청해 주세요."
+                ? " 열람에는 소개 티켓 1장이 필요해요."
+                : " 열람 전에 무료 티켓을 신청해 주세요."
               : ""}
           </GuideNote>
         ) : null}
       </div>
+
+      {(needsPhone || needsPhotos) && !loading ? (
+        <section className="mt-8 border-t border-border pt-5" aria-labelledby="home-ready-title">
+          <h2 id="home-ready-title" className="text-sm font-semibold text-foreground">
+            새 소개를 받으려면
+          </h2>
+          <div className="mt-2 divide-y divide-border">
+            {needsPhone ? (
+              <Link
+                to="/verify-phone"
+                className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
+              >
+                <span>휴대폰 인증</span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </Link>
+            ) : null}
+            {needsPhotos ? (
+              <Link
+                to="/signup"
+                search={{ edit: true }}
+                className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
+              >
+                <span>사진 추가</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {photoCount}/{MIN_PHOTOS}장
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </Link>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {/*
         진행 중인 만남이 없을 때만 띄운다. 약속이 잡혀 있으면 화면에 이미 할 일이
@@ -313,7 +314,13 @@ function HomePage() {
         소개가 도착한 상태에서는 띄우지 않는다. 같은 화면에서 "도착했어요" 와 "준비되면
         알려드릴게요" 가 함께 보였다 — 도착했으면 할 일은 위 카드 하나다.
       */}
-      {!loading && !meeting && !noShow && !candidate && !(isMale && queued > 0) ? (
+      {!loading &&
+      !needsPhone &&
+      !needsPhotos &&
+      !meeting &&
+      !noShow &&
+      !candidate &&
+      !(isMale && queued > 0) ? (
         <ReadinessPanel
           isMale={isMale}
           paused={me?.paused_at !== null && me?.paused_at !== undefined}
@@ -476,17 +483,15 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
     <div className="rounded-surface border border-border bg-card px-5 py-5 shadow-card">
       <p className="flex items-center gap-1.5 text-3xs font-semibold text-muted-foreground">
         <Clock className="size-3.5" aria-hidden="true" />
-        기다리는 중
+        만남 요청
       </p>
-      <p className="mt-2.5 text-xs font-semibold text-muted-foreground">티켓 반환 안내</p>
-      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-2.5 text-sm leading-relaxed text-foreground">
         {left ? (
           <>
-            <span className="font-semibold text-foreground">{left}</span> 안에 답이 없으면 티켓은
-            자동으로 반환됩니다.
+            <span className="font-semibold">{left}</span> 안에 답이 없으면 티켓이 돌아옵니다.
           </>
         ) : (
-          "곧 티켓이 반환됩니다. 다시 사용하실 수 있습니다."
+          "답변 기한이 지났어요. 티켓이 곧 돌아옵니다."
         )}
       </p>
     </div>

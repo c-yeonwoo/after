@@ -3,10 +3,10 @@
  * Deno Edge Function과 로컬 품질 회귀 테스트가 같은 함수를 사용한다.
  */
 
-const HEADLINE_MIN = 15;
+const HEADLINE_MIN = 12;
 const HEADLINE_MAX = 35;
-const INTRO_MIN = 150;
-const INTRO_MAX = 350;
+const INTRO_MIN = 100;
+const INTRO_MAX = 300;
 
 const BANNED_PHRASES = [
   "진심입니다",
@@ -59,8 +59,8 @@ export function validProfileComposition(headlines: string[], intro: string) {
   return (
     characterCount(intro) >= INTRO_MIN &&
     characterCount(intro) <= INTRO_MAX &&
-    paragraphs.length >= 2 &&
-    paragraphs.length <= 3 &&
+    paragraphs.length >= 1 &&
+    paragraphs.length <= 2 &&
     !hasBannedStyle(intro)
   );
 }

@@ -27,6 +27,7 @@ function requestError(err: unknown) {
       : "";
   if (raw.includes("between 3 hours and 21 days"))
     return "후보는 3시간 뒤부터 3주 안의 시간으로 골라 주세요.";
+  if (raw.includes("weekday evenings")) return "평일 저녁 시간으로 다시 골라 주세요.";
   if (raw.includes("place not available"))
     return "그 장소는 지금 고를 수 없어요. 다른 곳을 골라 주세요.";
   if (raw.includes("place required")) return "만날 곳을 적어 주세요.";

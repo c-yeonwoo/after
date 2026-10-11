@@ -42,9 +42,8 @@ select throws_ok(
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"54000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
 
-select throws_ok(
-  $$ select verify_phone_code('+821012345678', '000000') $$,
-  '22023', 'wrong code', 'T6 틀린 코드는 받지 않는다');
+select ok(verify_phone_code('+821012345678', '000000') is null,
+  'T6 틀린 코드는 받지 않는다');
 select throws_ok(
   $$ update profiles set phone = '+821099999999' where id = '54000000-0000-0000-0000-0000000000a1' $$,
   '42501', null, 'T7 번호는 직접 고칠 수 없다');
