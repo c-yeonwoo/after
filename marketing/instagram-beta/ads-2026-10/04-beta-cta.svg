@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <rect width="1080" height="1350" fill="#FAF6EE"/>
+  <circle cx="935" cy="1080" r="230" fill="#F08A8A" fill-opacity=".17"/>
+  <text x="78" y="112" fill="#23302B" font-family="Arial, sans-serif" font-size="40" font-weight="600" letter-spacing="-2">after</text>
+  <circle cx="186" cy="82" r="8" fill="#F08A8A"/>
+  <text x="80" y="334" fill="#8E514B" font-family="AppleSDGothicNeo-Semibold, sans-serif" font-size="27">애프터 무료 베타</text>
+  <rect x="80" y="382" width="90" height="5" rx="2.5" fill="#F08A8A"/>
+  <text x="76" y="585" fill="#23302B" font-family="AppleSDGothicNeo-Bold, sans-serif" font-size="77" letter-spacing="-4">강남·역삼권</text>
+  <text x="76" y="690" fill="#23302B" font-family="AppleSDGothicNeo-Bold, sans-serif" font-size="77" letter-spacing="-4">직장인이라면</text>
+  <text x="80" y="814" fill="#5E655F" font-family="AppleSDGothicNeo-Regular, sans-serif" font-size="32">현재 결제 없이 참여할 수 있어요.</text>
+  <text x="80" y="866" fill="#5E655F" font-family="AppleSDGothicNeo-Regular, sans-serif" font-size="28">소개는 참여자 구성과 서로의 선택에 따라</text>
+  <text x="80" y="912" fill="#5E655F" font-family="AppleSDGothicNeo-Regular, sans-serif" font-size="28">순차적으로 진행됩니다.</text>
+  <rect x="80" y="1032" width="920" height="92" rx="46" fill="#23302B"/>
+  <text x="540" y="1090" fill="#FAF6EE" font-family="AppleSDGothicNeo-Semibold, sans-serif" font-size="30" text-anchor="middle">프로필 링크에서 참여 방법 확인  →</text>
+  <text x="80" y="1208" fill="#5E655F" font-family="AppleSDGothicNeo-Medium, sans-serif" font-size="26">aftersunset.kr</text>
+  <text x="80" y="1287" fill="#8E514B" font-family="AppleSDGothicNeo-Semibold, sans-serif" font-size="23">퇴근 후, 한 사람과의 약속.</text>
+  <text x="906" y="1287" fill="#8E514B" font-family="Arial, sans-serif" font-size="22" letter-spacing="2">04 / 04</text>
+</svg>

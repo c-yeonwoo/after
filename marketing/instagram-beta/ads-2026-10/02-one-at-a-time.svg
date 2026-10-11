@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <rect width="1080" height="1350" fill="#FAF6EE"/>
+  <circle cx="920" cy="228" r="140" fill="#F08A8A" fill-opacity=".18"/>
+  <text x="78" y="112" fill="#23302B" font-family="Arial, sans-serif" font-size="40" font-weight="600" letter-spacing="-2">after</text>
+  <circle cx="186" cy="82" r="8" fill="#F08A8A"/>
+  <text x="80" y="334" fill="#8E514B" font-family="AppleSDGothicNeo-Semibold, sans-serif" font-size="27">01  /  소개 방식</text>
+  <rect x="80" y="382" width="90" height="5" rx="2.5" fill="#F08A8A"/>
+  <text x="76" y="595" fill="#23302B" font-family="AppleSDGothicNeo-Bold, sans-serif" font-size="83" letter-spacing="-4">많이 보기보다,</text>
+  <text x="76" y="704" fill="#23302B" font-family="AppleSDGothicNeo-Bold, sans-serif" font-size="83" letter-spacing="-4">한 사람씩.</text>
+  <text x="80" y="838" fill="#5E655F" font-family="AppleSDGothicNeo-Regular, sans-serif" font-size="33">애프터는 서로의 선택에 따라</text>
+  <text x="80" y="892" fill="#5E655F" font-family="AppleSDGothicNeo-Regular, sans-serif" font-size="33">한 번에 한 사람씩 소개합니다.</text>
+  <path d="M80 1084H1000" stroke="#D9D2C8" stroke-width="2"/>
+  <text x="80" y="1155" fill="#23302B" font-family="AppleSDGothicNeo-Medium, sans-serif" font-size="27">탐색을 줄이고, 한 사람을 알아가는 시간.</text>
+  <text x="80" y="1287" fill="#8E514B" font-family="AppleSDGothicNeo-Semibold, sans-serif" font-size="23">애프터  ·  강남·역삼권 직장인 소개</text>
+  <text x="906" y="1287" fill="#8E514B" font-family="Arial, sans-serif" font-size="22" letter-spacing="2">02 / 04</text>
+</svg>

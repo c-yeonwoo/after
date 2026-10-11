@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <defs>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0D1724" stop-opacity=".56"/>
+      <stop offset=".42" stop-color="#0D1724" stop-opacity=".15"/>
+      <stop offset="1" stop-color="#0D1724" stop-opacity=".70"/>
+    </linearGradient>
+  </defs>
+  <image href="after-beta-carousel-bg.png" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>
+  <rect width="1080" height="1350" fill="url(#shade)"/>
+  <text x="78" y="112" fill="#FAF6EE" font-family="Arial, sans-serif" font-size="40" font-weight="600" letter-spacing="-2">after</text>
+  <circle cx="186" cy="82" r="8" fill="#F08A8A"/>
+  <text x="80" y="265" fill="#F4D6D2" font-family="AppleSDGothicNeo-Regular, sans-serif" font-size="26" letter-spacing="1">강남·역삼권 직장인 소개</text>
+  <text x="76" y="434" fill="#FFFFFF" font-family="AppleSDGothicNeo-Bold, sans-serif" font-size="88" letter-spacing="-5">퇴근 후,</text>
+  <text x="76" y="548" fill="#FFFFFF" font-family="AppleSDGothicNeo-Bold, sans-serif" font-size="88" letter-spacing="-5">한 사람과의 약속.</text>
+  <rect x="78" y="1162" width="255" height="58" rx="29" fill="#FAF6EE" fill-opacity=".95"/>
+  <text x="108" y="1201" fill="#23302B" font-family="AppleSDGothicNeo-Semibold, sans-serif" font-size="25">애프터 무료 베타</text>
+  <text x="906" y="1287" fill="#FAF6EE" fill-opacity=".9" font-family="Arial, sans-serif" font-size="22" letter-spacing="2">01 / 04</text>
+</svg>
