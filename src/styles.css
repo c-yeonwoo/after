@@ -146,6 +146,7 @@
   --color-brand-700: var(--brand-700);
   --color-brand-800: var(--brand-800);
   --color-brand-signature: var(--brand-signature);
+  --color-brand-blush: var(--brand-blush);
   --color-brand-text: var(--brand-text);
   --color-brand-tint: var(--brand-tint);
   --color-peach-300: var(--peach-300);
@@ -199,6 +200,12 @@
 
   /* 봉랍: 로고 점·인용부호·링크·선택 표시. 큰 면으로 쓰지 않는다. */
   --brand-signature: var(--brand-700);
+  /*
+    로고 점(2026-10-11). 봉랍(signature)과 따로 둔다 — 봉랍은 인용부호·링크·선택에
+    쓰는 차분한 색이고, 점은 "설레는" 블러시다. 크림 바탕 위에서 묻히지 않게 아이콘
+    (#F08A8A)보다 한 단계 짙게 쓴다.
+  */
+  --brand-blush: oklch(0.709 0.139 22.8); /* #EB7B78 */
   --brand-text: var(--brand-700);
   --brand-tint: oklch(0.929 0.024 77.5); /* #F1E6D6 — 선택 면·내 말풍선 */
   --peach-300: var(--brand-tint);
@@ -313,6 +320,7 @@
   --bubble-mine: oklch(0.287 0.015 84.6); /* #2E2A22 — 글자 12.24 */
   --bubble-mine-foreground: var(--ink);
   --brand-signature: oklch(0.813 0.074 66.5);
+  --brand-blush: oklch(0.743 0.125 20.5); /* #F08A8A — 앱 아이콘과 같은 점 */
   --brand-text: oklch(0.813 0.074 66.5);
   --brand-tint: oklch(0.287 0.015 84.6);
 

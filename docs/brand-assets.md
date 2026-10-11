@@ -1,6 +1,6 @@
 # 애프터 브랜드 자산
 
-현재 기준은 [리브랜딩 설계안](after-rebrand-plan.md)이다. 워드마크·심벌 SVG가 원본이며, 화면 마크는 [Logo.tsx](../src/components/Logo.tsx), 웹 아이콘은 [favicon.svg](../public/favicon.svg), iOS 아이콘은 [app-icon-ios.svg](../brand/app-icon-ios.svg), 실행 화면은 [splash.svg](../brand/splash.svg)에서 관리한다.
+현재 기준은 [리브랜딩 설계안](after-rebrand-plan.md)이다. 2026-10-11 심벌을 바꿨다: 같은 a 에 점을 키우고(r 3.4) 블러시(#F08A8A, 크림 바탕 화면에서는 #EB7B78)로 칠했다. 배경 잉크 #23302B, 글자 크림 #FAF6EE. 워드마크·심벌 SVG가 원본이며, 화면 마크는 [Logo.tsx](../src/components/Logo.tsx), 웹 아이콘은 [favicon.svg](../public/favicon.svg), iOS 아이콘은 [app-icon-ios.svg](../brand/app-icon-ios.svg), 실행 화면은 [splash.svg](../brand/splash.svg)에서 관리한다.
 
 ## 래스터 자산 재생성
 
@@ -9,15 +9,21 @@ macOS의 Chrome과 `sips`를 사용한다. 벡터를 고친 뒤 저장소 루트
 ```bash
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
+# favicon.svg 는 width/height 가 64 라 그대로 찍으면 512 캔버스 왼쪽 위 64px 에만
+# 그려진다(2026-10-11 까지 실제로 그렇게 배포됐다). 512 로 바꾼 사본을 찍는다.
+sed 's/width="64" height="64"/width="512" height="512"/' public/favicon.svg > /tmp/favicon-512.svg
 "$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
   --screenshot="$PWD/public/icon-512.png" --window-size=512,512 \
-  --default-background-color=00000000 "file://$PWD/public/favicon.svg"
-sips -z 180 180 public/icon-512.png --out public/apple-touch-icon.png
+  --default-background-color=00000000 "file:///tmp/favicon-512.svg"
+python3 -c "from PIL import Image; Image.open('public/icon-512.png').save('public/favicon.ico', sizes=[(16,16),(32,32),(48,48)])"
 
 "$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
   --screenshot="$PWD/brand/app-store-1024.png" --window-size=1024,1024 \
   --default-background-color=ffffffff "file://$PWD/brand/app-icon-ios.svg"
 cp brand/app-store-1024.png ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+# 홈 화면 아이콘은 iOS 가 직접 모서리를 깎는다. 투명 모서리가 있으면 검게 보이므로
+# 둥근 favicon 이 아니라 꽉 찬 스토어 아이콘에서 줄인다.
+sips -z 180 180 brand/app-store-1024.png --out public/apple-touch-icon.png
 
 "$CHROME" --headless --disable-gpu --force-device-scale-factor=1 \
   --screenshot="$PWD/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png" \

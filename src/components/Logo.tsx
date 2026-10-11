@@ -2,7 +2,9 @@ import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact after monogram: a single-storey a with a small signature dot.
+ * Compact after monogram: a single-storey a with a blush dot (2026-10-11).
+ * 앱 아이콘(brand/app-icon-ios.svg)·파비콘과 같은 형태다. 점이 예전보다 크고
+ * 블러시라 작게 그려도 "설레는" 인상이 남는다.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
@@ -12,9 +14,9 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("size-6 text-foreground", className)}
     >
-      <circle cx="13" cy="17" r="7.1" stroke="currentColor" strokeWidth="4.1" />
-      <path d="M20.1 17v7" stroke="currentColor" strokeWidth="4.1" strokeLinecap="round" />
-      <circle cx="25" cy="8" r="2.1" fill="var(--color-brand-signature)" />
+      <circle cx="13" cy="17" r="7.1" stroke="currentColor" strokeWidth="4.4" />
+      <path d="M20.1 17v7" stroke="currentColor" strokeWidth="4.4" strokeLinecap="round" />
+      <circle cx="26.5" cy="6.5" r="3.4" fill="var(--color-brand-blush)" />
     </svg>
   );
 }
