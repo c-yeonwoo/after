@@ -1976,6 +1976,40 @@ export type Database = {
       }
     }
     Functions: {
+      admin_support_requests: {
+        Args: { p_status?: string | null }
+        Returns: {
+          id: string
+          user_id: string
+          member_name: string | null
+          category: string
+          body: string
+          status: string
+          response: string | null
+          created_at: string
+          responded_at: string | null
+        }[]
+      }
+      create_support_request: {
+        Args: { p_category: string; p_body: string }
+        Returns: string
+      }
+      my_support_requests: {
+        Args: never
+        Returns: {
+          id: string
+          category: string
+          body: string
+          status: string
+          response: string | null
+          created_at: string
+          responded_at: string | null
+        }[]
+      }
+      respond_support_request: {
+        Args: { p_id: string; p_response: string }
+        Returns: undefined
+      }
       accept_meeting_slot: {
         Args: { p_index: number; p_meeting_id: string }
         Returns: {
