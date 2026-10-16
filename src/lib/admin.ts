@@ -682,3 +682,176 @@ export async function upsertMeetPlace(p: MeetPlaceInput): Promise<MeetPlaceRow> 
   if (error) throw error;
   return data;
 }
+
+// ─────────────────── 운영 작업함 (s62) ───────────────────
+
+export type OpsCase = Database["public"]["Tables"]["ops_cases"]["Row"];
+export type OpsCaseItem = Pick<
+  OpsCase,
+  | "id"
+  | "case_type"
+  | "source_id"
+  | "subject_id"
+  | "occurrence"
+  | "priority"
+  | "status"
+  | "opened_at"
+  | "due_at"
+  | "next_check_at"
+  | "version"
+> & { subject_name: string | null; hub_id: string | null };
+export type OpsCursor = { rank: number; due_at: string; id: string };
+export type OpsOverview = {
+  as_of: string;
+  total: number;
+  critical: number;
+  high: number;
+  overdue: number;
+  due_today: number;
+  waiting: number;
+  by_type: Record<string, number>;
+};
+export type OpsPage = {
+  as_of: string;
+  total: number;
+  items: OpsCaseItem[];
+  next_cursor: OpsCursor | null;
+};
+export type OpsCaseEvent = {
+  id: number;
+  event_type: string;
+  actor_type: string;
+  actor_id: string | null;
+  from_status: string | null;
+  to_status: string;
+  reason_code: string | null;
+  note: string | null;
+  created_at: string;
+};
+export type OpsCaseDetail = {
+  case: OpsCase;
+  source_open: boolean;
+  events: OpsCaseEvent[];
+  allowed_actions: string[];
+};
+export type OpsBackfillPreview = {
+  as_of: string;
+  current_total: number;
+  missing_total: number;
+  by_type: { case_type: string; current_count: number; missing_count: number }[];
+};
+export type MemberTimelineItem = {
+  id: string;
+  at: string;
+  kind: string;
+  object_type: string;
+  object_id: string;
+  details: Record<string, unknown>;
+};
+export type MemberTimelinePage = {
+  as_of: string;
+  items: MemberTimelineItem[];
+  next_cursor: { at: string; id: string } | null;
+};
+
+function requireJsonPage<T>(data: unknown, key: string): T {
+  if (!data || typeof data !== "object" || !Array.isArray((data as Record<string, unknown>)[key])) {
+    throw new Error("운영 자료 응답을 확인할 수 없습니다.");
+  }
+  return data as T;
+}
+
+export async function fetchOpsOverview(): Promise<OpsOverview> {
+  const { data, error } = await supabase.rpc("admin_ops_overview");
+  if (error) throw error;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    typeof (data as Record<string, unknown>).total !== "number"
+  ) {
+    throw new Error("운영 현황 응답을 확인할 수 없습니다.");
+  }
+  return data as unknown as OpsOverview;
+}
+
+export async function fetchOpsCases(
+  p: {
+    status?: string;
+    type?: string;
+    priority?: string;
+    cursor?: OpsCursor | null;
+    limit?: number;
+  } = {},
+): Promise<OpsPage> {
+  const { data, error } = await supabase.rpc("admin_ops_cases", {
+    p_status: p.status,
+    p_type: p.type,
+    p_priority: p.priority,
+    p_cursor: p.cursor ?? undefined,
+    p_limit: p.limit ?? 30,
+  });
+  if (error) throw error;
+  return requireJsonPage<OpsPage>(data, "items");
+}
+
+export async function fetchOpsCaseDetail(id: string): Promise<OpsCaseDetail> {
+  const { data, error } = await supabase.rpc("admin_ops_case_detail", { p_case_id: id });
+  if (error) throw error;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    !Array.isArray((data as Record<string, unknown>).events)
+  ) {
+    throw new Error("작업 상세 응답을 확인할 수 없습니다.");
+  }
+  return data as unknown as OpsCaseDetail;
+}
+
+export async function transitionOpsCase(p: {
+  id: string;
+  action: string;
+  version: number;
+  reason: string;
+  nextCheckAt?: string;
+}): Promise<OpsCase> {
+  const { data, error } = await supabase.rpc("admin_transition_case", {
+    p_case_id: p.id,
+    p_action: p.action,
+    p_expected_version: p.version,
+    p_reason: p.reason,
+    p_request_id: crypto.randomUUID(),
+    p_next_check_at: p.nextCheckAt,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function previewOpsBackfill(): Promise<OpsBackfillPreview> {
+  const { data, error } = await supabase.rpc("admin_preview_ops_backfill");
+  if (error) throw error;
+  return requireJsonPage<OpsBackfillPreview>(data, "by_type");
+}
+
+export async function applyOpsBackfill(expectedMissing: number, reason: string): Promise<number> {
+  const { data, error } = await supabase.rpc("admin_apply_ops_backfill", {
+    p_expected_missing: expectedMissing,
+    p_note: reason,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchMemberTimeline(
+  userId: string,
+  cursor: MemberTimelinePage["next_cursor"] = null,
+): Promise<MemberTimelinePage> {
+  const { data, error } = await supabase.rpc("admin_member_timeline", {
+    p_user_id: userId,
+    p_cursor: cursor ?? undefined,
+    p_limit: 30,
+  });
+  if (error) throw error;
+  return requireJsonPage<MemberTimelinePage>(data, "items");
+}

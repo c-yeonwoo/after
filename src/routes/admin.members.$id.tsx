@@ -6,7 +6,14 @@ import { Tag } from "@/components/admin/ui";
 import { hubLabel } from "@/components/admin/labels";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { toProfileView } from "@/lib/profileView";
-import { fetchMemberDetail, setAccountState, type AdminMemberDetail } from "@/lib/admin";
+import {
+  fetchMemberDetail,
+  fetchMemberTimeline,
+  setAccountState,
+  type AdminMemberDetail,
+  type MemberTimelineItem,
+  type MemberTimelinePage,
+} from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/members/$id")({ component: MemberDetail });
 
@@ -198,20 +205,7 @@ function MemberDetail() {
             )}
           </Section>
 
-          <Section title={`운영자 개입 ${d.admin_actions.length}`}>
-            {d.admin_actions.length === 0 ? (
-              <Empty>개입 기록이 없습니다.</Empty>
-            ) : (
-              <ul className="space-y-2 text-sm">
-                {d.admin_actions.map((a, i) => (
-                  <li key={i} className="text-muted-foreground">
-                    <Tag tone="muted">{a.kind}</Tag> {a.actor_name} · {when(a.created_at)}
-                    <p className="mt-0.5 text-xs">{a.note}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
+          <MemberTimeline id={id} />
 
           <AccountState
             id={id}
@@ -223,6 +217,118 @@ function MemberDetail() {
         </div>
       </div>
     </>
+  );
+}
+
+const TIMELINE_LABEL: Record<string, string> = {
+  support_requested: "문의 접수",
+  support_answered: "문의 답변",
+  photo_submitted: "사진 변경",
+  photo_reviewed: "사진 검수",
+  content_reported: "신고 접수",
+  content_report_resolved: "신고 판정",
+  no_show_reported: "노쇼 신고",
+  no_show_resolved: "노쇼 판정",
+  payment_attention: "결제 확인 필요",
+  payment_reconciled: "결제 확인 완료",
+  meeting_confirmed: "약속 확정",
+  meeting_canceled: "약속 취소",
+  ticket_issued: "티켓 발급",
+  ticket_consumed: "티켓 사용",
+  ticket_restored: "티켓 반환",
+  intro_delivered: "소개 도착",
+  intro_opened: "소개 열람",
+  intro_expired: "소개 만료",
+};
+
+function MemberTimeline({ id }: { id: string }) {
+  const [items, setItems] = useState<MemberTimelineItem[] | null>(null);
+  const [cursor, setCursor] = useState<MemberTimelinePage["next_cursor"]>(null);
+  const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(
+    async (append = false) => {
+      setBusy(true);
+      setError(false);
+      try {
+        const page = await fetchMemberTimeline(id, append ? cursor : null);
+        setItems((current) => (append && current ? [...current, ...page.items] : page.items));
+        setCursor(page.next_cursor);
+      } catch {
+        setError(true);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [id, cursor],
+  );
+
+  useEffect(() => {
+    void load(false);
+    // A different member starts at the first page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  return (
+    <Section title="운영 타임라인">
+      <p className="mb-3 text-xs text-muted-foreground">
+        새 계측을 시작한 이후의 사건과 기존 운영자 개입 기록입니다.
+      </p>
+      {error ? (
+        <button
+          type="button"
+          onClick={() => void load(false)}
+          className="text-xs text-destructive underline"
+        >
+          이력을 확인할 수 없습니다. 다시 시도
+        </button>
+      ) : items === null ? (
+        <Empty>이력을 불러오는 중입니다.</Empty>
+      ) : items.length === 0 ? (
+        <Empty>아직 기록된 사건이 없습니다.</Empty>
+      ) : (
+        <ol className="space-y-3 border-l border-border pl-3">
+          {items
+            .filter(
+              (item) => !(item.object_type === "admin_action" && item.kind === "case_transition"),
+            )
+            .map((item) => (
+              <li key={item.id} className="text-sm">
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-medium">
+                    {TIMELINE_LABEL[item.kind] ??
+                      (item.object_type === "admin_action" ? "운영 조치" : item.kind)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{when(item.at)}</span>
+                  {item.object_type === "ops_case" ? (
+                    <Link
+                      to="/admin/tasks"
+                      search={{ caseId: item.object_id }}
+                      className="text-xs text-primary-strong hover:underline"
+                    >
+                      작업 보기
+                    </Link>
+                  ) : null}
+                </div>
+                {typeof item.details.note === "string" ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{item.details.note}</p>
+                ) : null}
+              </li>
+            ))}
+        </ol>
+      )}
+      {cursor && !error ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void load(true)}
+          className="mt-3 text-xs text-primary-strong hover:underline disabled:opacity-50"
+        >
+          {busy ? "불러오는 중…" : "이전 기록 더 보기"}
+        </button>
+      ) : null}
+    </Section>
   );
 }
 
