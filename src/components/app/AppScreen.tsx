@@ -132,6 +132,7 @@ export function AppScreen({
 
       <main
         ref={mainRef}
+        tabIndex={fill ? undefined : 0}
         className={cn(
           /*
             좌우 20px. 예전에는 24px 이었는데, 프레임이 430px 로 고정된 앱에서
@@ -142,7 +143,9 @@ export function AppScreen({
           "mx-auto w-full min-h-0 flex-1 px-5 pt-1",
           // 스크롤하는 유일한 지점. overscroll-contain 은 본문 끝에서 더 당겼을 때
           // 스크롤이 문서로 새어 나가는 것을 막는다.
-          fill ? "flex flex-col" : "overflow-y-auto overscroll-contain",
+          fill
+            ? "flex flex-col"
+            : "overflow-y-auto overscroll-contain focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none",
         )}
         style={fill ? undefined : { paddingBottom: "1.5rem" }}
       >

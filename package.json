@@ -19,6 +19,7 @@
     "test:ai-concurrency": "node scripts/test-ai-concurrency.mjs",
     "test:notification-concurrency": "node scripts/test-notification-concurrency.mjs",
     "test:meeting-concurrency": "node scripts/test-meeting-concurrency.mjs",
+    "test:browser-e2e": "node scripts/test-browser-e2e.mjs",
     "format": "prettier --write .",
     "check:contrast": "bun scripts/check-contrast.mjs",
     "check:ai": "bun scripts/check-ai-quality.ts",
@@ -96,6 +97,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.32.0",
     "@types/node": "^22.16.5",
@@ -110,6 +112,7 @@
     "globals": "^15.15.0",
     "lightningcss": "^1.33.0",
     "nitro": "3.0.260603-beta",
+    "playwright": "^1.64.1",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",

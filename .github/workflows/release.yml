@@ -29,8 +29,11 @@ jobs:
         with:
           version: 2.117.0
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: supabase start
       - run: npm run release:check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser-e2e
 
   # main 머지 = 운영 배포. 순서가 중요하다: DB → edge function → 프론트.
   # 새 화면은 새 RPC 를 부르므로, 프론트가 먼저 나가면 DB 가 따라올 때까지 화면이 깨진다
