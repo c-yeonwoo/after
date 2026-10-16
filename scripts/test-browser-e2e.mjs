@@ -103,7 +103,7 @@ async function createPerson(kind, gender, role, password) {
       role,
       terms_agreed_at: new Date().toISOString(),
       privacy_agreed_at: new Date().toISOString(),
-      agreed_policy_version: "2026-10-16.1",
+      agreed_policy_version: "2026-10-17.1",
       phone_verified_at: new Date().toISOString(),
       photo_paths: paths,
       photo_state: "approved",
