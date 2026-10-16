@@ -80,7 +80,10 @@ const NAV: { label: string; items: AdminNavItem[] }[] = [
   },
   {
     label: "자동화와 관리",
-    items: [{ to: "/admin/system", label: "자동화·시스템", icon: Settings2 }],
+    items: [
+      { to: "/admin/system", label: "자동화·시스템", icon: Settings2 },
+      { to: "/admin/settings", label: "운영 설정", icon: Settings2 },
+    ],
   },
 ];
 

@@ -255,6 +255,8 @@ export type AdminSystemOverview = {
     jobname: string;
     schedule: string | null;
     active: boolean;
+    rule_mode?: "off" | "observe" | "approval" | "auto" | null;
+    rule_paused?: boolean | null;
     last_status: string | null;
     last_started_at: string | null;
     last_finished_at: string | null;
@@ -881,4 +883,74 @@ export async function fetchMemberTimeline(
   });
   if (error) throw error;
   return requireJsonPage<MemberTimelinePage>(data, "items");
+}
+
+export type AutomationRule = {
+  rule_key: "meeting_request_reminder";
+  mode: "off" | "observe" | "approval" | "auto";
+  version: number;
+  daily_limit: number;
+  min_interval_hours: number;
+  paused_reason: string | null;
+  observed_since: string | null;
+  updated_at: string;
+};
+
+export type AutomationRun = {
+  id: string;
+  meeting_id: string | null;
+  user_id: string | null;
+  status: "observed" | "approval_required" | "succeeded" | "skipped" | "failed" | "unknown";
+  preview_hash: string;
+  preview_expires_at: string;
+  created_at: string;
+  result_code: string | null;
+};
+
+export type AutomationOverview = {
+  rule: AutomationRule;
+  runs: AutomationRun[];
+  as_of: string;
+};
+
+export async function fetchAutomationOverview(): Promise<AutomationOverview> {
+  const { data, error } = await supabase.rpc("admin_automation_overview");
+  if (error) throw error;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    !Array.isArray((data as Record<string, unknown>).runs)
+  ) {
+    throw new Error("자동화 현황을 확인할 수 없습니다.");
+  }
+  return data as unknown as AutomationOverview;
+}
+
+export async function updateAutomationRule(
+  rule: AutomationRule,
+  next: Pick<AutomationRule, "mode" | "daily_limit" | "min_interval_hours" | "paused_reason">,
+  reason: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_update_automation_rule", {
+    p_expected_version: rule.version,
+    p_mode: next.mode,
+    p_daily_limit: next.daily_limit,
+    p_min_interval_hours: next.min_interval_hours,
+    p_paused_reason: next.paused_reason ?? "",
+    p_reason: reason,
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error) throw error;
+}
+
+export async function approveAutomationRun(run: AutomationRun, reason: string): Promise<string> {
+  const { data, error } = await supabase.rpc("admin_approve_automation", {
+    p_run_id: run.id,
+    p_preview_hash: run.preview_hash,
+    p_reason: reason,
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error) throw error;
+  return data;
 }

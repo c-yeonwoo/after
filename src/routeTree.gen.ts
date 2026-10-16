@@ -42,6 +42,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPlacesRouteImport } from './routes/admin.places'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as AdminTasksRouteImport } from './routes/admin.tasks'
@@ -215,6 +216,11 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/places': typeof AdminPlacesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/system': typeof AdminSystemRoute
   '/admin/tasks': typeof AdminTasksRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/places': typeof AdminPlacesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/system': typeof AdminSystemRoute
   '/admin/tasks': typeof AdminTasksRoute
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/places': typeof AdminPlacesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/system': typeof AdminSystemRoute
   '/admin/tasks': typeof AdminTasksRoute
@@ -412,6 +421,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/places'
     | '/admin/reports'
+    | '/admin/settings'
     | '/admin/support'
     | '/admin/system'
     | '/admin/tasks'
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/places'
     | '/admin/reports'
+    | '/admin/settings'
     | '/admin/support'
     | '/admin/system'
     | '/admin/tasks'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/places'
     | '/admin/reports'
+    | '/admin/settings'
     | '/admin/support'
     | '/admin/system'
     | '/admin/tasks'
@@ -768,6 +780,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/support': {
       id: '/admin/support'
       path: '/support'
@@ -841,6 +860,7 @@ interface AdminRouteChildren {
   AdminPhotosRoute: typeof AdminPhotosRoute
   AdminPlacesRoute: typeof AdminPlacesRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminSystemRoute: typeof AdminSystemRoute
   AdminTasksRoute: typeof AdminTasksRoute
@@ -856,6 +876,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPhotosRoute: AdminPhotosRoute,
   AdminPlacesRoute: AdminPlacesRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminSystemRoute: AdminSystemRoute,
   AdminTasksRoute: AdminTasksRoute,

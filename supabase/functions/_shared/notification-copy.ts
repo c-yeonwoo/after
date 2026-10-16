@@ -16,6 +16,7 @@ export type NotificationKind =
   | "candidates_refilled"
   | "no_show_response_required"
   | "meeting_requested"
+  | "meeting_request_reminder"
   | "prefs_submitted"
   | "meeting_confirmed"
   | "meeting_released"
@@ -55,6 +56,12 @@ export function notificationCopy(
       return {
         title: `${whoGa} 만나고 싶어 해요`,
         body: "보내 준 시간 중 하나만 고르면 약속이 정해져요. 24시간 안에 답해 주세요.",
+        path: "/requests",
+      };
+    case "meeting_request_reminder":
+      return {
+        title: "아직 답변하지 않은 만남 요청이 있어요",
+        body: "가능한 시간을 고르거나, 어려우시면 거절할 수 있어요. 요청은 24시간 뒤 종료됩니다.",
         path: "/requests",
       };
     case "prefs_submitted":

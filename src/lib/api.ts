@@ -1007,6 +1007,19 @@ export async function setFeedbackEmails(on: boolean): Promise<void> {
   if (error) throw error;
 }
 
+export async function getRequestReminderPreference(): Promise<boolean> {
+  const { data, error } = await supabase.rpc("my_notification_preferences");
+  if (error) throw error;
+  const enabled = (data as { request_reminders?: unknown } | null)?.request_reminders;
+  if (typeof enabled !== "boolean") throw new Error("알림 설정을 확인할 수 없습니다.");
+  return enabled;
+}
+
+export async function setRequestReminderPreference(enabled: boolean): Promise<void> {
+  const { error } = await supabase.rpc("set_my_request_reminders", { p_enabled: enabled });
+  if (error) throw error;
+}
+
 /** 회사 인증 메일과 분리된 개인 알림 메일로 확인 코드를 보낸다. */
 export async function requestNotificationEmail(email: string): Promise<string> {
   const { data, error } = await supabase.rpc("request_notification_email", {
