@@ -10,6 +10,13 @@ import { supabase } from "@/lib/supabase";
 export const Route = createFileRoute("/admin/support")({ component: AdminSupport });
 
 type Request = Database["public"]["Functions"]["admin_support_requests"]["Returns"][number];
+const CATEGORY_LABEL: Record<string, string> = {
+  account: "계정·프로필",
+  introduction: "소개·일정",
+  payment: "티켓·결제",
+  safety: "안전·신고",
+  other: "기타",
+};
 
 function AdminSupport() {
   const [status, setStatus] = useState<"open" | "answered">("open");
@@ -83,7 +90,8 @@ function AdminSupport() {
             <article key={request.id} className="rounded-surface border border-border bg-card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>
-                  {request.category} · {new Date(request.created_at).toLocaleString("ko-KR")}
+                  {CATEGORY_LABEL[request.category] ?? "기타"} ·{" "}
+                  {new Date(request.created_at).toLocaleString("ko-KR")}
                 </span>
                 <Link
                   to="/admin/members/$id"

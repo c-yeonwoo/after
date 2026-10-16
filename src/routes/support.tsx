@@ -147,7 +147,7 @@ function SupportPage() {
         <p>로그인할 수 없거나 별도 답변이 필요하다면 이메일로 보내주세요.</p>
         <a
           href={`mailto:${BUSINESS.contactEmail}?subject=${subject}`}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-primary px-4 font-semibold text-primary-foreground"
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-4 font-semibold text-foreground"
         >
           <Mail className="size-4" aria-hidden="true" />
           {BUSINESS.contactEmail}
