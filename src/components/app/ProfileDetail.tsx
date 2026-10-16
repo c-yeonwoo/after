@@ -31,9 +31,8 @@ export type ProfileView = {
   화면에서 정보 0 인 템플릿 문법이었다. 그리고 사진이 맨 위를 차지해 "결" 보다
   얼굴이 먼저 읽혔다.
 
-  지금은 **사람의 문장이 주인공**이다. 이름 → 한 줄 소개(인용) → 소개글 첫 문단 →
-  사진(첫 문단 뒤, 종이 매트) → 나머지 소개글 → 기본 정보 → 문장형 목록 순서다.
-  세리프는 이름·인용·소개글에만 쓴다. 라벨·목록·버튼은 Pretendard 다.
+  사람의 문장이 먼저다. 이름 → 한 줄 소개 → 소개글 → 사진 → 기본 정보 순서.
+  명조는 한 줄 인용에만 남기고, 이름과 본문은 화면의 나머지 UI와 같은 서체로 읽힌다.
 */
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -65,7 +64,7 @@ function PhotoTile({ path, name, index }: { path: string; name: string; index: n
   // 비공개 버킷이라 표시할 때마다 서명 URL 을 받는다(S11).
   const src = usePhotoUrl(path);
   return (
-    <div className="aspect-[3/4] w-[44%] shrink-0 snap-start overflow-hidden rounded-surface bg-muted">
+    <div className="aspect-[3/4] w-[56%] shrink-0 snap-start overflow-hidden rounded-surface bg-muted">
       {src ? (
         <img
           src={src}
@@ -84,14 +83,14 @@ function PhotoTile({ path, name, index }: { path: string; name: string; index: n
 
 /*
   사진은 소개장의 삽화다. 한 장이 화면 폭을 다 쓰면 글보다 사진이 먼저 읽힌다
-  (2026-10-10). 3장 이상(s53)을 한 줄에 두 장 남짓 보이게 가로로 넘긴다 — 다음
+  (2026-10-10). 3장 이상(s53)을 한 줄에 한 장 반 정도 보이게 가로로 넘긴다 — 다음
   사진이 살짝 보여야 넘길 수 있다는 걸 안다.
 */
 function Photos({ paths, name }: { paths: string[]; name: string }) {
   if (paths.length === 0) return null;
   return (
     <div
-      className="-mx-5 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]"
+      className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 [scrollbar-width:none]"
       aria-label={`${name} 사진 ${paths.length}장`}
     >
       {paths.map((path, i) => (
@@ -127,7 +126,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
   return (
     <article className="space-y-7 pb-4">
       <header>
-        <h2 className="serif text-[1.75rem] leading-[1.3] font-bold text-foreground">
+        <h2 className="text-[1.875rem] leading-[1.25] font-semibold tracking-[-0.035em] text-foreground">
           {p.name}
           {p.age ? (
             <span className="ml-2 font-sans text-base font-medium text-muted-foreground">
@@ -141,24 +140,15 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       </header>
 
       {p.headline ? (
-        <blockquote className="relative pl-7">
-          <span
-            aria-hidden="true"
-            className="serif absolute top-[-0.35rem] left-0 text-[2.5rem] leading-none text-primary-strong"
-          >
-            “
-          </span>
-          <p data-selectable className="serif text-xl leading-[1.5] text-foreground">
+        <blockquote className="border-l-2 border-brand-blush pl-4">
+          <p data-selectable className="serif text-xl leading-[1.65] text-foreground">
             {p.headline}
           </p>
         </blockquote>
       ) : null}
 
       {first ? (
-        <p
-          data-selectable
-          className="serif text-[1.0625rem] leading-[1.8] whitespace-pre-line text-foreground"
-        >
+        <p data-selectable className="text-base leading-[1.8] whitespace-pre-line text-foreground">
           {first}
         </p>
       ) : null}
@@ -169,7 +159,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         <p
           key={para}
           data-selectable
-          className="serif text-[1.0625rem] leading-[1.8] whitespace-pre-line text-foreground"
+          className="text-base leading-[1.8] whitespace-pre-line text-foreground"
         >
           {para}
         </p>
@@ -207,7 +197,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
                 <p className="text-sm font-semibold text-foreground">{a.q}</p>
                 <p
                   data-selectable
-                  className="serif mt-1.5 text-base leading-[1.75] whitespace-pre-line text-foreground"
+                  className="mt-1.5 text-base leading-[1.75] whitespace-pre-line text-foreground"
                 >
                   {a.a}
                 </p>

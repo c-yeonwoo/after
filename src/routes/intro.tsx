@@ -336,19 +336,15 @@ function IntroPage() {
         ) : null
       }
     >
-      <div className="mb-4">
-        {isMale && reason && !maleAnswered ? (
-          <ReasonNote reason={reason} />
-        ) : (
-          <GuideNote>
-            {maleAnswered
-              ? "답을 받았어요. 다음 단계가 생기면 알려 드릴게요."
-              : isMale
-                ? "오늘 소개할 한 분입니다. 편하게 읽어 보세요."
-                : "오늘 살펴볼 한 분입니다. 편하게 읽고 답해 주세요."}
-          </GuideNote>
-        )}
-      </div>
+      {maleAnswered || (isMale && reason) ? (
+        <div className="mb-5">
+          {isMale && reason && !maleAnswered ? (
+            <ReasonNote reason={reason} />
+          ) : (
+            <GuideNote>답을 받았어요. 다음 단계가 생기면 알려 드릴게요.</GuideNote>
+          )}
+        </div>
+      ) : null}
 
       <ProfileDetail p={view} />
 
@@ -429,7 +425,7 @@ function ReasonNote({ reason }: { reason: string }) {
   return (
     <div className="rounded-surface border border-border bg-card px-5 py-4">
       <p className="text-xs font-medium text-muted-foreground">애프터 운영팀이 전하는 말</p>
-      <p data-selectable className="serif mt-2 text-base leading-[1.7] text-foreground">
+      <p data-selectable className="mt-2 text-base leading-[1.7] text-foreground">
         {reason}
       </p>
     </div>
@@ -463,7 +459,7 @@ function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
       {teaser.reason ? (
         <div className="mt-4 border-t border-border pt-4">
           <p className="text-xs font-medium text-muted-foreground">애프터 운영팀이 전하는 말</p>
-          <p className="serif mt-1.5 text-base leading-[1.7] text-foreground">{teaser.reason}</p>
+          <p className="mt-1.5 text-base leading-[1.7] text-foreground">{teaser.reason}</p>
         </div>
       ) : null}
       <p className="mt-4 text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>

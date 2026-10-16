@@ -26,16 +26,22 @@ export function Logo({ className, size = "md" }: { className?: string; size?: "s
     <span
       className={cn(
         "inline-flex min-w-0 items-center whitespace-nowrap text-foreground",
-        size === "sm" ? "gap-1.5 text-lg" : "gap-2 text-xl",
+        size === "sm" ? "text-[1.625rem]" : "text-[2rem]",
         className,
       )}
       aria-label={BRAND.name}
       role="img"
     >
-      <LogoMark className="size-5" />
-      <span aria-hidden="true" className="font-sans text-[1em] font-semibold tracking-[-0.05em]">
+      <span
+        aria-hidden="true"
+        className="font-sans text-[1em] leading-none font-bold tracking-[-0.065em]"
+      >
         {BRAND.nameEn}
       </span>
+      <span
+        aria-hidden="true"
+        className="mb-[0.06em] ml-[0.09em] size-[0.18em] self-end rounded-full bg-brand-blush"
+      />
     </span>
   );
 }

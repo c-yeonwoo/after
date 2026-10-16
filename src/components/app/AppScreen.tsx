@@ -120,7 +120,7 @@ export function AppScreen({
             </Link>
           ) : null}
           {title ? (
-            <h1 className="serif min-w-0 flex-1 truncate text-[1.3125rem] font-semibold">
+            <h1 className="min-w-0 flex-1 truncate text-xl font-semibold tracking-[-0.025em]">
               {title}
             </h1>
           ) : (
@@ -178,12 +178,23 @@ export function AppScreen({
                     to={t.to}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex min-h-14 flex-col items-center justify-center gap-1 pt-2 text-2xs font-semibold transition-colors",
+                      "pressable flex min-h-16 flex-col items-center justify-center gap-1 pt-2 text-2xs font-medium",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       active ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
-                    <Icon className="size-5" aria-hidden="true" strokeWidth={active ? 2.6 : 1.9} />
+                    <span
+                      className={cn(
+                        "flex h-7 w-12 items-center justify-center rounded-full",
+                        active && "bg-surface-subtle",
+                      )}
+                    >
+                      <Icon
+                        className="size-5"
+                        aria-hidden="true"
+                        strokeWidth={active ? 2.3 : 1.7}
+                      />
+                    </span>
                     {t.label}
                   </Link>
                 </li>

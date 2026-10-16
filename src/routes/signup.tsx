@@ -1172,7 +1172,7 @@ function Onboarding() {
       <div className="rounded-surface border border-border bg-card p-5">
         <div className="flex items-start gap-4">
           <div className="min-w-0 flex-1">
-            <p className="serif text-lg font-semibold">
+            <p className="text-lg font-semibold">
               {basics.name}
               {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
             </p>

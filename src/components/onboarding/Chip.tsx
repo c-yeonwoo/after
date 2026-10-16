@@ -21,10 +21,10 @@ export function Chip({
       onClick={onClick}
       className={cn(
         "inline-flex min-h-11 items-center justify-center rounded-control border px-4 text-center",
-        "font-sans text-sm leading-none font-medium tracking-[-0.01em] transition-colors",
+        "pressable font-sans text-sm leading-none font-medium tracking-[-0.01em]",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         selected
-          ? "border-primary bg-primary text-primary-foreground font-semibold"
+          ? "border-primary-strong bg-brand-tint text-foreground font-semibold"
           : "border-border bg-card text-foreground",
         disabled && !selected ? "cursor-not-allowed opacity-45" : "",
         className,

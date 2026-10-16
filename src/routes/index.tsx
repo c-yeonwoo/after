@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { ArrowRight, MapPin } from "lucide-react";
 
 import { BRAND, COVERAGE_LABEL } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
+import { Button } from "@/components/ui/button";
 
 const OG_IMAGE = `https://${BRAND.domain}/og-image.png`;
 
@@ -66,66 +68,73 @@ function Landing() {
           <Logo size="sm" className="min-w-0 shrink" />
           <Link
             to="/login"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-foreground underline underline-offset-4"
+            className="pressable inline-flex min-h-11 items-center rounded-control px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             로그인
           </Link>
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-6">
-        <section className="flex min-h-[calc(100svh-14rem)] flex-col justify-center pt-6 pb-10">
-          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-primary-strong" aria-hidden="true" />
-            {COVERAGE_LABEL} 직장인 소개
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
+        <section className="pt-7 pb-12">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <MapPin className="size-3.5" aria-hidden="true" />
+            {COVERAGE_LABEL} · 직장인 소개
           </p>
-          <h1 className="serif mt-4 text-[clamp(2rem,9.6vw,2.5rem)] leading-[1.28] font-bold text-foreground">
+          <h1 className="mt-4 text-[clamp(1.875rem,8.3vw,2.25rem)] leading-[1.25] font-semibold tracking-[-0.045em] text-foreground">
             퇴근 후,
             <br />한 사람과의 약속.
           </h1>
-          <p className="mt-5 text-[1.0625rem] leading-[1.65] text-foreground">
-            회사 근처에서 한 사람씩.
+          <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted-foreground">
+            끝없는 탐색 대신, 만나고 싶은 한 사람.
             <br />
-            소개부터 약속 조율까지 함께해요.
+            소개부터 약속 조율까지 애프터와 함께해요.
           </p>
-          <button
-            type="button"
-            onClick={start}
-            className="mt-8 flex min-h-[52px] w-full items-center justify-center rounded-control bg-primary px-4 text-base font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            가입하고 시작하기
-          </button>
-          <p className="mt-3 text-center text-sm text-muted-foreground">
-            회사 이메일 주소는 상대에게 공개되지 않아요.
+          <div className="mt-6 overflow-hidden rounded-[1.25rem] bg-ink">
+            <img
+              src="/brand/after-hours.jpg"
+              alt=""
+              width="768"
+              height="960"
+              fetchPriority="high"
+              className="h-[clamp(10rem,27svh,14rem)] w-full object-cover object-bottom"
+            />
+          </div>
+          <Button type="button" onClick={start} className="mt-6 min-h-[52px] w-full text-base">
+            애프터 시작하기 <ArrowRight aria-hidden="true" />
+          </Button>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            무료 베타 진행 중 · 회사 이메일로 가입해요
           </p>
         </section>
 
         <section aria-labelledby="sample-title" className="pb-12">
-          <h2 id="sample-title" className="text-base font-semibold text-foreground">
-            소개는 이렇게 도착해요
+          <p className="text-xs font-medium text-primary-strong">한 번에 한 사람</p>
+          <h2
+            id="sample-title"
+            className="mt-2 text-2xl leading-snug font-semibold text-foreground"
+          >
+            조건 너머의 이야기를 읽어요.
           </h2>
           <SampleIntro />
         </section>
 
         <section aria-labelledby="steps-title" className="border-t border-border py-10">
-          <h2 id="steps-title" className="text-base font-semibold text-foreground">
-            이렇게 진행돼요
+          <h2 id="steps-title" className="text-2xl font-semibold text-foreground">
+            소개에서 약속까지.
           </h2>
           <ol className="mt-5 space-y-5">
             {[
-              [
-                "나를 소개해요",
-                "회사 이메일·휴대폰을 확인하고, 사진과 짧은 답변으로 소개장을 만들어요.",
-              ],
+              ["나를 소개해요", "회사 이메일을 확인하고, 사진과 짧은 답변으로 나를 알려요."],
               ["한 사람씩 소개받아요", "운영팀이 확인한 소개를 읽고, 더 알아갈지 결정해요."],
               [
                 "만날 시간을 정해요",
                 "가까운 장소와 평일 저녁 시간을 제안하면 상대가 고를 수 있어요.",
               ],
             ].map(([title, body], i) => (
-              <li key={title} className="grid grid-cols-[1.75rem_1fr] gap-x-2">
-                <span className="serif text-lg leading-[1.4] font-bold text-primary-strong">
-                  {i + 1}
+              <li key={title} className="grid grid-cols-[2rem_1fr] gap-x-3">
+                <span className="flex size-8 items-center justify-center rounded-full bg-surface-subtle text-xs font-semibold text-foreground tabular-nums">
+                  {String(i + 1).padStart(2, "0")}
                 </span>
                 <div>
                   <p className="text-base leading-snug font-semibold text-foreground">{title}</p>
@@ -147,13 +156,12 @@ function Landing() {
             만남 요청이 거절되거나 24시간 안에 답이 없으면 티켓은 돌아옵니다. 소개와 만남은 보장되지
             않아요.
           </p>
-          <button
-            type="button"
-            onClick={start}
-            className="mt-8 flex min-h-[52px] w-full items-center justify-center rounded-control bg-primary px-4 text-base font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            가입하고 시작하기
-          </button>
+          <Button type="button" onClick={start} className="mt-7 min-h-[52px] w-full text-base">
+            애프터 시작하기 <ArrowRight aria-hidden="true" />
+          </Button>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            회사 이메일 주소는 상대에게 공개되지 않아요.
+          </p>
         </section>
         <footer
           className="border-t border-border pt-3"
@@ -197,24 +205,20 @@ function Landing() {
  */
 function SampleIntro() {
   return (
-    <figure className="mt-4 rounded-surface border border-border bg-card p-5 shadow-card">
-      <p className="text-xs font-medium text-muted-foreground">화면 예시 · 실제 회원이 아니에요</p>
-      <p className="serif mt-4 text-2xl leading-[1.3] font-bold text-foreground">
+    <figure className="mt-6 rounded-[1.25rem] border border-border bg-card p-6">
+      <figcaption className="text-xs font-medium text-muted-foreground">
+        소개 예시 · 가상의 프로필
+      </figcaption>
+      <p className="mt-5 text-2xl leading-[1.3] font-semibold text-foreground">
         지원 <span className="font-sans text-base font-medium text-muted-foreground">31</span>
       </p>
       <p className="mt-0.5 text-sm text-muted-foreground">회계 · {COVERAGE_LABEL}</p>
-      <blockquote className="relative mt-5 pl-6">
-        <span
-          aria-hidden="true"
-          className="serif absolute top-[-0.3rem] left-0 text-[2rem] leading-none text-primary-strong"
-        >
-          “
-        </span>
-        <p className="serif text-lg leading-[1.5] text-foreground">
+      <blockquote className="mt-5 border-l-2 border-brand-blush pl-4">
+        <p className="serif text-lg leading-[1.65] text-foreground">
           퇴근하고 한강까지 뛰는 게 요즘 제일 좋아하는 시간이에요.
         </p>
       </blockquote>
-      <p className="serif mt-4 text-base leading-[1.8] text-foreground">
+      <p className="mt-5 text-sm leading-[1.8] text-muted-foreground">
         처음 만나는 자리라면 길게 걷기보다 가볍게 저녁을 먹으며 이야기하는 쪽이 편해요. 최근에 본
         전시 이야기를 나누고 싶어요.
       </p>
