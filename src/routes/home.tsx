@@ -162,8 +162,8 @@ function HomePage() {
 
   return (
     <AppScreen action={<NotificationBell />}>
-      <p className="mt-4 text-2xs font-medium text-muted-foreground">
-        {hub?.label ?? PRIMARY_HUB.label}
+      <p className="mt-5 text-xs font-medium text-muted-foreground">
+        {hub?.label ?? PRIMARY_HUB.label} · {me.name ? `${me.name}님` : "나의 애프터"}
       </p>
       {/*
         예전에는 아랫줄을 브랜드 색으로 칠했다. 그런데 그 자리에 오는 문장은
@@ -174,14 +174,9 @@ function HomePage() {
         강조색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
         상태 문장이 저절로 앞으로 나온다. 살구색은 작은 포인트와 선택 상태에 쓴다.
       */}
-      {/*
-        인사와 상태를 두 색·두 줄 39px 로 쌓던 것을 나눈다(2026-10-10 디자인 정리).
-        화면에서 가장 큰 글자는 상태 한 문장이고, 소개장과 같은 명조로 쓴다.
-      */}
-      <p className="mt-1 text-sm text-muted-foreground">
-        {me?.name ? `${me.name}님,` : "안녕하세요,"}
-      </p>
-      <h1 className="serif mt-1 text-[1.75rem] leading-[1.35] font-semibold">{headline}</h1>
+      <h1 className="mt-3 max-w-[19rem] text-[1.75rem] leading-[1.35] font-semibold tracking-[-0.035em]">
+        {headline}
+      </h1>
 
       {noShow ? (
         <div className="mt-5">
@@ -376,12 +371,21 @@ function ReadinessPanel({
   const [busy, setBusy] = useState(false);
 
   return (
-    <section className="mt-6" aria-label="소개 설정">
-      <div className="overflow-hidden rounded-surface border border-border bg-card">
-        <div className="flex min-h-16 items-center gap-3.5 px-5">
+    <section className="mt-4" aria-label="소개 설정">
+      <div className="overflow-hidden rounded-[1.25rem] border border-border bg-card">
+        {!paused ? (
+          <img
+            src="/brand/after-hours.jpg"
+            alt=""
+            width="768"
+            height="960"
+            className="h-40 w-full object-cover object-[center_65%]"
+          />
+        ) : null}
+        <div className="flex min-h-20 items-center gap-3.5 px-5 py-4">
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">
-              {paused ? "지금은 쉬는 중입니다" : "소개를 받는 중입니다"}
+              {paused ? "소개 쉬어가기" : "새 소개 받기"}
             </span>
             <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
               {paused
@@ -418,7 +422,7 @@ function ReadinessPanel({
           <div className="flex min-h-14 items-center gap-3.5 border-t border-border px-5">
             <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
               {introTickets > 0
-                ? `소개가 오면 바로 열 수 있습니다. 소개 티켓 ${introTickets}장 보유.`
+                ? `소개 티켓 ${introTickets}장 보유`
                 : introPaymentsEnabled
                   ? "소개를 열려면 소개 티켓 1장이 필요합니다."
                   : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
@@ -447,7 +451,7 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
         <p className="text-3xs font-semibold text-muted-foreground">
           {isMale ? "오늘의 소개" : "살펴볼 소개"}
         </p>
-        <p className="serif mt-3 text-2xl leading-[1.3] font-bold">
+        <p className="mt-3 text-2xl leading-[1.3] font-semibold">
           {candidate.name}
           {candidate.age !== null ? (
             <span className="ml-2 text-base text-muted-foreground">{candidate.age}</span>
@@ -455,15 +459,14 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
         {candidate.headline ? (
-          <p className="serif mt-3 line-clamp-2 text-base leading-[1.5] text-foreground">
-            <span className="text-primary-strong">“</span>
+          <p className="serif mt-4 line-clamp-2 border-l-2 border-brand-blush pl-3 text-lg leading-[1.65] text-foreground">
             {candidate.headline}
           </p>
         ) : null}
       </div>
       <Link
         to="/intro"
-        className="headline flex min-h-14 items-center justify-center gap-2 bg-primary text-base text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="pressable flex min-h-14 items-center justify-between gap-2 border-t border-border px-5 text-sm font-semibold text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {isMale ? "프로필 열어보기" : "읽고 답하기"}
         <ArrowRight className="size-4" aria-hidden="true" />
@@ -598,7 +601,7 @@ function ConfirmedCard({
           만남 확정
         </p>
         {meeting.scheduled_at ? (
-          <p className="serif mt-2 text-2xl font-semibold text-primary-foreground">
+          <p className="mt-2 text-2xl font-semibold text-primary-foreground">
             {formatWhen(meeting.scheduled_at)}
           </p>
         ) : null}

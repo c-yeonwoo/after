@@ -36,8 +36,8 @@ export function StepShell({
         className="z-20 shrink-0 bg-background pb-2"
         style={{
           paddingTop: "var(--safe-top)",
-          paddingLeft: "max(env(safe-area-inset-left, 0px), 1rem)",
-          paddingRight: "max(env(safe-area-inset-right, 0px), 1rem)",
+          paddingLeft: "max(env(safe-area-inset-left, 0px), 1.25rem)",
+          paddingRight: "max(env(safe-area-inset-right, 0px), 1.25rem)",
         }}
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
@@ -55,15 +55,17 @@ export function StepShell({
           aria-label="가입 진행률"
         >
           <div
-            className="h-full rounded-full bg-foreground transition-all duration-500"
-            style={{ width: `${(step / total) * 100}%` }}
+            className="h-full origin-left rounded-full bg-foreground transition-transform duration-200 ease-out motion-reduce:transition-none"
+            style={{ transform: `scaleX(${step / total})` }}
           />
         </div>
       </header>
 
       <main className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-8 pb-10">
         <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
-        <h1 className="serif mt-2 text-[1.625rem] leading-[1.35] font-semibold">{title}</h1>
+        <h1 className="mt-2 text-[1.75rem] leading-[1.3] font-semibold tracking-[-0.035em]">
+          {title}
+        </h1>
         {description ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
         ) : null}

@@ -39,7 +39,7 @@
 
   /*
    * 소개장(D3, 2026-10-10) — 사람의 문장을 읽히게 하는 세리프.
-   * 사람 이름·한 줄 소개·소개글·랜딩 제목에만 쓴다. 버튼·라벨·폼은 Pretendard 다.
+   * 한 줄 소개처럼 사람의 목소리를 인용하는 자리에만 쓴다. 제목·본문·폼은 Pretendard 다.
    * 세리프를 UI 전체에 깔면 "청첩장·결정사" 로 미끄러진다(진단 디자인 C 리스크).
    */
   --font-serif: "Gowun Batang", "Nanum Myeongjo", "AppleMyungjo", serif;
@@ -184,8 +184,9 @@
 
   /* 라운드 스케일 기준값 — sm .5 / md .625 / lg .75 / xl 1 / 2xl 1.25 / 3xl 1.5rem */
   --radius: 0.75rem;
-  /* 입력폼은 한 단계 더 각지게 */
-  --radius-field-value: 0.5rem;
+  /* 입력과 버튼은 같은 12px 모서리로 묶는다. */
+  --radius-field-value: 0.75rem;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* ── 브랜드 원천 값 — 봉랍(seal) 한 색 ── */
   --brand-50: oklch(0.98 0.009 84.6); /* #FBF8F2 */
@@ -215,8 +216,8 @@
   --ink: oklch(0.295 0.02 169.4); /* #23302B */
   --ink-muted: oklch(0.513 0.016 162); /* #5F6A64 — 크림 5.22 · 카드 5.53 · 보조면 4.66 */
 
-  --surface: oklch(0.994 0.007 88.6); /* #FFFDF8 */
-  --surface-subtle: oklch(0.936 0.016 82.8); /* #EFE9DE */
+  --surface: oklch(1 0 0);
+  --surface-subtle: oklch(0.956 0.006 85);
   --success: oklch(0.492 0.06 164); /* #3F6C58 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
 
@@ -226,7 +227,7 @@
   --shadow-brand: 0 14px 34px -18px oklch(0.487 0.133 36 / 20%);
 
   /* ── 시맨틱 (shadcn) ── */
-  --background: oklch(0.974 0.011 84.6); /* #FAF6EE 크림 */
+  --background: oklch(0.985 0.004 85); /* 따뜻한 오프화이트 */
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
@@ -253,7 +254,7 @@
   /* 브랜드가 로즈(h≈5)라 경고색은 hue 를 벌려 둔다 — 안 그러면 "위험"이 브랜드로 읽힌다. */
   --destructive: oklch(0.532 0.151 22.4); /* #B33F42 */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.896 0.019 83.1); /* #E3DCCF */
+  --border: oklch(0.9 0.006 85);
   --input: oklch(0.632 0.012 149.8); /* #858C86 — 크림 3.20 */
   /* 포커스 링은 얇은 선이라 채움색으로는 안 보인다(2.14). 글자 역할과 같은 톤을 쓴다. */
   --ring: var(--brand-text);
@@ -363,6 +364,7 @@
     overflow: hidden;
     /* 고무줄 바운스가 고정 바를 끌고 다니지 않게 한다 */
     overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
   }
 
   /*
@@ -387,22 +389,24 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
 
-    /*
-      ── 여기부터 "웹처럼 보이는 것" 을 지운다 ──
-
-      웹뷰를 그냥 두면 네이티브 앱과 다르다는 게 조작할 때마다 드러난다.
-        · 탭할 때마다 회색 사각형이 번쩍인다(-webkit-tap-highlight-color).
-        · 카드나 라벨을 꾹 누르면 텍스트 선택 핸들과 "복사" 팝업이 뜬다.
-        · 두 번 탭하면 확대된다.
-      아래 셋이 그 셋을 각각 끈다. iOS 앱에서 이런 동작을 하는 곳은 없다.
-
-      선택은 **필요한 곳에만 되살린다**(아래 규칙) — 다 막으면 대화 내용이나
-      상대가 적어 준 장소를 복사할 수 없다. 그건 네이티브 앱도 되는 일이다.
-    */
+    /* 기본 탭 하이라이트 대신 컨트롤 자체의 눌림 상태를 쓴다. */
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 본문·오류·주소는 복사 가능하게 두고, 조작부에만 선택 제한을 둔다. */
+  button,
+  [role="button"],
+  [role="switch"],
+  nav a {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  button,
+  a,
+  [role="button"],
+  [role="switch"] {
     touch-action: manipulation;
   }
 
@@ -426,6 +430,7 @@
   .overflow-y-auto,
   .overflow-auto {
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /*
@@ -452,6 +457,37 @@
   }
 }
 
+/* iOS 자동 확대를 막되 사용자의 핀치 확대는 허용한다. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: max(1rem, 16px);
+  }
+}
+
+@utility pressable {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease-out,
+    color 140ms ease-out,
+    opacity 140ms ease-out;
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable {
+    transition:
+      background-color 100ms ease-out,
+      color 100ms ease-out;
+    &:active {
+      transform: none;
+    }
+  }
+}
+
 /* 헤드라인 — Pretendard Bold. 한글은 0.98 행간이면 두 줄이 붙어서 1.25 로 연다. */
 @utility headline {
   font-family: var(--font-display);
@@ -461,7 +497,7 @@
   line-height: 1.25;
 }
 
-/* 소개장 — 사람의 문장(이름·한 줄 소개·소개글·랜딩 제목). */
+/* 소개장의 한 줄 인용. 제목·긴 본문에는 쓰지 않는다. */
 @utility serif {
   font-family: var(--font-serif);
   font-synthesis-weight: none;

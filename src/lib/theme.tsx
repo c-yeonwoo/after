@@ -41,6 +41,10 @@ function systemPrefersDark() {
 function apply(choice: ThemeChoice) {
   const dark = choice === "dark" || (choice === "system" && systemPrefersDark());
   document.documentElement.classList.toggle("dark", dark);
+  // OS 모드가 아닌 앱 내부 선택도 브라우저 상단 색에 반영한다.
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", dark ? "#161C19" : "#FBFAF7");
   return dark;
 }
 
