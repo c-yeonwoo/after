@@ -1,4 +1,6 @@
 begin;
+-- 만료된 유료 티켓이 무료 베타 발급으로 대체되지 않도록 유료 모드를 명시한다.
+update public.app_settings set payments_enabled = true;
 select plan(11);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)

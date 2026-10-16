@@ -13,6 +13,13 @@ import { BUSINESS } from "@/lib/policy";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/support")({
+  validateSearch: (search: Record<string, unknown>): { meetingId?: string } => ({
+    meetingId:
+      typeof search.meetingId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.meetingId)
+        ? search.meetingId
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: `고객 지원 — ${BRAND.name}` },
@@ -26,8 +33,9 @@ export const Route = createFileRoute("/support")({
 });
 
 function SupportPage() {
+  const { meetingId } = Route.useSearch();
   const { me, ready } = useMe();
-  const [category, setCategory] = useState("account");
+  const [category, setCategory] = useState(meetingId ? "introduction" : "account");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [requests, setRequests] = useState<SupportRequest[] | null>(null);
@@ -47,19 +55,32 @@ function SupportPage() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const message = body.trim();
-    if (message.length < 10 || message.length > 2000) return;
+    if (message.length < 10 || message.length > (meetingId ? 1000 : 2000)) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.rpc("create_support_request", {
-        p_category: category,
-        p_body: message,
-      });
+      const { error } = meetingId
+        ? await supabase.rpc("create_meeting_help_request", {
+            p_meeting_id: meetingId,
+            p_body: message,
+          })
+        : await supabase.rpc("create_support_request", {
+            p_category: category,
+            p_body: message,
+          });
       if (error) throw error;
       setBody("");
       await load();
       toast.success("문의가 접수되었습니다.");
-    } catch {
-      toast.error("접수하지 못했습니다. 잠시 후 다시 시도하거나 이메일로 연락해 주세요.");
+    } catch (error) {
+      toast.error(
+        meetingId &&
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "23505"
+          ? "이 약속의 문의가 이미 접수되어 있어요. 답변을 기다려 주세요."
+          : "접수하지 못했습니다. 잠시 후 다시 시도하거나 이메일로 연락해 주세요.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -68,34 +89,46 @@ function SupportPage() {
   return (
     <PublicInfoPage title="어떻게 도와드릴까요?">
       <InfoSection title="1:1 문의">
-        <p>가입, 소개, 결제 문제를 남기면 이 화면에서 답변을 확인할 수 있습니다.</p>
+        <p>
+          {meetingId
+            ? "이 약속의 일정이나 장소가 막혔다면 알려주세요. 운영팀이 확인하고 이 화면에서 답합니다."
+            : "가입, 소개, 결제 문제를 남기면 이 화면에서 답변을 확인할 수 있습니다."}
+        </p>
         {ready && me ? (
           <form onSubmit={(event) => void submit(event)} className="space-y-3">
-            <label htmlFor="support-category" className="block font-medium text-foreground">
-              문의 종류
-            </label>
-            <select
-              id="support-category"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              className="min-h-12 w-full rounded-field border border-input bg-card px-3 text-foreground"
-            >
-              {CATEGORIES.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            {!meetingId ? (
+              <>
+                <label htmlFor="support-category" className="block font-medium text-foreground">
+                  문의 종류
+                </label>
+                <select
+                  id="support-category"
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                  className="min-h-12 w-full rounded-field border border-input bg-card px-3 text-foreground"
+                >
+                  {CATEGORIES.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
             <label htmlFor="support-body" className="block font-medium text-foreground">
               문의 내용
             </label>
             <Textarea
               id="support-body"
               value={body}
-              maxLength={2000}
+              maxLength={meetingId ? 1000 : 2000}
               minLength={10}
               required
-              placeholder="무엇이 불편하셨나요? 필요한 내용만 적어주세요."
+              placeholder={
+                meetingId
+                  ? "예: 제안받은 날은 어렵고, 다음 주 수요일 저녁은 괜찮아요."
+                  : "무엇이 불편하셨나요? 필요한 내용만 적어주세요."
+              }
               onChange={(event) => setBody(event.target.value)}
             />
             <p className="text-xs">상대방의 연락처나 민감한 개인정보는 적지 말아 주세요.</p>

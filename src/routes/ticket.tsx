@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Ticket } from "lucide-react";
 import { toast } from "sonner";
@@ -23,13 +23,13 @@ import {
 export const Route = createFileRoute("/ticket")({
   head: () => ({
     meta: [
-      { title: `만남 티켓 — ${BRAND.name}` },
+      { title: `만남 준비 — ${BRAND.name}` },
       {
         name: "description",
-        content: "만남 티켓을 쓰면 애프터 자동 안내가 약속 조율을 시작합니다.",
+        content: "평일 저녁의 만남 후보와 장소를 함께 제안합니다.",
       },
-      { property: "og:title", content: `만남 티켓 — ${BRAND.name}` },
-      { property: "og:description", content: "티켓 한 장으로 한 번의 만남을 준비합니다." },
+      { property: "og:title", content: `만남 준비 — ${BRAND.name}` },
+      { property: "og:description", content: "퇴근 후의 만남을 함께 준비합니다." },
     ],
   }),
   component: TicketPage,
@@ -70,14 +70,14 @@ function TicketPage() {
 
   if (loading || paid === null) {
     return (
-      <AppScreen title="만남 티켓" hideTabs back="/intro">
+      <AppScreen title="만남 준비" hideTabs back="/intro">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen title="만남 티켓" hideTabs back="/intro">
+    <AppScreen title={paid ? "만남 티켓" : "만남 준비"} hideTabs back="/intro">
       <div className="mt-3">
         <GuideNote introduce>
           {waiting
@@ -96,7 +96,9 @@ function TicketPage() {
         <div className="bg-primary px-6 py-6 text-primary-foreground">
           <Ticket className="size-5 text-primary-foreground" aria-hidden="true" />
           <div className="mt-3 flex items-baseline justify-between gap-3">
-            <p className="text-lg font-semibold text-primary-foreground">만남 티켓 1장</p>
+            <p className="text-lg font-semibold text-primary-foreground">
+              {paid ? "만남 티켓 1장" : "만남 조율"}
+            </p>
             <p className="text-lg font-semibold text-primary-foreground">
               {paid ? MEETING_TICKET_PRICE_LABEL : "베타 무료"}
             </p>
@@ -105,8 +107,9 @@ function TicketPage() {
         </div>
         <ul className="space-y-2.5 px-6 py-5 text-sm">
           {[
-            // 거절 반환이 빠져 있었다 — 서버는 거절 즉시 돌려준다(decline_meeting).
-            "상대가 거절하거나 24시간 안에 답이 없으면 티켓을 돌려드립니다",
+            paid
+              ? "상대가 거절하거나 24시간 안에 답이 없으면 티켓을 돌려드립니다"
+              : "상대가 거절하거나 24시간 안에 답이 없으면 요청이 종료됩니다",
             "평일 저녁 후보와 장소를 한 번에 보냅니다",
             "상대가 하나를 고르면 약속이 정해지고 대화가 열립니다",
           ].map((t) => (
@@ -122,8 +125,9 @@ function TicketPage() {
         <div className="mt-7 rounded-surface bg-surface-subtle px-6 py-8 text-center">
           <p className="text-sm font-medium">답변을 기다리는 중입니다</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            상대가 후보 하나를 고르면 약속이 정해집니다. 거절하거나 24시간 안에 답이 없으면 티켓은
-            자동으로 반환됩니다.
+            {paid
+              ? "상대가 후보 하나를 고르면 약속이 정해집니다. 거절하거나 24시간 안에 답이 없으면 티켓은 자동으로 반환됩니다."
+              : "상대가 후보 하나를 고르면 약속이 정해집니다. 답이 없으면 이 요청은 종료돼요."}
           </p>
         </div>
       ) : readyToSchedule && meeting ? (
@@ -138,7 +142,7 @@ function TicketPage() {
         <Button className="mt-7 w-full" size="lg" onClick={() => navigate({ to: "/chats" })}>
           대화방으로 이동
         </Button>
-      ) : tickets > 0 && introId ? (
+      ) : (tickets > 0 || paid === false) && introId ? (
         /*
           D1-B(s51): 티켓을 쓰는 순간 평일 저녁 후보와 장소를 같이 보낸다. 예전엔 티켓만
           쓰고 여성이 날짜를 보내기를 기다린 뒤 남성이 장소를 빈칸에 적었다.
@@ -147,14 +151,27 @@ function TicketPage() {
           <MeetRequestForm
             introId={introId}
             counterpartName={counterpartName}
+            beta={paid === false}
             onRequested={(m) => {
               setMeeting(m);
               haptics.success();
             }}
           />
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            보유 만남 티켓 {tickets}장
+          {paid ? (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              보유 만남 티켓 {tickets}장
+            </p>
+          ) : null}
+        </div>
+      ) : !paid && !introId ? (
+        <div className="mt-7 rounded-surface bg-surface-subtle px-6 py-8 text-center">
+          <p className="text-sm font-medium">먼저 소개를 확인해 주세요</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            베타 기간에는 소개를 연 뒤 티켓 신청 없이 만남을 요청할 수 있습니다.
           </p>
+          <Button className="mt-5 w-full" onClick={() => navigate({ to: "/intro" })}>
+            소개 확인하기
+          </Button>
         </div>
       ) : order && paid ? (
         <div className="mt-7 rounded-surface border border-primary/30 bg-primary/8 px-6 py-7 text-center">
@@ -218,6 +235,15 @@ function TicketPage() {
           </p>
         </>
       )}
+      {meeting && !meeting.cancelled_at && !meeting.completed_at ? (
+        <Link
+          to="/support"
+          search={{ meetingId: meeting.id }}
+          className="mt-4 flex min-h-11 items-center justify-center text-sm text-muted-foreground underline underline-offset-4"
+        >
+          약속 조율 도움받기
+        </Link>
+      ) : null}
     </AppScreen>
   );
 }

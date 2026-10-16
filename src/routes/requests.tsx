@@ -186,6 +186,13 @@ function RequestsPage() {
                     <ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 )}
+                <Link
+                  to="/support"
+                  search={{ meetingId: meeting.id }}
+                  className="flex min-h-11 items-center justify-center border-t border-border text-xs text-muted-foreground underline underline-offset-4"
+                >
+                  일정 조율 도움받기
+                </Link>
               </div>
             </li>
           );

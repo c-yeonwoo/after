@@ -9,6 +9,8 @@
 -- 그 내부 경로를 클라이언트에 직접 열지 않았다는 것도 함께 검증한다.
 
 begin;
+-- 노쇼 보상 티켓의 기존 유료 경로를 검증한다.
+update public.app_settings set payments_enabled = true;
 select plan(19);
 
 -- ═══════════════════════════ 픽스처 ═══════════════════════════

@@ -8,14 +8,39 @@ import { cancelMeeting, fetchMeetings, type AdminMeeting, type MeetingFilter } f
 const STATES: MeetingFilter[] = ["active", "confirmed", "completed", "cancelled"];
 
 export const Route = createFileRoute("/admin/meetings")({
-  validateSearch: (s: Record<string, unknown>): { state?: MeetingFilter } => ({
+  validateSearch: (s: Record<string, unknown>): { state?: MeetingFilter; meeting?: string } => ({
     state: STATES.includes(s.state as MeetingFilter) ? (s.state as MeetingFilter) : undefined,
+    meeting: typeof s.meeting === "string" ? s.meeting : undefined,
   }),
   component: MeetingsTab,
 });
 
 const DATE = new Intl.DateTimeFormat("ko-KR", { dateStyle: "short", timeStyle: "short" });
 const when = (s: string | null) => (s ? DATE.format(new Date(s)) : "—");
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function urgency(m: AdminMeeting, now: number) {
+  if (m.cancelled_at || m.completed_at) return 5;
+  if (!m.prefs_submitted_at) return now >= Date.parse(m.created_at) + 18 * 60 * 60 * 1000 ? 0 : 3;
+  if (m.confirmed_at && m.scheduled_at && Date.parse(m.scheduled_at) < now) return 1;
+  if (!m.confirmed_at) return 2;
+  return 4;
+}
+
+function nextStep(m: AdminMeeting, now: number) {
+  if (m.cancelled_at || m.completed_at) return "처리 완료";
+  if (!m.prefs_submitted_at) {
+    const left = Date.parse(m.created_at) + DAY_MS - now;
+    return left <= 0
+      ? "응답 기한 경과"
+      : left <= 6 * 60 * 60 * 1000
+        ? "여성 응답 임박"
+        : "여성 응답 대기";
+  }
+  if (!m.confirmed_at) return "남성 날짜 선택 대기";
+  if (m.scheduled_at && Date.parse(m.scheduled_at) < now) return "만남 결과 확인";
+  return "약속 예정";
+}
 
 const FILTERS: { v: MeetingFilter | ""; label: string }[] = [
   { v: "active", label: "진행 중" },
@@ -26,7 +51,7 @@ const FILTERS: { v: MeetingFilter | ""; label: string }[] = [
 ];
 
 function MeetingsTab() {
-  const { state } = Route.useSearch();
+  const { state, meeting } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [rows, setRows] = useState<AdminMeeting[] | null>(null);
   /*
@@ -34,11 +59,21 @@ function MeetingsTab() {
     "지금 몇 건이 돌고 있나" 를 볼 수 없고, 실수로 옆 건을 취소할 여지도 커진다.
   */
   const [openId, setOpenId] = useState<string | null>(null);
+  const now = Date.now();
+  const sortedRows = rows
+    ? [...rows].sort(
+        (a, b) =>
+          urgency(a, now) - urgency(b, now) || Date.parse(a.created_at) - Date.parse(b.created_at),
+      )
+    : null;
+  const urgentCount = rows?.filter((m) => urgency(m, now) === 0).length ?? 0;
+  const outcomeCount = rows?.filter((m) => urgency(m, now) === 1).length ?? 0;
 
   const load = useCallback(async () => {
-    setRows(await fetchMeetings(state));
+    const fetched = await fetchMeetings(meeting ? undefined : state);
+    setRows(meeting ? fetched.filter((row) => row.id === meeting) : fetched);
     setOpenId(null);
-  }, [state]);
+  }, [state, meeting]);
 
   useEffect(() => {
     void load();
@@ -46,13 +81,25 @@ function MeetingsTab() {
 
   // 기본은 진행 중이다 — 운영자가 손댈 수 있는 건 그것뿐이다.
   useEffect(() => {
-    if (state === undefined) {
+    if (state === undefined && !meeting) {
       void navigate({ search: { state: "active" }, replace: true });
     }
-  }, [state, navigate]);
+  }, [state, meeting, navigate]);
 
   return (
     <>
+      {meeting ? (
+        <div className="mb-5 flex items-center justify-between gap-3 rounded-surface border border-border bg-card px-4 py-3 text-sm">
+          <span className="font-semibold">문의와 연결된 만남</span>
+          <Link
+            to="/admin/meetings"
+            search={{ state: "active" }}
+            className="text-primary-strong underline underline-offset-4"
+          >
+            전체 보기
+          </Link>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-1">
         {FILTERS.map((f) => (
           <button
@@ -69,13 +116,28 @@ function MeetingsTab() {
         ))}
       </div>
 
+      {state === "active" && rows ? (
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <div className="rounded-surface border border-border bg-card px-4 py-3 text-sm">
+            <span className="font-semibold tabular-nums">{urgentCount}건</span>
+            <span className="ml-2 text-muted-foreground">응답 기한 임박·경과</span>
+          </div>
+          <div className="rounded-surface border border-border bg-card px-4 py-3 text-sm">
+            <span className="font-semibold tabular-nums">{outcomeCount}건</span>
+            <span className="ml-2 text-muted-foreground">지난 만남 결과 확인</span>
+          </div>
+        </div>
+      ) : null}
+
       {rows === null ? (
         <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
       ) : rows.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">해당하는 만남이 없습니다.</p>
       ) : (
         <>
-          <p className="mt-5 text-sm text-muted-foreground tabular-nums">{rows.length}건</p>
+          <p className="mt-5 text-sm text-muted-foreground tabular-nums">
+            {rows.length}건 · 처리할 일부터
+          </p>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
               <thead>
@@ -83,6 +145,7 @@ function MeetingsTab() {
                   <Th>남성</Th>
                   <Th>여성</Th>
                   <Th>상태</Th>
+                  <Th>다음 단계</Th>
                   <Th>티켓</Th>
                   <Th>일정 · 장소</Th>
                   <Th>시작</Th>
@@ -90,13 +153,14 @@ function MeetingsTab() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((m) => (
+                {sortedRows?.map((m) => (
                   <MeetingRow
                     key={m.id}
                     m={m}
                     open={openId === m.id}
                     onToggle={() => setOpenId(openId === m.id ? null : m.id)}
                     onDone={load}
+                    now={now}
                   />
                 ))}
               </tbody>
@@ -113,11 +177,13 @@ function MeetingRow({
   open,
   onToggle,
   onDone,
+  now,
 }: {
   m: AdminMeeting;
   open: boolean;
   onToggle: () => void;
   onDone: () => void;
+  now: number;
 }) {
   const live = !m.cancelled_at && !m.completed_at;
 
@@ -144,6 +210,13 @@ function MeetingRow({
             <Tag tone="alert">응답 대기</Tag>
           )}
         </Td>
+        <Td
+          className={
+            urgency(m, now) <= 1 ? "font-semibold text-primary-strong" : "text-muted-foreground"
+          }
+        >
+          {nextStep(m, now)}
+        </Td>
         <Td className="text-muted-foreground">
           {m.ticket_state === "used" ? "사용" : m.ticket_state === "refunded" ? "반환" : "미사용"}
         </Td>
@@ -166,7 +239,7 @@ function MeetingRow({
       </tr>
       {open ? (
         <tr>
-          <td colSpan={7} className="border-b border-border bg-muted/30 px-3 py-3">
+          <td colSpan={8} className="border-b border-border bg-muted/30 px-3 py-3">
             {/*
               환불 여부를 운영자가 고른다. 취소 사유가 "장소 착오" 인지 "한쪽
               잘못" 인지는 사람만 아는 정보라 서버가 정할 수 없다. 기본은 환불 —

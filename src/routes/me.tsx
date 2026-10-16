@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, FileText, Receipt, Ticket, User } from "lucide-react";
+import { ArrowRight, Bell, CalendarDays, FileText, Receipt, Ticket, User } from "lucide-react";
 
 import { NotificationBell } from "@/components/app/NotificationBell";
 import { AppScreen } from "@/components/app/AppScreen";
 import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
-import { myStats, remainingCandidates, signOut, type MyStats } from "@/lib/api";
+import { myStats, paymentsEnabled, remainingCandidates, signOut, type MyStats } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { usePhotoUrl } from "@/lib/photo";
 
@@ -29,6 +29,13 @@ export const Route = createFileRoute("/me")({
  */
 const MENU = [
   { to: "/profile", icon: User, label: "내 프로필", hint: "상대에게 보이는 모습", male: false },
+  {
+    to: "/availability",
+    icon: CalendarDays,
+    label: "만남 가능 시간",
+    hint: "퇴근 후 편한 요일",
+    male: false,
+  },
   // 베타에는 결제를 받지 않으므로 구매·상점으로 부르지 않는다. 결제를 켠 뒤에도
   // 티켓 보유량과 신청 상태를 확인하는 화면이라 중립적인 이름이 더 오래 간다.
   { to: "/store", icon: Ticket, label: "티켓 받기", hint: "소개 · 만남 티켓", male: true },
@@ -43,6 +50,10 @@ const MENU = [
   },
 ] as const;
 
+function toVisibleInMenu(to: string, paid: boolean | null) {
+  return to !== "/store" || paid === true;
+}
+
 /**
  * 마이페이지 = 허브.
  *
@@ -56,6 +67,7 @@ function MePage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<MyStats | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [paid, setPaid] = useState<boolean | null>(null);
   const photo = usePhotoUrl(me?.photo_url);
   const isMale = me?.gender === "male";
 
@@ -73,6 +85,15 @@ function MePage() {
     myStats().then((s) => {
       if (!cancelled) setStats(s);
     });
+    if (me.gender === "male") {
+      paymentsEnabled()
+        .then((enabled) => {
+          if (!cancelled) setPaid(enabled);
+        })
+        .catch(() => {
+          if (!cancelled) setPaid(null);
+        });
+    }
     // 여성 화면의 티켓 자리를 대신 채우는 값. 남성에게는 부르지 않는다.
     if (me.gender === "female") {
       remainingCandidates().then((n) => {
@@ -140,7 +161,12 @@ function MePage() {
             남성에게는 티켓을 종류별로 나눠 적는다. 합치면 "몇 장이 무엇에
             쓰이는지" 를 잃고, 한쪽만 세면 나머지를 가진 사람이 0장을 본다.
           */}
-          {isMale ? (
+          {isMale && paid === false ? (
+            <div>
+              <dt className="text-3xs font-semibold text-muted-foreground">베타 이용</dt>
+              <dd className="mt-1 text-sm font-semibold">소개·만남 요청 무료</dd>
+            </div>
+          ) : isMale ? (
             <div>
               <dt className="text-3xs font-semibold text-muted-foreground">보유 티켓</dt>
               <dd className="headline mt-1 text-2xl tabular-nums">
@@ -191,21 +217,26 @@ function MePage() {
       {/* ── 메뉴 ──────────────────────────────── */}
       <nav className="mt-6" aria-label="설정 메뉴">
         <ul className="overflow-hidden rounded-surface border border-border bg-card">
-          {MENU.filter((m) => !m.male || isMale).map(({ to, icon: Icon, label, hint }) => (
-            <li key={to}>
-              <Link
-                to={to}
-                className="flex min-h-16 items-center gap-3.5 border-b border-border/70 px-5 last:border-0 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold">{label}</span>
-                  <span className="block text-xs text-muted-foreground">{hint}</span>
-                </span>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              </Link>
-            </li>
-          ))}
+          {MENU.filter((m) => (!m.male || isMale) && toVisibleInMenu(m.to, paid)).map(
+            ({ to, icon: Icon, label, hint }) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className="flex min-h-16 items-center gap-3.5 border-b border-border/70 px-5 last:border-0 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{label}</span>
+                    <span className="block text-xs text-muted-foreground">{hint}</span>
+                  </span>
+                  <ArrowRight
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </Link>
+              </li>
+            ),
+          )}
         </ul>
       </nav>
 

@@ -19,7 +19,9 @@ export type AdminMember = Database["public"]["Functions"]["admin_members"]["Retu
 export type AdminMeeting = Database["public"]["Functions"]["admin_meetings"]["Returns"][number];
 
 export type SupportItem =
-  Database["public"]["Functions"]["admin_support_requests"]["Returns"][number];
+  Database["public"]["Functions"]["admin_support_requests"]["Returns"][number] & {
+    meeting_id?: string | null;
+  };
 export type SupportCursor = { created_at: string; id: string };
 export type SupportPage = {
   items: SupportItem[];

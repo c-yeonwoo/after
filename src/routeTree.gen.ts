@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ConsentRouteImport } from './routes/consent'
@@ -60,6 +61,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvailabilityRoute = AvailabilityRouteImport.update({
+  id: '/availability',
+  path: '/availability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatsRoute = ChatsRouteImport.update({
@@ -266,6 +272,7 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
   '/consent': typeof ConsentRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
   '/consent': typeof ConsentRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
   '/consent': typeof ConsentRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/availability'
     | '/chats'
     | '/checkout'
     | '/consent'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/availability'
     | '/chats'
     | '/checkout'
     | '/consent'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/availability'
     | '/chats'
     | '/checkout'
     | '/consent'
@@ -532,6 +544,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AvailabilityRoute: typeof AvailabilityRoute
   ChatsRoute: typeof ChatsRoute
   CheckoutRoute: typeof CheckoutRoute
   ConsentRoute: typeof ConsentRoute
@@ -574,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/availability': {
+      id: '/availability'
+      path: '/availability'
+      fullPath: '/availability'
+      preLoaderRoute: typeof AvailabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chats': {
@@ -908,6 +928,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AvailabilityRoute: AvailabilityRoute,
   ChatsRoute: ChatsRoute,
   CheckoutRoute: CheckoutRoute,
   ConsentRoute: ConsentRoute,
