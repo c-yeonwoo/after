@@ -1985,6 +1985,15 @@ export type Database = {
       }
     }
     Functions: {
+      admin_support_page: {
+        Args: {
+          p_status?: string | null
+          p_before?: string | null
+          p_before_id?: string | null
+          p_limit?: number
+        }
+        Returns: Json
+      }
       admin_support_requests: {
         Args: { p_status?: string | null }
         Returns: {

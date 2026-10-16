@@ -31,21 +31,31 @@ function DashboardTab() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [openSupport, setOpenSupport] = useState<number | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [dashboard, ops, marketplace, supportCount] = await Promise.all([
+      const [dashboard, ops, marketplace, supportCount] = await Promise.allSettled([
         fetchDashboard(),
         fetchOperationalHealth(),
         fetchMarketplaceHealth(),
         fetchOpenSupportCount(),
       ]);
-      setD(dashboard);
-      setHealth(ops);
-      setMarket(marketplace);
-      setOpenSupport(supportCount);
-      setUpdatedAt(new Date());
+      const failed: string[] = [];
+      if (dashboard.status === "fulfilled") setD(dashboard.value);
+      else failed.push("운영 현황");
+      if (ops.status === "fulfilled") setHealth(ops.value);
+      else failed.push("처리 지표");
+      if (marketplace.status === "fulfilled") setMarket(marketplace.value);
+      else failed.push("수급 지표");
+      if (supportCount.status === "fulfilled") setOpenSupport(supportCount.value);
+      else failed.push("고객 문의");
+      setErrors(failed);
+      setCheckedAt(new Date());
+      if (failed.length === 0) setUpdatedAt(new Date());
     } finally {
       setRefreshing(false);
     }
@@ -53,10 +63,53 @@ function DashboardTab() {
 
   useEffect(() => {
     void load();
+    const refresh = window.setInterval(() => {
+      setNow(Date.now());
+      if (document.visibilityState === "visible") void load();
+    }, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [load]);
 
-  if (!d || !health || !market || openSupport === null)
-    return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
+  if (!d || !health || !market || openSupport === null) {
+    if (!checkedAt) return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
+    return (
+      <section className="space-y-4" aria-live="polite">
+        <h1 className="text-2xl font-semibold">오늘의 운영</h1>
+        <div role="alert" className="rounded-surface border border-destructive/30 p-4 text-sm">
+          {errors.join("·")}을 확인할 수 없습니다. 일부 현황만 표시합니다.
+          <button className="ml-3 underline" onClick={() => void load()} disabled={refreshing}>
+            다시 확인
+          </button>
+        </div>
+        {d ? (
+          <p className="text-sm">
+            미처리 신고 {d.backlog.pending_reports}건 · 사진 검수 {d.backlog.pending_photos}건
+          </p>
+        ) : null}
+        {health ? (
+          <p className="text-sm">
+            실패 알림 {health.notifications.failed}건 · 일정 지연{" "}
+            {health.scheduling.stale_confirmation}건
+          </p>
+        ) : null}
+        {openSupport !== null ? <p className="text-sm">미답변 고객 문의 {openSupport}건</p> : null}
+        {market ? (
+          <p className="text-sm">
+            소개 가능 회원 여성 {market.pool.eligible_female}명 · 남성 {market.pool.eligible_male}명
+          </p>
+        ) : null}
+      </section>
+    );
+  }
+
+  const staleMinutes = updatedAt ? Math.floor((now - updatedAt.getTime()) / 60_000) : null;
 
   const passRate =
     d.quality.intros_total > 0
@@ -126,8 +179,14 @@ function DashboardTab() {
     },
     {
       priority: "P1",
-      label: "큐레이션 대기 호감",
+      label: "큐레이션 가능한 호감",
       count: d.backlog.unmatched_likes,
+      to: "/admin/curation",
+    },
+    {
+      priority: "P1",
+      label: "자격 대기 호감",
+      count: d.backlog.blocked_likes,
       to: "/admin/curation",
     },
     {
@@ -159,6 +218,20 @@ function DashboardTab() {
             : "새로고침"}
         </button>
       </div>
+
+      {errors.length > 0 ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-surface border border-destructive/30 px-4 py-3 text-sm"
+        >
+          {errors.join("·")} 조회에 실패했습니다. 표시된 값은 마지막 성공 시점 기준입니다.
+        </p>
+      ) : null}
+      {staleMinutes !== null && staleMinutes >= 2 ? (
+        <p className="mt-3 text-xs text-muted-foreground" role="status">
+          마지막 전체 확인 {staleMinutes}분 전{staleMinutes >= 5 ? " · 최신 상태 확인 필요" : ""}
+        </p>
+      ) : null}
 
       {work.length === 0 ? (
         <div className="mt-5 flex items-center gap-3 rounded-surface border border-border bg-card px-5 py-5">
@@ -285,7 +358,8 @@ function DashboardTab() {
             to="/admin/orders"
             search={{ state: "pending" as const }}
           />
-          <Stat label="소개 안 된 호감" value={d.backlog.unmatched_likes} />
+          <Stat label="큐레이션 가능 호감" value={d.backlog.unmatched_likes} />
+          <Stat label="자격 대기 호감" value={d.backlog.blocked_likes} />
           <Stat
             label="가장 오래 기다린 호감"
             value={d.backlog.oldest_like_hours}

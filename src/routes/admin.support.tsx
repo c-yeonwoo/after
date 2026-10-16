@@ -1,15 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { Database } from "@/lib/database.types";
+import { fetchSupportPage, type SupportCursor, type SupportPage } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin/support")({ component: AdminSupport });
 
-type Request = Database["public"]["Functions"]["admin_support_requests"]["Returns"][number];
 const CATEGORY_LABEL: Record<string, string> = {
   account: "계정·프로필",
   introduction: "소개·일정",
@@ -20,19 +19,37 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 function AdminSupport() {
   const [status, setStatus] = useState<"open" | "answered">("open");
-  const [requests, setRequests] = useState<Request[] | null>(null);
+  const [page, setPage] = useState<SupportPage | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const requestVersion = useRef(0);
 
-  const load = useCallback(async () => {
-    const { data, error } = await supabase.rpc("admin_support_requests", { p_status: status });
-    if (error) throw error;
-    setRequests(data);
-  }, [status]);
+  const load = useCallback(
+    async (cursor: SupportCursor | null = null) => {
+      const version = ++requestVersion.current;
+      setLoading(true);
+      try {
+        const next = await fetchSupportPage(status, cursor);
+        if (version !== requestVersion.current) return;
+        setPage((previous) =>
+          cursor && previous ? { ...next, items: [...previous.items, ...next.items] } : next,
+        );
+        setLoadError(false);
+      } catch {
+        if (version === requestVersion.current) setLoadError(true);
+      } finally {
+        if (version === requestVersion.current) setLoading(false);
+      }
+    },
+    [status],
+  );
 
   useEffect(() => {
-    void load().catch(() => toast.error("문의 목록을 불러오지 못했습니다."));
+    setPage(null);
+    void load();
   }, [load]);
 
   async function respond(id: string) {
@@ -71,6 +88,9 @@ function AdminSupport() {
               size="sm"
               variant={status === value ? "default" : "outline"}
               onClick={() => {
+                if (value === status) return;
+                requestVersion.current += 1;
+                setPage(null);
                 setStatus(value);
                 setSelected(null);
               }}
@@ -80,13 +100,24 @@ function AdminSupport() {
           ))}
         </div>
       </div>
-      {requests === null ? (
+      {loadError ? (
+        <div role="alert" className="mt-5 rounded-surface border border-destructive/30 p-4 text-sm">
+          문의 목록을 확인할 수 없습니다.
+          <Button className="ml-3" size="sm" variant="outline" onClick={() => void load()}>
+            다시 시도
+          </Button>
+        </div>
+      ) : null}
+      {page === null && loading ? (
         <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
-      ) : requests.length === 0 ? (
+      ) : page?.items.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">해당 문의가 없습니다.</p>
-      ) : (
+      ) : page ? (
         <div className="mt-5 space-y-3">
-          {requests.map((request) => (
+          <p className="text-xs text-muted-foreground">
+            전체 {page.total}건 · {page.items.length}건 표시
+          </p>
+          {page.items.map((request) => (
             <article key={request.id} className="rounded-surface border border-border bg-card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>
@@ -141,8 +172,17 @@ function AdminSupport() {
               ) : null}
             </article>
           ))}
+          {page.next_cursor ? (
+            <Button
+              variant="outline"
+              disabled={loading}
+              onClick={() => void load(page.next_cursor)}
+            >
+              {loading ? "불러오는 중…" : "더 보기"}
+            </Button>
+          ) : null}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
