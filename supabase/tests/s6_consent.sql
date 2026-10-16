@@ -57,7 +57,7 @@ reset role;
 -- ═════════ T4 — record_consent 로 동의하면 자격이 생긴다 (대조군) ═════════
 set local "request.jwt.claims" to '{"sub":"eeee0002-0000-0000-0000-000000000002","role":"authenticated"}';
 select lives_ok(
-  $$ select record_consent('2026-08-01') $$,
+  $$ select record_consent('2026-10-16.1') $$,
   'T4: 본인은 동의를 기록할 수 있다'
 );
 

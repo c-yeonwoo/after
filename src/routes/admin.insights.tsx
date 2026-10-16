@@ -6,11 +6,13 @@ import { CuratorTable } from "@/components/admin/CuratorTable";
 import {
   fetchDashboard,
   fetchMarketplaceHealth,
+  fetchMarketplaceHealthV2,
   fetchOperationalHealth,
   fetchOpenSupportCount,
   type AdminDashboard,
   type AdminMarketplaceHealth,
   type AdminOperationalHealth,
+  type MarketplaceHealthV2,
 } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/insights")({ component: DashboardTab });
@@ -272,6 +274,8 @@ function DashboardTab() {
         </ol>
       )}
 
+      <MarketplaceV2Panel />
+
       <details open className="mt-8 border-t border-border pt-5">
         <summary className="cursor-pointer text-sm font-semibold marker:text-muted-foreground">
           세부 운영 지표 보기
@@ -383,53 +387,6 @@ function DashboardTab() {
           />
         </Group>
 
-        <Group title="실측 대기" hint="중앙값 · 느린 10% (표본이 적으면 방향만 봅니다)">
-          <Stat
-            label={`남성 가입→첫 노출 · n=${market.male_first_exposure.sample}`}
-            value={market.male_first_exposure.p50_hours}
-            unit="시간"
-          />
-          <Stat
-            label="남성 첫 노출 · p90"
-            value={market.male_first_exposure.p90_hours}
-            unit="시간"
-            alert={(market.male_first_exposure.p90_hours ?? 0) > 168}
-          />
-          <Stat
-            label={`여성 호감→큐 · n=${market.female_like_to_queue.sample}`}
-            value={market.female_like_to_queue.p50_hours}
-            unit="시간"
-          />
-          <Stat
-            label="여성 호감→큐 · p90"
-            value={market.female_like_to_queue.p90_hours}
-            unit="시간"
-            alert={(market.female_like_to_queue.p90_hours ?? 0) > 72}
-          />
-          <Stat
-            label={`남성 가입→첫 호감 · n=${market.male_first_like.sample}`}
-            value={market.male_first_like.p50_hours}
-            unit="시간"
-          />
-          <Stat
-            label="남성 첫 호감 · p90"
-            value={market.male_first_like.p90_hours}
-            unit="시간"
-            alert={(market.male_first_like.p90_hours ?? 0) > 336}
-          />
-          <Stat
-            label={`여성 호감→소개 열림 · n=${market.female_like_to_open.sample}`}
-            value={market.female_like_to_open.p50_hours}
-            unit="시간"
-          />
-          <Stat
-            label="여성 소개 열림 · p90"
-            value={market.female_like_to_open.p90_hours}
-            unit="시간"
-            alert={(market.female_like_to_open.p90_hours ?? 0) > 336}
-          />
-        </Group>
-
         <Group title="품질" hint="큐레이션이 좋은가">
           <Stat label="소개 넘김 비율" value={passRate} unit="%" alert={(passRate ?? 0) > 60} />
           <Stat label="소개 전체" value={d.quality.intros_total} />
@@ -495,6 +452,147 @@ function DashboardTab() {
       </details>
     </>
   );
+}
+
+function MarketplaceV2Panel() {
+  const [hub, setHub] = useState<string | null>(null);
+  const [days, setDays] = useState<7 | 14 | 28>(14);
+  const [data, setData] = useState<MarketplaceHealthV2 | null>(null);
+  const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setBusy(true);
+    try {
+      setData(await fetchMarketplaceHealthV2(hub, days));
+      setError(false);
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(false);
+    }
+  }, [hub, days]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return (
+    <section className="mt-9 border-t border-border pt-6" aria-labelledby="market-v2-title">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 id="market-v2-title" className="text-lg font-semibold">
+            실제 수급과 대기
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            지금 기다리는 사람과 이미 완료한 표본을 나눠 봅니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label className="text-xs text-muted-foreground">
+            권역
+            <select
+              value={hub ?? ""}
+              onChange={(e) => setHub(e.target.value || null)}
+              className="mt-1 block min-h-10 rounded-control border border-border bg-card px-2 text-sm text-foreground"
+            >
+              <option value="">전체</option>
+              <option value="gangnam">강남</option>
+              <option value="pangyo">판교</option>
+              <option value="jongno">종로</option>
+              <option value="yeouido">여의도</option>
+            </select>
+          </label>
+          <label className="text-xs text-muted-foreground">
+            관측 기간
+            <select
+              value={days}
+              onChange={(e) => setDays(Number(e.target.value) as 7 | 14 | 28)}
+              className="mt-1 block min-h-10 rounded-control border border-border bg-card px-2 text-sm text-foreground"
+            >
+              <option value={7}>7일</option>
+              <option value={14}>14일</option>
+              <option value={28}>28일</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      {error ? (
+        <p role="alert" className="mt-4 rounded-surface border border-destructive/30 p-4 text-sm">
+          새 지표를 확인하지 못했습니다. 아래 값은 마지막 조회 기준일 수 있습니다.
+        </p>
+      ) : null}
+      {!data && !error ? <p className="mt-4 text-sm text-muted-foreground">불러오는 중…</p> : null}
+      {data ? (
+        <>
+          <p className="mt-4 text-xs text-muted-foreground">
+            기준 {formatMetricTime(data.as_of)}
+            {busy ? " · 갱신 중" : ""} · 가입 시각을 소개 자격 시각으로 대체하지 않습니다.
+          </p>
+          <Group title="현재" hint="완료 표본과 별개인 지금의 상태">
+            <Stat label="소개 가능 여성" value={data.ready_now.female} />
+            <Stat label="소개 가능 남성" value={data.ready_now.male} />
+            <Stat label="답변 대기 요청" value={data.pending_request.count} />
+            <Stat
+              label="가장 오래된 답변 대기"
+              value={data.pending_request.oldest_hours}
+              unit="시간"
+            />
+          </Group>
+          <Group title="응답 속도" hint="현재 대기와 완료 건을 섞지 않습니다">
+            <Stat label="현재 대기 · 중앙값" value={data.pending_request.p50_hours} unit="시간" />
+            <Stat label="현재 대기 · p90" value={data.pending_request.p90_hours} unit="시간" />
+            <Stat
+              label={`완료 표본 ${data.completed_response.sample}건 · 중앙값`}
+              value={data.completed_response.p50_hours}
+              unit="시간"
+            />
+            <Stat label="완료 표본 · p90" value={data.completed_response.p90_hours} unit="시간" />
+          </Group>
+          <Group title="7일 전환" hint="관측 7일을 채운 기수만 계산">
+            <Stat
+              label={`남성 첫 소개 도달 ${data.first_intro_7d.numerator}/${data.first_intro_7d.denominator}`}
+              value={ratePercent(data.first_intro_7d.rate)}
+              unit="%"
+            />
+            <Stat
+              label={`소개 열람 ${data.intro_open_7d.numerator}/${data.intro_open_7d.denominator}`}
+              value={ratePercent(data.intro_open_7d.rate)}
+              unit="%"
+            />
+            <Stat label="확정 약속" value={data.meeting_confirmation.confirmed} />
+          </Group>
+          <Group title="만남 확인" hint="확정과 실제 만남을 같은 뜻으로 쓰지 않습니다">
+            <Stat label="양측 확인" value={data.meeting_confirmation.both_reported} />
+            <Stat label="한쪽 확인" value={data.meeting_confirmation.one_reported} />
+            <Stat label="시각 경과 · 미확인" value={data.meeting_confirmation.not_reported} />
+          </Group>
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            자격 전이 계측 시작 {formatMetricTime(data.coverage.readiness_started_at)}. 그 이전 자격
+            시점은 알 수 없어 7일 도달률에 포함하지 않습니다. 탈퇴 회원의 개별 사건은 삭제되므로
+            현재 코호트는 탈퇴를 포함한 전체 성과가 아닙니다. 표본이 없으면 0%가 아니라 —로
+            표시합니다.
+          </p>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function ratePercent(rate: number | null): number | null {
+  return rate === null ? null : Math.round(rate * 1000) / 10;
+}
+
+function formatMetricTime(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "확인 불가"
+    : date.toLocaleString("ko-KR", {
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 }
 
 function Group({

@@ -415,6 +415,28 @@ export async function recordConsent(): Promise<Profile> {
   return data as Profile;
 }
 
+export type MyPolicyStatus = {
+  signup_version: string;
+  required_version: string | null;
+  effective_at: string | null;
+  reconsent_required: boolean;
+  as_of: string;
+};
+
+export async function myPolicyStatus(): Promise<MyPolicyStatus> {
+  const { data, error } = await supabase.rpc("my_policy_status");
+  if (error) throw error;
+  const status = data as unknown as MyPolicyStatus | null;
+  if (
+    !status ||
+    typeof status.signup_version !== "string" ||
+    typeof status.reconsent_required !== "boolean"
+  ) {
+    throw new Error("동의 상태를 확인할 수 없습니다.");
+  }
+  return status;
+}
+
 /**
  * 홈이 필요한 상태 전부. 조각조각 묻지 않는다(진단 PERF-3).
  *
@@ -453,6 +475,7 @@ export type HomeStateV2 = HomeState & {
     | "meeting_outcome_required"
     | "meeting_confirmed"
     | "profile_incomplete"
+    | "policy_required"
     | "identity_required"
     | "phone_required"
     | "photos_required"

@@ -5,9 +5,11 @@ import { toast } from "sonner";
 import {
   approveAutomationRun,
   fetchAutomationOverview,
+  fetchPolicyPreview,
   updateAutomationRule,
   type AutomationOverview,
   type AutomationRule,
+  type AdminPolicyPreview,
 } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/settings")({ component: AdminSettingsPage });
@@ -21,6 +23,8 @@ const MODE_LABEL: Record<AutomationRule["mode"], string> = {
 
 function AdminSettingsPage() {
   const [data, setData] = useState<AutomationOverview | null>(null);
+  const [policy, setPolicy] = useState<AdminPolicyPreview | null>(null);
+  const [policyError, setPolicyError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<AutomationRule["mode"]>("off");
@@ -51,6 +55,15 @@ function AdminSettingsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void fetchPolicyPreview()
+      .then((value) => {
+        setPolicy(value);
+        setPolicyError(false);
+      })
+      .catch(() => setPolicyError(true));
+  }, []);
 
   async function save() {
     if (!data || reason.trim().length < 3) return;
@@ -290,6 +303,32 @@ function AdminSettingsPage() {
           </section>
         </>
       ) : null}
+
+      <section className="mt-9 rounded-surface border border-border bg-card p-5">
+        <h2 className="text-base font-semibold">정책 재동의</h2>
+        {policyError ? (
+          <p role="alert" className="mt-2 text-sm text-destructive">
+            적용 대상을 확인할 수 없습니다.
+          </p>
+        ) : null}
+        {policy ? (
+          <>
+            <p className="mt-2 text-sm">
+              현재 문서 {policy.signup_version} · 재동의{" "}
+              {policy.required_version ? "예약됨" : "비활성"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              재동의 적용 시 영향을 받을 활성 회원 {policy.affected_active_members}명
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              법률 검토와 운영자 강화 인증을 마치기 전에는 적용하지 않습니다. 적용되더라도 진행 중인
+              약속·문의·탈퇴 경로는 유지됩니다.
+            </p>
+          </>
+        ) : !policyError ? (
+          <p className="mt-2 text-sm text-muted-foreground">불러오는 중…</p>
+        ) : null}
+      </section>
     </div>
   );
 }

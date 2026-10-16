@@ -44,6 +44,7 @@ const ACTION_LABELS: Record<string, string> = {
   retry_notification: "알림 재시도",
   automation_rule: "자동화 설정",
   automation_approval: "알림 승인",
+  policy_activation: "정책 재동의 예약",
 };
 
 const JOB_INTERVAL_MINUTES: Record<string, number> = {

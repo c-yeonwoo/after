@@ -257,7 +257,12 @@ function StorePage() {
                   toast.success("신청을 받았습니다.");
                 }
               } catch (err) {
-                toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
+                if (err instanceof Error && err.message.includes("policy_reconsent_required")) {
+                  toast.message("새 티켓을 신청하려면 약관을 확인해 주세요.");
+                  void navigate({ to: "/consent" });
+                } else {
+                  toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
+                }
               } finally {
                 setBusy(false);
               }
