@@ -1362,6 +1362,53 @@ export type Database = {
           },
         ]
       }
+      notification_deliveries: {
+        Row: {
+          attempt: number
+          channel: string
+          error_code: string | null
+          id: number
+          notification_id: string
+          provider_ref: string | null
+          recipient_ref: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempt?: number
+          channel: string
+          error_code?: string | null
+          id?: never
+          notification_id: string
+          provider_ref?: string | null
+          recipient_ref: string
+          status: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempt?: number
+          channel?: string
+          error_code?: string | null
+          id?: never
+          notification_id?: string
+          provider_ref?: string | null
+          recipient_ref?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_email_verifications: {
         Row: {
           attempts: number
@@ -1411,15 +1458,55 @@ export type Database = {
           },
         ]
       }
+      notification_worker_runs: {
+        Row: {
+          claimed: number
+          completed_at: string
+          duration_ms: number
+          failed: number
+          id: number
+          skipped: number
+          submitted: number
+          unavailable: number
+          unknown: number
+        }
+        Insert: {
+          claimed: number
+          completed_at?: string
+          duration_ms: number
+          failed: number
+          id?: never
+          skipped: number
+          submitted: number
+          unavailable: number
+          unknown: number
+        }
+        Update: {
+          claimed?: number
+          completed_at?: string
+          duration_ms?: number
+          failed?: number
+          id?: never
+          skipped?: number
+          submitted?: number
+          unavailable?: number
+          unknown?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           attempts: number
           created_at: string
+          dispatch_state: string
           event_id: string | null
           id: string
           kind: Database["public"]["Enums"]["notification_kind"]
           last_error: string | null
+          lease_token: string | null
+          lease_until: string | null
           meeting_id: string | null
+          next_attempt_at: string
           payload: Json
           read_at: string | null
           sent_at: string | null
@@ -1428,11 +1515,15 @@ export type Database = {
         Insert: {
           attempts?: number
           created_at?: string
+          dispatch_state?: string
           event_id?: string | null
           id?: string
           kind: Database["public"]["Enums"]["notification_kind"]
           last_error?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
           meeting_id?: string | null
+          next_attempt_at?: string
           payload?: Json
           read_at?: string | null
           sent_at?: string | null
@@ -1441,11 +1532,15 @@ export type Database = {
         Update: {
           attempts?: number
           created_at?: string
+          dispatch_state?: string
           event_id?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["notification_kind"]
           last_error?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
           meeting_id?: string | null
+          next_attempt_at?: string
           payload?: Json
           read_at?: string | null
           sent_at?: string | null
@@ -2593,7 +2688,10 @@ export type Database = {
           state: Database["public"]["Enums"]["report_state"]
         }[]
       }
+      admin_notification_health: { Args: never; Returns: Json }
+      admin_notification_health_base: { Args: never; Returns: Json }
       admin_operational_health: { Args: never; Returns: Json }
+      admin_operational_health_legacy: { Args: never; Returns: Json }
       admin_ops_case_detail: { Args: { p_case_id: string }; Returns: Json }
       admin_ops_cases: {
         Args: {
@@ -2887,6 +2985,7 @@ export type Database = {
         }[]
       }
       admin_system_overview: { Args: never; Returns: Json }
+      admin_system_overview_legacy: { Args: never; Returns: Json }
       admin_ticket_orders: {
         Args: { p_state?: string }
         Returns: {
@@ -3013,6 +3112,18 @@ export type Database = {
       }
       carrier_adult_verified: { Args: { p_user: string }; Returns: boolean }
       carrier_identity_required: { Args: never; Returns: boolean }
+      claim_notification_dispatches: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          lease_token: string
+          meeting_id: string
+          payload: Json
+          user_id: string
+        }[]
+      }
       confirm_meeting: {
         Args: {
           p_meeting_id: string
@@ -3230,6 +3341,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      finish_notification_dispatch: {
+        Args: {
+          p_error_code: string
+          p_id: string
+          p_lease_token: string
+          p_results?: Json
+          p_retryable?: boolean
+          p_state: string
+        }
+        Returns: boolean
       }
       fulfill_paid_ticket_order: {
         Args: { p_method?: string; p_order_id: string; p_payment_key: string }
@@ -3483,6 +3605,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      notification_push_still_relevant: {
+        Args: { p_id: string; p_lease_token: string }
+        Returns: boolean
+      }
       open_intro: {
         Args: never
         Returns: {
@@ -3611,6 +3737,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_notification_worker_run: {
+        Args: {
+          p_claimed: number
+          p_duration_ms: number
+          p_failed: number
+          p_skipped: number
+          p_submitted: number
+          p_unavailable: number
+          p_unknown: number
+        }
+        Returns: number
       }
       record_payment_provider_check: {
         Args: { p_attention?: string; p_checked?: boolean; p_order_id: string }

@@ -21,6 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
   content_report: "안전 신고",
   no_show_report: "노쇼 신고",
   payment_unknown: "결제 확인",
+  notification_failure: "알림 결과 확인",
 };
 
 function timeLabel(iso: string) {
@@ -194,6 +195,7 @@ function OperationsHome() {
             {health ? (
               <dl className="mt-4 space-y-3 text-sm">
                 <Metric label="알림 최종 실패" value={health.notifications.failed} />
+                <Metric label="알림 결과 미상" value={health.notifications.unknown} />
                 <Metric label="일정 확정 지연" value={health.scheduling.stale_confirmation} />
               </dl>
             ) : (

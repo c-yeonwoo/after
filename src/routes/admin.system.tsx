@@ -153,8 +153,15 @@ function SystemTab() {
 
       <section className="mt-7">
         <div className="grid gap-3 sm:grid-cols-3">
-          <Summary label="알림 발송 대기" value={data.notifications.pending} />
-          <Summary label="알림 최종 실패" value={data.notifications.failed} alert />
+          <Summary label="푸시 대기" value={data.notifications.pending} />
+          <Summary label="푸시 실패" value={data.notifications.failed} alert />
+          <Summary label="결과 미상" value={data.notifications.unknown} alert />
+          <Summary label="푸시 접수 · 24시간" value={data.notifications.submitted_24h} />
+          <Summary label="푸시 불가 · 24시간" value={data.notifications.unavailable_24h} />
+          <Summary
+            label="최근 24시간 알림 중 앱 내 확인"
+            value={`${data.notifications.in_app_read_24h}/${data.notifications.in_app_available_24h}`}
+          />
           {paymentsEnabled === null ? (
             <Summary label="결제 모드" value="확인 불가" />
           ) : (
@@ -172,9 +179,52 @@ function SystemTab() {
         </div>
       </section>
 
+      {data.notifications.legacy_unverified > 0 ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          이전 발송 {data.notifications.legacy_unverified}건은 공급자 접수 여부를 확인할 수
+          없습니다.
+        </p>
+      ) : null}
+      {data.notifications.worker_stale ? (
+        <p className="mt-3 rounded-md border border-destructive/30 px-3 py-2 text-sm" role="alert">
+          푸시 대기 건이 있지만 워커 완료 기록이 15분 넘게 없습니다. 예약 작업과 함수 상태를 확인해
+          주세요.
+        </p>
+      ) : (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {data.notifications.last_worker_at
+            ? `마지막 알림 워커 완료 ${formatDate(data.notifications.last_worker_at)}`
+            : "아직 알림 워커 실행 기록이 없습니다."}
+        </p>
+      )}
+
+      {data.notifications.unknown_rows.length > 0 ? (
+        <Section
+          title={`결과를 확인할 수 없는 푸시 ${data.notifications.unknown}건`}
+          hint="공급자가 접수했을 수 있어 자동 재전송하지 않습니다. 회원의 앱 내 알림은 그대로 확인할 수 있습니다."
+        >
+          <ul className="space-y-2 text-sm">
+            {data.notifications.unknown_rows.map((row) => (
+              <li key={row.id} className="rounded-md border border-border px-3 py-2">
+                <Link
+                  to="/admin/members/$id"
+                  params={{ id: row.user_id }}
+                  className="font-medium hover:underline"
+                >
+                  {row.user_name ?? "회원 확인 필요"}
+                </Link>
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {row.kind} · {formatDate(row.created_at)} · {row.last_error ?? "결과 없음"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+
       <Section
         title="실패한 알림"
-        hint="발송 설정을 고친 뒤 재시도하세요. 재시도 사유는 운영 기록에 남습니다."
+        hint="공급자에게 거절된 건만 사유를 남기고 재시도할 수 있습니다. 결과 미상 건은 재전송하지 않습니다."
       >
         {data.notifications.failed_rows.length === 0 ? (
           <Empty>최종 실패한 알림이 없습니다.</Empty>
@@ -202,9 +252,6 @@ function SystemTab() {
                         >
                           {row.user_name ?? "(이름 없음)"}
                         </Link>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {row.notification_email ?? "알림 이메일 없음"}
-                        </p>
                       </Td>
                       <Td>{row.kind}</Td>
                       <Td className="tabular-nums">{row.attempts}회</Td>
@@ -224,7 +271,7 @@ function SystemTab() {
                 화면에 표시된 실패 {failedIds.length}건 재시도
               </p>
               <NoteAction
-                placeholder="재시도 사유 (예: Resend 설정 복구 확인)"
+                placeholder="재시도 사유 (예: APNs 설정 복구 확인)"
                 onDone={() => void load()}
                 actions={[
                   {
