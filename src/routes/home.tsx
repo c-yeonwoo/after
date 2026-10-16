@@ -296,7 +296,11 @@ function HomePage() {
               : "만나고 싶다는 요청이 도착했어요. 보내 준 시간 중 하나만 고르시면 약속이 정해져요."}
           </GuideNote>
         ) : meeting ? (
-          <WaitingCard now={now} deadlineAt={serverState?.deadline_at ?? null} />
+          <WaitingCard
+            now={now}
+            deadlineAt={serverState?.deadline_at ?? null}
+            paid={introPaymentsEnabled === true}
+          />
         ) : blocksNewIntro ? (
           primaryState === "photos_pending" ? (
             <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
@@ -599,11 +603,19 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
 }
 
 /**
- * 티켓을 쓰고 상대 응답을 기다리는 상태.
- * 24시간 무응답이면 자동 환불되므로(P3) 남은 시간을 실제로 보여준다 —
+ * 만남을 요청하고 상대 응답을 기다리는 상태. 유료 모드에서만 티켓 반환을 말한다.
+ * 24시간 무응답이면 요청이 종료되므로(P3) 남은 시간을 실제로 보여준다 —
  * 지금까지는 "24시간 안에 오지 않으면" 이라는 정적 문구뿐이었다.
  */
-function WaitingCard({ now, deadlineAt }: { now: number | null; deadlineAt: string | null }) {
+function WaitingCard({
+  now,
+  deadlineAt,
+  paid,
+}: {
+  now: number | null;
+  deadlineAt: string | null;
+  paid: boolean;
+}) {
   const left = now === null || deadlineAt === null ? null : remaining(deadlineAt, now);
 
   return (
@@ -617,10 +629,13 @@ function WaitingCard({ now, deadlineAt }: { now: number | null; deadlineAt: stri
           "상대의 답변을 기다리고 있어요."
         ) : left ? (
           <>
-            <span className="font-semibold">{left}</span> 안에 답이 없으면 티켓이 돌아옵니다.
+            <span className="font-semibold">{left}</span> 안에 답이 없으면{" "}
+            {paid ? "사용한 만남 티켓이 돌아옵니다." : "이 요청은 종료돼요."}
           </>
+        ) : paid ? (
+          "답변 기한이 지났어요. 사용한 만남 티켓이 곧 돌아옵니다."
         ) : (
-          "답변 기한이 지났어요. 티켓이 곧 돌아옵니다."
+          "답변 기한이 지났어요. 요청 상태가 정리되는 중입니다."
         )}
       </p>
     </div>

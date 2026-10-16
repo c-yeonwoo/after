@@ -153,8 +153,8 @@ function Landing() {
             지금은 결제를 받지 않아요.
           </p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            만남 요청이 거절되거나 24시간 안에 답이 없으면 티켓은 돌아옵니다. 소개와 만남은 보장되지
-            않아요.
+            소개가 도착하면 무료로 확인하고 만남을 요청할 수 있어요. 소개까지 걸리는 시간은 참여
+            상황에 따라 다르고, 만남은 두 분의 선택으로 정해집니다.
           </p>
           <Button type="button" onClick={start} className="mt-7 min-h-[52px] w-full text-base">
             애프터 시작하기 <ArrowRight aria-hidden="true" />

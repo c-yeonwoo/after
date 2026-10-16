@@ -491,6 +491,9 @@ try {
       "2",
       "beta opening and meeting request used zero-won tickets only",
     );
+    await betaMalePage.goto(`${baseUrl}/home`);
+    await betaMalePage.getByText("이 요청은 종료돼요.", { exact: false }).waitFor();
+    await betaMalePage.goto(`${baseUrl}/ticket`);
     await betaMalePage.getByRole("link", { name: "약속 조율 도움받기" }).click();
     await betaMalePage.getByLabel("문의 내용").fill("이 만남의 약속 장소를 조율하고 싶어요.");
     await betaMalePage.getByRole("button", { name: /문의.*보내기|문의.*남기기|문의 접수/ }).click();
