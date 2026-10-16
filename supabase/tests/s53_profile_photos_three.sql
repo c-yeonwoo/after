@@ -44,6 +44,13 @@ select throws_ok(
   '23514', null, 'T6 일곱 장은 받지 않는다');
 
 -- 여성 평가 화면은 상대 사진 묶음을 받는다
+update profiles set phone_verified_at = now(),
+  photo_paths = array['53000000-0000-0000-0000-0000000000f1/a.webp',
+                      '53000000-0000-0000-0000-0000000000f1/b.webp',
+                      '53000000-0000-0000-0000-0000000000f1/c.webp']
+ where id = '53000000-0000-0000-0000-0000000000f1';
+update profiles set photo_state = 'approved'
+ where id = '53000000-0000-0000-0000-0000000000f1';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"53000000-0000-0000-0000-0000000000f1","role":"authenticated"}';
 select is(

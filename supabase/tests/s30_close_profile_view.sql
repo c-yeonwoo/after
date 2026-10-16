@@ -43,6 +43,13 @@ update profiles set phone_verified_at = now(), photo_paths = array[photo_url, ph
  where id = '30000000-0000-0000-0000-0000000000a1';
 update profiles set photo_state = 'approved' where id = '30000000-0000-0000-0000-0000000000a1';
 
+-- 후보를 볼 여성도 이제 인증·사진 검수 완료여야 한다(s60).
+update profiles set phone_verified_at = now(),
+  photo_paths = array[id::text || '/1.png', id::text || '/2.png', id::text || '/3.png']
+ where id = '30000000-0000-0000-0000-0000000000f1';
+update profiles set photo_state = 'approved'
+ where id = '30000000-0000-0000-0000-0000000000f1';
+
 insert into storage.objects (bucket_id, name, owner_id)
 values ('profile-photos', '30000000-0000-0000-0000-0000000000a1/portrait.png',
         '30000000-0000-0000-0000-0000000000a1');

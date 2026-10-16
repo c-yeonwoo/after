@@ -1,18 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationBell } from "@/components/app/NotificationBell";
 import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
-import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import {
-  homeState,
+  homeStateV2,
   markMet,
   meetPlacesForMe,
   paymentsEnabled,
@@ -20,6 +20,7 @@ import {
   type Meeting,
   type NoShowReport,
   type PublicProfile,
+  type HomeStateV2,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 
@@ -51,21 +52,64 @@ function remaining(deadlineIso: string, now: number) {
   return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
 }
 
+function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): string {
+  switch (state) {
+    case "account_unavailable":
+      return "계정 상태를 확인해주세요.";
+    case "report_response_required":
+      return "확인이 필요한 신고가 있어요.";
+    case "meeting_outcome_required":
+      return "만나보셨나요?";
+    case "meeting_confirmed":
+      return "만남이 잡혔어요.";
+    case "profile_incomplete":
+      return "소개받을 준비를 마저 해주세요.";
+    case "identity_required":
+      return "본인 확인이 필요해요.";
+    case "phone_required":
+      return "휴대폰 인증이 필요해요.";
+    case "photos_required":
+      return "사진을 다시 확인해주세요.";
+    case "photos_pending":
+      return "사진을 확인하고 있어요.";
+    case "schedule_selection":
+      return "가능한 날짜를 골라주세요.";
+    case "schedule_waiting":
+      return "답변을 기다리고 있어요.";
+    case "request_received":
+      return "만남 요청이 왔어요.";
+    case "request_waiting":
+      return "상대의 답변을 기다리고 있어요.";
+    case "intro_available":
+      return isMale ? "소개가 열려 있어요." : "살펴볼 소개가 있어요.";
+    case "intro_delivered":
+      return "소개가 도착했어요.";
+    case "paused":
+      return "소개를 잠시 쉬고 있어요.";
+    case "waiting":
+      return isMale ? "소개를 준비하고 있어요." : "새 소개를 기다리고 있어요.";
+  }
+}
+
 function HomePage() {
   const { me, ready, refresh } = useMe();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+  const [serverState, setServerState] = useState<HomeStateV2 | null>(null);
   const [candidate, setCandidate] = useState<PublicProfile | null>(null);
   /** 큐에서 전송된 카드 수 · 소개 티켓 보유량(v2). 홈의 안내 근거다. */
   const [queued, setQueued] = useState(0);
   const [introTickets, setIntroTickets] = useState(0);
-  const [introPaymentsEnabled, setIntroPaymentsEnabled] = useState(false);
+  const [introPaymentsEnabled, setIntroPaymentsEnabled] = useState<boolean | null>(null);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [noShow, setNoShow] = useState<NoShowReport | null>(null);
   // 여성은 동시에 여러 건을 받을 수 있다 — 개수를 세어 목록으로 보낸다.
   const [requestCount, setRequestCount] = useState(0);
   // 환불 기한 카운트다운용. 서버 시각이 권위이고 이건 표시 전용이다.
   const [now, setNow] = useState<number | null>(null);
+  const serverClockOffset = useRef(0);
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
@@ -74,45 +118,73 @@ function HomePage() {
 
   // 하이드레이션 불일치를 피하려고 마운트 후에만 시각을 잡는다.
   useEffect(() => {
-    setNow(Date.now());
-    const t = window.setInterval(() => setNow(Date.now()), 60_000);
+    setNow(Date.now() + serverClockOffset.current);
+    const t = window.setInterval(() => setNow(Date.now() + serverClockOffset.current), 60_000);
     return () => window.clearInterval(t);
   }, []);
 
   useEffect(() => {
     if (!ready || !me || me.onboarding_step < 7) return;
     let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
     (async () => {
-      const [state, payments] = await Promise.all([homeState(), paymentsEnabled()]);
-      /*
+      try {
+        const [stateResult, paymentResult] = await Promise.allSettled([
+          homeStateV2(),
+          paymentsEnabled(),
+        ]);
+        if (stateResult.status === "rejected") throw stateResult.reason;
+        const state = stateResult.value;
+        const payments = paymentResult.status === "fulfilled" ? paymentResult.value : null;
+        /*
         **여기서 소개를 열지 않는다.** 예전에는 열린 소개가 없으면 openIntro() 를
         대신 불러줬는데, v2 부터 그 호출은 소개 티켓 1장을 차감한다 — 홈을 열기만
         해도 5,000원이 빠지게 된다. 홈은 "도착했다" 까지만 말하고, 차감은 /intro
         의 열람 확인이 받는다.
       */
-      if (cancelled) return;
-      setCandidate(state.candidate);
-      setMeeting(state.meeting);
-      setRequestCount(state.request_count);
-      // 답변한 신고는 운영자 검토 큐다. 판정 전까지 같은 질문을 반복하지 않는다.
-      setNoShow(state.pending_no_show?.responded_at ? null : state.pending_no_show);
-      setQueued(state.queued_intros);
-      setIntroTickets(state.intro_tickets);
-      setIntroPaymentsEnabled(payments);
-      setLoading(false);
+        if (cancelled) return;
+        const serverTime = Date.parse(state.as_of);
+        if (Number.isFinite(serverTime)) {
+          serverClockOffset.current = serverTime - Date.now();
+          setNow(Date.now() + serverClockOffset.current);
+        }
+        setServerState(state);
+        setCandidate(state.candidate);
+        setMeeting(state.meeting);
+        setRequestCount(state.request_count);
+        // 답변한 신고는 운영자 검토 큐다. 판정 전까지 같은 질문을 반복하지 않는다.
+        setNoShow(state.pending_no_show?.responded_at ? null : state.pending_no_show);
+        setQueued(state.queued_intros);
+        setIntroTickets(state.ticket_summary.intro_available);
+        setIntroPaymentsEnabled(payments);
+      } catch {
+        if (!cancelled) setLoadError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [ready, me]);
+  }, [ready, me, retryKey]);
 
   const hub = HUBS.find((h) => h.id === me?.hub_id);
   const isMale = me?.gender === "male";
-  const needsPhone = Boolean(
-    me && (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at),
-  );
+  const primaryState = serverState?.primary_state;
+  const needsPhone = primaryState === "identity_required" || primaryState === "phone_required";
   const photoCount = me?.photo_paths?.length ?? 0;
-  const needsPhotos = Boolean(me && photoCount < MIN_PHOTOS);
+  const needsPhotos = primaryState === "photos_required";
+  const blocksNewIntro = Boolean(
+    primaryState &&
+    [
+      "profile_incomplete",
+      "identity_required",
+      "phone_required",
+      "photos_required",
+      "photos_pending",
+    ].includes(primaryState),
+  );
 
   /**
    * 약속 시각이 지났는데 아직 성사 여부를 답하지 않은 상태.
@@ -126,31 +198,11 @@ function HomePage() {
     new Date(meeting.scheduled_at).getTime() < now,
   );
 
-  const headline = awaitingOutcome
-    ? "어떠셨어요?"
-    : meeting?.confirmed_at
-      ? "만남이 잡혔어요."
-      : meeting?.prefs_submitted_at
-        ? isMale
-          ? "날짜만 고르면 돼요."
-          : "전달했어요. 답을 기다리는 중."
-        : meeting
-          ? isMale
-            ? "상대의 답변을 기다리는 중."
-            : "만나고 싶다는 요청이 왔어요."
-          : candidate
-            ? isMale
-              ? "오늘 소개가 도착했어요."
-              : "살펴볼 소개가 있어요."
-            : isMale && queued > 0
-              ? "소개가 도착했어요."
-              : me?.paused_at
-                ? "소개를 잠시 쉬고 있어요."
-                : needsPhone || needsPhotos
-                  ? "소개받을 준비가 남았어요."
-                  : isMale
-                    ? "소개를 준비하고 있어요."
-                    : "새 소개를 기다리고 있어요.";
+  const headline = loadError
+    ? "상태를 확인할 수 없어요."
+    : primaryState
+      ? stateHeadline(primaryState, isMale)
+      : "지금 상태를 확인하고 있어요.";
 
   if (!ready || !me || me.onboarding_step < 7) {
     return (
@@ -178,7 +230,7 @@ function HomePage() {
         {headline}
       </h1>
 
-      {noShow ? (
+      {!loadError && noShow ? (
         <div className="mt-5">
           <NoShowPrompt report={noShow} onResolved={() => setNoShow(null)} />
         </div>
@@ -193,6 +245,17 @@ function HomePage() {
         {loading ? (
           <div className="rounded-surface border border-border bg-card px-6 py-10 text-center">
             <p className="text-sm text-muted-foreground">불러오는 중입니다…</p>
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="rounded-surface border border-border bg-card p-6">
+            <p className="text-sm text-muted-foreground">현재 진행 상태를 불러오지 못했습니다.</p>
+            <Button
+              className="mt-4"
+              variant="outline"
+              onClick={() => setRetryKey((key) => key + 1)}
+            >
+              다시 확인
+            </Button>
           </div>
         ) : awaitingOutcome && meeting ? (
           <AfterMeetingCard
@@ -226,7 +289,21 @@ function HomePage() {
               : "만나고 싶다는 요청이 도착했어요. 보내 준 시간 중 하나만 고르시면 약속이 정해져요."}
           </GuideNote>
         ) : meeting ? (
-          <WaitingCard meeting={meeting} now={now} />
+          <WaitingCard now={now} deadlineAt={serverState?.deadline_at ?? null} />
+        ) : blocksNewIntro ? (
+          primaryState === "photos_pending" ? (
+            <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
+          ) : primaryState === "profile_incomplete" ? (
+            <GuideNote
+              action={
+                <CardAction to="/signup" search={{ edit: "1" }}>
+                  프로필 확인하기
+                </CardAction>
+              }
+            >
+              아직 확인할 정보가 있어요.
+            </GuideNote>
+          ) : null
         ) : candidate ? (
           /*
             "답은 상대에게 바로 보이지 않습니다" 는 여성의 평가에만 맞는 말이다. 남성에게
@@ -255,7 +332,11 @@ function HomePage() {
                 <CardAction to="/intro">소개 열어보기</CardAction>
               ) : (
                 <CardAction to="/store" search={{ kind: "intro" }}>
-                  {introPaymentsEnabled ? "소개 티켓 구매하기" : "무료 티켓 신청하기"}
+                  {introPaymentsEnabled === null
+                    ? "티켓 확인하기"
+                    : introPaymentsEnabled
+                      ? "소개 티켓 구매하기"
+                      : "무료 티켓 신청하기"}
                 </CardAction>
               )
             }
@@ -264,15 +345,17 @@ function HomePage() {
               ? `${queued}건의 소개가 기다리고 있어요. 한 분씩 확인해 보세요.`
               : "한 분의 소개가 기다리고 있어요."}
             {introTickets === 0
-              ? introPaymentsEnabled
-                ? " 열람에는 소개 티켓 1장이 필요해요."
-                : " 열람 전에 무료 티켓을 신청해 주세요."
+              ? introPaymentsEnabled === null
+                ? " 티켓 안내를 확인해 주세요."
+                : introPaymentsEnabled
+                  ? " 열람에는 소개 티켓 1장이 필요해요."
+                  : " 열람 전에 무료 티켓을 신청해 주세요."
               : ""}
           </GuideNote>
         ) : null}
       </div>
 
-      {(needsPhone || needsPhotos) && !loading ? (
+      {(needsPhone || needsPhotos) && !loading && !loadError && blocksNewIntro ? (
         <section className="mt-8 border-t border-border pt-5" aria-labelledby="home-ready-title">
           <h2 id="home-ready-title" className="text-sm font-semibold text-foreground">
             새 소개를 받으려면
@@ -283,7 +366,9 @@ function HomePage() {
                 to="/verify-phone"
                 className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
               >
-                <span>{carrierIdentityEnabled ? "본인·성인 확인" : "휴대폰 인증"}</span>
+                <span>
+                  {primaryState === "identity_required" ? "본인·성인 확인" : "휴대폰 인증"}
+                </span>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               </Link>
             ) : null}
@@ -293,10 +378,12 @@ function HomePage() {
                 search={{ edit: true }}
                 className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
               >
-                <span>사진 추가</span>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {photoCount}/{MIN_PHOTOS}장
-                </span>
+                <span>{me.photo_state === "rejected" ? "사진 다시 올리기" : "사진 추가"}</span>
+                {photoCount < MIN_PHOTOS ? (
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {photoCount}/{MIN_PHOTOS}장
+                  </span>
+                ) : null}
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               </Link>
             ) : null}
@@ -313,6 +400,8 @@ function HomePage() {
         알려드릴게요" 가 함께 보였다 — 도착했으면 할 일은 위 카드 하나다.
       */}
       {!loading &&
+      !loadError &&
+      (serverState?.readiness.ready || primaryState === "paused") &&
       !needsPhone &&
       !needsPhotos &&
       !meeting &&
@@ -365,7 +454,7 @@ function ReadinessPanel({
   isMale: boolean;
   paused: boolean;
   introTickets: number;
-  introPaymentsEnabled: boolean;
+  introPaymentsEnabled: boolean | null;
   onToggle: (next: boolean) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -423,9 +512,11 @@ function ReadinessPanel({
             <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
               {introTickets > 0
                 ? `소개 티켓 ${introTickets}장 보유`
-                : introPaymentsEnabled
-                  ? "소개를 열려면 소개 티켓 1장이 필요합니다."
-                  : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
+                : introPaymentsEnabled === null
+                  ? "티켓 안내를 확인할 수 없습니다."
+                  : introPaymentsEnabled
+                    ? "소개를 열려면 소개 티켓 1장이 필요합니다."
+                    : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
             </span>
             {introTickets === 0 ? (
               <Link
@@ -433,7 +524,11 @@ function ReadinessPanel({
                 search={{ kind: "intro" as const }}
                 className="shrink-0 text-xs font-semibold text-foreground underline underline-offset-4"
               >
-                {introPaymentsEnabled ? "티켓 보기" : "무료로 신청"}
+                {introPaymentsEnabled === null
+                  ? "티켓 보기"
+                  : introPaymentsEnabled
+                    ? "티켓 보기"
+                    : "무료로 신청"}
               </Link>
             ) : null}
           </div>
@@ -480,10 +575,8 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
  * 24시간 무응답이면 자동 환불되므로(P3) 남은 시간을 실제로 보여준다 —
  * 지금까지는 "24시간 안에 오지 않으면" 이라는 정적 문구뿐이었다.
  */
-function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null }) {
-  // 티켓 차감과 만남 생성이 같은 트랜잭션이라 created_at 이 기한 기준이 된다.
-  const deadline = new Date(new Date(meeting.created_at).getTime() + 24 * 3_600_000).toISOString();
-  const left = now === null ? null : remaining(deadline, now);
+function WaitingCard({ now, deadlineAt }: { now: number | null; deadlineAt: string | null }) {
+  const left = now === null || deadlineAt === null ? null : remaining(deadlineAt, now);
 
   return (
     <div className="rounded-surface border border-border bg-card px-5 py-5 shadow-card">
@@ -492,7 +585,9 @@ function WaitingCard({ meeting, now }: { meeting: Meeting; now: number | null })
         만남 요청
       </p>
       <p className="mt-2.5 text-sm leading-relaxed text-foreground">
-        {left ? (
+        {deadlineAt === null ? (
+          "상대의 답변을 기다리고 있어요."
+        ) : left ? (
           <>
             <span className="font-semibold">{left}</span> 안에 답이 없으면 티켓이 돌아옵니다.
           </>

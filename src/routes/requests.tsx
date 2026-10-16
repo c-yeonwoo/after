@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Clock, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
+import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import {
   acceptMeetingSlot,
@@ -25,11 +26,6 @@ export const Route = createFileRoute("/requests")({
   component: RequestsPage,
 });
 
-/** 티켓 사용 시점 + 24시간 = 자동 환불 기한(P3). */
-function deadlineOf(createdAt: string) {
-  return new Date(new Date(createdAt).getTime() + 24 * 3_600_000).getTime();
-}
-
 function remainingLabel(deadline: number, now: number) {
   const left = deadline - now;
   if (left <= 0) return null;
@@ -46,33 +42,61 @@ function remainingLabel(deadline: number, now: number) {
  */
 function RequestsPage() {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [requests, setRequests] = useState<MeetingRequest[]>([]);
   const [now, setNow] = useState<number | null>(null);
+  const serverClockOffset = useRef(0);
 
   useEffect(() => {
-    setNow(Date.now());
-    const t = window.setInterval(() => setNow(Date.now()), 60_000);
+    setNow(Date.now() + serverClockOffset.current);
+    const t = window.setInterval(() => setNow(Date.now() + serverClockOffset.current), 60_000);
     return () => window.clearInterval(t);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
     (async () => {
-      const list = await listMeetingsAwaitingMyPrefs();
-      if (!cancelled) {
-        setRequests(list);
-        setLoading(false);
+      try {
+        const list = await listMeetingsAwaitingMyPrefs();
+        if (!cancelled) {
+          const serverTime = list[0]?.server_as_of ? Date.parse(list[0].server_as_of) : NaN;
+          if (Number.isFinite(serverTime)) {
+            serverClockOffset.current = serverTime - Date.now();
+            setNow(Date.now() + serverClockOffset.current);
+          }
+          setRequests(list);
+        }
+      } catch {
+        if (!cancelled) setLoadError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
 
   if (loading) {
     return (
       <AppScreen title="만남 요청" back="/home">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+      </AppScreen>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppScreen title="만남 요청" back="/home">
+        <div role="alert" className="mt-10 rounded-surface border border-border bg-card p-6">
+          <p className="text-sm">요청 목록을 확인할 수 없습니다.</p>
+          <Button className="mt-4" variant="outline" onClick={() => setRetryKey((key) => key + 1)}>
+            다시 확인
+          </Button>
+        </div>
       </AppScreen>
     );
   }
@@ -83,7 +107,7 @@ function RequestsPage() {
         <div className="mt-16 px-6 py-12 text-center">
           <p className="headline text-base">아직 받은 요청이 없습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            좋아요를 보낸 분이 만남 티켓을 사용하면 여기에 도착합니다.
+            만남 요청이 오면 여기에서 확인할 수 있어요.
           </p>
         </div>
       </AppScreen>
@@ -94,13 +118,16 @@ function RequestsPage() {
     <AppScreen title="만남 요청" back="/home">
       <div className="mt-3">
         <GuideNote>
-          {`만나고 싶다는 요청이 ${requests.length}건 도착했어요. 각각 따로 답하실 수 있습니다.`}
+          {requests.length > 1
+            ? `만남 요청이 ${requests.length}건 도착했어요. 각각 답하실 수 있습니다.`
+            : "만남 요청이 도착했어요. 가능한 날짜를 알려주세요."}
         </GuideNote>
       </div>
 
       <ul className="mt-6 space-y-3">
-        {requests.map(({ meeting, candidate }) => {
-          const left = now === null ? null : remainingLabel(deadlineOf(meeting.created_at), now);
+        {requests.map(({ meeting, candidate, deadline_at }) => {
+          const left =
+            now === null || !deadline_at ? null : remainingLabel(Date.parse(deadline_at), now);
           return (
             <li key={meeting.id}>
               <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
@@ -121,7 +148,9 @@ function RequestsPage() {
                   ) : null}
                   <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="size-3.5" aria-hidden="true" />
-                    {left ? (
+                    {!deadline_at ? (
+                      "답변 기한을 확인할 수 없습니다"
+                    ) : left ? (
                       <>
                         <span className="font-semibold text-foreground">{left}</span> 안에 답해
                         주세요
