@@ -26,6 +26,7 @@ const JOB_LABELS: Record<string, string> = {
   expire_unanswered_no_show_reports_15m: "노쇼 응답 만료",
   expire_intro_queue_15m: "소개 큐 만료",
   enqueue_feedback_due_hourly: "만남 후기 요청",
+  automation_reminder_tick: "미응답 요청 리마인드 점검",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -41,6 +42,8 @@ const ACTION_LABELS: Record<string, string> = {
   set_payments: "결제 설정",
   fulfill_order: "주문 발급",
   retry_notification: "알림 재시도",
+  automation_rule: "자동화 설정",
+  automation_approval: "알림 승인",
 };
 
 const JOB_INTERVAL_MINUTES: Record<string, number> = {
@@ -49,11 +52,14 @@ const JOB_INTERVAL_MINUTES: Record<string, number> = {
   expire_unanswered_no_show_reports_15m: 15,
   expire_intro_queue_15m: 15,
   enqueue_feedback_due_hourly: 60,
+  automation_reminder_tick: 5,
 };
 
 function jobHealth(job: AdminSystemOverview["jobs"][number], now: number) {
   if (!job.schedule) return { label: "미등록", alert: true };
   if (!job.active) return { label: "비활성", alert: false };
+  if (job.rule_mode === "off") return { label: "규칙 중지", alert: false };
+  if (job.rule_paused) return { label: "일시 중지", alert: false };
   if (!job.last_status || !job.last_started_at) return { label: "미실행", alert: true };
   if (job.last_status === "failed") return { label: "실패", alert: true };
   const interval = JOB_INTERVAL_MINUTES[job.jobname];

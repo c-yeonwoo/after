@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_actions: {
@@ -291,6 +266,169 @@ export type Database = {
           {
             foreignKeyName: "app_settings_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_rules: {
+        Row: {
+          daily_limit: number
+          min_interval_hours: number
+          mode: string
+          observed_since: string | null
+          paused_reason: string | null
+          rule_key: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          daily_limit?: number
+          min_interval_hours?: number
+          mode?: string
+          observed_since?: string | null
+          paused_reason?: string | null
+          rule_key: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          daily_limit?: number
+          min_interval_hours?: number
+          mode?: string
+          observed_since?: string | null
+          paused_reason?: string | null
+          rule_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_rules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_rules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_runs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          meeting_id: string | null
+          preview_expires_at: string
+          preview_hash: string
+          result_code: string | null
+          rule_key: string
+          rule_version: number
+          source_used_at: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string | null
+          preview_expires_at: string
+          preview_hash: string
+          result_code?: string | null
+          rule_key: string
+          rule_version: number
+          source_used_at: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string | null
+          preview_expires_at?: string
+          preview_hash?: string
+          result_code?: string | null
+          rule_key?: string
+          rule_version?: number
+          source_used_at?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_rule_key_fkey"
+            columns: ["rule_key"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["rule_key"]
+          },
+          {
+            foreignKeyName: "automation_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
@@ -1207,6 +1345,46 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: true
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_notification_preferences: {
+        Row: {
+          request_reminders: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          request_reminders?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          request_reminders?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2498,6 +2676,16 @@ export type Database = {
         Args: { p_expected_missing: number; p_note: string }
         Returns: number
       }
+      admin_approve_automation: {
+        Args: {
+          p_preview_hash: string
+          p_reason: string
+          p_request_id: string
+          p_run_id: string
+        }
+        Returns: string
+      }
+      admin_automation_overview: { Args: never; Returns: Json }
       admin_cancel_meeting: {
         Args: { p_meeting: string; p_note: string; p_refund?: boolean }
         Returns: {
@@ -3038,6 +3226,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_update_automation_rule: {
+        Args: {
+          p_daily_limit: number
+          p_expected_version: number
+          p_min_interval_hours: number
+          p_mode: string
+          p_paused_reason: string
+          p_reason: string
+          p_request_id: string
+        }
+        Returns: {
+          daily_limit: number
+          min_interval_hours: number
+          mode: string
+          observed_since: string | null
+          paused_reason: string | null
+          rule_key: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "automation_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_upsert_meet_place: {
         Args: {
           p_active: boolean
@@ -3106,6 +3322,11 @@ export type Database = {
         }
         Returns: string
       }
+      automation_reminder_valid: {
+        Args: { p_meeting_id: string; p_used_at: string; p_user_id: string }
+        Returns: boolean
+      }
+      automation_tick: { Args: never; Returns: number }
       block_user: {
         Args: { p_reason?: string; p_target: string }
         Returns: undefined
@@ -3347,8 +3568,8 @@ export type Database = {
           p_error_code: string
           p_id: string
           p_lease_token: string
-          p_results?: Json
           p_retryable?: boolean
+          p_results?: Json
           p_state: string
         }
         Returns: boolean
@@ -3523,6 +3744,7 @@ export type Database = {
       my_carrier_adult_verified: { Args: never; Returns: boolean }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
+      my_notification_preferences: { Args: never; Returns: Json }
       my_notifications: {
         Args: { p_limit?: number }
         Returns: {
@@ -3606,6 +3828,10 @@ export type Database = {
         }
       }
       notification_push_still_relevant: {
+        Args: { p_id: string; p_lease_token: string }
+        Returns: boolean
+      }
+      notification_push_still_relevant_base: {
         Args: { p_id: string; p_lease_token: string }
         Returns: boolean
       }
@@ -3954,6 +4180,7 @@ export type Database = {
         Args: { p_id: string; p_response: string }
         Returns: undefined
       }
+      set_my_request_reminders: { Args: { p_enabled: boolean }; Returns: Json }
       set_paused: {
         Args: { p_on: boolean }
         Returns: {
@@ -4240,6 +4467,7 @@ export type Database = {
         | "candidates_refilled"
         | "no_show_response_required"
         | "meeting_released"
+        | "meeting_request_reminder"
       photo_state: "pending" | "approved" | "rejected"
       report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
@@ -4370,9 +4598,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       account_state: ["active", "banned", "withdrawn"],
@@ -4397,6 +4622,7 @@ export const Constants = {
         "candidates_refilled",
         "no_show_response_required",
         "meeting_released",
+        "meeting_request_reminder",
       ],
       photo_state: ["pending", "approved", "rejected"],
       report_kind: ["profile", "message"],

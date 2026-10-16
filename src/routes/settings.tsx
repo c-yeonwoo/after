@@ -20,10 +20,12 @@ import { enablePush, pushPermission, type PushPermission } from "@/lib/push";
 import { BRAND } from "@/lib/brand";
 import {
   KAKAO_PROVIDER,
+  getRequestReminderPreference,
   linkedProviders,
   linkKakao,
   PASSWORD_MIN_LENGTH,
   setFeedbackEmails,
+  setRequestReminderPreference,
   setPassword,
   setPaused,
   unlinkKakao,
@@ -61,12 +63,32 @@ function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [pw, setPw] = useState("");
+  const [requestReminder, setRequestReminder] = useState<boolean | null>(null);
+  const [requestReminderError, setRequestReminderError] = useState(false);
   /** 이 계정에 붙어 있는 로그인 수단. null 이면 아직 못 읽었다. */
   const [providers, setProviders] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
   }, [ready, me, navigate]);
+
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    void getRequestReminderPreference()
+      .then((enabled) => {
+        if (alive) {
+          setRequestReminder(enabled);
+          setRequestReminderError(false);
+        }
+      })
+      .catch(() => {
+        if (alive) setRequestReminderError(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [me]);
 
   const refreshProviders = useCallback(async () => {
     try {
@@ -160,6 +182,39 @@ function SettingsPage() {
           <PushStatus />
         </div>
 
+        {requestReminderError ? (
+          <p role="alert" className="mt-3 text-xs text-destructive">
+            요청 리마인드 설정을 확인할 수 없습니다. 잠시 후 다시 열어 주세요.
+          </p>
+        ) : (
+          <label className="mt-4 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
+            <input
+              type="checkbox"
+              className="size-5 shrink-0 accent-primary"
+              checked={requestReminder ?? false}
+              disabled={busy || requestReminder === null}
+              onChange={async (e) => {
+                const next = e.target.checked;
+                setBusy(true);
+                try {
+                  await setRequestReminderPreference(next);
+                  setRequestReminder(next);
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium">답변 대기 리마인드</span>
+              <span className="block text-xs text-muted-foreground">
+                만남 요청에 아직 답하지 않았을 때 한 번 더 알려드려요.
+              </span>
+            </span>
+          </label>
+        )}
+
         <label className="mt-4 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
           <input
             type="checkbox"
@@ -188,15 +243,15 @@ function SettingsPage() {
         </label>
 
         {/*
-          진행 알림은 끌 수 없다. 요청이 온 걸 모르면 24시간 뒤 상대의 티켓이
+          최초 진행 알림은 끌 수 없다. 요청이 온 걸 모르면 24시간 뒤 상대의 티켓이
           조용히 환불되므로 편의가 아니라 상대에 대한 의무다. 대신 아래
           "잠시 쉬기"로 새 소개 자체를 멈출 수 있다 — 그게 진짜 필요한 것이었다.
         */}
         <div className="mt-3 rounded-surface bg-surface-subtle px-5 py-4">
           <p className="text-sm font-medium">만남 진행 알림</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            소개 도착 · 요청 · 답변 · 만남 확정은 끌 수 없습니다. 당분간 소개를 받지 않으시려면 아래
-            잠시 쉬기를 켜 주세요.
+            소개 도착 · 최초 요청 · 답변 · 만남 확정 알림은 끌 수 없습니다. 추가 리마인드는 위에서
+            선택할 수 있어요. 당분간 소개를 받지 않으시려면 아래 잠시 쉬기를 켜 주세요.
           </p>
         </div>
       </section>
