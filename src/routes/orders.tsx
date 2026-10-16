@@ -15,7 +15,7 @@ import { BRAND } from "@/lib/brand";
 import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/orders")({
-  head: () => ({ meta: [{ title: `결제 내역 — ${BRAND.name}` }] }),
+  head: () => ({ meta: [{ title: `티켓 이용 내역 — ${BRAND.name}` }] }),
   component: OrdersPage,
 });
 
@@ -54,7 +54,7 @@ function OrdersPage() {
   }, [ready, me, navigate]);
 
   return (
-    <AppScreen title="결제 내역" back="/me">
+    <AppScreen title="티켓 이용 내역" back="/me">
       {loadError ? (
         <p className="mt-16 text-center text-sm text-muted-foreground">
           내역을 불러오지 못했습니다. 다시 접속해 주세요.
@@ -63,7 +63,7 @@ function OrdersPage() {
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       ) : orders.length === 0 ? (
         <div className="mt-10 text-center">
-          <p className="text-sm text-muted-foreground">결제 내역이 없습니다.</p>
+          <p className="text-sm text-muted-foreground">유료 결제 내역이 없습니다.</p>
           <Link to="/store" className="mt-4 inline-block text-sm font-semibold underline">
             티켓 보러 가기
           </Link>
