@@ -58,7 +58,8 @@ select is((select status from ops_cases where case_type = 'payment_unknown'
   'resolved', '공급자 상태 확인으로 미상 플래그가 사라지면 작업도 해결된다');
 
 select is((select count(*) from ops_case_events where event_type = 'opened'
-  and case_id in (select id from ops_cases where case_type = 'support'))::integer,
+  and case_id in (select id from ops_cases where case_type = 'support'
+    and source_id = '62000000-0000-0000-0000-000000000002'))::integer,
   2, '회차별 작업 이력이 남는다');
 select ok(not has_table_privilege('authenticated', 'public.ops_cases', 'SELECT'),
   '회원은 작업 원장에 직접 접근하지 못한다');

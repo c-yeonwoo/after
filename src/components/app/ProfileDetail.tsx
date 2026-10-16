@@ -90,7 +90,9 @@ function Photos({ paths, name }: { paths: string[]; name: string }) {
   if (paths.length === 0) return null;
   return (
     <div
-      className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 [scrollbar-width:none]"
+      className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none [scrollbar-width:none]"
+      role="region"
+      tabIndex={0}
       aria-label={`${name} 사진 ${paths.length}장`}
     >
       {paths.map((path, i) => (
