@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
+import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import {
   homeState,
   markMet,
@@ -107,7 +108,9 @@ function HomePage() {
 
   const hub = HUBS.find((h) => h.id === me?.hub_id);
   const isMale = me?.gender === "male";
-  const needsPhone = Boolean(me && !me.phone_verified_at);
+  const needsPhone = Boolean(
+    me && (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at),
+  );
   const photoCount = me?.photo_paths?.length ?? 0;
   const needsPhotos = Boolean(me && photoCount < MIN_PHOTOS);
 
@@ -285,7 +288,7 @@ function HomePage() {
                 to="/verify-phone"
                 className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
               >
-                <span>휴대폰 인증</span>
+                <span>{carrierIdentityEnabled ? "본인·성인 확인" : "휴대폰 인증"}</span>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               </Link>
             ) : null}

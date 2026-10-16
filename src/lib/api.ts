@@ -394,7 +394,7 @@ export async function verifyEmailCode(
   if (createError) throw createError;
 
   await track("signup_verified");
-  return profile;
+  return profile as Profile;
 }
 
 export async function signOut() {
@@ -412,7 +412,7 @@ export async function recordConsent(): Promise<Profile> {
     p_policy_version: POLICY_VERSION,
   });
   if (error) throw error;
-  return data;
+  return data as Profile;
 }
 
 /**
@@ -865,7 +865,7 @@ export async function verifyPhoneCode(phone: string, code: string): Promise<Prof
   }
   // 틀린 코드는 NULL로 돌려줘야 DB의 실패 횟수가 롤백되지 않는다.
   if (data === null) throw new Error("wrong code");
-  return data;
+  return data as Profile;
 }
 
 export type ComposedProfile = {
@@ -914,7 +914,7 @@ export async function ticketBundles(kind: TicketKind = "meeting"): Promise<Ticke
 export async function setPaused(on: boolean): Promise<Profile> {
   const { data, error } = await supabase.rpc("set_paused", { p_on: on });
   if (error) throw error;
-  return data;
+  return data as Profile;
 }
 
 /**
