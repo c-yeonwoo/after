@@ -238,18 +238,21 @@ export type Database = {
       app_settings: {
         Row: {
           id: boolean
+          identity_required: boolean
           payments_enabled: boolean
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           id?: boolean
+          identity_required?: boolean
           payments_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           id?: boolean
+          identity_required?: boolean
           payments_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -1440,6 +1443,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -1485,6 +1490,8 @@ export type Database = {
           headline?: string | null
           hub_id: string
           id: string
+          identity_verification_id?: string | null
+          identity_verified_at?: string | null
           interests?: string[]
           intro?: string | null
           job?: string | null
@@ -1530,6 +1537,8 @@ export type Database = {
           headline?: string | null
           hub_id?: string
           id?: string
+          identity_verification_id?: string | null
+          identity_verified_at?: string | null
           interests?: string[]
           intro?: string | null
           job?: string | null

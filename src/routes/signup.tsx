@@ -4,6 +4,7 @@ import { AlertCircle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
+import { CarrierIdentityForm } from "@/components/app/CarrierIdentityForm";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { Chip } from "@/components/onboarding/Chip";
@@ -34,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND, HUBS, isCompanyEmail, OPEN_HUBS } from "@/lib/brand";
+import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import {
   authErrorMessage,
   completeOnboarding,
@@ -121,7 +123,7 @@ function questionDone(p: ProfileDraft, i: number) {
  * 인터뷰 답이 없어도 소개장 확인으로 보낸다. 키워드로 초안을 만들 수 있다.
  */
 function resumeStep(me: Profile, p: ProfileDraft) {
-  if (!me.phone_verified_at) return PHONE;
+  if (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at) return PHONE;
   if (me.onboarding_step < 4) return 2;
   const missing = INTERVIEW.findIndex((_, i) => !questionDone(p, i));
   if (missing >= 0 && me.onboarding_step < 5) return Q_FIRST + missing;
@@ -367,16 +369,30 @@ function Onboarding() {
       <StepShell
         step={shown(PHONE)}
         total={TOTAL}
-        eyebrow="휴대폰 인증"
-        title="휴대폰 번호를 확인할게요"
-        description="한 사람이 한 계정만 쓰도록 하기 위해서예요."
+        eyebrow={carrierIdentityEnabled ? "본인 확인" : "휴대폰 인증"}
+        title={
+          carrierIdentityEnabled ? "본인과 성인 여부를 확인할게요" : "휴대폰 번호를 확인할게요"
+        }
+        description={
+          carrierIdentityEnabled ? undefined : "한 사람이 한 계정만 쓰도록 하기 위해서예요."
+        }
       >
-        <PhoneVerifyForm
-          onVerified={async () => {
-            await refresh();
-            setStep(2);
-          }}
-        />
+        {carrierIdentityEnabled ? (
+          <CarrierIdentityForm
+            onVerified={async (birth) => {
+              await refresh();
+              setBasics((previous) => ({ ...previous, birth }));
+              setStep(2);
+            }}
+          />
+        ) : (
+          <PhoneVerifyForm
+            onVerified={async () => {
+              await refresh();
+              setStep(2);
+            }}
+          />
+        )}
       </StepShell>
     );
   }
@@ -483,6 +499,7 @@ function Onboarding() {
               className="mt-2"
               value={basics.birth}
               onChange={(e) => setB({ birth: e.target.value })}
+              readOnly={Boolean(me?.identity_verified_at)}
               aria-invalid={Boolean(basics.birth) && (age === null || age < 19)}
               aria-describedby="birth-help"
             />
@@ -773,7 +790,15 @@ function Onboarding() {
                   await recordConsent();
                   setUserId(created.id);
                   // 다시 인증하는 사람(이미 번호를 확인한 계정)은 건너뛴다.
-                  setStep(created.phone_verified_at ? 2 : PHONE);
+                  setStep(
+                    (
+                      carrierIdentityEnabled
+                        ? created.identity_verified_at
+                        : created.phone_verified_at
+                    )
+                      ? 2
+                      : PHONE,
+                  );
                 } catch (err) {
                   setAuthError(authErrorMessage(err));
                 } finally {

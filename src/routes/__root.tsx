@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { BRAND } from "@/lib/brand";
+import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import { MobileFrame } from "@/components/MobileFrame";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 import { MeProvider, useMe } from "@/lib/me";
@@ -187,18 +188,51 @@ function RootComponent() {
       <ThemeProvider>
         <MeProvider>
           <PushBridge />
-          {isAdminRoute ? (
-            <Outlet />
-          ) : (
-            <MobileFrame>
+          <IdentityGate>
+            {isAdminRoute ? (
               <Outlet />
-            </MobileFrame>
-          )}
+            ) : (
+              <MobileFrame>
+                <Outlet />
+              </MobileFrame>
+            )}
+          </IdentityGate>
         </MeProvider>
       </ThemeProvider>
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
+}
+
+/** 인증 전 회원에게는 기존 소개·채팅 화면을 먼저 그리지 않는다. DB 게이트의 UX 보조다. */
+function IdentityGate({ children }: { children: ReactNode }) {
+  const { me, ready } = useMe();
+  const navigate = useNavigate();
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  const allowed = [
+    "/",
+    "/login",
+    "/signup",
+    "/verify-phone",
+    "/support",
+    "/terms",
+    "/privacy",
+    "/settings",
+    "/delete-account",
+    "/orders",
+  ];
+  const needsIdentity =
+    carrierIdentityEnabled &&
+    ready &&
+    me?.role === "member" &&
+    !me.identity_verified_at &&
+    !allowed.includes(path) &&
+    !path.startsWith("/admin");
+  useEffect(() => {
+    if (needsIdentity) void navigate({ to: "/verify-phone", replace: true });
+  }, [needsIdentity, navigate]);
+  if (needsIdentity) return null;
+  return children;
 }
 
 /**
