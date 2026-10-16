@@ -14,7 +14,7 @@ import { deleteMyPhotos } from "@/lib/photo";
 import { POLICY_VERSION } from "@/lib/policy";
 import { supabase } from "@/lib/supabase";
 
-import type { Database } from "./database.types";
+import type { Database, Json } from "./database.types";
 
 export type Gender = Database["public"]["Enums"]["gender"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -550,6 +550,44 @@ export async function completeOnboarding(
   await track("profile_completed");
 }
 
+/** An unpublished interview is only read through its own RLS table. */
+export async function loadProfileInterviewDraft(userId: string) {
+  const { data, error } = await supabase
+    .from("profile_interview_drafts")
+    .select("data,revision")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function saveProfileInterviewDraft(data: Json, expectedRevision: number) {
+  const { data: revision, error } = await supabase.rpc("save_profile_interview_draft", {
+    p_data: data,
+    p_expected_revision: expectedRevision,
+  });
+  if (error) throw error;
+  return revision;
+}
+
+export async function publishProfileInterview(revision: number, conditions: Basics) {
+  const { data, error } = await supabase.rpc("publish_profile_interview", {
+    p_expected_revision: revision,
+    p_conditions: {
+      name: conditions.name,
+      birth: conditions.birth,
+      job: conditions.job,
+      photos: conditions.photos,
+      mbti: conditions.mbti,
+      smoking: conditions.smoking,
+      drinking: conditions.drinking,
+      religion: conditions.religion,
+    },
+  });
+  if (error) throw error;
+  return data;
+}
+
 // ─────────────────────── 호·불 평가 (D2) ───────────────────────
 
 /** affinity_submitted 계측은 DB 트리거(affinities_log_submitted)가 남긴다 — 여기서 남기지 않는다. */
@@ -931,6 +969,7 @@ export async function verifyPhoneCode(phone: string, code: string): Promise<Prof
 export type ComposedProfile = {
   headlines: string[];
   intro: string;
+  evidence?: { sourceField: string; quote: string }[];
   /** 가입자 답변·생성 문장 자체는 남기지 않는 최소 운영 계측값. */
   meta?: {
     model: string;
@@ -963,12 +1002,30 @@ export async function composeProfile(input: {
   matchNote?: string;
   topics: string[];
   topicNote?: string;
+  followups?: { question: string; answer: string }[];
 }): Promise<ComposedProfile | null> {
   try {
     const { data, error } = await supabase.functions.invoke<ComposedProfile>("compose-profile", {
       body: input,
     });
     if (error || !data?.headlines?.length || !data?.intro) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function selectProfileFollowups(input: {
+  eveningNote?: string;
+  knownAs?: string;
+  topicNote?: string;
+}): Promise<{ ids: string[]; topics: string[] } | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke<{
+      ids: string[];
+      topics: string[];
+    }>("compose-profile", { body: { ...input, mode: "followups" } });
+    if (error || !data || !Array.isArray(data.ids) || !Array.isArray(data.topics)) return null;
     return data;
   } catch {
     return null;

@@ -2207,6 +2207,35 @@ export type Database = {
           },
         ]
       }
+      profile_interview_drafts: {
+        Row: {
+          data: Json
+          revision: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          data: Json
+          revision?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          data?: Json
+          revision?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_interview_drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_state: Database["public"]["Enums"]["account_state"]
@@ -4180,6 +4209,10 @@ export type Database = {
         Args: { p_confirmed: string; p_scheduled: string }
         Returns: string
       }
+      publish_profile_interview: {
+        Args: { p_conditions: Json; p_expected_revision: number }
+        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+      }
       profile_candidate_ready: {
         Args: { p: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: boolean
@@ -4392,6 +4425,10 @@ export type Database = {
           p_user: string
         }
         Returns: Json
+      }
+      save_profile_interview_draft: {
+        Args: { p_data: Json; p_expected_revision: number }
+        Returns: number
       }
       reserve_paid_order_cancel: {
         Args: { p_order_id: string }

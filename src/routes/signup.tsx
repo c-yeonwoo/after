@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
 import { CarrierIdentityForm } from "@/components/app/CarrierIdentityForm";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
+import { ProfileInterview } from "@/components/onboarding/ProfileInterview";
 import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
@@ -20,26 +21,13 @@ import {
   emptyBasics,
   type Basics,
 } from "@/components/onboarding/basics";
-import {
-  INTEREST_PLACEHOLDERS,
-  INTERVIEW,
-  INTERVIEW_MAX,
-  MATCH_TAGS,
-  TOPIC_TAGS,
-  buildIntro,
-  suggestHeadlines,
-  emptyProfile,
-  type ProfileDraft,
-} from "@/components/onboarding/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { BRAND, HUBS, isCompanyEmail, OPEN_HUBS } from "@/lib/brand";
 import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import {
   authErrorMessage,
-  completeOnboarding,
-  composeProfile,
+  loadProfileInterviewDraft,
   LOCAL_DEV_AUTH_BYPASS,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
@@ -47,17 +35,18 @@ import {
   requestEmailCode,
   recordConsent,
   recordMyAiDecision,
+  publishProfileInterview,
+  saveProfileInterviewDraft,
   saveOnboardingStep,
   setPassword,
   startLocalDevSignup,
-  track,
   verifyEmailCode,
-  type ComposedProfile,
   type Profile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { isNative } from "@/lib/native";
-import { pruneMyPhotos, usePhotoUrl } from "@/lib/photo";
+import { isProfileInterviewData, newProfileInterview } from "@/lib/profileInterview";
+import { pruneMyPhotos } from "@/lib/photo";
 import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +58,7 @@ export const Route = createFileRoute("/signup")({
       { title: `가입 — ${BRAND.name}` },
       {
         name: "description",
-        content: "회사 이메일을 확인하고, 질문 네 개에 답해 나를 소개하는 글을 함께 써요.",
+        content: "회사 이메일을 확인하고, 세 가지 질문으로 나를 소개하는 글을 함께 써요.",
       },
       { property: "og:title", content: `가입 — ${BRAND.name}` },
       {
@@ -92,7 +81,7 @@ const SKIP_HUB_STEP = OPEN_HUBS.length === 1;
   단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
   두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
 
-    성별 → (권역) → 회사 이메일 → 기본 정보 → 인터뷰 ①~④ → 소개장 확인 → 알아 두면 좋은 것
+    성별 → (권역) → 회사 이메일 → 기본 정보 → 인터뷰 ①~③ → 소개장 확인 → 알아 두면 좋은 것
 
   조건(흡연·음주·종교·MBTI)을 맨 뒤로 뺐다. 예전에는 기본 정보 화면에서 먼저 물어서
   가입이 스펙 비교로 시작했다. 소개장은 "문장이 주인공"이다(D3).
@@ -101,44 +90,16 @@ const Q_FIRST = 11;
 const CONDITIONS = 15;
 /** 휴대폰 인증(s54). 회사 메일 다음, 기본 정보 앞. 프로필 행이 생긴 뒤라야 저장할 곳이 있다. */
 const PHONE = 5;
-const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, PHONE, 2, 11, 12, 13, 14, 9, CONDITIONS];
+const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, PHONE, 2, Q_FIRST, CONDITIONS];
 const TOTAL = ORDER.length;
 /** 화면에 보이는 단계 번호. */
 const shown = (id: number) => ORDER.indexOf(id) + 1;
-const MIN_INTERESTS = 1;
-const MAX_INTERESTS = 5;
-
-/** 인터뷰 질문 i 를 다 채웠는가. 답 + 그 아래 칩까지. */
-function questionDone(p: ProfileDraft, i: number) {
-  const q = INTERVIEW[i];
-  const answered = p[q.key].trim().length >= q.min;
-  if (q.key === "eveningNote") return answered && p.interests.some((v) => v.trim());
-  if (q.key === "topicNote") return answered && p.topics.length >= 1;
-  if (q.key === "matchNote") return answered && p.matchTags.length >= 1;
-  return answered;
-}
-
-/**
- * 재개할 단계. 저장된 값에서 거꾸로 찾는다 — onboarding_step 만 보면 인터뷰 도중
- * 어디까지 답했는지 모른다. 예전 흐름(칩)으로 관심사까지 저장하고 멈춘 사람은
- * 인터뷰 답이 없어도 소개장 확인으로 보낸다. 키워드로 초안을 만들 수 있다.
- */
-function resumeStep(me: Profile, p: ProfileDraft) {
-  if (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at) return PHONE;
-  if (me.onboarding_step < 4) return 2;
-  const missing = INTERVIEW.findIndex((_, i) => !questionDone(p, i));
-  if (missing >= 0 && me.onboarding_step < 5) return Q_FIRST + missing;
-  if (!me.headline || !me.intro) {
-    return missing >= 0 && p.interests.length === 0 ? Q_FIRST + missing : 9;
-  }
-  return CONDITIONS;
-}
 type Gender = "female" | "male";
 
-function toggle(list: string[], id: string, max?: number) {
-  if (list.includes(id)) return list.filter((v) => v !== id);
-  if (max && list.length >= max) return list;
-  return [...list, id];
+function resumeStep(me: Profile) {
+  if (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at) return PHONE;
+  if (me.onboarding_step < 4) return 2;
+  return Q_FIRST;
 }
 
 function Onboarding() {
@@ -165,19 +126,15 @@ function Onboarding() {
   const [saving, setSaving] = useState(false);
   /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
   const [resumed, setResumed] = useState(false);
+  const [editDraftReady, setEditDraftReady] = useState(!editing);
+  const [editDraftLoadError, setEditDraftLoadError] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
-  const [profile, setProfile] = useState<ProfileDraft>(emptyProfile);
-  const [intro, setIntro] = useState("");
-  /*
-    모델이 쓴 문장(compose-profile). null 이면 아직 못 받았거나 실패한 것이고,
-    그때는 규칙 기반 초안이 그대로 쓰인다. **실패가 곧 빈 화면이 되지 않는다.**
-  */
-  const [composed, setComposed] = useState<ComposedProfile | null>(null);
-  const [composing, setComposing] = useState(false);
-  /* 같은 답변으로 두 번 부르지 않는다. 호출마다 돈이 나간다. */
-  const composedKey = useRef<string | null>(null);
-  const [seedInput, setSeedInput] = useState("");
+  const [interviewRevision, setInterviewRevision] = useState<number | null>(null);
+  const [acceptedRunId, setAcceptedRunId] = useState<number | undefined>();
+  const [acceptedDecision, setAcceptedDecision] = useState<
+    "accepted" | "edited" | "discarded" | undefined
+  >();
   /*
     저장할 onboarding_step. **내려가지 않는다.** 완료된 회원(7)이 수정하면서 4·5 를
     쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다. 예전 수정 흐름은 관심사·
@@ -224,118 +181,38 @@ function Onboarding() {
       religion: me.religion ?? "",
     };
     setBasics(nextBasics);
-    const loaded: ProfileDraft = {
-      headline: me.headline ?? "",
-      eveningNote: me.evening_note ?? "",
-      knownAs: me.known_as ?? "",
-      interests: me.interests,
-      details: (me.details as Record<string, string>) ?? {},
-      matchTags: me.match_tags,
-      matchNote: me.match_note ?? "",
-      topics: me.topics,
-      topicNote: me.topic_note ?? "",
-    };
-    setProfile(loaded);
-    // 수정은 기본 정보부터 차례로 다시 본다. 가입 재개는 멈춘 곳으로 착지시킨다.
-    if (!editing) setStep(resumeStep(me, loaded));
-    setIntro(me.intro ?? me.headline ?? "");
+    if (editing) {
+      void loadProfileInterviewDraft(me.id)
+        .then((row) => {
+          if (row && !isProfileInterviewData(row.data)) throw new Error("invalid draft");
+          const restoredBasics =
+            row && isProfileInterviewData(row.data) ? row.data.basics : undefined;
+          if (restoredBasics) setBasics((current) => ({ ...current, ...restoredBasics }));
+          setEditDraftReady(true);
+        })
+        .catch(() => setEditDraftLoadError(true));
+    }
+    if (!editing) setStep(resumeStep(me));
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
   }, [editing, ready, me, navigate, resumed]);
 
-  // 저장된 값은 Storage 경로라 그대로 <img src> 에 넣을 수 없다. 확인 화면은 대표 사진만.
-  const shownPhoto = usePhotoUrl(basics.photos[0]);
-
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
-  const selectedInterests = useMemo(
-    () => profile.interests.map((v) => v.trim()).filter(Boolean),
-    [profile.interests],
-  );
-
-  const draft = useMemo(() => buildIntro(profile), [profile]);
-
-  /*
-    마지막 확인 화면에 들어오면 모델에게 문장을 맡긴다.
-
-    ── 왜 자동으로 부르는가 ──
-    "AI로 다듬기" 버튼을 두면 대부분 누르지 않고 지나간다. 그러면 좋은 문장은
-    누른 사람만 갖고, 프로필 품질이 사용자의 호기심에 따라 갈린다. 화면에
-    들어온 김에 미리 만들어 두고, 마음에 안 들면 직접 고치게 하는 편이 낫다.
-
-    ── 왜 같은 답변으로 두 번 안 부르는가 ──
-    호출마다 돈이 나간다. 이전 단계로 갔다가 돌아오는 일이 잦은 화면이라,
-    답변이 그대로면 이미 받은 결과를 다시 쓴다. 답변을 고쳤으면 키가 달라져
-    자연스럽게 다시 부른다.
-
-    실패는 조용히 지나간다. 규칙 기반 초안이 이미 화면에 있고, 문장이 더
-    좋아지지 않았다고 가입을 막을 이유가 없다.
-  */
-  useEffect(() => {
-    if (step !== 9 || (selectedInterests.length === 0 && !profile.eveningNote.trim())) return;
-
-    const payload = {
-      job: basics.job,
-      eveningNote: profile.eveningNote.trim() || undefined,
-      knownAs: profile.knownAs.trim() || undefined,
-      interests: selectedInterests.map((label) => ({
-        label,
-        note: profile.details[label]?.trim() || undefined,
-      })),
-      matchTags: profile.matchTags,
-      matchNote: profile.matchNote.trim() || undefined,
-      topics: profile.topics,
-      topicNote: profile.topicNote.trim() || undefined,
-    };
-    const key = JSON.stringify(payload);
-    if (composedKey.current === key) return;
-    composedKey.current = key;
-    // An earlier AI draft no longer represents these answers. Preserve only
-    // text the member edited themselves; replace untouched AI copy with the
-    // current rule-based draft while the next request is pending.
-    setIntro((current) => (composed && current === composed.intro ? draft : current));
-    setComposed(null);
-
-    let cancelled = false;
-    setComposing(true);
-    const startedAt = performance.now();
-    composeProfile(payload)
-      .then((result) => {
-        if (cancelled) return;
-        const durationMs = Math.round(performance.now() - startedAt);
-        if (!result) {
-          // 실패 원문이나 답변은 남기지 않는다. 운영자는 성공률과 지연만 본다.
-          void track("profile_composition_fallback", { duration_ms: durationMs });
-          return;
-        }
-        void track("profile_composition_generated", {
-          duration_ms: durationMs,
-          model: result.meta?.model ?? "unknown",
-          input_tokens: result.meta?.inputTokens ?? null,
-          output_tokens: result.meta?.outputTokens ?? null,
-        });
-        setComposed(result);
-        /*
-          사용자가 이미 손댄 소개글은 건드리지 않는다. 아직 규칙 기반 초안
-          그대로이거나 비어 있을 때만 바꿔 넣는다 — 남이 쓰던 글을 화면이
-          말없이 지우는 일은 없어야 한다.
-        */
-        setIntro((current) =>
-          current.trim() === "" || current === draft ? result.intro : current,
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setComposing(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-    // draft 는 의도적으로 뺀다. 소개글을 고치는 순간 draft 가 바뀌어 재호출된다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedInterests, basics.job, profile]);
-
-  function patch(next: Partial<ProfileDraft>) {
-    setProfile((prev) => ({ ...prev, ...next }));
+  if (editing && step === 2 && !editDraftReady) {
+    return (
+      <StepShell step={shown(2)} total={TOTAL} eyebrow="기본 정보" title="프로필을 불러오고 있어요">
+        {editDraftLoadError ? (
+          <div>
+            <p role="alert" className="text-sm text-destructive">
+              저장된 내용을 불러오지 못했어요.
+            </p>
+            <Button className="mt-4" onClick={() => window.location.reload()}>
+              다시 시도
+            </Button>
+          </div>
+        ) : null}
+      </StepShell>
+    );
   }
 
   if (step === 10) {
@@ -550,26 +427,50 @@ function Onboarding() {
             size="lg"
             disabled={!basicsValid(basics) || saving}
             onClick={async () => {
-              // 인증이 앞으로 왔으므로 이 시점엔 이미 프로필 행이 있다 —
-              // 기본 정보를 바로 서버에 남긴다. 예전에는 completeOnboarding()
-              // 까지 가야 저장돼서, 관심사 단계에서 이탈하면 이름·생일까지
-              // 전부 다시 입력해야 했다(진단 UX-2).
+              // 신규 가입은 재개를 위해 기본 정보를 프로필에 저장한다.
+              // 기존 회원의 수정은 확정 전까지 비공개 인터뷰 초안에만 둔다.
               if (userId) {
                 setSaving(true);
                 try {
-                  await saveOnboardingStep(userId, keepStep(4), {
-                    name: basics.name,
-                    birth: basics.birth,
-                    job: basics.job,
-                    photo_paths: basics.photos,
-                  });
-                  // 묶음에서 뺀 사진 파일을 치운다. 저장이 끝난 뒤라야 안전하다.
-                  void pruneMyPhotos(basics.photos);
+                  if (editing) {
+                    const row = await loadProfileInterviewDraft(userId);
+                    if (row && !isProfileInterviewData(row.data))
+                      throw new Error("저장된 인터뷰를 읽을 수 없습니다.");
+                    const draft =
+                      row && isProfileInterviewData(row.data)
+                        ? row.data
+                        : newProfileInterview(me ?? undefined);
+                    await saveProfileInterviewDraft(
+                      {
+                        ...draft,
+                        basics: {
+                          name: basics.name,
+                          birth: basics.birth,
+                          job: basics.job,
+                          photos: basics.photos,
+                        },
+                      } as unknown as import("@/lib/database.types").Json,
+                      row?.revision ?? 0,
+                    );
+                  } else {
+                    await saveOnboardingStep(userId, keepStep(4), {
+                      name: basics.name,
+                      birth: basics.birth,
+                      job: basics.job,
+                      photo_paths: basics.photos,
+                    });
+                    // 묶음에서 뺀 사진 파일을 치운다. 저장이 끝난 뒤라야 안전하다.
+                    void pruneMyPhotos(basics.photos);
+                  }
+                  setStep(Q_FIRST);
+                } catch {
+                  toast.error("저장하지 못했어요. 다시 시도해 주세요.");
                 } finally {
                   setSaving(false);
                 }
+              } else {
+                setStep(Q_FIRST);
               }
-              setStep(Q_FIRST);
             }}
           >
             {saving ? "저장 중…" : "다음"}
@@ -859,174 +760,23 @@ function Onboarding() {
     );
   }
 
-  // 인터뷰 ①~④ — 한 화면에 질문 하나 (리부팅 C)
-  const qIndex = step - Q_FIRST;
-  if (qIndex >= 0 && qIndex < INTERVIEW.length) {
-    const q = INTERVIEW[qIndex];
-    const value = profile[q.key];
-    const length = value.trim().length;
-    const ok = questionDone(profile, qIndex);
-    const seeds = profile.interests.map((v) => v.trim()).filter(Boolean);
-    const canAdd = seeds.length < MAX_INTERESTS;
-    const last = qIndex === INTERVIEW.length - 1;
-
-    const addSeed = () => {
-      const v = seedInput.trim();
-      if (!v || !canAdd || seeds.includes(v)) return;
-      patch({ interests: [...seeds, v] });
-      setSeedInput("");
-    };
-
-    /* 질문마다 바로 저장한다. 중간에 닫아도 쓴 문장이 남아야 한다. */
-    const save = async () => {
-      if (!userId) return;
-      const text = value.trim() || null;
-      const fields: Partial<Profile> =
-        q.key === "eveningNote"
-          ? { evening_note: text, interests: seeds }
-          : q.key === "knownAs"
-            ? { known_as: text }
-            : q.key === "topicNote"
-              ? { topic_note: text, topics: profile.topics }
-              : { match_note: text, match_tags: profile.matchTags };
-      await saveOnboardingStep(userId, keepStep(last ? 5 : 4), fields);
-    };
-
+  if (step === Q_FIRST && userId) {
     return (
-      <StepShell
-        step={shown(step)}
-        total={TOTAL}
-        eyebrow={`소개장 인터뷰 ${qIndex + 1}/${INTERVIEW.length}`}
-        title={q.title}
-        description={q.description}
-      >
-        <Textarea
-          rows={4}
-          aria-label={q.title}
-          aria-describedby={`${q.key}-help`}
-          placeholder={q.placeholder}
-          maxLength={INTERVIEW_MAX}
-          value={value}
-          onChange={(e) => patch({ [q.key]: e.target.value } as Partial<ProfileDraft>)}
-        />
-        <p id={`${q.key}-help`} aria-live="polite" className="mt-2 text-sm text-muted-foreground">
-          {q.min && length < q.min
-            ? `${q.min}자 이상 적어 주세요 (${length}자)`
-            : `${q.min ? "" : "선택 · "}${length}/${INTERVIEW_MAX}자`}
-        </p>
-
-        <details className="mt-2 text-sm">
-          <summary className="flex min-h-11 cursor-pointer items-center text-primary-strong">
-            예시 보기
-          </summary>
-          <ul className="space-y-2 pb-2 text-muted-foreground">
-            {q.examples.map((ex) => (
-              <li key={ex} className="rounded-surface bg-muted/50 px-3 py-2 leading-relaxed">
-                {ex}
-              </li>
-            ))}
-          </ul>
-        </details>
-
-        {q.key === "eveningNote" ? (
-          <div className="mt-6">
-            <p className="text-sm font-semibold text-foreground">
-              키워드로도 남겨 주세요 ({MIN_INTERESTS}~{MAX_INTERESTS}개)
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">소개장에 함께 실려요.</p>
-            <div className="mt-3 flex items-center gap-2">
-              <Input
-                value={seedInput}
-                aria-label="키워드 추가"
-                placeholder={INTEREST_PLACEHOLDERS[seeds.length] ?? "직접 적기"}
-                disabled={!canAdd}
-                onChange={(e) => setSeedInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-                    e.preventDefault();
-                    addSeed();
-                  }
-                }}
-              />
-              <Button variant="outline" disabled={!seedInput.trim() || !canAdd} onClick={addSeed}>
-                추가
-              </Button>
-            </div>
-            {seeds.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {seeds.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    aria-label={`${label} 지우기`}
-                    onClick={() => patch({ interests: seeds.filter((v) => v !== label) })}
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-border bg-card px-4 text-sm text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    {label}
-                    <X className="size-3.5 text-muted-foreground" aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {q.key === "topicNote" || q.key === "matchNote" ? (
-          <div className="mt-6">
-            <p className="text-sm font-semibold text-foreground">
-              {q.key === "topicNote" ? "가까운 주제를 골라 주세요" : "가까운 사람을 골라 주세요"}{" "}
-              (1~4개)
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(q.key === "topicNote" ? TOPIC_TAGS : MATCH_TAGS).map((tag) => {
-                const list = q.key === "topicNote" ? profile.topics : profile.matchTags;
-                return (
-                  <Chip
-                    key={tag}
-                    selected={list.includes(tag)}
-                    onClick={() =>
-                      patch(
-                        q.key === "topicNote"
-                          ? { topics: toggle(profile.topics, tag, 4) }
-                          : { matchTags: toggle(profile.matchTags, tag, 4) },
-                      )
-                    }
-                  >
-                    {tag}
-                  </Chip>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(qIndex === 0 ? 2 : step - 1)}>
-            이전
-          </Button>
-          <Button
-            className="flex-1"
-            size="lg"
-            disabled={!ok || saving}
-            onClick={async () => {
-              setSaving(true);
-              try {
-                await save();
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : "저장하지 못했습니다.");
-                return;
-              } finally {
-                setSaving(false);
-              }
-              if (last) setIntro(draft);
-              setStep(last ? 9 : step + 1);
-            }}
-          >
-            {saving ? "저장 중…" : last ? "소개장 만들기" : "다음"}
-          </Button>
-        </div>
-      </StepShell>
+      <ProfileInterview
+        userId={userId}
+        member={me}
+        basics={basics}
+        editing={editing}
+        progressStep={shown(Q_FIRST)}
+        progressTotal={TOTAL}
+        onBack={() => setStep(2)}
+        onDone={(revision, runId, decision) => {
+          setInterviewRevision(revision);
+          setAcceptedRunId(runId);
+          setAcceptedDecision(decision);
+          setStep(CONDITIONS);
+        }}
+      />
     );
   }
 
@@ -1121,18 +871,26 @@ function Onboarding() {
         </div>
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(9)}>
+          <Button variant="ghost" onClick={() => setStep(Q_FIRST)}>
             이전
           </Button>
           <Button
             className="flex-1"
             size="lg"
-            disabled={!conditionsValid(basics) || saving || !userId}
+            disabled={!conditionsValid(basics) || saving || !userId || interviewRevision === null}
             onClick={async () => {
-              if (!userId) return;
+              if (!userId || interviewRevision === null) return;
               setSaving(true);
               try {
-                await completeOnboarding(userId, basics, profile, intro.trim());
+                await publishProfileInterview(interviewRevision, basics);
+                if (editing) void pruneMyPhotos(basics.photos);
+                if (acceptedRunId && acceptedDecision) {
+                  try {
+                    await recordMyAiDecision(acceptedRunId, acceptedDecision);
+                  } catch {
+                    /* A saved profile must not be undone by telemetry. */
+                  }
+                }
                 // 완료 직전까지 읽고 있던 me 는 프로필을 쓰기 전 값이다. 갱신하지 않으면
                 // /profile 이 소개글 없이 그려져 새로고침해야만 방금 쓴 내용이 보인다.
                 await refresh();
@@ -1160,180 +918,7 @@ function Onboarding() {
     );
   }
 
-  /*
-    모델이 쓴 문장이 있으면 그걸 쓰고, 없으면 규칙 기반 후보를 쓴다.
-    화면 구조는 하나다 — 두 경로를 따로 그리면 실패했을 때만 보이는 화면이
-    생기고, 그런 화면은 아무도 안 본다.
-  */
-  const headlineOptions = composed?.headlines ?? suggestHeadlines(profile, basics.job);
-
-  return (
-    <StepShell
-      step={shown(9)}
-      total={TOTAL}
-      eyebrow="소개장 확인"
-      title="이렇게 소개해도 될까요?"
-      description="마음에 드는 문장만 남겨 주세요."
-    >
-      <div className="rounded-surface border border-border bg-card p-5">
-        <div className="flex items-start gap-4">
-          <div className="min-w-0 flex-1">
-            <p className="text-lg font-semibold">
-              {basics.name}
-              {ageFrom(basics.birth) !== null ? ` · ${ageFrom(basics.birth)}세` : ""}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">{basics.job}</p>
-            {profile.eveningNote ? (
-              <p className="serif mt-3 line-clamp-2 text-sm leading-relaxed text-foreground">
-                {profile.eveningNote}
-              </p>
-            ) : null}
-          </div>
-          {shownPhoto ? (
-            <img
-              src={shownPhoto}
-              alt="내 대표 사진"
-              className="aspect-[3/4] w-[4.5rem] shrink-0 rounded-control object-cover"
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <div className="flex min-h-6 items-center gap-2">
-          <p className="text-sm font-semibold text-foreground">한 줄 소개 제안</p>
-          {/*
-            생성에는 몇 초가 걸린다. 그동안 화면은 규칙 기반 초안을 이미 보여
-            주고 있으므로 비어 있지 않다. 다만 곧 바뀐다는 사실은 말해야 한다 —
-            읽고 고른 문장이 말없이 교체되면 그게 더 나쁘다.
-          */}
-          {composing ? (
-            <span aria-live="polite" className="text-xs text-muted-foreground">
-              문장을 다듬는 중이에요…
-            </span>
-          ) : null}
-        </div>
-        <div className="mt-3 space-y-2">
-          {headlineOptions.map((line) => {
-            const selected = profile.headline === line;
-            return (
-              <button
-                key={line}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => {
-                  patch({ headline: line });
-                  /*
-                    모델이 쓴 소개글이 있으면 후보를 바꿔도 그 글을 유지한다.
-                    한 줄 소개와 소개글은 따로 쓰인 글이라, 후보를 누를 때마다
-                    소개글을 규칙 기반 초안으로 되돌리면 방금 받은 문장이 사라진다.
-                  */
-                  if (!composed) setIntro(buildIntro({ ...profile, headline: line }));
-                }}
-                className={cn(
-                  "w-full rounded-control border border-border bg-card p-4 text-left text-sm leading-relaxed transition-colors",
-                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  selected
-                    ? "border-primary-strong bg-primary/10"
-                    : "hover:border-primary-strong/60",
-                )}
-              >
-                “{line}”
-              </button>
-            );
-          })}
-        </div>
-        <Input
-          className="mt-3"
-          aria-label="한 줄 소개 직접 쓰기"
-          placeholder="직접 쓰기 (선택)"
-          value={profile.headline}
-          onChange={(e) => patch({ headline: e.target.value })}
-        />
-      </div>
-
-      <label className="mt-6 block text-sm font-semibold text-foreground" htmlFor="intro">
-        소개글
-      </label>
-      <Textarea
-        id="intro"
-        rows={9}
-        className="mt-2"
-        value={intro}
-        onChange={(e) => setIntro(e.target.value)}
-        aria-invalid={intro.trim().length > 0 && intro.trim().length < 20}
-        aria-describedby="intro-help"
-      />
-      <p
-        id="intro-help"
-        aria-live="polite"
-        className={cn(
-          "mt-2 text-sm",
-          intro.trim().length > 0 && intro.trim().length < 20
-            ? "font-medium text-destructive"
-            : "text-muted-foreground",
-        )}
-      >
-        최소 20자 ({intro.trim().length}자)
-      </p>
-
-      <div className="mt-8 flex gap-2">
-        <Button variant="ghost" onClick={() => setStep(Q_FIRST + INTERVIEW.length - 1)}>
-          이전
-        </Button>
-        <Button
-          className="flex-1"
-          size="lg"
-          disabled={
-            intro.trim().length < 20 || profile.headline.trim().length < 5 || saving || !userId
-          }
-          onClick={async () => {
-            if (!userId) return;
-            setSaving(true);
-            try {
-              await saveOnboardingStep(userId, keepStep(6), {
-                headline: profile.headline.trim(),
-                intro: intro.trim(),
-              });
-              if (composed) {
-                const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
-                if (composed.meta?.runId) {
-                  const keptHeadline = composed.headlines.includes(profile.headline.trim());
-                  const keptIntro = normalize(intro) === normalize(composed.intro);
-                  const decision =
-                    keptHeadline && keptIntro
-                      ? "accepted"
-                      : keptHeadline || keptIntro
-                        ? "edited"
-                        : "discarded";
-                  try {
-                    await recordMyAiDecision(composed.meta.runId, decision);
-                  } catch {
-                    // The profile is saved; missing quality telemetry must not block onboarding.
-                  }
-                }
-                await track("profile_composition_saved", {
-                  headline: composed.headlines.includes(profile.headline.trim())
-                    ? "candidate"
-                    : "edited_or_custom",
-                  intro: normalize(intro) === normalize(composed.intro) ? "kept" : "edited",
-                });
-              } else {
-                await track("profile_composition_saved", { source: "rule_based_fallback" });
-              }
-              setStep(CONDITIONS);
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
-            } finally {
-              setSaving(false);
-            }
-          }}
-        >
-          {saving ? "저장 중…" : "다음"}
-        </Button>
-      </div>
-    </StepShell>
-  );
+  return null;
 }
 
 function ChoiceCard({

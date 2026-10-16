@@ -1,5 +1,9 @@
 /** Small deterministic checks around untrusted LLM prose; human approval stays required. */
-import { validPairBrief, validProfileComposition } from "./ai-quality.ts";
+import {
+  validInterviewComposition,
+  validPairBrief,
+  validProfileComposition,
+} from "./ai-quality.ts";
 
 export function scrubUserText(value: unknown, max: number): string {
   if (typeof value !== "string") return "";
@@ -43,6 +47,26 @@ export function validGroundedProfile(
 ): boolean {
   return (
     validProfileComposition(headlines, intro) &&
+    evidence.length >= 1 &&
+    evidence.length <= 3 &&
+    evidence.every(
+      (item) =>
+        quoteInSource(item, sources) &&
+        compact(intro).includes(compact(item.quote)) &&
+        !containsContact(item.quote),
+    ) &&
+    !containsContact(`${headlines.join(" ")} ${intro}`)
+  );
+}
+
+export function validGroundedInterview(
+  headlines: string[],
+  intro: string,
+  evidence: Evidence[],
+  sources: SourceMap,
+): boolean {
+  return (
+    validInterviewComposition(headlines, intro) &&
     evidence.length >= 1 &&
     evidence.length <= 3 &&
     evidence.every(
