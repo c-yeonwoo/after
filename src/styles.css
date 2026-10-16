@@ -164,12 +164,10 @@
 }
 
 /*
- * 애프터 — 소개장 (D3, 2026-10-10).
+ * 애프터 — Evening, Refined (2026-10-16).
  *
- * 크림 종이 위에 만년필 잉크(짙은 녹회색)로 쓰고, 봉랍색 하나를 작은 강조에 쓴다.
- * 다크는 같은 잉크를 밤 종이 위에 뒤집는다. 성별 색 구분·금색·그라데이션은 없다.
- * 이전 팔레트(따뜻한 종이 #F7F5F0 + 잉크 #252A34 + 살구)는 화면 골격을 그대로 둔 채
- * 색만 바꿨다는 진단을 받았다 — 이번엔 글자(세리프)와 프로필 구성도 함께 바꾼다.
+ * 웜 페이퍼 위의 잉크와 쿨 그린을 중심에 두고, 코럴은 제목 일부·선택 상태·로고 점에만 쓴다.
+ * 다크는 같은 색 관계를 밤 종이 위로 뒤집는다. 브랜드 강조와 오류색은 색상도 분리한다.
  *
  * 값은 hex 로 정하고 대비를 검증한 뒤 oklch 로 옮겼다 — 주석의 hex 가 원본이다.
  * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
@@ -188,46 +186,45 @@
   --radius-field-value: 0.75rem;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
-  /* ── 브랜드 원천 값 — 봉랍(seal) 한 색 ── */
-  --brand-50: oklch(0.98 0.009 84.6); /* #FBF8F2 */
-  --brand-100: oklch(0.957 0.015 80.7); /* #F6F0E6 */
-  --brand-200: oklch(0.929 0.024 77.5); /* #F1E6D6 */
-  --brand-300: oklch(0.883 0.031 49.4); /* #EAD3C7 */
-  --brand-400: oklch(0.711 0.084 39.8); /* #D0907A */
-  --brand-500: oklch(0.562 0.133 36); /* #B5543A */
-  --brand-600: oklch(0.518 0.132 35.8); /* #A6472E */
-  --brand-700: oklch(0.487 0.133 35.7); /* #9C3D24 — 봉랍 */
-  --brand-800: oklch(0.434 0.12 35.1); /* #86321D */
+  /* 브랜드 원천 값: 뉴트럴 70 · 잉크/그린 25 · 코럴 5 */
+  --brand-50: oklch(0.9793 0.007 88.6); /* #FAF8F3 Warm Paper */
+  --brand-100: oklch(0.9377 0.0128 86.8); /* #EEEAE1 Soft Cream */
+  --brand-200: oklch(0.9081 0.0301 33.1); /* #F4DAD4 */
+  --brand-300: oklch(0.7826 0.0836 27.4); /* #E9A49B Soft Blush */
+  --brand-400: oklch(0.6729 0.1116 27.3); /* #D27A70 */
+  --brand-500: oklch(0.6048 0.1226 28.1); /* #C06257 */
+  --brand-600: oklch(0.5465 0.1214 28.1); /* #AC5147 After Coral */
+  --brand-700: oklch(0.4763 0.1167 27.7); /* #933E36 */
+  --brand-800: oklch(0.4176 0.1033 27.1); /* #7B322C */
+  --brand-pine: oklch(0.4352 0.0422 173.2); /* #38594F */
+  --brand-sage: oklch(0.6818 0.0303 161.7); /* #899F93 */
+  --brand-dusk: oklch(0.5116 0.0335 224.3); /* #526B75 */
+  --brand-taupe: oklch(0.7502 0.045 47.4); /* #C7A696 */
 
-  /* 봉랍: 로고 점·인용부호·링크·선택 표시. 큰 면으로 쓰지 않는다. */
-  --brand-signature: var(--brand-700);
-  /*
-    로고 점(2026-10-11). 봉랍(signature)과 따로 둔다 — 봉랍은 인용부호·링크·선택에
-    쓰는 차분한 색이고, 점은 "설레는" 블러시다. 크림 바탕 위에서 묻히지 않게 아이콘
-    (#F08A8A)보다 한 단계 짙게 쓴다.
-  */
-  --brand-blush: oklch(0.709 0.139 22.8); /* #EB7B78 */
-  --brand-text: var(--brand-700);
-  --brand-tint: oklch(0.929 0.024 77.5); /* #F1E6D6 — 선택 면·내 말풍선 */
+  /* 코럴은 작은 강조에만 사용한다. 밝은 면에서는 진한 코럴, 밤 면에서는 블러시. */
+  --brand-signature: var(--brand-600);
+  --brand-blush: var(--brand-signature);
+  --brand-text: oklch(0.521 0.1201 28.4); /* #A34A40 — 8% 잉크 틴트 위에서도 AA */
+  --brand-tint: var(--brand-50); /* 선택 면·내 말풍선은 페이퍼로 조용히 */
   --peach-300: var(--brand-tint);
   --peach-500: var(--brand-signature);
 
   /* 만년필 잉크 */
-  --ink: oklch(0.295 0.02 169.4); /* #23302B */
-  --ink-muted: oklch(0.513 0.016 162); /* #5F6A64 — 크림 5.22 · 카드 5.53 · 보조면 4.66 */
+  --ink: oklch(0.2955 0.0198 169.4); /* #23302B Evening Ink */
+  --ink-muted: var(--brand-dusk); /* 쿨한 정보색 — 페이퍼·크림에서도 AA */
 
   --surface: oklch(1 0 0);
-  --surface-subtle: oklch(0.956 0.006 85);
+  --surface-subtle: var(--brand-100);
   --success: oklch(0.492 0.06 164); /* #3F6C58 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
 
   --shadow-frame: 0 0 70px -24px oklch(0.295 0.02 169 / 16%);
   /* 카드는 평평하게 둔다. 테두리와 그림자를 함께 쓰면 상자가 두 번 그려진다. */
   --shadow-card: none;
-  --shadow-brand: 0 14px 34px -18px oklch(0.487 0.133 36 / 20%);
+  --shadow-brand: 0 14px 34px -18px oklch(0.5465 0.1214 28.1 / 16%);
 
   /* ── 시맨틱 (shadcn) ── */
-  --background: oklch(0.985 0.004 85); /* 따뜻한 오프화이트 */
+  --background: var(--brand-50);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
@@ -236,13 +233,13 @@
   /*
     ── 두 토큰의 역할이 갈린다 ──
     --primary        = **채움**. 버튼처럼 면으로 쓰는 자리 — 잉크.
-    --primary-strong = **글자·아이콘·선택 표시** — 봉랍.
+    --primary-strong = **글자·아이콘·선택 표시** — 코럴.
   */
-  --primary: var(--ink); /* #23302B — 크림 글자 12.74 */
-  --primary-strong: var(--brand-text); /* #9B3D24 봉랍 — 크림 6.27 · 카드 6.65 · 선택면 5.48 */
-  --primary-foreground: oklch(0.974 0.011 84.6); /* #FAF6EE */
+  --primary: var(--ink);
+  --primary-strong: var(--brand-text); /* #A34A40 — 페이퍼 5.48 */
+  --primary-foreground: var(--brand-50);
 
-  /* 내 말풍선·선택 면은 엷은 종이 틴트, 글자는 잉크(11.14). */
+  /* 내 말풍선·선택 면은 엷은 종이 틴트, 글자는 잉크. */
   --bubble-mine: var(--brand-tint);
   --bubble-mine-foreground: var(--ink);
   --secondary: var(--surface-subtle);
@@ -251,19 +248,19 @@
   --muted-foreground: var(--ink-muted);
   --accent: var(--surface-subtle);
   --accent-foreground: var(--ink);
-  /* 브랜드가 로즈(h≈5)라 경고색은 hue 를 벌려 둔다 — 안 그러면 "위험"이 브랜드로 읽힌다. */
-  --destructive: oklch(0.532 0.151 22.4); /* #B33F42 */
+  /* 오류는 코럴(h≈28)과 구별되는 라즈베리(h≈359)를 쓴다. */
+  --destructive: oklch(0.493 0.1674 359); /* #A6285F */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0.006 85);
+  --border: oklch(0.8935 0.011 149.8); /* #D7DED8 Quiet Line */
   --input: oklch(0.632 0.012 149.8); /* #858C86 — 크림 3.20 */
   /* 포커스 링은 얇은 선이라 채움색으로는 안 보인다(2.14). 글자 역할과 같은 톤을 쓴다. */
   --ring: var(--brand-text);
 
-  --chart-1: var(--brand-text);
-  --chart-2: var(--brand-signature);
-  --chart-3: var(--ink);
+  --chart-1: var(--brand-pine);
+  --chart-2: var(--brand-dusk);
+  --chart-3: var(--brand-signature);
   --chart-4: var(--success);
-  --chart-5: var(--brand-600);
+  --chart-5: var(--warning);
   --sidebar: var(--background);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--primary);
@@ -278,7 +275,7 @@
   color-scheme: dark;
 
   /* 밤 종이 위의 같은 잉크 */
-  --ink: oklch(0.947 0.014 84.6); /* #F2EDE3 — 배경 14.82 */
+  --ink: var(--brand-50); /* 밤 종이 위의 Warm Paper */
   --ink-muted: oklch(0.75 0.012 149.8); /* #A9B0AA — 배경 7.81 · 카드 6.90 · 보조면 5.97 */
 
   --surface: oklch(0.263 0.014 163.7); /* #1F2723 */
@@ -286,7 +283,7 @@
 
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 60%);
   --shadow-card: none;
-  --shadow-brand: 0 12px 34px -16px oklch(0.813 0.074 66.5 / 18%);
+  --shadow-brand: 0 12px 34px -16px oklch(0.7826 0.0836 27.4 / 16%);
 
   --background: oklch(0.219 0.011 163.8); /* #161C19 */
   --foreground: var(--ink);
@@ -296,10 +293,10 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  /* 라이트와 같은 몸짓: 버튼은 잉크↔종이를 뒤집는다(14.82). */
+  /* 라이트와 같은 몸짓: 버튼은 잉크↔종이를 뒤집는다. */
   --primary: var(--ink);
   --primary-foreground: oklch(0.219 0.011 163.8); /* #161C19 */
-  --primary-strong: oklch(0.813 0.074 66.5); /* #E3B98F 밤의 봉랍 — 배경 9.56 · 카드 8.45 */
+  --primary-strong: var(--brand-300); /* #E9A49B — 다크의 코럴 강조 */
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -308,7 +305,7 @@
   --accent: var(--surface-subtle);
   --accent-foreground: var(--ink);
 
-  --destructive: oklch(0.76 0.09 20); /* #F1A1A0 */
+  --destructive: oklch(0.7565 0.1334 2.8); /* #F58AA8 */
   --destructive-foreground: oklch(0.219 0.011 163.8);
 
   --success: oklch(0.77 0.07 158); /* #95C5AC */
@@ -318,18 +315,18 @@
   --input: oklch(0.614 0.014 156.8); /* #7E8781 — 배경 4.67 */
   --ring: var(--primary-strong);
 
-  --bubble-mine: oklch(0.287 0.015 84.6); /* #2E2A22 — 글자 12.24 */
+  --bubble-mine: var(--surface-subtle);
   --bubble-mine-foreground: var(--ink);
-  --brand-signature: oklch(0.813 0.074 66.5);
-  --brand-blush: oklch(0.743 0.125 20.5); /* #F08A8A — 앱 아이콘과 같은 점 */
-  --brand-text: oklch(0.813 0.074 66.5);
-  --brand-tint: oklch(0.287 0.015 84.6);
+  --brand-signature: var(--brand-300);
+  --brand-blush: var(--brand-signature);
+  --brand-text: var(--brand-signature);
+  --brand-tint: var(--surface-subtle);
 
-  --chart-1: var(--brand-signature);
-  --chart-2: var(--success);
-  --chart-3: var(--warning);
+  --chart-1: var(--brand-300);
+  --chart-2: var(--brand-sage);
+  --chart-3: var(--brand-taupe);
   --chart-4: oklch(0.72 0.07 245);
-  --chart-5: oklch(0.83 0.06 45);
+  --chart-5: var(--warning);
 
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink);

@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="애프터 앱 아이콘">
   <rect width="1024" height="1024" fill="#23302B"/>
   <g transform="translate(157 215) scale(21)" fill="none" stroke-linecap="round" stroke-width="4.4">
-    <circle cx="13" cy="17" r="7.1" stroke="#FAF6EE"/>
-    <path d="M20.1 17v7" stroke="#FAF6EE"/>
-    <circle cx="26.5" cy="6.5" r="3.4" fill="#F08A8A" stroke="none"/>
+    <circle cx="13" cy="17" r="7.1" stroke="#FAF8F3"/>
+    <path d="M20.1 17v7" stroke="#FAF8F3"/>
+    <circle cx="26.5" cy="6.5" r="3.4" fill="#E9A49B" stroke="none"/>
   </g>
 </svg>

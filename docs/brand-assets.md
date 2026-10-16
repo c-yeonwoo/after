@@ -1,5 +1,13 @@
 # 애프터 브랜드 자산
 
+## 2026-10-16 Evening, Refined 팔레트
+
+- 기본 배경 `#FAF8F3`(Warm Paper), 본문·주 버튼 `#23302B`(Evening Ink), 보조면 `#EEEAE1`(Soft Cream), 선 `#D7DED8`(Quiet Line).
+- 강조는 `#AC5147`(After Coral)을 로고 점·인용 경계·작은 선택 표시에 한정한다. 작은 강조 글자는 8% 잉크 틴트 위에서도 WCAG AA를 만족하는 `#A34A40`을 쓴다. 다크 강조는 `#E9A49B`(Soft Blush)다.
+- 정보성 보조 글자에 `#526B75`(Dusk Slate)를 사용한다. 성공·경고·오류는 브랜드색과 구별되는 의미색을 유지한다.
+- 주요 CTA는 여전히 잉크 채움이며 코럴 버튼으로 바꾸지 않는다. 바탕 70% · 잉크/그린 25% · 코럴 5%를 화면의 대략적인 면적 기준으로 삼는다.
+- 실제 적용값은 [styles.css](../src/styles.css), 대비 회귀 검사는 `npm run check:contrast`가 단일 기준이다.
+
 ## 2026-10-16 UI 정돈
 
 - 심벌과 앱 아이콘은 유지하고, 화면 헤더는 중복된 `a + after` 대신 코럴 점을 붙인 `after` 워드마크로 단순화했다.
@@ -10,7 +18,7 @@
 
 아래는 기존 아이콘 제작 기준이다. 화면 색·타이포그래피는 위 기준을 우선한다.
 
-현재 기준은 [리브랜딩 설계안](after-rebrand-plan.md)이다. 2026-10-11 심벌을 바꿨다: 같은 a 에 점을 키우고(r 3.4) 블러시(#F08A8A, 크림 바탕 화면에서는 #EB7B78)로 칠했다. 배경 잉크 #23302B, 글자 크림 #FAF6EE. 워드마크·심벌 SVG가 원본이며, 화면 마크는 [Logo.tsx](../src/components/Logo.tsx), 웹 아이콘은 [favicon.svg](../public/favicon.svg), iOS 아이콘은 [app-icon-ios.svg](../brand/app-icon-ios.svg), 실행 화면은 [splash.svg](../brand/splash.svg)에서 관리한다.
+현재 기준은 위 팔레트와 [리브랜딩 설계안](after-rebrand-plan.md)이다. 2026-10-11에 만든 `a` 심벌 형태와 점 크기(r 3.4)는 유지하되 점 색을 2026-10-16 팔레트로 정리했다. 어두운 아이콘의 점은 Soft Blush `#E9A49B`, 밝은 화면의 점은 After Coral `#AC5147`이다. 배경 잉크 `#23302B`, 글자 Warm Paper `#FAF8F3`. 워드마크·심벌 SVG가 원본이며, 화면 마크는 [Logo.tsx](../src/components/Logo.tsx), 웹 아이콘은 [favicon.svg](../public/favicon.svg), iOS 아이콘은 [app-icon-ios.svg](../brand/app-icon-ios.svg), 실행 화면은 [splash.svg](../brand/splash.svg)에서 관리한다.
 
 ## 래스터 자산 재생성
 
