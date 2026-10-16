@@ -1985,6 +1985,18 @@ export type Database = {
       }
     }
     Functions: {
+      home_state_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      my_readiness: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      my_request_deadlines: {
+        Args: Record<PropertyKey, never>
+        Returns: { meeting_id: string; deadline_at: string | null; as_of: string }[]
+      }
       admin_support_page: {
         Args: {
           p_status?: string | null

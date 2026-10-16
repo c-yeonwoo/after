@@ -444,6 +444,43 @@ export async function homeState(): Promise<HomeState> {
   return data as unknown as HomeState;
 }
 
+export type HomeStateV2 = HomeState & {
+  schema_version: 2;
+  as_of: string;
+  primary_state:
+    | "account_unavailable"
+    | "report_response_required"
+    | "meeting_outcome_required"
+    | "meeting_confirmed"
+    | "profile_incomplete"
+    | "identity_required"
+    | "phone_required"
+    | "photos_required"
+    | "photos_pending"
+    | "schedule_selection"
+    | "schedule_waiting"
+    | "request_received"
+    | "request_waiting"
+    | "intro_available"
+    | "intro_delivered"
+    | "paused"
+    | "waiting";
+  readiness: { ready: boolean; blockers: string[] };
+  next_action: { type: string; target_id: string | null } | null;
+  deadline_at: string | null;
+  ticket_summary: { intro_available: number; meeting_available: number };
+};
+
+export async function homeStateV2(): Promise<HomeStateV2> {
+  const { data, error } = await supabase.rpc("home_state_v2");
+  if (error) throw error;
+  const state = data as unknown as HomeStateV2;
+  if (state.schema_version !== 2 || !state.primary_state || !state.readiness) {
+    throw new Error("홈 상태 응답이 올바르지 않습니다.");
+  }
+  return state;
+}
+
 // ─────────────────────── 온보딩 (프로필 저장) ───────────────────────
 
 /** 온보딩 단계별 진행 저장. 기존 코드는 완료 시점에만 저장해 중간 이탈 시 재입력을 강요했다. */
@@ -1143,7 +1180,12 @@ export async function getMeetingCounterpart(meeting: Meeting): Promise<PublicPro
   return getProfile(counterpartId);
 }
 
-export type MeetingRequest = { meeting: Meeting; candidate: PublicProfile };
+export type MeetingRequest = {
+  meeting: Meeting;
+  candidate: PublicProfile;
+  deadline_at: string | null;
+  server_as_of: string | null;
+};
 
 /**
  * 여성이 답을 보내야 하는 만남 요청 **전부**.
@@ -1178,23 +1220,41 @@ export async function listMeetingsAwaitingMyPrefs(): Promise<MeetingRequest[]> {
     )
     .is("prefs_submitted_at", null)
     .is("cancelled_at", null)
+    .is("completed_at", null)
     .order("created_at", { ascending: true });
   if (meetingErr) throw meetingErr;
   if (!meetings?.length) return [];
 
   const maleByIntro = new Map(intros.map((i) => [i.id, i.male_id]));
   // 건별로 getProfile 을 돌면 N+1 이 된다(진단 PERF-3). 한 번에 모아 온다.
-  const profiles = await getProfiles(
-    meetings.flatMap((m) => {
-      const id = maleByIntro.get(m.intro_id);
-      return id ? [id] : [];
-    }),
+  const [profiles, deadlineResult] = await Promise.all([
+    getProfiles(
+      meetings.flatMap((m) => {
+        const id = maleByIntro.get(m.intro_id);
+        return id ? [id] : [];
+      }),
+    ),
+    supabase.rpc("my_request_deadlines"),
+  ]);
+  if (deadlineResult.error) throw deadlineResult.error;
+  const deadlineByMeeting = new Map(
+    (deadlineResult.data ?? []).map((row) => [row.meeting_id, row]),
   );
 
   return meetings.flatMap((meeting) => {
     const maleId = maleByIntro.get(meeting.intro_id);
     const candidate = maleId ? profiles.get(maleId) : undefined;
-    return candidate ? [{ meeting, candidate }] : [];
+    const deadline = deadlineByMeeting.get(meeting.id);
+    return candidate
+      ? [
+          {
+            meeting,
+            candidate,
+            deadline_at: deadline?.deadline_at ?? null,
+            server_as_of: deadline?.as_of ?? null,
+          },
+        ]
+      : [];
   });
 }
 

@@ -23,7 +23,7 @@ import { toProfileView } from "@/lib/profileView";
 import {
   ensureOpenIntro,
   getOpenIntroWithCandidate,
-  homeState,
+  homeStateV2,
   introTeaser,
   getMeetingByIntro,
   myPendingCandidate,
@@ -52,11 +52,13 @@ export const Route = createFileRoute("/intro")({
 });
 
 function IntroPage() {
-  const { me } = useMe();
+  const { me, ready } = useMe();
   const isMale = me?.gender === "male";
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [preparationMessage, setPreparationMessage] = useState<string | null>(null);
   const [candidate, setCandidate] = useState<PublicProfile | null>(null);
   const [introId, setIntroId] = useState<string | null>(null);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -78,50 +80,102 @@ function IntroPage() {
 
   async function load() {
     if (!me) return;
-    if (isMale) {
-      /*
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const h = await homeStateV2();
+      if (!h.readiness.ready && !h.has_open_intro && !h.meeting) {
+        setPreparationMessage(
+          h.primary_state === "paused"
+            ? "소개를 쉬고 있어요. 홈에서 다시 받을 수 있습니다."
+            : h.primary_state === "photos_pending"
+              ? "사진을 확인하는 중이에요. 검수가 끝나면 새 소개를 볼 수 있습니다."
+              : "새 소개를 보려면 먼저 준비를 마쳐주세요.",
+        );
+        setCandidate(null);
+        setGate(null);
+        return;
+      }
+      setPreparationMessage(null);
+      if (isMale) {
+        /*
         **여기서 open_intro() 를 부르지 않는다.** v2 부터 그 호출은 소개 티켓
         1장을 차감하므로, 탭을 열기만 해도 5,000원이 빠지게 된다. 이미 열려 있는
         소개만 읽고, 없으면 게이트를 띄워 사용자가 누를 때 연다.
       */
-      const existing = await getOpenIntroWithCandidate();
-      if (existing) {
-        setGate(null);
-        setCandidate(existing.candidate);
-        setIntroId(existing.intro.id);
-        setReason(existing.intro.reason ?? null);
-        setMeeting(await getMeetingByIntro(existing.intro.id));
+        const existing = await getOpenIntroWithCandidate();
+        if (existing) {
+          setGate(null);
+          setCandidate(existing.candidate);
+          setIntroId(existing.intro.id);
+          setReason(existing.intro.reason ?? null);
+          setMeeting(await getMeetingByIntro(existing.intro.id));
+        } else {
+          const teaser = await introTeaser();
+          setGate({ queued: h.queued_intros, tickets: h.intro_tickets, teaser });
+          setCandidate(null);
+          setIntroId(null);
+          setMeeting(null);
+        }
       } else {
-        const [h, teaser] = await Promise.all([homeState(), introTeaser()]);
-        setGate({ queued: h.queued_intros, tickets: h.intro_tickets, teaser });
-        setCandidate(null);
-        setIntroId(null);
+        // 여성 소개 탭은 **평가 큐 전용**이다.
+        // 예전에는 대기 중인 만남 요청이 있으면 그 요청자를 대신 띄웠는데,
+        // 그러면 평가할 후보가 남아 있어도 평가를 계속할 수 없었다.
+        // 요청은 성격이 다른 이벤트라 /requests 와 홈이 담당한다.
+        // 후보와 남은 수를 함께 받는다 — 화면이 "이번이 마지막"을 말할 수 있어야 한다.
+        const [next, left] = await Promise.all([myPendingCandidate(), remainingCandidates()]);
+        setCandidate(next);
+        setRemaining(left);
         setMeeting(null);
       }
-    } else {
-      // 여성 소개 탭은 **평가 큐 전용**이다.
-      // 예전에는 대기 중인 만남 요청이 있으면 그 요청자를 대신 띄웠는데,
-      // 그러면 평가할 후보가 남아 있어도 평가를 계속할 수 없었다.
-      // 요청은 성격이 다른 이벤트라 /requests 와 홈이 담당한다.
-      // 후보와 남은 수를 함께 받는다 — 화면이 "이번이 마지막"을 말할 수 있어야 한다.
-      const [next, left] = await Promise.all([myPendingCandidate(), remainingCandidates()]);
-      setCandidate(next);
-      setRemaining(left);
-      setMeeting(null);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
+    if (!ready) return;
+    if (!me) {
+      navigate({ to: "/" });
+      return;
+    }
     setLoading(true);
-    load();
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me?.id, isMale]);
+  }, [ready, me?.id, isMale]);
 
   if (loading) {
     return (
       <AppScreen title="이번 소개">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+      </AppScreen>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppScreen title="이번 소개">
+        <div role="alert" className="mt-10 rounded-surface border border-border bg-card p-6">
+          <p className="text-sm">소개 상태를 불러오지 못했습니다.</p>
+          <Button className="mt-4" variant="outline" onClick={() => void load()}>
+            다시 확인
+          </Button>
+        </div>
+      </AppScreen>
+    );
+  }
+
+  if (preparationMessage) {
+    return (
+      <AppScreen title="이번 소개">
+        <div className="mt-10 rounded-surface border border-border bg-card p-6">
+          <p className="text-sm">{preparationMessage}</p>
+          <Button className="mt-4" onClick={() => navigate({ to: "/home" })}>
+            내 상태 확인하기
+          </Button>
+        </div>
       </AppScreen>
     );
   }
