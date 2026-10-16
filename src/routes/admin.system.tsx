@@ -184,7 +184,7 @@ function SystemTab() {
             >
               <p className="text-xs text-muted-foreground">결제 모드</p>
               <p className="mt-1 flex items-center gap-1 text-lg font-semibold">
-                {paymentsEnabled ? "실결제" : "베타 수동 발급"}
+                {paymentsEnabled ? "실결제" : "무료 베타"}
                 <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden="true" />
               </p>
             </Link>
