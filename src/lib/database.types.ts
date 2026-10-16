@@ -37,28 +37,34 @@ export type Database = {
       admin_actions: {
         Row: {
           actor_id: string
+          case_id: string | null
           created_at: string
           id: string
           kind: string
           note: string
+          request_id: string | null
           target_ref: string | null
           target_user: string | null
         }
         Insert: {
           actor_id: string
+          case_id?: string | null
           created_at?: string
           id?: string
           kind: string
           note: string
+          request_id?: string | null
           target_ref?: string | null
           target_user?: string | null
         }
         Update: {
           actor_id?: string
+          case_id?: string | null
           created_at?: string
           id?: string
           kind?: string
           note?: string
+          request_id?: string | null
           target_ref?: string | null
           target_user?: string | null
         }
@@ -82,6 +88,13 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "ops_cases"
             referencedColumns: ["id"]
           },
           {
@@ -551,6 +564,64 @@ export type Database = {
           {
             foreignKeyName: "device_tokens_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_events: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          dedupe_key: string
+          event_type: string
+          id: number
+          occurred_at: string
+          props: Json
+          source_version: string | null
+          subject_id: string | null
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          dedupe_key: string
+          event_type: string
+          id?: never
+          occurred_at?: string
+          props?: Json
+          source_version?: string | null
+          subject_id?: string | null
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          dedupe_key?: string
+          event_type?: string
+          id?: never
+          occurred_at?: string
+          props?: Json
+          source_version?: string | null
+          subject_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_events_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_subject_id_fkey"
+            columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
@@ -1411,6 +1482,150 @@ export type Database = {
           },
         ]
       }
+      ops_case_events: {
+        Row: {
+          actor_id: string | null
+          actor_type: string
+          case_id: string
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: number
+          note: string | null
+          reason_code: string | null
+          request_id: string | null
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_type: string
+          case_id: string
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: never
+          note?: string | null
+          reason_code?: string | null
+          request_id?: string | null
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_type?: string
+          case_id?: string
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: never
+          note?: string | null
+          reason_code?: string | null
+          request_id?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ops_case_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_case_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_case_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_case_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "ops_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ops_cases: {
+        Row: {
+          case_type: string
+          due_at: string
+          id: string
+          next_check_at: string | null
+          occurrence: number
+          opened_at: string
+          priority: string
+          resolution_code: string | null
+          resolved_at: string | null
+          source_id: string
+          source_revision: string
+          status: string
+          subject_id: string | null
+          version: number
+        }
+        Insert: {
+          case_type: string
+          due_at: string
+          id?: string
+          next_check_at?: string | null
+          occurrence: number
+          opened_at?: string
+          priority: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          source_id: string
+          source_revision: string
+          status?: string
+          subject_id?: string | null
+          version?: number
+        }
+        Update: {
+          case_type?: string
+          due_at?: string
+          id?: string
+          next_check_at?: string | null
+          occurrence?: number
+          opened_at?: string
+          priority?: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          source_id?: string
+          source_revision?: string
+          status?: string
+          subject_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ops_cases_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_cases_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_cases_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phone_codes: {
         Row: {
           attempts: number
@@ -2184,6 +2399,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_apply_ops_backfill: {
+        Args: { p_expected_missing: number; p_note: string }
+        Returns: number
+      }
       admin_cancel_meeting: {
         Args: { p_meeting: string; p_note: string; p_refund?: boolean }
         Returns: {
@@ -2320,6 +2539,10 @@ export type Database = {
         }[]
       }
       admin_member_detail: { Args: { p_user: string }; Returns: Json }
+      admin_member_timeline: {
+        Args: { p_cursor?: Json; p_limit?: number; p_user_id: string }
+        Returns: Json
+      }
       admin_members: {
         Args: {
           p_gender?: Database["public"]["Enums"]["gender"]
@@ -2371,6 +2594,19 @@ export type Database = {
         }[]
       }
       admin_operational_health: { Args: never; Returns: Json }
+      admin_ops_case_detail: { Args: { p_case_id: string }; Returns: Json }
+      admin_ops_cases: {
+        Args: {
+          p_cursor?: Json
+          p_hub?: string
+          p_limit?: number
+          p_priority?: string
+          p_status?: string
+          p_type?: string
+        }
+        Returns: Json
+      }
+      admin_ops_overview: { Args: { p_hub?: string }; Returns: Json }
       admin_photo_queue: {
         Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
         Returns: {
@@ -2387,6 +2623,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_preview_ops_backfill: { Args: never; Returns: Json }
       admin_queue: {
         Args: { p_male: string }
         Returns: {
@@ -2669,6 +2906,38 @@ export type Database = {
           user_id: string
           user_name: string
         }[]
+      }
+      admin_transition_case: {
+        Args: {
+          p_action: string
+          p_case_id: string
+          p_expected_version: number
+          p_next_check_at?: string
+          p_reason: string
+          p_request_id: string
+        }
+        Returns: {
+          case_type: string
+          due_at: string
+          id: string
+          next_check_at: string | null
+          occurrence: number
+          opened_at: string
+          priority: string
+          resolution_code: string | null
+          resolved_at: string | null
+          source_id: string
+          source_revision: string
+          status: string
+          subject_id: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ops_cases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_upsert_meet_place: {
         Args: {
@@ -3232,6 +3501,42 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      ops_current_sources: {
+        Args: never
+        Returns: {
+          case_type: string
+          priority: string
+          source_id: string
+          source_revision: string
+          subject_id: string
+        }[]
+      }
+      ops_emit_domain_event: {
+        Args: {
+          p_aggregate_id: string
+          p_aggregate_type: string
+          p_dedupe_key: string
+          p_props?: Json
+          p_subject: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      ops_source_open: {
+        Args: { p_source_id: string; p_type: string }
+        Returns: boolean
+      }
+      ops_sync_case: {
+        Args: {
+          p_open: boolean
+          p_priority: string
+          p_revision: string
+          p_source_id: string
+          p_subject: string
+          p_type: string
+        }
+        Returns: string
       }
       pass_intro: { Args: { p_intro_id: string }; Returns: undefined }
       phone_code_hash: {

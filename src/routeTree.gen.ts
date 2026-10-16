@@ -35,6 +35,7 @@ import { Route as TicketRouteImport } from './routes/ticket'
 import { Route as VerifyPhoneRouteImport } from './routes/verify-phone'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCurationRouteImport } from './routes/admin.curation'
+import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminMeetingsRouteImport } from './routes/admin.meetings'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
@@ -43,6 +44,7 @@ import { Route as AdminPlacesRouteImport } from './routes/admin.places'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
+import { Route as AdminTasksRouteImport } from './routes/admin.tasks'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
 import { Route as PaymentFailRouteImport } from './routes/payment.fail'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -178,6 +180,11 @@ const AdminCurationRoute = AdminCurationRouteImport.update({
   path: '/curation',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminInsightsRoute = AdminInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMeetingsRoute = AdminMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
@@ -216,6 +223,11 @@ const AdminSupportRoute = AdminSupportRouteImport.update({
 const AdminSystemRoute = AdminSystemRouteImport.update({
   id: '/system',
   path: '/system',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTasksRoute = AdminTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => AdminRoute,
 } as any)
 const ChatIdRoute = ChatIdRouteImport.update({
@@ -265,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/ticket': typeof TicketRoute
   '/verify-phone': typeof VerifyPhoneRoute
   '/admin/curation': typeof AdminCurationRoute
+  '/admin/insights': typeof AdminInsightsRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/orders': typeof AdminOrdersRoute
@@ -273,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/system': typeof AdminSystemRoute
+  '/admin/tasks': typeof AdminTasksRoute
   '/chat/$id': typeof ChatIdRoute
   '/payment/fail': typeof PaymentFailRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -304,6 +318,7 @@ export interface FileRoutesByTo {
   '/ticket': typeof TicketRoute
   '/verify-phone': typeof VerifyPhoneRoute
   '/admin/curation': typeof AdminCurationRoute
+  '/admin/insights': typeof AdminInsightsRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/orders': typeof AdminOrdersRoute
@@ -312,6 +327,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/system': typeof AdminSystemRoute
+  '/admin/tasks': typeof AdminTasksRoute
   '/chat/$id': typeof ChatIdRoute
   '/payment/fail': typeof PaymentFailRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -345,6 +361,7 @@ export interface FileRoutesById {
   '/ticket': typeof TicketRoute
   '/verify-phone': typeof VerifyPhoneRoute
   '/admin/curation': typeof AdminCurationRoute
+  '/admin/insights': typeof AdminInsightsRoute
   '/admin/meetings': typeof AdminMeetingsRoute
   '/admin/members': typeof AdminMembersRouteWithChildren
   '/admin/orders': typeof AdminOrdersRoute
@@ -353,6 +370,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/system': typeof AdminSystemRoute
+  '/admin/tasks': typeof AdminTasksRoute
   '/chat/$id': typeof ChatIdRoute
   '/payment/fail': typeof PaymentFailRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -387,6 +405,7 @@ export interface FileRouteTypes {
     | '/ticket'
     | '/verify-phone'
     | '/admin/curation'
+    | '/admin/insights'
     | '/admin/meetings'
     | '/admin/members'
     | '/admin/orders'
@@ -395,6 +414,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/support'
     | '/admin/system'
+    | '/admin/tasks'
     | '/chat/$id'
     | '/payment/fail'
     | '/payment/success'
@@ -426,6 +446,7 @@ export interface FileRouteTypes {
     | '/ticket'
     | '/verify-phone'
     | '/admin/curation'
+    | '/admin/insights'
     | '/admin/meetings'
     | '/admin/members'
     | '/admin/orders'
@@ -434,6 +455,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/support'
     | '/admin/system'
+    | '/admin/tasks'
     | '/chat/$id'
     | '/payment/fail'
     | '/payment/success'
@@ -466,6 +488,7 @@ export interface FileRouteTypes {
     | '/ticket'
     | '/verify-phone'
     | '/admin/curation'
+    | '/admin/insights'
     | '/admin/meetings'
     | '/admin/members'
     | '/admin/orders'
@@ -474,6 +497,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/support'
     | '/admin/system'
+    | '/admin/tasks'
     | '/chat/$id'
     | '/payment/fail'
     | '/payment/success'
@@ -695,6 +719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCurationRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/insights': {
+      id: '/admin/insights'
+      path: '/insights'
+      fullPath: '/admin/insights'
+      preLoaderRoute: typeof AdminInsightsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/meetings': {
       id: '/admin/meetings'
       path: '/meetings'
@@ -751,6 +782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSystemRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/tasks': {
+      id: '/admin/tasks'
+      path: '/tasks'
+      fullPath: '/admin/tasks'
+      preLoaderRoute: typeof AdminTasksRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/chat/$id': {
       id: '/chat/$id'
       path: '/chat/$id'
@@ -796,6 +834,7 @@ const AdminMembersRouteWithChildren = AdminMembersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminCurationRoute: typeof AdminCurationRoute
+  AdminInsightsRoute: typeof AdminInsightsRoute
   AdminMeetingsRoute: typeof AdminMeetingsRoute
   AdminMembersRoute: typeof AdminMembersRouteWithChildren
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -804,11 +843,13 @@ interface AdminRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminSystemRoute: typeof AdminSystemRoute
+  AdminTasksRoute: typeof AdminTasksRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCurationRoute: AdminCurationRoute,
+  AdminInsightsRoute: AdminInsightsRoute,
   AdminMeetingsRoute: AdminMeetingsRoute,
   AdminMembersRoute: AdminMembersRouteWithChildren,
   AdminOrdersRoute: AdminOrdersRoute,
@@ -817,6 +858,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminSystemRoute: AdminSystemRoute,
+  AdminTasksRoute: AdminTasksRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

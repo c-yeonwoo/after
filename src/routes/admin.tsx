@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   Users,
   MapPin,
+  ListTodo,
+  ChartColumn,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -47,7 +49,10 @@ type AdminNavItem = { to: string; label: string; exact?: boolean; icon: LucideIc
 const NAV: { label: string; items: AdminNavItem[] }[] = [
   {
     label: "오늘",
-    items: [{ to: "/admin", label: "운영 홈", exact: true, icon: LayoutDashboard }],
+    items: [
+      { to: "/admin", label: "운영 홈", exact: true, icon: LayoutDashboard },
+      { to: "/admin/tasks", label: "작업함", icon: ListTodo },
+    ],
   },
   {
     label: "매칭 운영",
@@ -67,15 +72,23 @@ const NAV: { label: string; items: AdminNavItem[] }[] = [
     ],
   },
   {
-    label: "거래와 시스템",
+    label: "거래와 개선",
     items: [
-      { to: "/admin/orders", label: "주문", icon: PackageCheck },
-      { to: "/admin/system", label: "시스템", icon: Settings2 },
+      { to: "/admin/orders", label: "주문·티켓", icon: PackageCheck },
+      { to: "/admin/insights", label: "수급·성과", icon: ChartColumn },
     ],
+  },
+  {
+    label: "자동화와 관리",
+    items: [{ to: "/admin/system", label: "자동화·시스템", icon: Settings2 }],
   },
 ];
 
 const FLAT_NAV = NAV.flatMap((g) => g.items);
+const MOBILE_NAV = FLAT_NAV.filter((item) =>
+  ["/admin", "/admin/tasks", "/admin/members"].includes(item.to),
+);
+const MOBILE_MORE = FLAT_NAV.filter((item) => !MOBILE_NAV.includes(item));
 
 function AdminLayout() {
   const { me, ready } = useMe();
@@ -115,11 +128,17 @@ function AdminLayout() {
 function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: boolean }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [searchError, setSearchError] = useState(false);
 
   function searchMember(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
+    if (q.includes("@") || /\d{7,}/.test(q)) {
+      setSearchError(true);
+      return;
+    }
+    setSearchError(false);
     void navigate({ to: "/admin/members", search: { q } });
   }
 
@@ -149,12 +168,20 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
             />
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSearchError(false);
+              }}
               className="h-9 pl-9"
-              placeholder="회원 검색"
-              aria-label="회원 검색"
+              placeholder="이름 검색"
+              aria-label="회원 이름 검색"
             />
           </form>
+          {searchError ? (
+            <p className="mt-2 px-1 text-xs text-destructive" role="alert">
+              이메일은 회원 화면에서 검색해 주세요.
+            </p>
+          ) : null}
           <nav className="mt-5 min-h-0 flex-1 space-y-5 overflow-y-auto">
             {NAV.map((group) => (
               <div key={group.label}>
@@ -185,7 +212,7 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header
-          className="shrink-0 border-b border-border px-4 lg:hidden"
+          className="relative z-20 shrink-0 border-b border-border px-4 lg:hidden"
           style={{ paddingTop: "var(--safe-top)" }}
         >
           <div className="flex items-center gap-3 pb-3">
@@ -193,8 +220,8 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
             <span className="text-sm font-semibold text-muted-foreground">운영</span>
           </div>
           {showTabs ? (
-            <nav className="-mb-px flex gap-1 overflow-x-auto">
-              {FLAT_NAV.map((item) => (
+            <nav className="-mb-px flex gap-1">
+              {MOBILE_NAV.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
@@ -204,6 +231,23 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
                   {item.label}
                 </Link>
               ))}
+              <details className="group ml-auto">
+                <summary className="cursor-pointer list-none border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground marker:content-none">
+                  더보기
+                </summary>
+                <div className="absolute left-0 right-0 top-full grid grid-cols-2 gap-1 border-b border-border bg-card p-3 shadow-lg">
+                  {MOBILE_MORE.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}
+                      className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </details>
             </nav>
           ) : null}
         </header>

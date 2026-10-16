@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useMatches, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/admin/ui";
@@ -30,7 +30,11 @@ export const Route = createFileRoute("/admin/members")({
       s.state === "active" || s.state === "banned" || s.state === "withdrawn" ? s.state : undefined,
     hub: HUBS.some((h) => h.id === s.hub) ? (s.hub as string) : undefined,
     paused: typeof s.paused === "boolean" ? s.paused : s.paused === "true" ? true : undefined,
-    q: typeof s.q === "string" && s.q.trim() ? s.q : undefined,
+    // URL 은 공유·브라우저 기록에 남는다. 기존 이름 검색만 호환한다.
+    q:
+      typeof s.q === "string" && s.q.trim() && !s.q.includes("@") && !/\d{7,}/.test(s.q)
+        ? s.q
+        : undefined,
   }),
   component: MembersTab,
 });
@@ -52,20 +56,27 @@ function MemberList() {
   const [rows, setRows] = useState<AdminMember[] | null>(null);
   // 검색어만 로컬에 둔다 — 타이핑마다 URL 을 갈면 뒤로가기 이력이 글자 수만큼 쌓인다.
   const [q, setQ] = useState(search.q ?? "");
+  const loadSequence = useRef(0);
 
   const set = (patch: Partial<MemberSearch>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
 
+  const [loadError, setLoadError] = useState(false);
   const load = useCallback(async (s: MemberSearch, query: string) => {
-    setRows(
-      await fetchMembers({
+    const sequence = ++loadSequence.current;
+    setLoadError(false);
+    try {
+      const result = await fetchMembers({
         gender: s.gender,
         state: s.state,
         hub: s.hub,
         paused: s.paused,
         query,
-      }),
-    );
+      });
+      if (sequence === loadSequence.current) setRows(result);
+    } catch {
+      if (sequence === loadSequence.current) setLoadError(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -118,6 +129,7 @@ function MemberList() {
         <Input
           className="h-9 w-56"
           placeholder="이름 · 회사 이메일"
+          aria-label="회원 검색 — 이메일은 주소에 남기지 않습니다"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -134,8 +146,16 @@ function MemberList() {
         ) : null}
       </div>
 
+      {loadError ? (
+        <p className="mt-5 text-sm text-destructive" role="alert">
+          회원 목록을 확인할 수 없습니다. 검색어를 다시 입력하거나 필터를 바꿔 재시도해 주세요.
+        </p>
+      ) : null}
+
       {rows === null ? (
-        <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
+        !loadError ? (
+          <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
+        ) : null
       ) : rows.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">조건에 맞는 회원이 없습니다.</p>
       ) : (
@@ -150,7 +170,7 @@ function MemberList() {
             <table className="w-full min-w-[52rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
-                  <Th>이름</Th>
+                  <Th>이름 · ID</Th>
                   <Th>성별</Th>
                   <Th>권역</Th>
                   <Th>상태</Th>
@@ -170,6 +190,7 @@ function MemberList() {
                       >
                         {m.name ?? "(이름 없음)"}
                       </Link>
+                      <span className="ml-2 text-xs text-muted-foreground">{m.id.slice(0, 8)}</span>
                     </Td>
                     <Td className="text-muted-foreground">{m.gender === "female" ? "여" : "남"}</Td>
                     <Td className="text-muted-foreground">{hubLabel(m.hub_id)}</Td>
@@ -197,7 +218,7 @@ function MemberList() {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </Td>
-                    <Td className="text-muted-foreground">{m.company_email}</Td>
+                    <Td className="text-muted-foreground">{maskEmail(m.company_email)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -207,6 +228,13 @@ function MemberList() {
       )}
     </>
   );
+}
+
+function maskEmail(email: string | null) {
+  if (!email) return "—";
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return "—";
+  return `${local.slice(0, 2)}***@${domain}`;
 }
 
 function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
