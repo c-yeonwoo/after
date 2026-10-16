@@ -7,6 +7,7 @@ import { paymentsEnabled } from "@/lib/api";
 import {
   fetchOrders,
   fulfillOrder,
+  reconcileOrder,
   setPayments,
   type AdminOrder,
   type OrderFilter,
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/admin/orders")({
 });
 
 const FILTERS: { v: OrderFilter; label: string }[] = [
-  { v: "pending", label: "발급 대기" },
+  { v: "pending", label: "발급·결제 대기" },
   { v: "confirmed", label: "발급됨" },
   { v: "canceling", label: "취소 확인 중" },
   { v: "canceled", label: "취소 완료" },
@@ -162,7 +163,24 @@ function OrdersTab() {
 
 function OrderRow({ o, paid, onDone }: { o: AdminOrder; paid: boolean; onDone: () => void }) {
   const [open, setOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
   const pending = o.state === "pending";
+  const needsProviderCheck = o.payment_required && (pending || o.state === "canceling");
+
+  const checkProvider = async () => {
+    setChecking(true);
+    setCheckError(null);
+    try {
+      await reconcileOrder(o.order_id);
+      onDone();
+    } catch {
+      setCheckError("아직 결제 상태를 확정할 수 없습니다. 티켓은 변경하지 않았습니다.");
+      onDone();
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <li className="px-4 py-3">
@@ -181,8 +199,9 @@ function OrderRow({ o, paid, onDone }: { o: AdminOrder; paid: boolean; onDone: (
         {o.state === "canceling" ? <Tag tone="alert">취소 확인 중</Tag> : null}
         {o.state === "canceled" ? <Tag tone="muted">취소 완료</Tag> : null}
         {o.state === "failed" ? <Tag tone="alert">실패</Tag> : null}
+        {o.payment_attention && needsProviderCheck ? <Tag tone="alert">토스 확인 필요</Tag> : null}
 
-        {pending ? (
+        {pending && !o.payment_required ? (
           <button
             onClick={() => setOpen((v) => !v)}
             className="ml-auto rounded-full border border-border px-3 py-1 text-xs transition-colors hover:bg-muted"
@@ -192,11 +211,35 @@ function OrderRow({ o, paid, onDone }: { o: AdminOrder; paid: boolean; onDone: (
         ) : null}
       </div>
 
+      {needsProviderCheck ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
+          <p className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
+            {o.state === "canceling"
+              ? "취소 결과를 확인하는 동안 티켓 사용은 잠겨 있습니다."
+              : "토스에서 승인된 결제만 조회해 발급합니다. 조회만으로 결제되지 않습니다."}
+            {o.provider_checked_at ? ` 마지막 확인 ${when(o.provider_checked_at)}` : ""}
+          </p>
+          <button
+            type="button"
+            disabled={checking}
+            onClick={() => void checkProvider()}
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            {checking ? "확인 중…" : "토스 상태 확인"}
+          </button>
+          {checkError ? (
+            <p className="w-full text-xs text-destructive" role="alert">
+              {checkError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       {o.fulfill_note ? (
         <p className="mt-1.5 text-xs text-muted-foreground">승인 사유 — {o.fulfill_note}</p>
       ) : null}
 
-      {open && pending ? (
+      {open && pending && !o.payment_required ? (
         <div className="mt-3 border-t border-border pt-3">
           {o.payment_required || paid ? (
             /*

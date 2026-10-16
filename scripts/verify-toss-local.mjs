@@ -22,6 +22,7 @@ const anonKey = localValue("ANON_KEY");
 const serviceKey = localValue("SERVICE_ROLE_KEY");
 const userClient = createClient(apiUrl, anonKey);
 const adminClient = createClient(apiUrl, serviceKey);
+const operatorClient = createClient(apiUrl, anonKey);
 function localSql(sql) {
   return execFileSync(
     "psql",
@@ -41,13 +42,21 @@ if (loginError || !login.session) {
   throw new Error("Local E2E user unavailable. Run `bun scripts/e2e-seed.mjs` first.");
 }
 const accessToken = login.session.access_token;
+const { data: operatorLogin, error: operatorError } = await operatorClient.auth.signInWithPassword({
+  email: "admin@verify.local",
+  password: "eclipse-e2e-2026",
+});
+if (operatorError || !operatorLogin.session) {
+  throw new Error("Local E2E admin unavailable. Run `bun scripts/e2e-seed.mjs` first.");
+}
+const operatorToken = operatorLogin.session.access_token;
 
-async function edge(name, body) {
+async function edge(name, body, token = accessToken) {
   const response = await fetch(`${apiUrl}/functions/v1/${name}`, {
     method: "POST",
     headers: {
       apikey: anonKey,
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
@@ -126,7 +135,101 @@ try {
   if (finalTicketError) throw finalTicketError;
   assert.ok(finalTickets.every((t) => t.state === "refunded" && !t.refund_locked));
 
-  process.stdout.write("PASS: local HTTP confirm, retry, ticket issue, cancel and retry\n");
+  const { data: unresolved, error: unresolvedError } = await userClient.rpc("create_ticket_order", {
+    p_quantity: 1,
+    p_kind: "meeting",
+  });
+  if (unresolvedError) throw unresolvedError;
+  createdOrders.push(unresolved.order_id);
+  const unresolvedKey = `mock_${unresolved.order_id}`;
+  const mockConfirm = await fetch("http://127.0.0.1:8899/v1/payments/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      orderId: unresolved.order_id,
+      paymentKey: unresolvedKey,
+      amount: unresolved.amount,
+    }),
+  });
+  assert.equal(mockConfirm.status, 200);
+
+  const denied = await edge("reconcile-ticket-payment", { orderId: unresolved.order_id });
+  assert.equal(denied.status, 403, "member cannot reconcile a payment");
+  const settled = await edge(
+    "reconcile-ticket-payment",
+    { orderId: unresolved.order_id },
+    operatorToken,
+  );
+  assert.equal(settled.status, 200, JSON.stringify(settled.body));
+  assert.equal(settled.body.result, "fulfilled");
+
+  const { error: reserveError } = await adminClient.rpc("reserve_paid_order_cancel", {
+    p_order_id: unresolved.order_id,
+  });
+  if (reserveError) throw reserveError;
+  const mockCancel = await fetch(
+    `http://127.0.0.1:8899/v1/payments/${encodeURIComponent(unresolvedKey)}/cancel`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cancelReason: "local test" }),
+    },
+  );
+  assert.equal(mockCancel.status, 200);
+  const refundSettled = await edge(
+    "reconcile-ticket-payment",
+    { orderId: unresolved.order_id },
+    operatorToken,
+  );
+  assert.equal(refundSettled.status, 200, JSON.stringify(refundSettled.body));
+  assert.equal(refundSettled.body.result, "canceled");
+
+  const { data: uncertain, error: uncertainError } = await userClient.rpc("create_ticket_order", {
+    p_quantity: 1,
+    p_kind: "meeting",
+  });
+  if (uncertainError) throw uncertainError;
+  createdOrders.push(uncertain.order_id);
+  const uncertainKey = `unknown_${uncertain.order_id}`;
+  const unknownConfirm = await edge("confirm-ticket-payment", {
+    orderId: uncertain.order_id,
+    paymentKey: uncertainKey,
+    amount: uncertain.amount,
+  });
+  assert.equal(unknownConfirm.status, 502);
+  const { data: afterUnknownConfirm } = await adminClient
+    .from("ticket_orders")
+    .select("state,payment_attention")
+    .eq("order_id", uncertain.order_id)
+    .single();
+  assert.equal(afterUnknownConfirm.state, "pending");
+  assert.equal(afterUnknownConfirm.payment_attention, "confirm_unknown");
+  const confirmedByRead = await edge(
+    "reconcile-ticket-payment",
+    { orderId: uncertain.order_id },
+    operatorToken,
+  );
+  assert.equal(confirmedByRead.status, 200, JSON.stringify(confirmedByRead.body));
+  assert.equal(confirmedByRead.body.result, "fulfilled");
+
+  const unknownCancel = await edge("cancel-ticket-payment", { orderId: uncertain.order_id });
+  assert.equal(unknownCancel.status, 502);
+  const { data: afterUnknownCancel } = await adminClient
+    .from("ticket_orders")
+    .select("state,payment_attention")
+    .eq("order_id", uncertain.order_id)
+    .single();
+  assert.equal(afterUnknownCancel.state, "canceling");
+  assert.equal(afterUnknownCancel.payment_attention, "cancel_unknown");
+  const canceledByRead = await edge(
+    "reconcile-ticket-payment",
+    { orderId: uncertain.order_id },
+    operatorToken,
+  );
+  assert.equal(canceledByRead.status, 200, JSON.stringify(canceledByRead.body));
+  assert.equal(canceledByRead.body.result, "canceled");
+
+  process.stdout.write("PASS: local HTTP payment, unknown outcomes, reconciliation and rights\n");
 } finally {
   localSql(`update app_settings set payments_enabled = ${originalFlag} where id = true`);
   // Test order IDs are generated by the server and constrained to this exact
@@ -135,6 +238,8 @@ try {
     if (!/^ticket_[a-f0-9]{32}$/.test(orderId)) continue;
     const sql = `
       begin;
+      delete from admin_actions where kind = 'reconcile_payment'
+        and note like '%${orderId}%';
       delete from events where props->>'order_id' = '${orderId}'
         or props->>'ticket_id' in (
           select id::text from tickets

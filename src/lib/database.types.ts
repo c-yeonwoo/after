@@ -237,6 +237,7 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          admin_mfa_required: boolean
           id: boolean
           identity_required: boolean
           payments_enabled: boolean
@@ -244,6 +245,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          admin_mfa_required?: boolean
           id?: boolean
           identity_required?: boolean
           payments_enabled?: boolean
@@ -251,6 +253,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          admin_mfa_required?: boolean
           id?: boolean
           identity_required?: boolean
           payments_enabled?: boolean
@@ -343,6 +346,43 @@ export type Database = {
             foreignKeyName: "candidate_impressions_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carrier_identity_links: {
+        Row: {
+          di_hash: string
+          user_id: string
+        }
+        Insert: {
+          di_hash: string
+          user_id: string
+        }
+        Update: {
+          di_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_identity_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carrier_identity_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carrier_identity_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
@@ -618,6 +658,49 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_verification_attempts: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          id: string
+          user_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_verification_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_verification_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_verification_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1592,6 +1675,85 @@ export type Database = {
           },
         ]
       }
+      support_requests: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          responded_at: string | null
+          responded_by: string | null
+          response: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category: string
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          response?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          response?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_orders: {
         Row: {
           amount: number
@@ -1604,9 +1766,11 @@ export type Database = {
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           paid_at: string | null
+          payment_attention: string | null
           payment_key: string | null
           payment_method: string | null
           payment_required: boolean
+          provider_checked_at: string | null
           quantity: number
           state: string
           user_id: string
@@ -1622,9 +1786,11 @@ export type Database = {
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           paid_at?: string | null
+          payment_attention?: string | null
           payment_key?: string | null
           payment_method?: string | null
           payment_required?: boolean
+          provider_checked_at?: string | null
           quantity?: number
           state?: string
           user_id: string
@@ -1640,9 +1806,11 @@ export type Database = {
           kind?: Database["public"]["Enums"]["ticket_kind"]
           order_id?: string
           paid_at?: string | null
+          payment_attention?: string | null
           payment_key?: string | null
           payment_method?: string | null
           payment_required?: boolean
+          provider_checked_at?: string | null
           quantity?: number
           state?: string
           user_id?: string
@@ -1985,61 +2153,6 @@ export type Database = {
       }
     }
     Functions: {
-      home_state_v2: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      my_readiness: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      my_request_deadlines: {
-        Args: Record<PropertyKey, never>
-        Returns: { meeting_id: string; deadline_at: string | null; as_of: string }[]
-      }
-      admin_support_page: {
-        Args: {
-          p_status?: string | null
-          p_before?: string | null
-          p_before_id?: string | null
-          p_limit?: number
-        }
-        Returns: Json
-      }
-      admin_support_requests: {
-        Args: { p_status?: string | null }
-        Returns: {
-          id: string
-          user_id: string
-          member_name: string | null
-          category: string
-          body: string
-          status: string
-          response: string | null
-          created_at: string
-          responded_at: string | null
-        }[]
-      }
-      create_support_request: {
-        Args: { p_category: string; p_body: string }
-        Returns: string
-      }
-      my_support_requests: {
-        Args: never
-        Returns: {
-          id: string
-          category: string
-          body: string
-          status: string
-          response: string | null
-          created_at: string
-          responded_at: string | null
-        }[]
-      }
-      respond_support_request: {
-        Args: { p_id: string; p_response: string }
-        Returns: undefined
-      }
       accept_meeting_slot: {
         Args: { p_index: number; p_meeting_id: string }
         Returns: {
@@ -2371,6 +2484,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -2407,6 +2522,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_sensitive_auth_ok: { Args: never; Returns: boolean }
       admin_set_account_state: {
         Args: {
           p_note: string
@@ -2429,6 +2545,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -2468,7 +2586,9 @@ export type Database = {
       admin_set_payments: {
         Args: { p_note: string; p_on: boolean }
         Returns: {
+          admin_mfa_required: boolean
           id: boolean
+          identity_required: boolean
           payments_enabled: boolean
           updated_at: string
           updated_by: string | null
@@ -2506,6 +2626,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_support_page: {
+        Args: {
+          p_before?: string
+          p_before_id?: string
+          p_limit?: number
+          p_status?: string
+        }
+        Returns: Json
+      }
+      admin_support_requests: {
+        Args: { p_status?: string }
+        Returns: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          member_name: string
+          responded_at: string
+          response: string
+          status: string
+          user_id: string
+        }[]
+      }
       admin_system_overview: { Args: never; Returns: Json }
       admin_ticket_orders: {
         Args: { p_state?: string }
@@ -2517,7 +2660,9 @@ export type Database = {
           fulfill_note: string
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
+          payment_attention: string
           payment_required: boolean
+          provider_checked_at: string
           quantity: number
           state: string
           user_gender: Database["public"]["Enums"]["gender"]
@@ -2581,10 +2726,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_payment_reconciliation: {
+        Args: {
+          p_actor: string
+          p_balance_amount: number
+          p_method?: string
+          p_order_id: string
+          p_payment_key: string
+          p_provider_status: string
+          p_total_amount: number
+        }
+        Returns: string
+      }
       block_user: {
         Args: { p_reason?: string; p_target: string }
         Returns: undefined
       }
+      carrier_adult_verified: { Args: { p_user: string }; Returns: boolean }
+      carrier_identity_required: { Args: never; Returns: boolean }
       confirm_meeting: {
         Args: {
           p_meeting_id: string
@@ -2642,6 +2801,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -2678,6 +2839,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_support_request: {
+        Args: { p_body: string; p_category: string }
+        Returns: string
+      }
       create_ticket_order: {
         Args: {
           p_kind?: Database["public"]["Enums"]["ticket_kind"]
@@ -2694,9 +2859,11 @@ export type Database = {
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           paid_at: string | null
+          payment_attention: string | null
           payment_key: string | null
           payment_method: string | null
           payment_required: boolean
+          provider_checked_at: string | null
           quantity: number
           state: string
           user_id: string
@@ -2732,6 +2899,68 @@ export type Database = {
       finalize_paid_order_cancel: {
         Args: { p_order_id: string; p_reason: string }
         Returns: number
+      }
+      finish_carrier_identity: {
+        Args: {
+          p_birth: string
+          p_di: string
+          p_id: string
+          p_phone: string
+          p_user: string
+        }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          evening_note: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
+          interests: string[]
+          intro: string | null
+          job: string | null
+          known_as: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
+          onboarding_step: number
+          paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          photo_paths: string[] | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       fulfill_paid_ticket_order: {
         Args: { p_method?: string; p_order_id: string; p_payment_key: string }
@@ -2795,6 +3024,7 @@ export type Database = {
         }
       }
       home_state: { Args: never; Returns: Json }
+      home_state_v2: { Args: never; Returns: Json }
       intro_teaser: {
         Args: never
         Returns: {
@@ -2898,6 +3128,8 @@ export type Database = {
           station: string
         }[]
       }
+      member_readiness: { Args: { p_user: string }; Returns: Json }
+      my_carrier_adult_verified: { Args: never; Returns: boolean }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
       my_notifications: {
@@ -2909,6 +3141,27 @@ export type Database = {
           kind: Database["public"]["Enums"]["notification_kind"]
           meeting_id: string
           read_at: string
+        }[]
+      }
+      my_readiness: { Args: never; Returns: Json }
+      my_request_deadlines: {
+        Args: never
+        Returns: {
+          as_of: string
+          deadline_at: string
+          meeting_id: string
+        }[]
+      }
+      my_support_requests: {
+        Args: never
+        Returns: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          responded_at: string
+          response: string
+          status: string
         }[]
       }
       next_candidate: {
@@ -2993,6 +3246,10 @@ export type Database = {
         Args: { p: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: boolean
       }
+      profile_photo_paths_distinct: {
+        Args: { p_paths: string[] }
+        Returns: boolean
+      }
       promote_intro_queue: { Args: { p_male: string }; Returns: number }
       record_consent: {
         Args: { p_policy_version: string }
@@ -3012,6 +3269,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -3047,6 +3306,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_payment_provider_check: {
+        Args: { p_attention?: string; p_checked?: boolean; p_order_id: string }
+        Returns: undefined
       }
       refund_ticket: {
         Args: { p_reason: string; p_ticket_id: string }
@@ -3178,9 +3441,11 @@ export type Database = {
           kind: Database["public"]["Enums"]["ticket_kind"]
           order_id: string
           paid_at: string | null
+          payment_attention: string | null
           payment_key: string | null
           payment_method: string | null
           payment_required: boolean
+          provider_checked_at: string | null
           quantity: number
           state: string
           user_id: string
@@ -3242,6 +3507,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      respond_support_request: {
+        Args: { p_id: string; p_response: string }
+        Returns: undefined
+      }
       set_paused: {
         Args: { p_on: boolean }
         Returns: {
@@ -3260,6 +3529,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -3349,6 +3620,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -3456,6 +3729,8 @@ export type Database = {
           headline: string | null
           hub_id: string
           id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
           interests: string[]
           intro: string | null
           job: string | null
@@ -3687,4 +3962,4 @@ export const Constants = {
       ticket_state: ["unused", "used", "refunded"],
     },
   },
-} as const;
+} as const
