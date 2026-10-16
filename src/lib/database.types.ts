@@ -162,40 +162,102 @@ export type Database = {
           },
         ]
       }
+      ai_decisions: {
+        Row: {
+          created_at: string
+          decision: string
+          id: number
+          run_id: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          id?: never
+          run_id: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          id?: never
+          run_id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_decisions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: true
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decisions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decisions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decisions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_runs: {
         Row: {
           created_at: string
           feature: string
+          finished_at: string | null
           id: number
           input_tokens: number | null
           latency_ms: number | null
           model: string
           output_tokens: number | null
           prompt_version: string
+          request_id: string | null
+          source_hash: string | null
           status: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
           feature: string
+          finished_at?: string | null
           id?: never
           input_tokens?: number | null
           latency_ms?: number | null
           model: string
           output_tokens?: number | null
           prompt_version: string
+          request_id?: string | null
+          source_hash?: string | null
           status: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
           feature?: string
+          finished_at?: string | null
           id?: never
           input_tokens?: number | null
           latency_ms?: number | null
           model?: string
           output_tokens?: number | null
           prompt_version?: string
+          request_id?: string | null
+          source_hash?: string | null
           status?: string
           user_id?: string | null
         }
@@ -2829,6 +2891,7 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_ai_quality_v2: { Args: never; Returns: Json }
       admin_apply_ops_backfill: {
         Args: { p_expected_missing: number; p_note: string }
         Returns: number
@@ -3054,6 +3117,14 @@ export type Database = {
         Returns: Json
       }
       admin_ops_overview: { Args: { p_hub?: string }; Returns: Json }
+      admin_pause_policy_reconsent: {
+        Args: {
+          p_expected_version: number
+          p_reason: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       admin_photo_queue: {
         Args: { p_state?: Database["public"]["Enums"]["photo_state"] }
         Returns: {
@@ -3663,6 +3734,16 @@ export type Database = {
         Args: { p_order_id: string; p_reason: string }
         Returns: number
       }
+      finish_ai_run: {
+        Args: {
+          p_input_tokens?: number
+          p_latency_ms: number
+          p_output_tokens?: number
+          p_request_id: string
+          p_status: string
+        }
+        Returns: number
+      }
       finish_carrier_identity: {
         Args: {
           p_birth: string
@@ -3860,6 +3941,37 @@ export type Database = {
         }
       }
       mark_met: {
+        Args: { p_meeting_id: string }
+        Returns: {
+          accepted_slot: number | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          completed_by: string[]
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          intro_id: string
+          place_id: string | null
+          place_kind: string | null
+          place_name: string | null
+          prefs: Json | null
+          prefs_submitted_at: string | null
+          private_opens_at: string | null
+          proposed_place_id: string | null
+          proposed_place_name: string | null
+          proposed_slots: string[] | null
+          scheduled_at: string | null
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      mark_met_base: {
         Args: { p_meeting_id: string }
         Returns: {
           accepted_slot: number | null
@@ -4133,6 +4245,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_my_ai_decision: {
+        Args: { p_decision: string; p_run_id: number }
+        Returns: boolean
+      }
       record_notification_worker_run: {
         Args: {
           p_claimed: number
@@ -4266,6 +4382,17 @@ export type Database = {
         }
       }
       request_notification_email: { Args: { p_email: string }; Returns: string }
+      reserve_ai_run: {
+        Args: {
+          p_feature: string
+          p_model: string
+          p_prompt_version: string
+          p_request_id: string
+          p_source_hash: string
+          p_user: string
+        }
+        Returns: Json
+      }
       reserve_paid_order_cancel: {
         Args: { p_order_id: string }
         Returns: {

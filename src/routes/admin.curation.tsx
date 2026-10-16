@@ -10,6 +10,7 @@ import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePhotoUrl } from "@/lib/photo";
+import { recordMyAiDecision } from "@/lib/api";
 import { toProfileView } from "@/lib/profileView";
 import { cn } from "@/lib/utils";
 import {
@@ -34,6 +35,16 @@ export const Route = createFileRoute("/admin/curation")({
 
 /** 전송된 카드는 상위 3장이다 — 서버(promote_intro_queue)와 같은 수. */
 const DELIVER_WINDOW = 3;
+const AI_SOURCE_LABELS: Record<string, string> = {
+  job: "직업",
+  evening_note: "퇴근 후",
+  known_as: "나에 대한 말",
+  topic_note: "대화 주제",
+  match_note: "함께할 사람",
+  interests: "관심사",
+  match_tags: "관계 선호",
+  topics: "대화 주제",
+};
 
 const DATE = new Intl.DateTimeFormat("ko-KR", { dateStyle: "short" });
 const day = (s: string | null) => (s ? DATE.format(new Date(s)) : "—");
@@ -457,10 +468,12 @@ function Workbench({
 function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string }) {
   const [brief, setBrief] = useState<PairBrief | null>(null);
   const [busy, setBusy] = useState(false);
+  const [decision, setDecision] = useState<"accepted" | "discarded" | null>(null);
 
   useEffect(() => {
     setBrief(null);
     setBusy(false);
+    setDecision(null);
   }, [maleId, femaleId]);
 
   return (
@@ -469,8 +482,7 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
         <div>
           <h3 className="text-xs font-semibold">페어 브리프</h3>
           <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-            프로필과 취향 문답을 다시 읽기 위한 메모입니다. 소개 순서나 결정을 자동으로 바꾸지
-            않습니다.
+            두 사람의 원문을 다시 읽기 위한 메모입니다. 소개 순서나 결정을 자동으로 바꾸지 않습니다.
           </p>
         </div>
         <Button
@@ -479,6 +491,7 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
           disabled={busy}
           onClick={() => {
             setBusy(true);
+            setDecision(null);
             composePairBrief(maleId, femaleId)
               .then(setBrief)
               .catch(() =>
@@ -500,7 +513,14 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
                 {brief.commonGround.map((item, index) => (
                   <li key={`${item.insight}-${index}`}>
                     <p className="text-foreground">{item.insight}</p>
-                    <p className="mt-0.5 text-muted-foreground">근거 · {item.basis}</p>
+                    <div className="mt-1 space-y-0.5 text-muted-foreground">
+                      {item.evidence.map((e) => (
+                        <p key={`${e.person}-${e.sourceField}`}>
+                          {e.person === "a" ? "남성" : "여성"} ·{" "}
+                          {AI_SOURCE_LABELS[e.sourceField] ?? "원문"} · “{e.quote}”
+                        </p>
+                      ))}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -524,6 +544,25 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
               </ul>
             </div>
           ) : null}
+          {brief.meta?.runId && !decision ? (
+            <div className="flex gap-2 border-t border-border pt-3">
+              {(["accepted", "discarded"] as const).map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  className="text-xs underline-offset-2 hover:underline"
+                  onClick={() =>
+                    void recordMyAiDecision(brief.meta!.runId, choice)
+                      .then(() => setDecision(choice))
+                      .catch(() => toast.error("의견을 기록하지 못했습니다."))
+                  }
+                >
+                  {choice === "accepted" ? "판단에 도움 됨" : "사용 안 함"}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {decision ? <p className="text-muted-foreground">의견을 기록했습니다.</p> : null}
         </div>
       ) : null}
     </section>

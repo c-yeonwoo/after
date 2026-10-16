@@ -6,6 +6,13 @@ import {
   validProfileComposition,
 } from "../supabase/functions/_shared/ai-quality";
 import { suggestHeadlines, type ProfileDraft } from "../src/components/onboarding/profile";
+import {
+  containsContact,
+  scrubUserText,
+  sourceHash,
+  validGroundedPairBrief,
+  validGroundedProfile,
+} from "../supabase/functions/_shared/ai-grounding";
 
 const headlines = [
   "퇴근 후 산책으로 머리를 식히는 편이에요.",
@@ -183,5 +190,103 @@ assert.ok(ownHeadlines[0].includes("동네를 한 바퀴 걸어요"));
 assert.ok(ownHeadlines.every((line) => !line.includes("진심입니다")));
 checked += 3;
 
-assert.ok(checked >= 30, "AI 품질 회귀 케이스는 최소 30개여야 합니다.");
+const profileSource = { evening_note: "퇴근한 뒤에는 동네를 걷거나 집에서 간단한 요리를 해요." };
+assert.equal(
+  validGroundedProfile(
+    headlines,
+    intro,
+    [
+      {
+        sourceField: "evening_note",
+        quote: "퇴근한 뒤에는 동네를 걷거나",
+      },
+    ],
+    profileSource,
+  ),
+  true,
+);
+assert.equal(
+  validGroundedProfile(
+    headlines,
+    intro,
+    [
+      {
+        sourceField: "evening_note",
+        quote: "매일 마라톤을 뛰어요",
+      },
+    ],
+    profileSource,
+  ),
+  false,
+);
+assert.equal(
+  validGroundedProfile(
+    headlines,
+    intro,
+    [
+      {
+        sourceField: "system",
+        quote: "퇴근한 뒤에는 동네를 걷거나",
+      },
+    ],
+    profileSource,
+  ),
+  false,
+);
+checked += 3;
+
+const groundedBrief = {
+  commonGround: [
+    {
+      insight: "두 사람 모두 동네 산책을 좋아해요.",
+      evidence: [
+        { person: "a" as const, sourceField: "interests", quote: "동네 산책" },
+        { person: "b" as const, sourceField: "interests", quote: "동네 산책" },
+      ],
+    },
+  ],
+  conversationStarters: brief.conversationStarters,
+  considerations: brief.considerations,
+};
+assert.equal(
+  validGroundedPairBrief(groundedBrief, { interests: "동네 산책" }, { interests: "동네 산책" }),
+  true,
+);
+assert.equal(
+  validGroundedPairBrief(groundedBrief, { interests: "동네 산책" }, { interests: "도자기" }),
+  false,
+);
+assert.equal(
+  validGroundedPairBrief(
+    {
+      ...groundedBrief,
+      commonGround: [
+        {
+          ...groundedBrief.commonGround[0],
+          evidence: [
+            { person: "a" as const, sourceField: "interests", quote: "동네 산책" },
+            { person: "a" as const, sourceField: "interests", quote: "동네 산책" },
+          ],
+        },
+      ],
+    },
+    { interests: "동네 산책" },
+    { interests: "동네 산책" },
+  ),
+  false,
+);
+checked += 3;
+
+assert.equal(
+  scrubUserText("연락 010-1234-5678 또는 hello@example.com", 100),
+  "연락 [연락처] 또는 [이메일]",
+);
+assert.equal(containsContact("010-1234-5678"), true);
+assert.equal(containsContact("[연락처]로 알려주세요"), true);
+assert.equal(containsContact("무작정 연락하지 않습니다"), false);
+assert.equal((await sourceHash({ a: "one" })).length, 64);
+assert.notEqual(await sourceHash({ a: "one" }), await sourceHash({ a: "two" }));
+checked += 6;
+
+assert.ok(checked >= 50, "AI 품질 회귀 케이스는 최소 50개여야 합니다.");
 console.log(`AI quality gates passed: ${checked} cases`);

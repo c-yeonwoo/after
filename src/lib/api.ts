@@ -932,8 +932,26 @@ export type ComposedProfile = {
   headlines: string[];
   intro: string;
   /** 가입자 답변·생성 문장 자체는 남기지 않는 최소 운영 계측값. */
-  meta?: { model: string; promptVersion: string; inputTokens: number; outputTokens: number };
+  meta?: {
+    model: string;
+    promptVersion: string;
+    inputTokens: number;
+    outputTokens: number;
+    runId: number;
+  };
 };
+
+/** Records only the disposition of an AI draft, never its source or generated text. */
+export async function recordMyAiDecision(
+  runId: number,
+  decision: "accepted" | "edited" | "discarded",
+): Promise<void> {
+  const { error } = await supabase.rpc("record_my_ai_decision", {
+    p_run_id: runId,
+    p_decision: decision,
+  });
+  if (error) throw error;
+}
 
 export async function composeProfile(input: {
   job?: string | null;
