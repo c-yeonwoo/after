@@ -99,6 +99,7 @@ begin
   end if;
   return new;
 end $$;
+revoke all on function erase_carrier_identity() from public, anon, authenticated;
 create trigger profiles_erase_carrier_identity before update of account_state on profiles
   for each row execute function erase_carrier_identity();
 
@@ -106,6 +107,8 @@ create function carrier_identity_required() returns boolean
   language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce((select identity_required from app_settings where id), false)
 $$;
+revoke all on function carrier_identity_required() from public, anon;
+grant execute on function carrier_identity_required() to authenticated;
 
 create function carrier_adult_verified(p_user uuid) returns boolean
   language sql stable security definer set search_path = public, pg_temp as $$
@@ -114,6 +117,14 @@ create function carrier_adult_verified(p_user uuid) returns boolean
     and p.birth is not null
     and extract(year from age((now() at time zone 'Asia/Seoul')::date, p.birth)) >= 19)
 $$;
+revoke all on function carrier_adult_verified(uuid) from public, anon, authenticated;
+
+create function my_carrier_adult_verified() returns boolean
+  language sql stable security definer set search_path = public, pg_temp as $$
+  select carrier_adult_verified(auth.uid())
+$$;
+revoke all on function my_carrier_adult_verified() from public, anon;
+grant execute on function my_carrier_adult_verified() to authenticated;
 
 -- 기존 자가 입력 연령 트리거도 같은 한국 날짜를 사용한다.
 create or replace function enforce_profile_adult_age() returns trigger
@@ -164,6 +175,7 @@ begin
   end if;
   return new;
 end $$;
+revoke all on function require_carrier_adult() from public, anon, authenticated;
 create trigger carrier_adult_affinity before insert on affinities
   for each row execute function require_carrier_adult();
 create trigger carrier_adult_intro before insert on intros
@@ -184,6 +196,7 @@ begin
   end if;
   return new;
 end $$;
+revoke all on function require_carrier_adult_ticket_use() from public, anon, authenticated;
 create trigger carrier_adult_ticket_use before update of state on tickets
   for each row execute function require_carrier_adult_ticket_use();
 
@@ -191,19 +204,19 @@ create trigger carrier_adult_ticket_use before update of state on tickets
 create policy profiles_carrier_identity_read on profiles as restrictive
   for select to authenticated using (
     id = auth.uid() or not carrier_identity_required()
-    or carrier_adult_verified(auth.uid()) or is_admin()
+    or my_carrier_adult_verified() or is_admin()
   );
 create policy intros_carrier_identity_read on intros as restrictive
   for select to authenticated using (
-    not carrier_identity_required() or carrier_adult_verified(auth.uid()) or is_admin()
+    not carrier_identity_required() or my_carrier_adult_verified() or is_admin()
   );
 create policy meetings_carrier_identity_read on meetings as restrictive
   for select to authenticated using (
-    not carrier_identity_required() or carrier_adult_verified(auth.uid()) or is_admin()
+    not carrier_identity_required() or my_carrier_adult_verified() or is_admin()
   );
 create policy messages_carrier_identity_read on messages as restrictive
   for select to authenticated using (
-    not carrier_identity_required() or carrier_adult_verified(auth.uid()) or is_admin()
+    not carrier_identity_required() or my_carrier_adult_verified() or is_admin()
   );
 
 -- 게이트 활성화 후에는 큐가 미인증 후보를 고르지 않게 자격 판정도 함께 좁힌다.
@@ -239,7 +252,10 @@ create or replace view eligible_profiles with (security_invoker = true) as
     and onboarding_step = 7 and terms_agreed_at is not null and privacy_agreed_at is not null
     and paused_at is null and name is not null and coalesce(cardinality(photo_paths), 0) >= 3
     and phone_verified_at is not null and photo_state = 'approved'
-    and (not carrier_identity_required() or carrier_adult_verified(id));
+    and (not carrier_identity_required() or (
+      identity_verified_at is not null and birth is not null
+      and extract(year from age((now() at time zone 'Asia/Seoul')::date, birth)) >= 19
+    ));
 
 -- public_profiles는 기본 security-definer 뷰여서 위 profiles RLS만으로는 부족하다.
 create or replace view public_profiles as
@@ -260,4 +276,4 @@ where (p.id = auth.uid() or (
     or (my_gender() = 'female' and p.gender = 'male' and is_eligible_candidate(p.id))
   )
 )) and (p.id = auth.uid() or not carrier_identity_required()
-  or carrier_adult_verified(auth.uid()) or is_admin());
+  or my_carrier_adult_verified() or is_admin());
