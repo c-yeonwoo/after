@@ -7,6 +7,7 @@ import {
   fetchDashboard,
   fetchMarketplaceHealth,
   fetchOperationalHealth,
+  fetchOpenSupportCount,
   type AdminDashboard,
   type AdminMarketplaceHealth,
   type AdminOperationalHealth,
@@ -29,18 +30,21 @@ function DashboardTab() {
   const [market, setMarket] = useState<AdminMarketplaceHealth | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [openSupport, setOpenSupport] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [dashboard, ops, marketplace] = await Promise.all([
+      const [dashboard, ops, marketplace, supportCount] = await Promise.all([
         fetchDashboard(),
         fetchOperationalHealth(),
         fetchMarketplaceHealth(),
+        fetchOpenSupportCount(),
       ]);
       setD(dashboard);
       setHealth(ops);
       setMarket(marketplace);
+      setOpenSupport(supportCount);
       setUpdatedAt(new Date());
     } finally {
       setRefreshing(false);
@@ -51,7 +55,7 @@ function DashboardTab() {
     void load();
   }, [load]);
 
-  if (!d || !health || !market)
+  if (!d || !health || !market || openSupport === null)
     return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
 
   const passRate =
@@ -79,6 +83,12 @@ function DashboardTab() {
       count: d.backlog.pending_reports,
       to: "/admin/reports",
       search: { state: "pending" as const },
+    },
+    {
+      priority: "P1",
+      label: "미답변 고객 문의",
+      count: openSupport,
+      to: "/admin/support",
     },
     {
       priority: "P1",
@@ -231,6 +241,12 @@ function DashboardTab() {
         </Group>
 
         <Group title="적체" hint="운영자가 밀리고 있는가">
+          <Stat
+            label="미답변 고객 문의"
+            value={openSupport}
+            alert={openSupport > 0}
+            to="/admin/support"
+          />
           <Stat
             label="미처리 신고"
             value={d.backlog.pending_reports}

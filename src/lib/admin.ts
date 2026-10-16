@@ -18,6 +18,12 @@ export type AdminReport = Database["public"]["Functions"]["admin_reports"]["Retu
 export type AdminMember = Database["public"]["Functions"]["admin_members"]["Returns"][number];
 export type AdminMeeting = Database["public"]["Functions"]["admin_meetings"]["Returns"][number];
 
+export async function fetchOpenSupportCount(): Promise<number> {
+  const { data, error } = await supabase.rpc("admin_support_requests", { p_status: "open" });
+  if (error) throw error;
+  return data.length;
+}
+
 /** 만남 목록 필터. 서버가 같은 문자열을 검증하니 여기서 벗어나면 22023 이다. */
 export type MeetingFilter = "active" | "confirmed" | "completed" | "cancelled";
 

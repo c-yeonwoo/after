@@ -133,11 +133,11 @@ select is_empty(
          'admin_meet_places','admin_photo_queue','admin_queue','admin_reports','admin_set_queue_reason',
          'admin_reset_photo','admin_resolve_no_show','admin_retry_notifications','admin_review_photo',
          'admin_set_account_state','admin_set_payments','admin_set_queue','admin_system_overview','admin_upsert_meet_place',
-         'admin_ticket_orders','accept_meeting_slot','block_user','confirm_meeting','create_my_profile','create_ticket_order',
+         'admin_ticket_orders','admin_support_requests','accept_meeting_slot','block_user','confirm_meeting','create_my_profile','create_ticket_order','create_support_request',
          'decline_meeting','get_public_profile','get_public_profiles','home_state','intro_teaser','is_admin',
-         'mark_met','meet_places_for_me','next_candidate','open_intro','pass_intro','record_consent','remaining_candidates',
+         'mark_met','meet_places_for_me','my_support_requests','next_candidate','open_intro','pass_intro','record_consent','remaining_candidates',
          'report_content','report_no_show','request_meeting','request_notification_email','resolve_content_report',
-         'respond_no_show','set_paused','submit_meeting_prefs','sync_email_verified','ticket_bundles',
+         'respond_no_show','respond_support_request','set_paused','submit_meeting_prefs','sync_email_verified','ticket_bundles',
          'unlink_my_kakao_identity','use_meeting_ticket','verify_notification_email','verify_phone_code','withdraw_account',
          'register_device_token','unregister_device_token','my_notifications','unread_notification_count','mark_notifications_read'
        ]) as fe(n)
@@ -147,7 +147,7 @@ select is_empty(
            and p.proname = fe.n
            and has_function_privilege('authenticated', p.oid, 'EXECUTE')
       ) $$,
-  'T14 화면이 부르는 RPC 65개는 모두 로그인 사용자가 실행할 수 있다'
+  'T14 화면이 부르는 RPC는 모두 로그인 사용자가 실행할 수 있다'
 );
 
 select * from finish();

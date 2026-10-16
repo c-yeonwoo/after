@@ -7,6 +7,7 @@ import {
   PackageCheck,
   Search,
   Settings2,
+  MessageCircleQuestion,
   ShieldCheck,
   Users,
   MapPin,
@@ -62,6 +63,7 @@ const NAV: { label: string; items: AdminNavItem[] }[] = [
       { to: "/admin/members", label: "회원", icon: Users },
       { to: "/admin/photos", label: "사진 검수", icon: Camera },
       { to: "/admin/reports", label: "신고", icon: ShieldCheck },
+      { to: "/admin/support", label: "고객 문의", icon: MessageCircleQuestion },
     ],
   },
   {
