@@ -29,6 +29,7 @@ if (
 }
 
 const baseUrl = "http://127.0.0.1:4174";
+const koreanBrowser = { locale: "ko-KR", timezoneId: "Asia/Seoul" };
 const service = createClient(apiUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
@@ -174,7 +175,12 @@ try {
       "--force",
     ],
     {
-      env: { ...process.env, VITE_SUPABASE_URL: apiUrl, VITE_SUPABASE_ANON_KEY: anonKey },
+      env: {
+        ...process.env,
+        TZ: "Asia/Seoul",
+        VITE_SUPABASE_URL: apiUrl,
+        VITE_SUPABASE_ANON_KEY: anonKey,
+      },
       stdio: "ignore",
     },
   );
@@ -182,7 +188,7 @@ try {
   browser = await chromium.launch({ headless: true });
 
   const publicPage = await (
-    await browser.newContext({ viewport: { width: 390, height: 844 } })
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await publicPage.goto(baseUrl);
   await publicPage.getByRole("link", { name: "로그인" }).waitFor();
@@ -215,7 +221,7 @@ try {
     commit;`);
 
   const malePage = await (
-    await browser.newContext({ viewport: { width: 390, height: 844 } })
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await login(malePage, male);
   await malePage.getByRole("link", { name: "소개 열어보기" }).click();
@@ -249,7 +255,7 @@ try {
   await malePage.close();
 
   const femalePage = await (
-    await browser.newContext({ viewport: { width: 390, height: 844 } })
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await login(femalePage, female);
   await checkPage(femalePage, "female home");
@@ -275,7 +281,7 @@ try {
   await femalePage.close();
 
   const adminPage = await (
-    await browser.newContext({ viewport: { width: 1440, height: 900 } })
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 1440, height: 900 } })
   ).newPage();
   await login(adminPage, admin);
   await adminPage.goto(`${baseUrl}/admin`);
