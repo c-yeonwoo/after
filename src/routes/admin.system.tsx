@@ -43,17 +43,59 @@ const ACTION_LABELS: Record<string, string> = {
   retry_notification: "알림 재시도",
 };
 
+const JOB_INTERVAL_MINUTES: Record<string, number> = {
+  drain_notification_outbox_5m: 5,
+  expire_unanswered_meetings_15m: 15,
+  expire_unanswered_no_show_reports_15m: 15,
+  expire_intro_queue_15m: 15,
+  enqueue_feedback_due_hourly: 60,
+};
+
+function jobHealth(job: AdminSystemOverview["jobs"][number], now: number) {
+  if (!job.schedule) return { label: "미등록", alert: true };
+  if (!job.active) return { label: "비활성", alert: false };
+  if (!job.last_status || !job.last_started_at) return { label: "미실행", alert: true };
+  if (job.last_status === "failed") return { label: "실패", alert: true };
+  const interval = JOB_INTERVAL_MINUTES[job.jobname];
+  const completed = job.last_finished_at ? Date.parse(job.last_finished_at) : NaN;
+  if (!interval || (job.last_status === "succeeded" && !Number.isFinite(completed))) {
+    return { label: "관측 불가", alert: true };
+  }
+  const age = (now - completed) / 60_000;
+  if (job.last_status === "running") {
+    const started = Date.parse(job.last_started_at);
+    return Number.isFinite(started) && (now - started) / 60_000 < interval * 3
+      ? { label: "실행 중", alert: false }
+      : { label: "지연", alert: true };
+  }
+  if (job.last_status !== "succeeded" || !Number.isFinite(age) || age < 0) {
+    return { label: "관측 불가", alert: true };
+  }
+  return age >= interval * 3 ? { label: "지연", alert: true } : { label: "정상", alert: false };
+}
+
 function SystemTab() {
   const [data, setData] = useState<AdminSystemOverview | null>(null);
   const [paymentsEnabled, setPaymentsEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const [overview, dashboard] = await Promise.all([fetchSystemOverview(), fetchDashboard()]);
-      setData(overview);
-      setPaymentsEnabled(dashboard.payments_enabled);
+      const [overview, dashboard] = await Promise.allSettled([
+        fetchSystemOverview(),
+        fetchDashboard(),
+      ]);
+      const failed: string[] = [];
+      if (overview.status === "fulfilled") setData(overview.value);
+      else failed.push("시스템 현황");
+      if (dashboard.status === "fulfilled") setPaymentsEnabled(dashboard.value.payments_enabled);
+      else failed.push("결제 설정");
+      setErrors(failed);
+      setCheckedAt(new Date());
     } finally {
       setBusy(false);
     }
@@ -61,9 +103,23 @@ function SystemTab() {
 
   useEffect(() => {
     void load();
+    const refresh = window.setInterval(() => {
+      setNow(Date.now());
+      if (document.visibilityState === "visible") void load();
+    }, 60_000);
+    return () => window.clearInterval(refresh);
   }, [load]);
 
-  if (!data) return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
+  if (!data && !checkedAt) return <p className="text-sm text-muted-foreground">불러오는 중…</p>;
+  if (!data)
+    return (
+      <div role="alert" className="rounded-surface border border-destructive/30 p-4 text-sm">
+        시스템 현황을 확인할 수 없습니다.
+        <button className="ml-3 underline" onClick={() => void load()} disabled={busy}>
+          다시 확인
+        </button>
+      </div>
+    );
 
   const failedIds = data.notifications.failed_rows.map((row) => row.id);
 
@@ -86,20 +142,33 @@ function SystemTab() {
         </button>
       </div>
 
+      {errors.length > 0 ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-surface border border-destructive/30 px-4 py-3 text-sm"
+        >
+          {errors.join("·")} 조회 실패 · 마지막 성공 데이터가 표시될 수 있습니다.
+        </p>
+      ) : null}
+
       <section className="mt-7">
         <div className="grid gap-3 sm:grid-cols-3">
           <Summary label="알림 발송 대기" value={data.notifications.pending} />
           <Summary label="알림 최종 실패" value={data.notifications.failed} alert />
-          <Link
-            to="/admin/orders"
-            className="rounded-surface border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40"
-          >
-            <p className="text-xs text-muted-foreground">결제 모드</p>
-            <p className="mt-1 flex items-center gap-1 text-lg font-semibold">
-              {paymentsEnabled ? "실결제" : "베타 수동 발급"}
-              <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden="true" />
-            </p>
-          </Link>
+          {paymentsEnabled === null ? (
+            <Summary label="결제 모드" value="확인 불가" />
+          ) : (
+            <Link
+              to="/admin/orders"
+              className="rounded-surface border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40"
+            >
+              <p className="text-xs text-muted-foreground">결제 모드</p>
+              <p className="mt-1 flex items-center gap-1 text-lg font-semibold">
+                {paymentsEnabled ? "실결제" : "베타 수동 발급"}
+                <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              </p>
+            </Link>
+          )}
         </div>
       </section>
 
@@ -187,7 +256,7 @@ function SystemTab() {
             </thead>
             <tbody>
               {data.jobs.map((job) => {
-                const healthy = job.active && (!job.last_status || job.last_status === "succeeded");
+                const health = jobHealth(job, now);
                 return (
                   <tr key={job.jobname}>
                     <Td className="font-semibold">{JOB_LABELS[job.jobname] ?? job.jobname}</Td>
@@ -195,15 +264,7 @@ function SystemTab() {
                       {job.schedule ?? "미등록"}
                     </Td>
                     <Td>
-                      <Tag tone={healthy ? "muted" : "alert"}>
-                        {!job.active
-                          ? "비활성"
-                          : job.last_status === "failed"
-                            ? "실패"
-                            : job.last_status === "running"
-                              ? "실행 중"
-                              : "정상"}
-                      </Tag>
+                      <Tag tone={health.alert ? "alert" : "muted"}>{health.label}</Tag>
                     </Td>
                     <Td className="whitespace-nowrap text-xs text-muted-foreground">
                       {formatDate(job.last_started_at)}
@@ -319,14 +380,14 @@ function Summary({
   alert = false,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   alert?: boolean;
 }) {
   return (
     <div className="rounded-surface border border-border bg-card px-4 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p
-        className={`mt-1 text-2xl font-semibold tabular-nums ${alert && value > 0 ? "text-destructive" : ""}`}
+        className={`mt-1 text-2xl font-semibold tabular-nums ${alert && typeof value === "number" && value > 0 ? "text-destructive" : ""}`}
       >
         {value}
       </p>

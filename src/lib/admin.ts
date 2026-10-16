@@ -18,10 +18,43 @@ export type AdminReport = Database["public"]["Functions"]["admin_reports"]["Retu
 export type AdminMember = Database["public"]["Functions"]["admin_members"]["Returns"][number];
 export type AdminMeeting = Database["public"]["Functions"]["admin_meetings"]["Returns"][number];
 
-export async function fetchOpenSupportCount(): Promise<number> {
-  const { data, error } = await supabase.rpc("admin_support_requests", { p_status: "open" });
+export type SupportItem =
+  Database["public"]["Functions"]["admin_support_requests"]["Returns"][number];
+export type SupportCursor = { created_at: string; id: string };
+export type SupportPage = {
+  items: SupportItem[];
+  total: number;
+  next_cursor: SupportCursor | null;
+  as_of: string;
+};
+
+export async function fetchSupportPage(
+  status: "open" | "answered",
+  cursor: SupportCursor | null = null,
+): Promise<SupportPage> {
+  const { data, error } = await supabase.rpc("admin_support_page", {
+    p_status: status,
+    p_before: cursor?.created_at ?? null,
+    p_before_id: cursor?.id ?? null,
+    p_limit: 30,
+  });
   if (error) throw error;
-  return data.length;
+  const page = data as unknown as SupportPage;
+  if (!page || !Array.isArray(page.items) || typeof page.total !== "number") {
+    throw new Error("문의 목록 응답이 올바르지 않습니다.");
+  }
+  return page;
+}
+
+export async function fetchOpenSupportCount(): Promise<number> {
+  const { data, error } = await supabase.rpc("admin_support_page", {
+    p_status: "open",
+    p_limit: 1,
+  });
+  if (error) throw error;
+  const total = (data as { total?: unknown } | null)?.total;
+  if (typeof total !== "number") throw new Error("문의 건수를 확인할 수 없습니다.");
+  return total;
 }
 
 /** 만남 목록 필터. 서버가 같은 문자열을 검증하니 여기서 벗어나면 22023 이다. */
@@ -137,9 +170,11 @@ export type AdminDashboard = {
     pending_photos: number;
     /** 발급을 기다리는 주문. 결제를 켜면 토스가 처리하므로 0 에 머문다(s27). */
     pending_orders: number;
-    /** 아직 어느 큐에도 들어가지 않은 호감 = 큐레이션 대기 */
+    /** 양측 자격이 유효하고 아직 어느 큐에도 들어가지 않은 호감 */
     unmatched_likes: number;
-    /** 큐가 비어 지금 아무것도 못 받는 활성 남성 */
+    /** 큐에 없지만 한쪽의 자격이 없어 지금 큐레이션할 수 없는 호감 */
+    blocked_likes: number;
+    /** 큐가 비어 지금 아무것도 못 받는 소개 가능 남성 */
     starved_males: number;
     oldest_like_hours: number | null;
   };
