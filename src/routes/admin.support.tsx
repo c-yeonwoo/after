@@ -133,6 +133,15 @@ function AdminSupport() {
                 </Link>
               </div>
               <p className="mt-3 whitespace-pre-wrap break-words text-sm">{request.body}</p>
+              {request.meeting_id ? (
+                <Link
+                  to="/admin/meetings"
+                  search={{ meeting: request.meeting_id }}
+                  className="mt-2 inline-flex min-h-10 items-center text-xs font-semibold text-primary-strong underline underline-offset-4"
+                >
+                  관련 만남 확인
+                </Link>
+              ) : null}
               {request.response ? (
                 <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
                   답변: {request.response}

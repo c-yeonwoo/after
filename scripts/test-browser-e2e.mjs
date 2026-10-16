@@ -402,8 +402,106 @@ try {
   await checkPage(adminPage, "admin system");
   await adminPage.close();
 
+  // Exercise the beta path without pre-issuing tickets. Restore the local
+  // setting even if a browser assertion fails; this script never touches prod.
+  const previousPaymentsEnabled = sql("select payments_enabled from public.app_settings");
+  try {
+    sql("update public.app_settings set payments_enabled=false");
+    const betaMale = await createPerson("male", "male", "member", password);
+    const betaFemale = await createPerson("female", "female", "member", password);
+    sql(`insert into public.affinities(from_id,to_id,verdict)
+      values('${betaFemale.id}','${betaMale.id}','like');
+      begin;
+      set local role authenticated;
+      set local request.jwt.claims='{"sub":"${admin.id}","role":"authenticated","aal":"aal2"}';
+      select public.admin_set_queue('${betaMale.id}',array['${betaFemale.id}']::uuid[],
+        '베타 무료 경로 합성 브라우저 검증');
+      commit;`);
+
+    const betaFemalePage = await (
+      await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
+    ).newPage();
+    await login(betaFemalePage, betaFemale);
+    await betaFemalePage.goto(`${baseUrl}/availability`);
+    await betaFemalePage.getByRole("heading", { name: "퇴근 후, 언제 편하세요?" }).waitFor();
+    await checkPage(betaFemalePage, "beta female availability");
+    for (const day of ["월", "화", "수", "목", "금"]) {
+      await betaFemalePage
+        .getByRole("group", { name: "편한 요일" })
+        .getByRole("button", { name: day })
+        .click();
+    }
+    await betaFemalePage.getByRole("button", { name: "저장하기" }).click();
+    await betaFemalePage.waitForURL("**/home");
+    await betaFemalePage.close();
+
+    const betaMalePage = await (
+      await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
+    ).newPage();
+    await login(betaMalePage, betaMale);
+    await betaMalePage.goto(`${baseUrl}/store?kind=intro`);
+    await betaMalePage.getByText("지금은 티켓 신청 없이 이용해요").waitFor();
+    await checkPage(betaMalePage, "beta store fallback");
+    await betaMalePage.goto(`${baseUrl}/availability`);
+    await betaMalePage.getByRole("heading", { name: "퇴근 후, 언제 편하세요?" }).waitFor();
+    for (const day of ["월", "화", "수", "목", "금"]) {
+      await betaMalePage
+        .getByRole("group", { name: "편한 요일" })
+        .getByRole("button", { name: day })
+        .click();
+    }
+    await betaMalePage.getByRole("button", { name: "저장하기" }).click();
+    await betaMalePage.waitForURL("**/home");
+    assert.equal(
+      sql(
+        `select count(*) from public.meet_windows where user_id in ('${betaMale.id}','${betaFemale.id}')`,
+      ),
+      "2",
+      "both beta members saved private meeting windows",
+    );
+    await betaMalePage.getByRole("link", { name: "소개 열어보기" }).click();
+    await betaMalePage.getByRole("button", { name: "베타 무료로 열기" }).click();
+    await betaMalePage.getByText(betaFemale.name).first().waitFor({ timeout: 15_000 });
+    await betaMalePage.getByRole("button", { name: "만남 요청하기" }).click();
+    await betaMalePage.getByText("서로 편한 요일이 겹쳐요").waitFor();
+    await checkPage(betaMalePage, "beta meeting request");
+    await betaMalePage.getByRole("group", { name: "날짜" }).getByRole("button").first().click();
+    await betaMalePage
+      .getByRole("group", { name: "시간" })
+      .getByRole("button", { name: "7시", exact: true })
+      .click();
+    const betaPlaces = betaMalePage.getByRole("radiogroup", { name: "장소" });
+    if (await betaPlaces.count()) await betaPlaces.getByRole("radio").first().click();
+    else await betaMalePage.getByLabel("만날 곳").fill("역삼역 3번 출구 근처 카페");
+    await betaMalePage.getByRole("button", { name: /후보 1개로 무료 요청하기/ }).click();
+    await betaMalePage.getByText("답변을 기다리는 중입니다").waitFor();
+    const betaMeetingId = sql(`select m.id from public.meetings m
+      join public.intros i on i.id=m.intro_id
+      where i.male_id='${betaMale.id}' and i.female_id='${betaFemale.id}'`);
+    assert.ok(betaMeetingId, "beta meeting exists without a pre-issued ticket");
+    assert.equal(
+      sql(
+        `select count(*) from public.tickets where user_id='${betaMale.id}' and price_krw=0 and used_at is not null`,
+      ),
+      "2",
+      "beta opening and meeting request used zero-won tickets only",
+    );
+    await betaMalePage.getByRole("link", { name: "약속 조율 도움받기" }).click();
+    await betaMalePage.getByLabel("문의 내용").fill("이 만남의 약속 장소를 조율하고 싶어요.");
+    await betaMalePage.getByRole("button", { name: /문의.*보내기|문의.*남기기|문의 접수/ }).click();
+    assert.equal(
+      sql(`select count(*) from public.support_requests where user_id='${betaMale.id}'
+        and meeting_id='${betaMeetingId}'`),
+      "1",
+      "concierge request is linked to the actual meeting",
+    );
+    await betaMalePage.close();
+  } finally {
+    sql(`update public.app_settings set payments_enabled=${previousPaymentsEnabled === "t"}`);
+  }
+
   process.stdout.write(
-    "Browser E2E: landing, intro, meeting, support, interview resume/publish/manual, admin PASS\n",
+    "Browser E2E: paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
   );
 } finally {
   await browser?.close();

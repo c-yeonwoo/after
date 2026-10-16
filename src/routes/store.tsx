@@ -113,11 +113,12 @@ function StorePage() {
   }, [ready, me, navigate]);
 
   async function load(k: TicketKind) {
-    const [count, list, payments] = await Promise.all([
-      unusedTicketCount(k),
-      ticketBundles(k),
-      paymentsEnabled(),
-    ]);
+    const payments = await paymentsEnabled();
+    if (!payments) {
+      setPaid(false);
+      return;
+    }
+    const [count, list] = await Promise.all([unusedTicketCount(k), ticketBundles(k)]);
     const pending = await myPendingTicketOrder(k, payments);
     setOwned(count);
     setOrder(pending);
@@ -142,10 +143,27 @@ function StorePage() {
     );
   }
 
+  if (!paid) {
+    return (
+      <AppScreen title="베타 이용 안내" back="/me">
+        <div className="mt-10 rounded-surface border border-border bg-card px-6 py-8">
+          <h2 className="text-xl font-semibold">지금은 티켓 신청 없이 이용해요</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            소개가 도착하면 무료로 열어보고, 마음이 가는 분에게 만남을 요청할 수 있습니다. 유료로
+            자동 전환되거나 결제되지 않습니다.
+          </p>
+          <Button className="mt-6 w-full" size="lg" onClick={() => navigate({ to: "/intro" })}>
+            소개 확인하기
+          </Button>
+        </div>
+      </AppScreen>
+    );
+  }
+
   return (
     <AppScreen title="티켓 받기" back="/me">
       <div className="mt-3 flex gap-2">
-        {KINDS.map((k) => (
+        {KINDS.filter((item) => paid || item.v === "meeting").map((k) => (
           <button
             key={k.v}
             type="button"

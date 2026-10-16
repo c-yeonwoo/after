@@ -28,6 +28,7 @@ import {
   getMeetingByIntro,
   myPendingCandidate,
   passIntro,
+  paymentsEnabled,
   remainingCandidates,
   submitAffinity,
   type IntroTeaser,
@@ -75,6 +76,7 @@ function IntroPage() {
     tickets: number;
     teaser: IntroTeaser | null;
   } | null>(null);
+  const [paid, setPaid] = useState<boolean | null>(null);
   /** 연 소개에 운영팀이 남긴 한 줄(s50). */
   const [reason, setReason] = useState<string | null>(null);
 
@@ -98,6 +100,7 @@ function IntroPage() {
       }
       setPreparationMessage(null);
       if (isMale) {
+        setPaid(await paymentsEnabled());
         /*
         **여기서 open_intro() 를 부르지 않는다.** v2 부터 그 호출은 소개 티켓
         1장을 차감하므로, 탭을 열기만 해도 5,000원이 빠지게 된다. 이미 열려 있는
@@ -216,7 +219,7 @@ function IntroPage() {
                 </p>
               )}
 
-              {gate.tickets > 0 ? (
+              {gate.tickets > 0 || paid === false ? (
                 <>
                   <Button
                     size="lg"
@@ -241,11 +244,13 @@ function IntroPage() {
                     }}
                   >
                     <Ticket className="size-4" aria-hidden="true" />
-                    소개 티켓 1장 쓰고 열기
+                    {paid === false ? "베타 무료로 열기" : "소개 티켓 1장 쓰고 열기"}
                   </Button>
                   {/* 소멸이라는 사실을 누르기 전에 말한다 — 열고 나서 알면 늦다. */}
                   <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
-                    보유 {gate.tickets}장 · 열람에 1장이 사용되며 되돌릴 수 없습니다.
+                    {paid === false
+                      ? "베타 기간에는 소개 열람에 결제한 티켓을 사용하지 않습니다."
+                      : `보유 ${gate.tickets}장 · 열람에 1장이 사용되며 되돌릴 수 없습니다.`}
                   </p>
                 </>
               ) : (
@@ -325,7 +330,7 @@ function IntroPage() {
         {isMale ? (
           <Button size="lg" className="w-full min-w-0" onClick={() => navigate({ to: "/ticket" })}>
             <Ticket className="size-4" aria-hidden="true" />
-            만남 티켓 쓰기
+            {paid === false ? "만남 요청하기" : "만남 티켓 쓰기"}
           </Button>
         ) : (
           <Button

@@ -13,6 +13,7 @@ import { usePhotoUrl } from "@/lib/photo";
 import { recordMyAiDecision } from "@/lib/api";
 import { toProfileView } from "@/lib/profileView";
 import { cn } from "@/lib/utils";
+import { adminMeetWindows, isMeetWindowFresh, type AdminMeetWindow } from "@/lib/meetWindow";
 import {
   fetchCurationTargets,
   fetchLikePool,
@@ -168,11 +169,25 @@ function Workbench({
   // 화면에서 세우는 순서. female_id 배열이 그대로 admin_set_queue 의 인자가 된다.
   const [order, setOrder] = useState<string[]>([]);
   const [preview, setPreview] = useState<LikePoolItem | QueueCard | null>(null);
+  const [windows, setWindows] = useState<Map<string, AdminMeetWindow>>(new Map());
+  const [windowError, setWindowError] = useState(false);
 
   const load = useCallback(async () => {
     const [p, q] = await Promise.all([fetchLikePool(maleId), fetchQueue(maleId)]);
     setPool(p);
     setSaved(q);
+    try {
+      const all = await adminMeetWindows([
+        maleId,
+        ...p.map((item) => item.id),
+        ...q.map((item) => item.female_id),
+      ]);
+      setWindows(new Map(all.map((item) => [item.user_id, item])));
+      setWindowError(false);
+    } catch {
+      setWindows(new Map());
+      setWindowError(true);
+    }
     setOrder(q.map((c) => c.female_id));
     setPreview(null);
   }, [maleId]);
@@ -187,6 +202,12 @@ function Workbench({
 
   const inQueue = new Set(order);
   const available = (pool ?? []).filter((p) => !inQueue.has(p.id));
+  const overlap = (femaleId: string) => {
+    const maleWindow = windows.get(maleId);
+    const femaleWindow = windows.get(femaleId);
+    if (!isMeetWindowFresh(maleWindow) || !isMeetWindowFresh(femaleWindow)) return null;
+    return maleWindow!.weekdays.filter((day) => femaleWindow!.weekdays.includes(day)).length;
+  };
   const dirty = order.length !== saved.length || order.some((id, i) => saved[i]?.female_id !== id);
 
   function move(i: number, dir: -1 | 1) {
@@ -200,8 +221,12 @@ function Workbench({
   function fillDeliveryWindow() {
     const slots = Math.max(0, DELIVER_WINDOW - order.length);
     if (slots === 0) return;
-    // 풀은 서버가 오래 기다린 순으로 준다. 자동 결정하지 않고 검토할 초안만 만든다.
-    setOrder([...order, ...available.slice(0, slots).map((p) => p.id)]);
+    // 교집합이 확인된 후보를 먼저 제안하고, 같은 조건에서는 오래 기다린 순서를 유지한다.
+    // 순위는 초안일 뿐이며 저장 전 운영자가 프로필과 의사를 확인한다.
+    const ranked = [...available].sort(
+      (a, b) => Number((overlap(b.id) ?? 0) > 0) - Number((overlap(a.id) ?? 0) > 0),
+    );
+    setOrder([...order, ...ranked.slice(0, slots).map((p) => p.id)]);
   }
 
   return (
@@ -223,6 +248,13 @@ function Workbench({
               소개 받기가 꺼져 있어 카드가 전송되지 않습니다
             </span>
           ) : null}
+          <span className="text-xs text-muted-foreground">
+            {windowError
+              ? "가능 시간을 불러오지 못함"
+              : isMeetWindowFresh(windows.get(maleId))
+                ? "가능 시간 확인됨"
+                : "가능 시간 미확인"}
+          </span>
         </header>
 
         {/* ── 큐 ── */}
@@ -239,7 +271,7 @@ function Workbench({
           </div>
           {order.length < DELIVER_WINDOW && available.length > 0 ? (
             <p className="mt-1 text-2xs text-muted-foreground">
-              오래 기다린 호감부터 초안에 담습니다. 저장 전 프로필과 순서를 검토하세요.
+              가능한 요일이 겹치는 후보를 먼저 담습니다. 저장 전 프로필과 순서를 검토하세요.
             </p>
           ) : null}
           {order.length === 0 ? (
@@ -282,6 +314,9 @@ function Workbench({
                           ) : (
                             "대기"
                           )}
+                        </span>
+                        <span className="ml-2 text-2xs text-muted-foreground">
+                          <TimeFit count={overlap(id)} />
                         </span>
                       </button>
                       <div className="flex shrink-0 items-center gap-1">
@@ -399,6 +434,9 @@ function Workbench({
                     </p>
                     <p className="mt-0.5 text-2xs text-muted-foreground tabular-nums">
                       {p.waiting_hours !== null ? `${Math.floor(p.waiting_hours / 24)}일 대기` : ""}
+                    </p>
+                    <p className="mt-0.5 text-2xs text-muted-foreground">
+                      <TimeFit count={overlap(p.id)} />
                     </p>
                     <Button
                       size="sm"
@@ -567,6 +605,12 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
       ) : null}
     </section>
   );
+}
+
+function TimeFit({ count }: { count: number | null }) {
+  if (count === null) return <>최근 가능 시간 미확인</>;
+  if (count === 0) return <>평소 가능한 요일이 다름</>;
+  return <>평소 가능한 요일 {count}일 겹침</>;
 }
 
 function age(birth: string | null) {

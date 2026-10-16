@@ -1313,6 +1313,35 @@ export type Database = {
           },
         ]
       }
+      meet_windows: {
+        Row: {
+          user_id: string
+          weekdays: number[]
+          earliest_local: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          weekdays: number[]
+          earliest_local: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          weekdays?: number[]
+          earliest_local?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meet_windows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
           accepted_slot: number | null
@@ -2408,6 +2437,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          meeting_id: string | null
           responded_at: string | null
           responded_by: string | null
           response: string | null
@@ -2419,6 +2449,7 @@ export type Database = {
           category: string
           created_at?: string
           id?: string
+          meeting_id?: string | null
           responded_at?: string | null
           responded_by?: string | null
           response?: string | null
@@ -2430,6 +2461,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          meeting_id?: string | null
           responded_at?: string | null
           responded_by?: string | null
           response?: string | null
@@ -2437,6 +2469,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "support_requests_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "support_requests_responded_by_fkey"
             columns: ["responded_by"]
@@ -2880,6 +2919,19 @@ export type Database = {
       }
     }
     Functions: {
+      create_meeting_help_request: {
+        Args: { p_meeting_id: string; p_body: string }
+        Returns: string
+      }
+      admin_meet_windows: {
+        Args: { p_users: string[] }
+        Returns: {
+          user_id: string
+          weekdays: number[]
+          earliest_local: string
+          updated_at: string
+        }[]
+      }
       accept_meeting_slot: {
         Args: { p_index: number; p_meeting_id: string }
         Returns: {
@@ -3907,6 +3959,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      clear_my_meet_window: { Args: never; Returns: undefined }
       home_state: { Args: never; Returns: Json }
       home_state_v2: { Args: never; Returns: Json }
       home_state_v2_base: { Args: never; Returns: Json }
@@ -4044,6 +4097,14 @@ export type Database = {
           station: string
         }[]
       }
+      save_my_meet_window: {
+        Args: { p_weekdays: number[]; p_earliest_local: string }
+        Returns: Json
+      }
+      suggested_meeting_slots: {
+        Args: { p_intro_id: string }
+        Returns: { slot: string }[]
+      }
       member_policy_current: { Args: { p_user: string }; Returns: boolean }
       member_readiness: { Args: { p_user: string }; Returns: Json }
       member_readiness_snapshot: {
@@ -4051,6 +4112,7 @@ export type Database = {
         Returns: Json
       }
       my_carrier_adult_verified: { Args: never; Returns: boolean }
+      my_meet_window: { Args: never; Returns: Json }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
       my_notification_preferences: { Args: never; Returns: Json }

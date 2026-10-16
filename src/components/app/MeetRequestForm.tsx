@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { MapPin, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ import {
   WEEKDAY_TIMES,
 } from "@/lib/meet";
 import { cn } from "@/lib/utils";
+import { suggestedMeetingSlots } from "@/lib/meetWindow";
 
 const MAX_SLOTS = 3;
 
@@ -56,10 +58,12 @@ const KIND_LABEL: Record<string, string> = {
 export function MeetRequestForm({
   introId,
   counterpartName,
+  beta,
   onRequested,
 }: {
   introId: string;
   counterpartName: string | null;
+  beta: boolean;
   onRequested: (m: Meeting) => void;
 }) {
   // 달력은 클라이언트에서만 만든다(하이드레이션 — meet.ts 주석).
@@ -70,6 +74,7 @@ export function MeetRequestForm({
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [placeName, setPlaceName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [suggested, setSuggested] = useState<string[]>([]);
 
   useEffect(() => {
     setDays(
@@ -81,11 +86,20 @@ export function MeetRequestForm({
     meetPlacesForMe()
       .then(setPlaces)
       .catch(() => setPlaces([]));
-  }, []);
+    suggestedMeetingSlots(introId)
+      .then(setSuggested)
+      .catch(() => setSuggested([]));
+  }, [introId]);
 
   const sortedSlots = useMemo(() => [...slots].sort(), [slots]);
   const placeReady = placeId !== null || placeName.trim().length > 0;
   const ready = slots.length > 0 && placeReady && !busy;
+  const recommended = suggested
+    .filter(
+      (slot, index, all) =>
+        all.findIndex((other) => other.slice(0, 10) === slot.slice(0, 10)) === index,
+    )
+    .slice(0, 5);
 
   function toggleSlot(iso: string) {
     setSlots((list) =>
@@ -106,6 +120,41 @@ export function MeetRequestForm({
           {counterpartName ? ` ${counterpartName}님이` : " 상대가"} 하나를 고르면 바로 약속이
           정해져요.
         </p>
+
+        {recommended.length ? (
+          <div className="mt-4 rounded-surface border border-border bg-surface-subtle p-4">
+            <p className="text-sm font-semibold">서로 편한 요일이 겹쳐요</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              평소 가능한 시간으로 고른 후보예요. 실제 날짜는 두 분이 다시 확인합니다.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {recommended.map((iso) => (
+                <button
+                  key={iso}
+                  type="button"
+                  aria-pressed={slots.includes(iso)}
+                  disabled={!slots.includes(iso) && slots.length >= MAX_SLOTS}
+                  onClick={() => toggleSlot(iso)}
+                  className={cn(
+                    "min-h-11 rounded-control border px-3 text-xs font-medium active:scale-[0.97] disabled:opacity-40",
+                    slots.includes(iso)
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground",
+                  )}
+                >
+                  {formatMeetTime(iso)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-muted-foreground">
+            <Link to="/availability" className="underline underline-offset-4">
+              내 가능 시간 설정
+            </Link>
+            을 해두면 겹치는 요일을 먼저 보여드려요. 아래에서 직접 골라도 됩니다.
+          </p>
+        )}
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="날짜">
           {days.map((k) => (
@@ -184,9 +233,9 @@ export function MeetRequestForm({
             <p className="mt-1 text-sm text-muted-foreground">
               운영팀이 퇴근길에 들르기 좋은 곳을 골라 두었어요. 예약은 하지 않아요.
             </p>
-            <ul className="mt-3 space-y-2" role="radiogroup" aria-label="장소">
+            <div className="mt-3 space-y-2" role="radiogroup" aria-label="장소">
               {places.map((p) => (
-                <li key={p.id}>
+                <div key={p.id}>
                   <button
                     type="button"
                     role="radio"
@@ -209,9 +258,9 @@ export function MeetRequestForm({
                       </span>
                     </span>
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </>
         ) : (
           <>
@@ -255,11 +304,15 @@ export function MeetRequestForm({
           {busy
             ? "보내는 중…"
             : slots.length > 0
-              ? `후보 ${slots.length}개로 요청하기 · 만남 티켓 1장`
+              ? beta
+                ? `후보 ${slots.length}개로 무료 요청하기`
+                : `후보 ${slots.length}개로 요청하기 · 만남 티켓 1장`
               : "후보를 골라 주세요"}
         </Button>
         <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-          상대가 거절하거나 24시간 안에 답하지 않으면 티켓을 돌려드려요.
+          {beta
+            ? "상대가 거절하거나 24시간 안에 답하지 않으면 요청이 종료돼요."
+            : "상대가 거절하거나 24시간 안에 답하지 않으면 티켓을 돌려드려요."}
         </p>
       </div>
     </div>

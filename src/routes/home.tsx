@@ -23,6 +23,7 @@ import {
   type HomeStateV2,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
+import { myMeetWindow, type MeetWindow } from "@/lib/meetWindow";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -105,6 +106,7 @@ function HomePage() {
   const [queued, setQueued] = useState(0);
   const [introTickets, setIntroTickets] = useState(0);
   const [introPaymentsEnabled, setIntroPaymentsEnabled] = useState<boolean | null>(null);
+  const [meetWindow, setMeetWindow] = useState<MeetWindow | null>(null);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [noShow, setNoShow] = useState<NoShowReport | null>(null);
   // 여성은 동시에 여러 건을 받을 수 있다 — 개수를 세어 목록으로 보낸다.
@@ -132,9 +134,10 @@ function HomePage() {
     setLoadError(false);
     (async () => {
       try {
-        const [stateResult, paymentResult] = await Promise.allSettled([
+        const [stateResult, paymentResult, windowResult] = await Promise.allSettled([
           homeStateV2(),
           paymentsEnabled(),
+          myMeetWindow(),
         ]);
         if (stateResult.status === "rejected") throw stateResult.reason;
         const state = stateResult.value;
@@ -160,6 +163,7 @@ function HomePage() {
         setQueued(state.queued_intros);
         setIntroTickets(state.ticket_summary.intro_available);
         setIntroPaymentsEnabled(payments);
+        if (windowResult.status === "fulfilled") setMeetWindow(windowResult.value);
       } catch {
         if (!cancelled) setLoadError(true);
       } finally {
@@ -335,7 +339,7 @@ function HomePage() {
           */
           <GuideNote
             action={
-              introTickets > 0 ? (
+              introTickets > 0 || introPaymentsEnabled === false ? (
                 <CardAction to="/intro">소개 열어보기</CardAction>
               ) : (
                 <CardAction to="/store" search={{ kind: "intro" }}>
@@ -351,7 +355,7 @@ function HomePage() {
             {queued > 1
               ? `${queued}건의 소개가 기다리고 있어요. 한 분씩 확인해 보세요.`
               : "한 분의 소개가 기다리고 있어요."}
-            {introTickets === 0
+            {introTickets === 0 && introPaymentsEnabled !== false
               ? introPaymentsEnabled === null
                 ? " 티켓 안내를 확인해 주세요."
                 : introPaymentsEnabled
@@ -420,6 +424,7 @@ function HomePage() {
           paused={me?.paused_at !== null && me?.paused_at !== undefined}
           introTickets={introTickets}
           introPaymentsEnabled={introPaymentsEnabled}
+          meetWindow={meetWindow}
           onToggle={async (next) => {
             try {
               await setPaused(next);
@@ -456,12 +461,14 @@ function ReadinessPanel({
   paused,
   introTickets,
   introPaymentsEnabled,
+  meetWindow,
   onToggle,
 }: {
   isMale: boolean;
   paused: boolean;
   introTickets: number;
   introPaymentsEnabled: boolean | null;
+  meetWindow: MeetWindow | null;
   onToggle: (next: boolean) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -517,15 +524,17 @@ function ReadinessPanel({
         {isMale && !paused ? (
           <div className="flex min-h-14 items-center gap-3.5 border-t border-border px-5">
             <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
-              {introTickets > 0
-                ? `소개 티켓 ${introTickets}장 보유`
-                : introPaymentsEnabled === null
-                  ? "티켓 안내를 확인할 수 없습니다."
-                  : introPaymentsEnabled
-                    ? "소개를 열려면 소개 티켓 1장이 필요합니다."
-                    : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
+              {introPaymentsEnabled === false
+                ? "베타 기간에는 무료로 열 수 있어요."
+                : introTickets > 0
+                  ? `소개 티켓 ${introTickets}장 보유`
+                  : introPaymentsEnabled === null
+                    ? "티켓 안내를 확인할 수 없습니다."
+                    : introPaymentsEnabled
+                      ? "소개를 열려면 소개 티켓 1장이 필요합니다."
+                      : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
             </span>
-            {introTickets === 0 ? (
+            {introTickets === 0 && introPaymentsEnabled !== false ? (
               <Link
                 to="/store"
                 search={{ kind: "intro" as const }}
@@ -539,6 +548,18 @@ function ReadinessPanel({
               </Link>
             ) : null}
           </div>
+        ) : null}
+        {!paused ? (
+          <Link
+            to="/availability"
+            className="flex min-h-14 items-center justify-between gap-3 border-t border-border px-5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <span className="font-medium">만남 가능 시간</span>
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {meetWindow?.fresh ? "설정됨" : meetWindow ? "다시 확인" : "요일 설정"}
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </span>
+          </Link>
         ) : null}
       </div>
     </section>
