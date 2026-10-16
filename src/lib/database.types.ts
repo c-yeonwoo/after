@@ -1445,6 +1445,21 @@ export type Database = {
           },
         ]
       }
+      metric_instrumentation: {
+        Row: {
+          id: boolean
+          readiness_started_at: string
+        }
+        Insert: {
+          id?: boolean
+          readiness_started_at?: string
+        }
+        Update: {
+          id?: boolean
+          readiness_started_at?: string
+        }
+        Relationships: []
+      }
       no_show_reports: {
         Row: {
           accused_admitted: boolean | null
@@ -1948,6 +1963,139 @@ export type Database = {
           {
             foreignKeyName: "phone_codes_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_catalog: {
+        Row: {
+          note: string
+          published_at: string | null
+          status: string
+          version: string
+        }
+        Insert: {
+          note: string
+          published_at?: string | null
+          status: string
+          version: string
+        }
+        Update: {
+          note?: string
+          published_at?: string | null
+          status?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      policy_consents: {
+        Row: {
+          accepted_at: string
+          evidence_source: string
+          id: number
+          policy_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at: string
+          evidence_source: string
+          id?: never
+          policy_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          evidence_source?: string
+          id?: never
+          policy_version?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_control: {
+        Row: {
+          id: boolean
+          reconsent_effective_at: string | null
+          required_reconsent_version: string | null
+          signup_version: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          id?: boolean
+          reconsent_effective_at?: string | null
+          required_reconsent_version?: string | null
+          signup_version: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          id?: boolean
+          reconsent_effective_at?: string | null
+          required_reconsent_version?: string | null
+          signup_version?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_control_required_reconsent_version_fkey"
+            columns: ["required_reconsent_version"]
+            isOneToOne: false
+            referencedRelation: "policy_catalog"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "policy_control_signup_version_fkey"
+            columns: ["signup_version"]
+            isOneToOne: false
+            referencedRelation: "policy_catalog"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "policy_control_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_control_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_control_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
@@ -2672,6 +2820,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_activate_policy_reconsent: {
+        Args: {
+          p_effective_at: string
+          p_expected_version: number
+          p_reason: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       admin_apply_ops_backfill: {
         Args: { p_expected_missing: number; p_note: string }
         Returns: number
@@ -2778,6 +2935,10 @@ export type Database = {
         }[]
       }
       admin_marketplace_health: { Args: never; Returns: Json }
+      admin_marketplace_health_v2: {
+        Args: { p_days?: number; p_hub?: string }
+        Returns: Json
+      }
       admin_meet_places: {
         Args: never
         Returns: {
@@ -2909,6 +3070,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_policy_preview: { Args: never; Returns: Json }
       admin_preview_ops_backfill: { Args: never; Returns: Json }
       admin_queue: {
         Args: { p_male: string }
@@ -3637,6 +3799,7 @@ export type Database = {
       }
       home_state: { Args: never; Returns: Json }
       home_state_v2: { Args: never; Returns: Json }
+      home_state_v2_base: { Args: never; Returns: Json }
       intro_teaser: {
         Args: never
         Returns: {
@@ -3740,7 +3903,12 @@ export type Database = {
           station: string
         }[]
       }
+      member_policy_current: { Args: { p_user: string }; Returns: boolean }
       member_readiness: { Args: { p_user: string }; Returns: Json }
+      member_readiness_snapshot: {
+        Args: { p: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: Json
+      }
       my_carrier_adult_verified: { Args: never; Returns: boolean }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
@@ -3756,6 +3924,7 @@ export type Database = {
           read_at: string
         }[]
       }
+      my_policy_status: { Args: never; Returns: Json }
       my_readiness: { Args: never; Returns: Json }
       my_request_deadlines: {
         Args: never

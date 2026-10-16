@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
@@ -69,6 +70,11 @@ const ChatsRoute = ChatsRouteImport.update({
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsentRoute = ConsentRouteImport.update({
+  id: '/consent',
+  path: '/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
+  '/consent': typeof ConsentRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
+  '/consent': typeof ConsentRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
+  '/consent': typeof ConsentRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -393,6 +402,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chats'
     | '/checkout'
+    | '/consent'
     | '/delete-account'
     | '/feedback'
     | '/home'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/'
     | '/chats'
     | '/checkout'
+    | '/consent'
     | '/delete-account'
     | '/feedback'
     | '/home'
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chats'
     | '/checkout'
+    | '/consent'
     | '/delete-account'
     | '/feedback'
     | '/home'
@@ -522,6 +534,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   ChatsRoute: typeof ChatsRoute
   CheckoutRoute: typeof CheckoutRoute
+  ConsentRoute: typeof ConsentRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
@@ -575,6 +588,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consent': {
+      id: '/consent'
+      path: '/consent'
+      fullPath: '/consent'
+      preLoaderRoute: typeof ConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delete-account': {
@@ -890,6 +910,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   ChatsRoute: ChatsRoute,
   CheckoutRoute: CheckoutRoute,
+  ConsentRoute: ConsentRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,

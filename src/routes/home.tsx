@@ -64,6 +64,8 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
       return "만남이 잡혔어요.";
     case "profile_incomplete":
       return "소개받을 준비를 마저 해주세요.";
+    case "policy_required":
+      return "약관을 확인해 주세요.";
     case "identity_required":
       return "본인 확인이 필요해요.";
     case "phone_required":
@@ -179,6 +181,7 @@ function HomePage() {
     primaryState &&
     [
       "profile_incomplete",
+      "policy_required",
       "identity_required",
       "phone_required",
       "photos_required",
@@ -302,6 +305,10 @@ function HomePage() {
               }
             >
               아직 확인할 정보가 있어요.
+            </GuideNote>
+          ) : primaryState === "policy_required" ? (
+            <GuideNote action={<CardAction to="/consent">내용 확인하기</CardAction>}>
+              새 소개를 받으려면 현재 약관에 동의해 주세요.
             </GuideNote>
           ) : null
         ) : candidate ? (

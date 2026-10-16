@@ -885,6 +885,75 @@ export async function fetchMemberTimeline(
   return requireJsonPage<MemberTimelinePage>(data, "items");
 }
 
+export type MarketplaceHealthV2 = {
+  as_of: string;
+  filters: { hub: string | null; days: 7 | 14 | 28 };
+  coverage: {
+    readiness_started_at: string;
+    historical_readiness_unknown: boolean;
+    withdrawn_event_history_removed: boolean;
+  };
+  ready_now: { female: number; male: number };
+  pending_request: {
+    count: number;
+    oldest_hours: number | null;
+    p50_hours: number | null;
+    p90_hours: number | null;
+  };
+  completed_response: { sample: number; p50_hours: number | null; p90_hours: number | null };
+  intro_open_7d: { numerator: number; denominator: number; rate: number | null };
+  first_intro_7d: { numerator: number; denominator: number; rate: number | null };
+  meeting_confirmation: {
+    confirmed: number;
+    both_reported: number;
+    one_reported: number;
+    not_reported: number;
+  };
+};
+
+export async function fetchMarketplaceHealthV2(
+  hub: string | null,
+  days: 7 | 14 | 28,
+): Promise<MarketplaceHealthV2> {
+  const { data, error } = await supabase.rpc("admin_marketplace_health_v2", {
+    p_hub: hub ?? undefined,
+    p_days: days,
+  });
+  if (error) throw error;
+  const value = data as unknown as MarketplaceHealthV2 | null;
+  if (
+    !value ||
+    typeof value.as_of !== "string" ||
+    !value.pending_request ||
+    !value.first_intro_7d
+  ) {
+    throw new Error("수급 지표 응답을 확인할 수 없습니다.");
+  }
+  return value;
+}
+
+export type AdminPolicyPreview = {
+  signup_version: string;
+  required_version: string | null;
+  affected_active_members: number;
+  control_version: number;
+  as_of: string;
+};
+
+export async function fetchPolicyPreview(): Promise<AdminPolicyPreview> {
+  const { data, error } = await supabase.rpc("admin_policy_preview");
+  if (error) throw error;
+  const value = data as unknown as AdminPolicyPreview | null;
+  if (
+    !value ||
+    typeof value.signup_version !== "string" ||
+    typeof value.affected_active_members !== "number"
+  ) {
+    throw new Error("정책 적용 대상을 확인할 수 없습니다.");
+  }
+  return value;
+}
+
 export type AutomationRule = {
   rule_key: "meeting_request_reminder";
   mode: "off" | "observe" | "approval" | "auto";
