@@ -4,6 +4,8 @@
 -- 그래서 티켓 환불과 "영구 배제 기록이 남지 않는가"를 함께 검사한다.
 
 begin;
+-- 이 시나리오는 구매한 티켓의 반환을 검증한다. 새 DB의 기본값은 무료 베타다.
+update public.app_settings set payments_enabled = true;
 select plan(14);
 
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, aud, role,

@@ -12,6 +12,8 @@
 --   4) **탈퇴는 되돌릴 수 없고, 탈퇴하면 내가 쓴 것이 지워진다.**
 
 begin;
+-- 거절 시 실제 구매 티켓 반환을 검증한다.
+update public.app_settings set payments_enabled = true;
 select plan(21);
 
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, aud, role,

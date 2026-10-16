@@ -6,6 +6,8 @@
 -- 그리고 D5(사진 필수)·D6(취향 문답 제거)·남성 반환 알림.
 
 begin;
+-- 반환 알림과 유료 티켓 수량의 기존 계약을 검증한다.
+update public.app_settings set payments_enabled = true;
 select plan(13);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)

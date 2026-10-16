@@ -44,6 +44,8 @@ function sql(statement) {
   }).trim();
 }
 
+const originalPaymentsEnabled = sql("select payments_enabled from public.app_settings");
+
 async function waitForServer() {
   for (let attempt = 0; attempt < 90; attempt += 1) {
     try {
@@ -163,6 +165,9 @@ async function checkPage(page, name, accessibility = true) {
 }
 
 try {
+  // The first scenario verifies paid-ticket behavior, even when a freshly
+  // started Supabase defaults to free beta. The outer finally restores it.
+  sql("update public.app_settings set payments_enabled=true");
   server = spawn(
     process.execPath,
     [
@@ -504,6 +509,7 @@ try {
     "Browser E2E: paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
   );
 } finally {
+  sql(`update public.app_settings set payments_enabled=${originalPaymentsEnabled === "t"}`);
   await browser?.close();
   server?.kill("SIGTERM");
   if (objectPaths.length) {
