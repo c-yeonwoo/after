@@ -69,6 +69,13 @@ Deno.serve(async (req) => {
   );
   if (reserveError) return json({ error: reserveError.message }, 409);
 
+  const recordAttention = (attention: string | null, checked = false) =>
+    adminClient.rpc("record_payment_provider_check", {
+      p_order_id: orderId,
+      p_attention: attention,
+      p_checked: checked,
+    });
+
   const reason = "구매자 요청 - 미사용 티켓 결제 취소";
   let tossRes: Response;
   let tossBody: Record<string, unknown>;
@@ -89,13 +96,14 @@ Deno.serve(async (req) => {
   } catch {
     // Provider status is unknown. Keep tickets reserved and let a retry with
     // the same idempotency key reconcile the result.
+    await recordAttention("cancel_unknown");
     return json({ error: "cancel status is unknown; retry or contact support" }, 502);
   }
 
   if (!tossRes.ok) {
-    if (tossRes.status >= 400 && tossRes.status < 500 && tossRes.status !== 429) {
-      await adminClient.rpc("release_paid_order_cancel", { p_order_id: orderId });
-    }
+    // A non-2xx does not prove that a prior refund failed. Keep the tickets
+    // reserved until a provider read confirms the current payment state.
+    await recordAttention("cancel_unknown");
     return json({ error: "payment cancellation failed" }, tossRes.status >= 500 ? 502 : 409);
   }
   if (
@@ -105,6 +113,7 @@ Deno.serve(async (req) => {
     tossBody.balanceAmount !== 0 ||
     tossBody.totalAmount !== reserved.amount
   ) {
+    await recordAttention("provider_mismatch", true);
     return json({ error: "cancel response did not match the order" }, 502);
   }
 
@@ -112,6 +121,10 @@ Deno.serve(async (req) => {
     p_order_id: orderId,
     p_reason: reason,
   });
-  if (finalizeError) return json({ error: finalizeError.message }, 500);
+  if (finalizeError) {
+    await recordAttention("cancel_unknown", true);
+    return json({ error: finalizeError.message }, 500);
+  }
+  await recordAttention(null, true);
   return json({ canceled: true });
 });

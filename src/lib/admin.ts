@@ -34,8 +34,8 @@ export async function fetchSupportPage(
 ): Promise<SupportPage> {
   const { data, error } = await supabase.rpc("admin_support_page", {
     p_status: status,
-    p_before: cursor?.created_at ?? null,
-    p_before_id: cursor?.id ?? null,
+    p_before: cursor?.created_at ?? undefined,
+    p_before_id: cursor?.id ?? undefined,
     p_limit: 30,
   });
   if (error) throw error;
@@ -612,6 +612,23 @@ export async function fetchOrders(state?: OrderFilter): Promise<AdminOrder[]> {
   });
   if (error) throw error;
   return data ?? [];
+}
+
+export async function reconcileOrder(
+  orderId: string,
+): Promise<"fulfilled" | "canceled" | "already_settled"> {
+  const { data, error } = await supabase.functions.invoke("reconcile-ticket-payment", {
+    body: { orderId },
+  });
+  if (error) throw error;
+  if (
+    data?.result === "fulfilled" ||
+    data?.result === "canceled" ||
+    data?.result === "already_settled"
+  ) {
+    return data.result;
+  }
+  throw new Error("토스 결제 상태가 아직 확정되지 않았습니다. 잠시 후 다시 확인해 주세요.");
 }
 
 /**

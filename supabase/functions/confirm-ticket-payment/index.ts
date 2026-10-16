@@ -115,6 +115,13 @@ Deno.serve(async (req) => {
     return json({ error: "order is not pending" }, 409);
   }
 
+  const recordAttention = (attention: string | null, checked = false) =>
+    adminClient.rpc("record_payment_provider_check", {
+      p_order_id: orderId,
+      p_attention: attention,
+      p_checked: checked,
+    });
+
   let tossRes: Response;
   let tossBody: Record<string, unknown>;
   try {
@@ -131,15 +138,14 @@ Deno.serve(async (req) => {
   } catch {
     // An interrupted network response does not prove the charge failed.
     // Keep the order pending so the same idempotency key can be retried.
+    await recordAttention("confirm_unknown");
     return json({ error: "payment confirmation status is unknown; retry" }, 502);
   }
 
   if (!tossRes.ok) {
-    // 5xx and rate limits may be transient. A definitive 4xx means the buyer
-    // must start a new order, but never treat a transport error as a decline.
-    if (tossRes.status >= 400 && tossRes.status < 500 && tossRes.status !== 429) {
-      await adminClient.from("ticket_orders").update({ state: "failed" }).eq("order_id", orderId);
-    }
+    // Even a 4xx can mean a previous request was processed. Only a provider
+    // read may settle an unknown charge; never mark it failed from this alone.
+    await recordAttention("confirm_unknown");
     return json({ error: "payment confirmation failed" }, tossRes.status >= 500 ? 502 : 402);
   }
   if (
@@ -149,6 +155,7 @@ Deno.serve(async (req) => {
     tossBody.totalAmount !== order.amount
   ) {
     // A charge may have succeeded. Keep the order pending for reconciliation.
+    await recordAttention("provider_mismatch", true);
     return json({ error: "payment response did not match the order" }, 502);
   }
 
@@ -161,8 +168,11 @@ Deno.serve(async (req) => {
     p_method: typeof tossBody.method === "string" ? tossBody.method : null,
   });
   if (issueError) {
+    await recordAttention("confirm_unknown", true);
     return json({ error: issueError.message }, 500);
   }
+
+  await recordAttention(null, true);
 
   const { data: tickets } = await adminClient
     .from("tickets")

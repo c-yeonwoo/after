@@ -42,6 +42,23 @@ createServer(async (req, res) => {
       status: "DONE",
     };
     payments.set(paymentKey, payment);
+    if (paymentKey.startsWith("unknown_")) {
+      send(res, 503, { code: "MOCK_LOST_RESPONSE", message: "provider applied request" });
+      return;
+    }
+    send(res, 200, payment);
+    return;
+  }
+
+  const byOrder = req.url?.match(/^\/v1\/payments\/orders\/([^/]+)$/);
+  if (req.method === "GET" && byOrder) {
+    const payment = [...payments.values()].find(
+      (entry) => entry.orderId === decodeURIComponent(byOrder[1]),
+    );
+    if (!payment) {
+      send(res, 404, { code: "NOT_FOUND_PAYMENT", message: "not found" });
+      return;
+    }
     send(res, 200, payment);
     return;
   }
@@ -57,6 +74,10 @@ createServer(async (req, res) => {
       payment.status = "CANCELED";
       payment.balanceAmount = 0;
       payment.cancels = [{ cancelReason: body.cancelReason, cancelAmount: payment.totalAmount }];
+      if (payment.paymentKey.startsWith("unknown_")) {
+        send(res, 503, { code: "MOCK_LOST_RESPONSE", message: "provider applied request" });
+        return;
+      }
       send(res, 200, payment);
       return;
     }
