@@ -83,7 +83,7 @@ function Landing() {
           </p>
           <h1 className="mt-4 text-[clamp(1.875rem,8.3vw,2.25rem)] leading-[1.25] font-semibold tracking-[-0.045em] text-foreground">
             퇴근 후,
-            <br />한 사람과의 약속.
+            <br />한 사람과의 <span className="text-primary-strong">약속.</span>
           </h1>
           <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted-foreground">
             끝없는 탐색 대신, 만나고 싶은 한 사람.

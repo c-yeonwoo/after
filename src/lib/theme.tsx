@@ -2,9 +2,7 @@
  * 테마 — 시스템 설정을 따르고, 사용자가 고르면 그 선택을 기억한다.
  *
  * `.dark` 토큰은 예전부터 styles.css 에 있었지만 그것을 켜는 코드가 없어
- * 도달 불가였다(진단 Later). 게다가 값이 shadcn 기본값(청회색)이라 켜는 순간
- * 코럴이 사라진 다른 제품이 됐다 — 팔레트를 브랜드 hue 로 다시 쓴 뒤에야
- * 켤 수 있는 상태가 됐다.
+ * 도달 불가였다(진단 Later). 라이트·다크의 브랜드 강조는 같은 코럴 계열로 유지한다.
  */
 import {
   createContext,
@@ -44,7 +42,7 @@ function apply(choice: ThemeChoice) {
   // OS 모드가 아닌 앱 내부 선택도 브라우저 상단 색에 반영한다.
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", dark ? "#161C19" : "#FBFAF7");
+    ?.setAttribute("content", dark ? "#161C19" : "#FAF8F3");
   return dark;
 }
 
@@ -92,7 +90,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     네이티브 상태바를 테마와 함께 돌린다.
 
     웹에서는 브라우저 크롬이 알아서 하지만 앱에는 우리 화면 위에 시계·배터리가
-    그대로 얹힌다. 자두 밤 배경에 검은 글자가 얹히면 시간이 안 보인다 — 앱을
+    그대로 얹힌다. 밤 종이 배경에 검은 글자가 얹히면 시간이 안 보인다 — 앱을
     처음 켠 순간 눈에 띄는 종류의 어긋남이다. 웹에서는 no-op 이다.
   */
   useEffect(() => {

@@ -2,9 +2,8 @@ import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact after monogram: a single-storey a with a blush dot (2026-10-11).
- * 앱 아이콘(brand/app-icon-ios.svg)·파비콘과 같은 형태다. 점이 예전보다 크고
- * 블러시라 작게 그려도 "설레는" 인상이 남는다.
+ * Compact after monogram: a single-storey a with a coral dot.
+ * 앱 아이콘(brand/app-icon-ios.svg)·파비콘과 같은 형태다.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
