@@ -10,7 +10,8 @@
 export type ApnsEnv = "production" | "sandbox";
 export type ApnsConfig = { keyP8: string; keyId: string; teamId: string; bundleId: string };
 export type ApnsResult =
-  { ok: true; env: ApnsEnv } | { ok: false; status: number; reason: string; env: ApnsEnv };
+  | { ok: true; env: ApnsEnv; providerRef: string | null }
+  | { ok: false; status: number; reason: string; env: ApnsEnv; providerRef: string | null };
 
 const HOST: Record<ApnsEnv, string> = {
   production: "https://api.push.apple.com",
@@ -75,6 +76,7 @@ export async function sendApns(
 ): Promise<ApnsResult> {
   const res = await fetch(`${HOST[env]}/3/device/${token}`, {
     method: "POST",
+    signal: AbortSignal.timeout(5_000),
     headers: {
       authorization: `bearer ${await providerToken(cfg)}`,
       "apns-topic": cfg.bundleId,
@@ -84,12 +86,13 @@ export async function sendApns(
     },
     body: JSON.stringify({ aps: { alert, sound: "default" }, ...data }),
   });
-  if (res.ok) return { ok: true, env };
+  const providerRef = res.headers.get("apns-id");
+  if (res.ok) return { ok: true, env, providerRef };
   let reason = "unknown";
   try {
     reason = (await res.json())?.reason ?? reason;
   } catch {
     // 본문이 없는 응답도 있다.
   }
-  return { ok: false, status: res.status, reason, env };
+  return { ok: false, status: res.status, reason, env, providerRef };
 }

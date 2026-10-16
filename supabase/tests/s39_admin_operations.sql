@@ -19,9 +19,9 @@ values
   ('39000000-0000-0000-0000-000000000001','male','gangnam','admin39@t.co','admin39@t.co',now(),'운영39',7,now(),now(),'admin'),
   ('39000000-0000-0000-0000-000000000002','female','gangnam','member39@t.co','member39@t.co',now(),'회원39',7,now(),now(),'member');
 
-insert into notifications (id, user_id, kind, attempts, last_error)
+insert into notifications (id, user_id, kind, attempts, last_error, dispatch_state)
 values ('39000000-0000-0000-0000-000000000003',
-        '39000000-0000-0000-0000-000000000002', 'notification_email_verify', 5, 'test failure');
+        '39000000-0000-0000-0000-000000000002', 'notification_email_verify', 5, 'test failure', 'failed');
 
 insert into ai_runs
   (user_id, feature, prompt_version, model, status, latency_ms, input_tokens, output_tokens)

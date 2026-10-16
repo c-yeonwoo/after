@@ -192,7 +192,7 @@ export type AdminDashboard = {
 export type AdminOperationalHealth = {
   no_show: { pending: number; overdue: number; oldest_hours: number | null };
   scheduling: { awaiting_confirmation: number; stale_confirmation: number };
-  notifications: { pending: number; failed: number; oldest_pending_minutes: number | null };
+  notifications: AdminNotificationHealth;
   ai: {
     runs_24h: number;
     failures_24h: number;
@@ -221,22 +221,36 @@ export type AdminMarketplaceHealth = {
   female_like_to_open: WaitDistribution;
 };
 
+export type AdminNotificationHealth = {
+  as_of: string;
+  last_worker_at: string | null;
+  last_worker_duration_ms: number | null;
+  worker_stale: boolean;
+  pending: number;
+  failed: number;
+  unknown: number;
+  unavailable_24h: number;
+  submitted_24h: number;
+  legacy_unverified: number;
+  in_app_available_24h: number;
+  in_app_read_24h: number;
+  oldest_pending_minutes: number | null;
+  failed_rows: NotificationAttentionRow[];
+  unknown_rows: NotificationAttentionRow[];
+};
+
+type NotificationAttentionRow = {
+  id: string;
+  user_id: string;
+  user_name: string | null;
+  kind: string;
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+};
+
 export type AdminSystemOverview = {
-  notifications: {
-    pending: number;
-    failed: number;
-    oldest_pending_minutes: number | null;
-    failed_rows: {
-      id: string;
-      user_id: string;
-      user_name: string | null;
-      notification_email: string | null;
-      kind: string;
-      attempts: number;
-      last_error: string | null;
-      created_at: string;
-    }[];
-  };
+  notifications: AdminNotificationHealth;
   jobs: {
     jobname: string;
     schedule: string | null;
@@ -300,6 +314,19 @@ export async function fetchSystemOverview(): Promise<AdminSystemOverview> {
   const { data, error } = await supabase.rpc("admin_system_overview");
   if (error) throw error;
   return data as unknown as AdminSystemOverview;
+}
+
+export async function fetchNotificationHealth(): Promise<AdminNotificationHealth> {
+  const { data, error } = await supabase.rpc("admin_notification_health");
+  if (error) throw error;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    !Array.isArray((data as Record<string, unknown>).failed_rows)
+  ) {
+    throw new Error("알림 전달 상태를 확인할 수 없습니다.");
+  }
+  return data as unknown as AdminNotificationHealth;
 }
 
 export async function retryNotifications(ids: string[], note: string): Promise<number> {

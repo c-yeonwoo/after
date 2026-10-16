@@ -15,13 +15,21 @@ import {
 
 type TaskSearch = { caseId?: string; status?: string; type?: string };
 const STATES = ["open", "in_progress", "waiting", "snoozed"];
-const TYPES = ["support", "photo_review", "content_report", "no_show_report", "payment_unknown"];
+const TYPES = [
+  "support",
+  "photo_review",
+  "content_report",
+  "no_show_report",
+  "payment_unknown",
+  "notification_failure",
+];
 const TYPE_LABEL: Record<string, string> = {
   support: "고객 문의",
   photo_review: "사진 검수",
   content_report: "안전 신고",
   no_show_report: "노쇼 신고",
   payment_unknown: "결제 확인",
+  notification_failure: "알림 결과 확인",
 };
 const ACTION_LABEL: Record<string, string> = {
   start: "처리 시작",
@@ -44,6 +52,7 @@ const SOURCE_LINK: Record<string, string> = {
   content_report: "/admin/reports",
   no_show_report: "/admin/reports",
   payment_unknown: "/admin/orders",
+  notification_failure: "/admin/system",
 };
 
 export const Route = createFileRoute("/admin/tasks")({
