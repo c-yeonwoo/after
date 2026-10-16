@@ -29,6 +29,7 @@ import { z } from "npm:zod@4.5.4";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.124.0/helpers/zod";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { escapeXml, validProfileComposition } from "../_shared/ai-quality.ts";
+import { scrubUserText, sourceHash, validGroundedProfile } from "../_shared/ai-grounding.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -36,8 +37,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODEL = "claude-opus-5";
-const PROMPT_VERSION = "profile-copy-v4";
-const DAILY_LIMIT = 5;
+const PROMPT_VERSION = "profile-copy-v5";
 
 /*
   화면이 그대로 쓰는 모양. 후보 3개와 소개글 1개.
@@ -49,6 +49,10 @@ const DAILY_LIMIT = 5;
 const Composed = z.object({
   headlines: z.array(z.string()).length(3),
   intro: z.string(),
+  evidence: z
+    .array(z.object({ sourceField: z.string(), quote: z.string() }))
+    .min(1)
+    .max(3),
 });
 
 /*
@@ -76,6 +80,7 @@ const SYSTEM = `당신은 소개팅 서비스의 프로필 문장을 다듬는 �
 - 주어진 답변에 없는 사실을 만들지 마세요. 직업, 취미, 성향을 지어내면 안 됩니다.
 - 답변이 짧으면 짧은 대로 씁니다. 분량을 채우려고 내용을 부풀리지 마세요.
 - 회사명, 학교명, 지역명, 나이를 새로 넣지 마세요.
+- 소개글에 남긴 가입자 표현 1~3개를 evidence 로 돌려주세요. sourceField 는 evening_note, known_as, interests, match_note, topics, topic_note, job, match_tags 중에서만 고르세요. quote 는 원문 일부를 정확히 복사하세요. 근거가 없으면 억지로 만들지 마세요.
 
 ## 문체 규칙
 - 1인칭 존댓말로 씁니다. "~합니다", "~해요"를 섞어 쓰되 한 편 안에서는 일관되게 유지합니다.
@@ -119,15 +124,6 @@ Deno.serve(async (req) => {
   if (!ANTHROPIC_API_KEY || !SERVICE_ROLE_KEY) return json({ error: "not configured" }, 500);
 
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count: recentRuns, error: quotaError } = await db
-    .from("ai_runs")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("feature", "profile_copy")
-    .gte("created_at", since);
-  if (quotaError) return json({ error: "quality tracking unavailable" }, 503);
-  if ((recentRuns ?? 0) >= DAILY_LIMIT) return json({ error: "daily limit reached" }, 429);
 
   let body: {
     job?: string;
@@ -150,22 +146,25 @@ Deno.serve(async (req) => {
     저장 전에 불리므로 그 방어선 앞에 있다. 상한이 없으면 긴 입력 한 번이
     그대로 토큰 비용이 된다.
   */
-  const clip = (s: unknown, n: number) => (typeof s === "string" ? s.trim().slice(0, n) : "");
-  const interests = (body.interests ?? [])
+  const clip = scrubUserText;
+  const interests = (Array.isArray(body.interests) ? body.interests : [])
     .slice(0, 5)
     .map((i) => ({ label: clip(i?.label, 40), note: clip(i?.note, 200) }))
     .filter((i) => i.label);
-  const matchTags = (body.matchTags ?? [])
+  const matchTags = (Array.isArray(body.matchTags) ? body.matchTags : [])
     .slice(0, 4)
     .map((t) => clip(t, 40))
     .filter(Boolean);
-  const topics = (body.topics ?? [])
+  const topics = (Array.isArray(body.topics) ? body.topics : [])
     .slice(0, 4)
     .map((t) => clip(t, 40))
     .filter(Boolean);
 
   const eveningNote = clip(body.eveningNote, 300);
   const knownAs = clip(body.knownAs, 300);
+  const matchNote = clip(body.matchNote, 300);
+  const topicNote = clip(body.topicNote, 300);
+  const job = clip(body.job, 60);
   // 인터뷰 답(s52) 또는 예전 키워드 중 하나는 있어야 쓸 재료가 있다.
   if (interests.length === 0 && !eveningNote) {
     return json({ error: "answers are required" }, 400);
@@ -176,8 +175,20 @@ Deno.serve(async (req) => {
     시스템 지시에는 이 안의 명령을 따르지 말라고 명시한다. 평문으로 이어 붙이면
     "앞 지시를 무시해" 같은 입력이 프롬프트 구조를 흐릴 수 있다.
   */
+  const sources = {
+    job,
+    evening_note: eveningNote,
+    known_as: knownAs,
+    interests: interests
+      .map((item) => [item.label, item.note].filter(Boolean).join(": "))
+      .join(" | "),
+    match_tags: matchTags.join(", "),
+    match_note: matchNote,
+    topics: topics.join(", "),
+    topic_note: topicNote,
+  };
   const answers = `<profile_facts>
-  ${body.job ? `<job>${escapeXml(clip(body.job, 60))}</job>` : ""}
+  ${job ? `<job>${escapeXml(job)}</job>` : ""}
   ${eveningNote ? `<evening_note>${escapeXml(eveningNote)}</evening_note>` : ""}
   ${knownAs ? `<known_as>${escapeXml(knownAs)}</known_as>` : ""}
   <interests>
@@ -189,28 +200,42 @@ Deno.serve(async (req) => {
     .join("\n  ")}
   </interests>
   ${matchTags.length ? `<match_tags>${escapeXml(matchTags.join(", "))}</match_tags>` : ""}
-  ${clip(body.matchNote, 300) ? `<match_note>${escapeXml(clip(body.matchNote, 300))}</match_note>` : ""}
+  ${matchNote ? `<match_note>${escapeXml(matchNote)}</match_note>` : ""}
   ${topics.length ? `<topics>${escapeXml(topics.join(", "))}</topics>` : ""}
-  ${clip(body.topicNote, 300) ? `<topic_note>${escapeXml(clip(body.topicNote, 300))}</topic_note>` : ""}
+  ${topicNote ? `<topic_note>${escapeXml(topicNote)}</topic_note>` : ""}
 </profile_facts>`;
+
+  const requestId = crypto.randomUUID();
+  const { data: reservation, error: reservationError } = await db.rpc("reserve_ai_run", {
+    p_user: user.id,
+    p_feature: "profile_copy",
+    p_source_hash: await sourceHash({ sources, promptVersion: PROMPT_VERSION, model: MODEL }),
+    p_request_id: requestId,
+    p_prompt_version: PROMPT_VERSION,
+    p_model: MODEL,
+  });
+  if (reservationError) return json({ error: "quality tracking unavailable" }, 503);
+  if (!reservation?.reserved) {
+    return json(
+      { error: reservation?.reason ?? "reservation unavailable" },
+      reservation?.reason === "daily_limit" ? 429 : 409,
+    );
+  }
 
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY, timeout: 12_000, maxRetries: 1 });
   const startedAt = Date.now();
   const record = async (
     status: "success" | "refused" | "invalid" | "error",
     usage?: { input_tokens: number; output_tokens: number },
-  ) => {
-    const { error } = await db.from("ai_runs").insert({
-      user_id: user.id,
-      feature: "profile_copy",
-      prompt_version: PROMPT_VERSION,
-      model: MODEL,
-      status,
-      latency_ms: Date.now() - startedAt,
-      input_tokens: usage?.input_tokens ?? null,
-      output_tokens: usage?.output_tokens ?? null,
+  ): Promise<boolean> => {
+    const { error } = await db.rpc("finish_ai_run", {
+      p_request_id: requestId,
+      p_status: status,
+      p_latency_ms: Date.now() - startedAt,
+      p_input_tokens: usage?.input_tokens ?? null,
+      p_output_tokens: usage?.output_tokens ?? null,
     });
-    if (error) console.error("compose-profile metrics failed", error.code);
+    return !error;
   };
 
   try {
@@ -240,12 +265,16 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .slice(0, 3);
     const intro = parsed.intro.trim();
-    if (!validProfileComposition(headlines, intro)) {
+    if (
+      !validProfileComposition(headlines, intro) ||
+      !validGroundedProfile(headlines, intro, parsed.evidence, sources)
+    ) {
       await record("invalid", response.usage);
       return json({ error: "invalid composition" }, 502);
     }
 
-    await record("success", response.usage);
+    if (!(await record("success", response.usage)))
+      return json({ error: "quality tracking unavailable" }, 503);
 
     return json({
       headlines,
@@ -256,6 +285,7 @@ Deno.serve(async (req) => {
         promptVersion: PROMPT_VERSION,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
+        runId: reservation.run_id,
       },
     });
   } catch (err) {

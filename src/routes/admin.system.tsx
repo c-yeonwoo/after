@@ -6,9 +6,11 @@ import { NoteAction } from "@/components/admin/NoteAction";
 import { Tag } from "@/components/admin/ui";
 import {
   fetchDashboard,
+  fetchAiQuality,
   fetchSystemOverview,
   retryNotifications,
   type AdminSystemOverview,
+  type AdminAiQuality,
 } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/system")({ component: SystemTab });
@@ -84,6 +86,7 @@ function jobHealth(job: AdminSystemOverview["jobs"][number], now: number) {
 function SystemTab() {
   const [data, setData] = useState<AdminSystemOverview | null>(null);
   const [paymentsEnabled, setPaymentsEnabled] = useState<boolean | null>(null);
+  const [aiQuality, setAiQuality] = useState<AdminAiQuality | null>(null);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
@@ -92,15 +95,18 @@ function SystemTab() {
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const [overview, dashboard] = await Promise.allSettled([
+      const [overview, dashboard, ai] = await Promise.allSettled([
         fetchSystemOverview(),
         fetchDashboard(),
+        fetchAiQuality(),
       ]);
       const failed: string[] = [];
       if (overview.status === "fulfilled") setData(overview.value);
       else failed.push("시스템 현황");
       if (dashboard.status === "fulfilled") setPaymentsEnabled(dashboard.value.payments_enabled);
       else failed.push("결제 설정");
+      if (ai.status === "fulfilled") setAiQuality(ai.value);
+      else failed.push("AI 성과");
       setErrors(failed);
       setCheckedAt(new Date());
     } finally {
@@ -334,7 +340,30 @@ function SystemTab() {
         </div>
       </Section>
 
-      <Section title="최근 AI 실행" hint="원문 없이 성공 여부·지연·토큰만 확인합니다.">
+      <Section
+        title="AI 품질 · 최근 14일"
+        hint="초안 생성과 실제 선택은 다릅니다. 원문·생성문은 이 기록에 남기지 않습니다."
+      >
+        {aiQuality ? (
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <Summary label="호출" value={aiQuality.runs} />
+            <Summary label="성공" value={aiQuality.success} />
+            <Summary label="실패 · 거절" value={aiQuality.failed} alert={aiQuality.failed > 0} />
+            <Summary
+              label="완료 기록 없음"
+              value={aiQuality.reserved}
+              alert={aiQuality.reserved > 0}
+            />
+            <Summary label="채택 · 수정" value={`${aiQuality.accepted} · ${aiQuality.edited}`} />
+            <Summary label="사용 안 함" value={aiQuality.discarded} />
+          </div>
+        ) : (
+          <p className="mb-4 text-sm text-muted-foreground">AI 성과를 확인할 수 없습니다.</p>
+        )}
+        <p className="mb-3 text-xs text-muted-foreground">
+          선택 기록은 의견을 남긴 초안만 포함합니다. 미기록을 채택으로 간주하지 않습니다. 완료 기록
+          없음에는 중단된 요청도 포함될 수 있습니다.
+        </p>
         {data.ai.length === 0 ? (
           <Empty>아직 기록된 AI 실행이 없습니다.</Empty>
         ) : (

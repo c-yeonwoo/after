@@ -46,6 +46,7 @@ import {
   PASSWORD_MIN_LENGTH,
   requestEmailCode,
   recordConsent,
+  recordMyAiDecision,
   saveOnboardingStep,
   setPassword,
   startLocalDevSignup,
@@ -288,6 +289,11 @@ function Onboarding() {
     const key = JSON.stringify(payload);
     if (composedKey.current === key) return;
     composedKey.current = key;
+    // An earlier AI draft no longer represents these answers. Preserve only
+    // text the member edited themselves; replace untouched AI copy with the
+    // current rule-based draft while the next request is pending.
+    setIntro((current) => (composed && current === composed.intro ? draft : current));
+    setComposed(null);
 
     let cancelled = false;
     setComposing(true);
@@ -1291,6 +1297,21 @@ function Onboarding() {
               });
               if (composed) {
                 const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+                if (composed.meta?.runId) {
+                  const keptHeadline = composed.headlines.includes(profile.headline.trim());
+                  const keptIntro = normalize(intro) === normalize(composed.intro);
+                  const decision =
+                    keptHeadline && keptIntro
+                      ? "accepted"
+                      : keptHeadline || keptIntro
+                        ? "edited"
+                        : "discarded";
+                  try {
+                    await recordMyAiDecision(composed.meta.runId, decision);
+                  } catch {
+                    // The profile is saved; missing quality telemetry must not block onboarding.
+                  }
+                }
                 await track("profile_composition_saved", {
                   headline: composed.headlines.includes(profile.headline.trim())
                     ? "candidate"

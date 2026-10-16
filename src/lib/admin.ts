@@ -318,6 +318,24 @@ export async function fetchSystemOverview(): Promise<AdminSystemOverview> {
   return data as unknown as AdminSystemOverview;
 }
 
+export type AdminAiQuality = {
+  as_of: string;
+  period_days: number;
+  runs: number;
+  reserved: number;
+  success: number;
+  failed: number;
+  accepted: number;
+  edited: number;
+  discarded: number;
+};
+
+export async function fetchAiQuality(): Promise<AdminAiQuality> {
+  const { data, error } = await supabase.rpc("admin_ai_quality_v2");
+  if (error) throw error;
+  return data as unknown as AdminAiQuality;
+}
+
 export async function fetchNotificationHealth(): Promise<AdminNotificationHealth> {
   const { data, error } = await supabase.rpc("admin_notification_health");
   if (error) throw error;
@@ -407,10 +425,23 @@ export type LikePoolItem = Database["public"]["Functions"]["admin_like_pool"]["R
  * 보내지 않은 채 공개 프로필 재료만 요약한다.
  */
 export type PairBrief = {
-  commonGround: { insight: string; basis: string }[];
+  commonGround: {
+    insight: string;
+    evidence: {
+      person: "a" | "b";
+      sourceField: string;
+      quote: string;
+    }[];
+  }[];
   conversationStarters: string[];
   considerations: string[];
-  meta?: { model: string; promptVersion: string; inputTokens: number; outputTokens: number };
+  meta?: {
+    model: string;
+    promptVersion: string;
+    inputTokens: number;
+    outputTokens: number;
+    runId: number;
+  };
 };
 
 export async function composePairBrief(maleId: string, femaleId: string): Promise<PairBrief> {
