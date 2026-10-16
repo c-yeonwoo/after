@@ -65,6 +65,22 @@ export function validProfileComposition(headlines: string[], intro: string) {
   );
 }
 
+/** The interview may have only one short, ordinary answer. Do not force filler. */
+export function validInterviewComposition(headlines: string[], intro: string) {
+  if (headlines.length !== 1) return false;
+  const headline = headlines[0].trim();
+  const paragraphs = intro.split(/\n\s*\n/).filter((part) => part.trim());
+  return (
+    characterCount(headline) >= 3 &&
+    characterCount(headline) <= 35 &&
+    characterCount(intro.trim()) >= 5 &&
+    characterCount(intro.trim()) <= 300 &&
+    paragraphs.length <= 2 &&
+    !hasBannedStyle(headline) &&
+    !hasBannedStyle(intro)
+  );
+}
+
 type PairBrief = {
   commonGround: { insight: string; basis: string }[];
   conversationStarters: string[];

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import {
   escapeXml,
+  validInterviewComposition,
   validPairBrief,
   validProfileComposition,
 } from "../supabase/functions/_shared/ai-quality";
@@ -11,8 +12,10 @@ import {
   scrubUserText,
   sourceHash,
   validGroundedPairBrief,
+  validGroundedInterview,
   validGroundedProfile,
 } from "../supabase/functions/_shared/ai-grounding";
+import { includedAnswers, newProfileInterview, ownWordsDraft } from "../src/lib/profileInterview";
 
 const headlines = [
   "퇴근 후 산책으로 머리를 식히는 편이에요.",
@@ -286,6 +289,36 @@ assert.equal(containsContact("[연락처]로 알려주세요"), true);
 assert.equal(containsContact("무작정 연락하지 않습니다"), false);
 assert.equal((await sourceHash({ a: "one" })).length, 64);
 assert.notEqual(await sourceHash({ a: "one" }), await sourceHash({ a: "two" }));
+checked += 6;
+
+const briefInterview = newProfileInterview();
+briefInterview.profile.eveningNote = "퇴근 후 동네를 걸어요";
+briefInterview.profile.knownAs = "처음에는 이야기를 듣는 편이에요";
+briefInterview.included = ["eveningNote"];
+assert.deepEqual(includedAnswers(briefInterview), [
+  { id: "eveningNote", text: "퇴근 후 동네를 걸어요" },
+]);
+assert.equal(ownWordsDraft(briefInterview).intro, "퇴근 후 동네를 걸어요.");
+assert.equal(validInterviewComposition(["동네를 걸어요"], "퇴근 후 동네를 걸어요."), true);
+assert.equal(validInterviewComposition(["짧"], "퇴근 후 동네를 걸어요."), false);
+assert.equal(
+  validGroundedInterview(
+    ["동네를 걸어요"],
+    "퇴근 후 동네를 걸어요.",
+    [{ sourceField: "evening_note", quote: "동네를 걸어요" }],
+    { evening_note: "퇴근 후 동네를 걸어요" },
+  ),
+  true,
+);
+assert.equal(
+  validGroundedInterview(
+    ["동네를 걸어요"],
+    "퇴근 후 동네를 걸어요.",
+    [{ sourceField: "evening_note", quote: "마라톤을 뛰어요" }],
+    { evening_note: "퇴근 후 동네를 걸어요" },
+  ),
+  false,
+);
 checked += 6;
 
 assert.ok(checked >= 50, "AI 품질 회귀 케이스는 최소 50개여야 합니다.");

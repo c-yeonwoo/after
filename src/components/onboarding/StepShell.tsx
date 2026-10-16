@@ -11,6 +11,7 @@ export function StepShell({
   description,
   children,
   footer,
+  progressLabel,
 }: {
   step: number;
   total: number;
@@ -19,6 +20,7 @@ export function StepShell({
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
+  progressLabel?: string;
 }) {
   /*
     가입은 모든 단계가 "입력하고 → 아래 버튼을 누른다" 구조다. 키보드가 뜨면
@@ -43,7 +45,7 @@ export function StepShell({
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
           <span className="shrink-0 text-2xs font-medium text-muted-foreground tabular-nums">
-            {step} / {total}
+            {progressLabel ?? `${step} / ${total}`}
           </span>
         </div>
         <div
@@ -52,7 +54,7 @@ export function StepShell({
           aria-valuenow={step}
           aria-valuemin={1}
           aria-valuemax={total}
-          aria-label="가입 진행률"
+          aria-label={progressLabel ? "소개글 작성 진행률" : "가입 진행률"}
         >
           <div
             className="h-full origin-left rounded-full bg-foreground transition-transform duration-200 ease-out motion-reduce:transition-none"
