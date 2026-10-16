@@ -95,7 +95,9 @@ Deno.serve(async (req) => {
   }
 
   let verification: {
+    id?: string;
     status?: string;
+    channel?: { key?: string; type?: string };
     verifiedCustomer?: { birthDate?: string; phoneNumber?: string; di?: string };
   };
   try {
@@ -111,6 +113,14 @@ Deno.serve(async (req) => {
   const customer = verification.verifiedCustomer;
   if (verification.status !== "VERIFIED" || !customer) {
     return json({ error: "not verified" }, 409);
+  }
+  // A VERIFIED result from another channel (or a test channel) is not production proof.
+  if (
+    verification.id !== id ||
+    verification.channel?.key !== channelKey ||
+    verification.channel?.type !== "LIVE"
+  ) {
+    return json({ error: "verification channel mismatch" }, 409);
   }
   const birth = customer.birthDate;
   const phone = normalizePhone(customer.phoneNumber ?? "");

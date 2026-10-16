@@ -5,7 +5,7 @@
 ## 대표가 먼저 해야 할 일
 
 1. 포트원 V2 계정에서 **KCP 휴대폰 본인확인** 서비스 계약·채널을 신청한다. 포트원은 결제창을 대체하는 것이 아니라 통신사 본인확인 연결에만 쓴다. KCP에서 인증 결과 URL `checkout-service.prod.iamport.co`와 **신규 연동방식(V2)** 사용을 설정한다. [KCP 연동 안내](https://developers.portone.io/opi/ko/integration/pg/v2/kcp-v2-identity-verification?v=v2)
-2. 발급받은 `PORTONE_STORE_ID`, `PORTONE_KCP_IDENTITY_CHANNEL_KEY`, `PORTONE_API_SECRET`을 **Supabase Edge Functions secrets**에 저장한다. 저장소/메신저에 원문을 올리지 않는다. 채널은 휴대폰 본인확인 전용으로 사용하고, 계약 결과에서 `birthDate`, `phoneNumber`, `di`가 실제로 제공되는지 확인한다. [포트원 결과 필드](https://developers.portone.io/opi/ko/extra/identity-verification/readme-v2)
+2. 발급받은 `PORTONE_STORE_ID`, `PORTONE_KCP_IDENTITY_CHANNEL_KEY`, `PORTONE_API_SECRET`을 **Supabase Edge Functions secrets**에 저장한다. 저장소/메신저에 원문을 올리지 않는다. 채널은 **LIVE 타입의 KCP 휴대폰 본인확인 전용**으로 사용하고, 계약 결과에서 `birthDate`, `phoneNumber`, `di`가 실제로 제공되는지 확인한다. TEST 채널 결과는 운영 서버에서 거절한다. [포트원 결과 필드](https://developers.portone.io/opi/ko/extra/identity-verification/readme-v2)
 3. 개인정보 처리방침에 본인확인 대행사, 처리 항목(검증 생년월일·번호·DI의 해시), 보유/파기 및 위탁 사항을 검토·반영한다. 실제 법률 문구와 동의 범위는 대표/전문가가 확인한다.
 
 ## 기술 롤아웃 순서
@@ -19,5 +19,5 @@
 ## 보안·품질 기준
 
 - `finish_carrier_identity`는 service role 전용이며 본인과 결부된 인증 시도만 완료한다. 원본 DI는 저장하지 않고 SHA-256 해시를 비공개 테이블에 보관해 중복가입을 막는다. 탈퇴 시 해시·인증 메타데이터·번호를 파기한다.
-- KCP에서 필수 필드가 빠졌거나 PortOne 조회가 실패하면 인증되지 않는다. 화면이 직접 생년월일/인증 시각을 설정할 수 없다.
+- KCP에서 필수 필드가 빠졌거나 PortOne 조회가 실패하면 인증되지 않는다. 조회된 인증 ID, 설정한 채널 키, LIVE 타입이 모두 일치해야 한다. 화면이 직접 생년월일/인증 시각을 설정할 수 없다.
 - `identity_required=false` 상태는 **출시 준비 상태가 아니다.** 기존 문자 OTP와 자가 입력 생년월일이 계속 유효하다. 토스 심사 제출 또는 유료 출시 전에 운영 플래그와 실제 인증 기록을 확인한다.
