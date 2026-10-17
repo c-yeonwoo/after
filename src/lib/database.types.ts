@@ -3361,6 +3361,8 @@ export type Database = {
       }
       admin_policy_preview: { Args: never; Returns: Json }
       admin_preview_ops_backfill: { Args: never; Returns: Json }
+      admin_curation_recommendations: { Args: { p_male: string }; Returns: Json }
+      admin_apply_pair_reason: { Args: { p_male: string; p_female: string; p_source_hash: string; p_run_id: number }; Returns: string }
       admin_profile_preferences: { Args: { p_user: string }; Returns: Json }
       admin_profile_story: { Args: { p_user: string }; Returns: Json }
       admin_queue: {

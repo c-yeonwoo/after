@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { NoteAction } from "@/components/admin/NoteAction";
@@ -22,6 +22,9 @@ import {
   setQueue,
   setQueueReason,
   composePairBrief,
+  fetchCurationRecommendations,
+  approvePairReason,
+  type CurationRecommendations,
   type CurationTarget,
   type LikePoolItem,
   type PairBrief,
@@ -46,6 +49,10 @@ const AI_SOURCE_LABELS: Record<string, string> = {
   interests: "관심사",
   match_tags: "관계 선호",
   topics: "대화 주제",
+  intro: "공개 소개글",
+  story_daily_life: "인터뷰 · 일상",
+  story_getting_closer: "인터뷰 · 가까워지는 방식",
+  story_conversation: "인터뷰 · 나눌 이야기",
 };
 
 const DATE = new Intl.DateTimeFormat("ko-KR", { dateStyle: "short" });
@@ -141,6 +148,7 @@ function CurationTab() {
       <div className="min-w-0">
         {male ? (
           <Workbench
+            key={male}
             maleId={male}
             target={targets?.find((t) => t.id === male)}
             onSaved={loadTargets}
@@ -174,11 +182,26 @@ function Workbench({
   >(null);
   const [windows, setWindows] = useState<Map<string, AdminMeetWindow>>(new Map());
   const [windowError, setWindowError] = useState(false);
+  const [recommendations, setRecommendations] = useState<CurationRecommendations | null>(null);
+  const [recommendationError, setRecommendationError] = useState(false);
+  const [refreshingRecommendations, setRefreshingRecommendations] = useState(false);
+  const previewGeneration = useRef(0);
+  const refreshRecommendations = useCallback(async () => {
+    setRefreshingRecommendations(true);
+    try {
+      setRecommendations(await fetchCurationRecommendations(maleId));
+      setRecommendationError(false);
+    } catch {
+      setRecommendationError(true);
+    } finally {
+      setRefreshingRecommendations(false);
+    }
+  }, [maleId]);
 
   const load = useCallback(async () => {
+    previewGeneration.current += 1;
     const [p, q] = await Promise.all([fetchLikePool(maleId), fetchQueue(maleId)]);
-    setPool(p);
-    setSaved(q);
+    await refreshRecommendations();
     try {
       const all = await adminMeetWindows([
         maleId,
@@ -191,9 +214,12 @@ function Workbench({
       setWindows(new Map());
       setWindowError(true);
     }
+    // Publish the queue and its ordering together after dependent data is ready.
+    setPool(p);
+    setSaved(q);
     setOrder(q.map((c) => c.female_id));
     setPreview(null);
-  }, [maleId]);
+  }, [maleId, refreshRecommendations]);
 
   useEffect(() => {
     void load();
@@ -205,10 +231,11 @@ function Workbench({
 
   const showPreview = async (card: LikePoolItem | QueueCard | null) => {
     if (!card) return;
+    const current = ++previewGeneration.current;
     const id = "female_id" in card ? card.female_id : card.id;
     try {
       const story = await fetchAdminProfileStory(id);
-      setPreview({ ...card, profile_story: story });
+      if (current === previewGeneration.current) setPreview({ ...card, profile_story: story });
     } catch {
       toast.error("프로필을 불러오지 못했어요.");
     }
@@ -216,6 +243,7 @@ function Workbench({
 
   const inQueue = new Set(order);
   const available = (pool ?? []).filter((p) => !inQueue.has(p.id));
+  const recommendationById = new Map((recommendations?.items ?? []).map((r) => [r.female_id, r]));
   const overlap = (femaleId: string) => {
     const maleWindow = windows.get(maleId);
     const femaleWindow = windows.get(femaleId);
@@ -237,8 +265,14 @@ function Workbench({
     if (slots === 0) return;
     // 교집합이 확인된 후보를 먼저 제안하고, 같은 조건에서는 오래 기다린 순서를 유지한다.
     // 순위는 초안일 뿐이며 저장 전 운영자가 프로필과 의사를 확인한다.
+    // Server ordering includes bounded preference signals and overdue-member
+    // review priority. Unknown data is not an incompatibility or exclusion.
+    const ranks = new Map(
+      (recommendations?.items ?? []).map((item, index) => [item.female_id, index]),
+    );
     const ranked = [...available].sort(
-      (a, b) => Number((overlap(b.id) ?? 0) > 0) - Number((overlap(a.id) ?? 0) > 0),
+      (a, b) =>
+        (ranks.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (ranks.get(b.id) ?? Number.MAX_SAFE_INTEGER),
     );
     setOrder([...order, ...ranked.slice(0, slots).map((p) => p.id)]);
   }
@@ -271,6 +305,34 @@ function Workbench({
           </span>
         </header>
 
+        <section
+          className="mt-4 rounded-surface border border-border p-4"
+          aria-label="추천 배치 상태"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold">추천 검토</h3>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={refreshingRecommendations}
+              onClick={() => void refreshRecommendations()}
+            >
+              {refreshingRecommendations ? "검사 중…" : "추천 다시 검사"}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            입력된 일정·첫 만남·가까워지는 방식·대화 선호를 비교합니다. 3일 이상 기다린 분은 우선
+            검토하며, 저장 전에는 누구에게도 소개를 보내지 않습니다.
+          </p>
+          <p role="status" className="mt-2 text-2xs text-muted-foreground">
+            {recommendationError
+              ? "추천 검사 실패 · 기존 큐는 유지됩니다. 프로필을 직접 확인하거나 다시 검사하세요."
+              : recommendations?.batch
+                ? `정기 배치 ${new Date(recommendations.batch.last_success_at).toLocaleString("ko-KR")} · ${recommendations.batch.pair_count}쌍${Date.now() - Date.parse(recommendations.batch.last_success_at) > 20 * 60_000 ? " · 정기 배치 지연" : ""}`
+                : "정기 배치 첫 실행 전 · 현재 후보는 별도로 검사합니다."}
+          </p>
+        </section>
+
         {/* ── 큐 ── */}
         <section className="mt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -278,14 +340,19 @@ function Workbench({
               위 {DELIVER_WINDOW}장만 전송됩니다. 나머지는 자리가 비면 올라갑니다.
             </p>
             {order.length < DELIVER_WINDOW && available.length > 0 ? (
-              <Button size="sm" variant="outline" onClick={fillDeliveryWindow}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={fillDeliveryWindow}
+                disabled={recommendationError || refreshingRecommendations || !recommendations}
+              >
                 전송 슬롯 자동 채우기
               </Button>
             ) : null}
           </div>
           {order.length < DELIVER_WINDOW && available.length > 0 ? (
             <p className="mt-1 text-2xs text-muted-foreground">
-              가능한 요일이 겹치는 후보를 먼저 담습니다. 저장 전 프로필과 순서를 검토하세요.
+              추천 근거와 대기 시간을 기준으로 초안을 담습니다. 저장 전 프로필과 순서를 검토하세요.
             </p>
           ) : null}
           {order.length === 0 ? (
@@ -452,6 +519,11 @@ function Workbench({
                     <p className="mt-0.5 text-2xs text-muted-foreground">
                       <TimeFit count={overlap(p.id)} />
                     </p>
+                    {recommendationById.get(p.id)?.preference_dimensions ? (
+                      <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
+                        선호 {recommendationById.get(p.id)!.preference_dimensions}개 영역 일치 확인
+                      </p>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"
@@ -483,7 +555,10 @@ function Workbench({
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">상대에게 보이는 프로필</p>
               <button
-                onClick={() => setPreview(null)}
+                onClick={() => {
+                  previewGeneration.current += 1;
+                  setPreview(null);
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 닫기
@@ -496,8 +571,13 @@ function Workbench({
                 들어온다. 여성 id 를 담는 필드 이름이 서로 다르므로 여기서 고른다.
               */}
               <PairBriefCard
+                key={`${maleId}:${"female_id" in preview ? preview.female_id : preview.id}`}
                 maleId={maleId}
                 femaleId={"female_id" in preview ? preview.female_id : preview.id}
+                queued={saved.some(
+                  (s) => s.female_id === ("female_id" in preview ? preview.female_id : preview.id),
+                )}
+                onApproved={() => void load()}
               />
             </div>
           </div>
@@ -517,10 +597,22 @@ function Workbench({
  * 버튼을 누를 때만 만든다. 카드를 훑을 때마다 모델을 부르면 비용만 생기고,
  * 정작 큐레이터가 원 프로필을 읽는 과정도 흐려진다.
  */
-function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string }) {
+function PairBriefCard({
+  maleId,
+  femaleId,
+  queued,
+  onApproved,
+}: {
+  maleId: string;
+  femaleId: string;
+  queued: boolean;
+  onApproved: () => void;
+}) {
   const [brief, setBrief] = useState<PairBrief | null>(null);
   const [busy, setBusy] = useState(false);
   const [decision, setDecision] = useState<"accepted" | "discarded" | null>(null);
+  const [approving, setApproving] = useState(false);
+  const sending = useRef(false);
 
   useEffect(() => {
     setBrief(null);
@@ -532,16 +624,18 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
     <section className="mt-6 border-t border-border pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h3 className="text-xs font-semibold">페어 브리프</h3>
+          <h3 className="text-xs font-semibold">인터뷰 기반 소개 이유</h3>
           <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-            두 사람의 원문을 다시 읽기 위한 메모입니다. 소개 순서나 결정을 자동으로 바꾸지 않습니다.
+            공개 인터뷰에서 연결점을 찾고 근거를 검토합니다. 승인 전에는 회원에게 보이지 않습니다.
           </p>
         </div>
         <Button
           size="sm"
           variant="outline"
-          disabled={busy}
+          disabled={busy || approving}
           onClick={() => {
+            if (sending.current) return;
+            sending.current = true;
             setBusy(true);
             setDecision(null);
             composePairBrief(maleId, femaleId)
@@ -549,15 +643,78 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
               .catch(() =>
                 toast.error("브리프를 만들지 못했습니다. 프로필과 문답으로 계속 판단해 주세요."),
               )
-              .finally(() => setBusy(false));
+              .finally(() => {
+                sending.current = false;
+                setBusy(false);
+              });
           }}
         >
-          {busy ? "만드는 중…" : brief ? "다시 만들기" : "브리프 만들기"}
+          {busy ? "작성·근거 확인 중…" : brief ? "설명 다시 확인" : "소개 이유 만들기"}
         </Button>
       </div>
 
       {brief ? (
         <div className="mt-3 space-y-4 rounded-surface border border-border bg-muted/30 p-3 text-xs leading-relaxed">
+          {brief.recommendation ? (
+            <div>
+              <p className="font-semibold">회원에게 보일 소개 이유 · 초안</p>
+              <p className="mt-2 break-keep text-sm leading-relaxed">{brief.recommendation.text}</p>
+              <div className="mt-2 space-y-1 text-muted-foreground">
+                {brief.recommendation.evidence.map((e, i) => (
+                  <p key={i}>
+                    {e.person === "a" ? "남성" : "여성"} ·{" "}
+                    {AI_SOURCE_LABELS[e.sourceField] ?? "공개 원문"} · “{e.quote}”
+                  </p>
+                ))}
+              </div>
+              {queued ? (
+                <Button
+                  className="mt-3 w-full"
+                  size="sm"
+                  disabled={busy || approving || !brief.meta?.sourceHash}
+                  onClick={async () => {
+                    if (sending.current || !brief.meta?.sourceHash || !brief.meta.draftRunId)
+                      return;
+                    sending.current = true;
+                    setApproving(true);
+                    try {
+                      await approvePairReason(
+                        maleId,
+                        femaleId,
+                        brief.meta.sourceHash,
+                        brief.meta.draftRunId,
+                      );
+                      toast.success("소개 이유를 승인했습니다. 두 분에게 같은 설명을 전합니다.");
+                      onApproved();
+                    } catch {
+                      toast.error(
+                        "현재 프로필과 큐를 다시 확인해 주세요. 바뀐 정보가 있으면 설명을 다시 만들어야 합니다.",
+                      );
+                    } finally {
+                      sending.current = false;
+                      setApproving(false);
+                    }
+                  }}
+                >
+                  {approving ? "승인 중…" : "근거 확인 후 소개에 반영"}
+                </Button>
+              ) : (
+                <p className="mt-2 text-muted-foreground">
+                  후보를 큐에 저장한 뒤 소개 이유를 승인할 수 있습니다.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              두 사람을 연결해 설명할 공개 근거가 아직 충분하지 않아요. 억지로 추천 문장을 만들지
+              않았습니다.
+            </p>
+          )}
+          {brief.meta?.cached ? (
+            <p className="text-muted-foreground">
+              현재 공개 자료로 검토한 초안을 다시 불러왔습니다. 추가 AI 호출은 하지 않았습니다.
+            </p>
+          ) : null}
           {brief.commonGround.length ? (
             <div>
               <p className="font-semibold text-foreground">함께 볼 만한 점</p>
@@ -603,11 +760,13 @@ function PairBriefCard({ maleId, femaleId }: { maleId: string; femaleId: string 
                   key={choice}
                   type="button"
                   className="text-xs underline-offset-2 hover:underline"
-                  onClick={() =>
-                    void recordMyAiDecision(brief.meta!.runId, choice)
+                  onClick={() => {
+                    const runId = brief.meta?.runId;
+                    if (!runId) return;
+                    void recordMyAiDecision(runId, choice)
                       .then(() => setDecision(choice))
-                      .catch(() => toast.error("의견을 기록하지 못했습니다."))
-                  }
+                      .catch(() => toast.error("의견을 기록하지 못했습니다."));
+                  }}
                 >
                   {choice === "accepted" ? "판단에 도움 됨" : "사용 안 함"}
                 </button>
@@ -647,7 +806,7 @@ function Thumb({ path }: { path: string | null }) {
 }
 
 /**
- * 남성에게 보이는 운영팀 한 줄(s50). 열기 전 티저와 연 뒤 소개 맨 위에 나온다.
+ * 두 회원에게 같은 문구로 전하는 운영팀의 소개 이유.
  * 감사용 사유(note)와 다르다 — 이건 받는 사람이 읽는 문장이다. 점수·궁합·"먼저 관심"은
  * 쓰지 않는다. 두 사람이 직접 적은 것에서 겹치는 이야기를 사실대로 한 줄.
  */
@@ -668,8 +827,8 @@ function ReasonEditor({
   return (
     <div className="mt-2 flex items-center gap-2 pl-8">
       <Input
-        aria-label="남성에게 보이는 한 줄"
-        placeholder="남성에게 보이는 한 줄 (선택, 120자) — 예: 두 분 다 퇴근 후 러닝을 적으셨어요."
+        aria-label="두 분에게 전할 소개 이유"
+        placeholder="두 분에게 전할 소개 이유 (선택, 120자)"
         maxLength={120}
         value={value}
         disabled={busy}

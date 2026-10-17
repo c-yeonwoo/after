@@ -18,6 +18,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { demoStoryUpgradeSql } from "./lib/demo-profile-stories.mjs";
 
 const DB = ["-h", "127.0.0.1", "-p", "55322", "-U", "postgres", "-d", "postgres", "-qtA"];
 const API = "http://127.0.0.1:55321";
@@ -277,6 +278,8 @@ for (const p of PEOPLE) {
       terms_agreed_at = coalesce(profiles.terms_agreed_at, now()),
       privacy_agreed_at = coalesce(profiles.privacy_agreed_at, now());
   `);
+  const storySql = demoStoryUpgradeSql(id, p.key, p.headline);
+  if (storySql) sql(storySql);
 }
 
 /* ── 2. 프로필 사진 ────────────────────────────────────────────────── */

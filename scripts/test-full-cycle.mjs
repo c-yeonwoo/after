@@ -29,7 +29,7 @@ const report = {
   run,
   environment: "local",
   browser: process.env.AFTER_TEST_BROWSER === "webkit" ? "webkit" : "chromium",
-  fixtures: ["company email", "SMS delivery", "PG provider"],
+  fixtures: ["company email", "SMS delivery", "PG provider", "pair-copy provider (UI fixture)"],
   checks: [],
   personas: [],
 };
@@ -349,7 +349,7 @@ async function purchase(person, kind) {
   await screen(page, `payment-${person.key}-${kind}`);
 }
 
-async function openAndRequest(male, beta = false) {
+async function openAndRequest(male, beta = false, expectedReason) {
   const page = male.page;
   await page.goto(`${base}/intro`);
   await page
@@ -358,6 +358,11 @@ async function openAndRequest(male, beta = false) {
       exact: true,
     })
     .click();
+  if (expectedReason)
+    await page
+      .getByLabel("소개 이유", { exact: true })
+      .getByText(expectedReason, { exact: true })
+      .waitFor();
   await page
     .getByRole("button", { name: beta ? "만남 요청하기" : "만남 티켓 쓰기", exact: true })
     .click();
@@ -747,6 +752,115 @@ try {
       );
       await screen(ap, `operator-queue-${m.key}`);
     });
+  const approvedReason =
+    "서로가 보내는 하루를 읽어보고 두 분의 이야기를 이어드리고 싶었어요. 처음에는 부담 없이 이야기를 나눠 보시면 좋겠어요.";
+  await check(
+    "operator reviews grounded prose and explicitly approves the exact draft",
+    async () => {
+      const femaleId = sql(
+        `select female_id from intro_queue where male_id='${m1.id}' order by position limit 1`,
+      );
+      const woman = personas.find((p) => p.id === femaleId);
+      const context = await service.rpc("pair_brief_context", {
+        p_male: m1.id,
+        p_female: femaleId,
+      });
+      assert.ifError(context.error);
+      assert.ok(context.data?.source_hash);
+      const requestId = randomUUID();
+      const reserved = await service.rpc("reserve_ai_run", {
+        p_user: admin.id,
+        p_feature: "pair_brief",
+        p_source_hash: context.data.source_hash,
+        p_request_id: requestId,
+        p_prompt_version: "UI-fixture",
+        p_model: "UI-fixture",
+      });
+      assert.ifError(reserved.error);
+      assert.equal(reserved.data?.reserved, true);
+      const finished = await service.rpc("finish_ai_run", {
+        p_request_id: requestId,
+        p_status: "success",
+        p_latency_ms: 1,
+        p_input_tokens: 0,
+        p_output_tokens: 0,
+      });
+      assert.ifError(finished.error);
+      const pick = (person) => {
+        const section = person.profile_story?.sections?.[0];
+        return section
+          ? { sourceField: `story_${section.id}`, quote: section.answer.slice(0, 40) }
+          : { sourceField: "intro", quote: person.intro.slice(0, 40) };
+      };
+      const brief = {
+        verified: true,
+        commonGround: [],
+        conversationStarters: [
+          "요즘의 일상을 이야기해 보세요.",
+          "처음 만날 때 편한 자리를 물어보세요.",
+          "최근 관심이 가는 것부터 나눠 보세요.",
+        ],
+        considerations: [],
+        recommendation: {
+          text: approvedReason,
+          evidence: [
+            { person: "a", ...pick(context.data.sources.a) },
+            { person: "b", ...pick(context.data.sources.b) },
+          ],
+        },
+      };
+      const stored = await service.rpc("store_pair_brief_draft", {
+        p_male: m1.id,
+        p_female: femaleId,
+        p_hash: context.data.source_hash,
+        p_brief: brief,
+        p_run_id: reserved.data.run_id,
+        p_prompt: "UI-fixture",
+        p_model: "UI-fixture",
+        p_actor: admin.id,
+      });
+      assert.ifError(stored.error);
+      assert.equal(stored.data, true);
+      await ap.route("**/functions/v1/compose-pair-brief", (route) =>
+        route.fulfill({
+          json: {
+            ...brief,
+            meta: {
+              sourceHash: context.data.source_hash,
+              model: "UI-fixture",
+              promptVersion: "UI-fixture",
+              runId: reserved.data.run_id,
+              draftRunId: reserved.data.run_id,
+              cached: false,
+            },
+          },
+        }),
+      );
+      await ap.goto(`${base}/admin/curation?male=${m1.id}`);
+      await ap
+        .locator("ol")
+        .getByRole("button", { name: new RegExp(woman.name) })
+        .click();
+      await ap.getByRole("button", { name: "소개 이유 만들기", exact: true }).click();
+      await ap.getByText(approvedReason, { exact: true }).waitFor();
+      assert.equal(
+        sql(
+          `select reason is null from intro_queue where male_id='${m1.id}' and female_id='${femaleId}'`,
+        ),
+        "t",
+      );
+      await ap.getByRole("button", { name: "근거 확인 후 소개에 반영", exact: true }).click();
+      await ap
+        .getByText("소개 이유를 승인했습니다. 두 분에게 같은 설명을 전합니다.", { exact: true })
+        .waitFor();
+      assert.equal(
+        sql(`select reason from intro_queue where male_id='${m1.id}' and female_id='${femaleId}'`),
+        approvedReason,
+      );
+      await ap.unroute("**/functions/v1/compose-pair-brief");
+      await screen(ap, "operator-approved-pair-reason");
+    },
+  );
   await setPaymentsInUI(ap, true);
   for (const m of [m1, m2])
     for (const kind of ["intro", "meeting"])
@@ -766,12 +880,16 @@ try {
     await homeObserver
       .getByRole("heading", { name: "마음을 남긴 소개가 있어요.", exact: true })
       .waitFor();
-    success = await openAndRequest(m1);
+    success = await openAndRequest(m1, false, approvedReason);
     const f = personas.find((p) => p.id === success.female_id);
     success.female = f;
     await homeObserver
       .getByRole("link", { name: "요청 확인하기", exact: true })
       .waitFor({ timeout: 25000 });
+    await f.page
+      .getByLabel("소개 이유", { exact: true })
+      .getByText(approvedReason, { exact: true })
+      .waitFor();
     await f.page
       .getByRole("button", { name: /이 날로 정하기/ })
       .first()
@@ -1323,6 +1441,8 @@ try {
       "cleanup ownership",
     );
     sql(`begin;
+      delete from pair_brief_drafts where generated_by in (${listed}) or male_id in (${listed}) or female_id in (${listed});
+      delete from ai_runs where user_id in (${listed});
       delete from support_requests where user_id in (${listed}) or responded_by in (${listed});
       delete from admin_actions where actor_id in (${listed}) or target_user in (${listed});
       delete from no_show_reports where reporter_id in (${listed}) or accused_id in (${listed});

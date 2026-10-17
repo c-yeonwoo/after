@@ -1392,6 +1392,7 @@ export async function getMeetingCounterpart(meeting: Meeting): Promise<PublicPro
 export type MeetingRequest = {
   meeting: Meeting;
   candidate: PublicProfile;
+  reason: string | null;
   deadline_at: string | null;
   server_as_of: string | null;
 };
@@ -1418,7 +1419,7 @@ export async function listMeetingsAwaitingMyPrefs(
 
   const { data: intros, error: introErr } = await supabase
     .from("intros")
-    .select("id, male_id")
+    .select("id, male_id, reason")
     .eq("female_id", session.user.id)
     .is("closed_at", null);
   if (introErr) throw introErr;
@@ -1439,6 +1440,7 @@ export async function listMeetingsAwaitingMyPrefs(
   if (!meetings?.length) return [];
 
   const maleByIntro = new Map(intros.map((i) => [i.id, i.male_id]));
+  const reasonByIntro = new Map(intros.map((i) => [i.id, i.reason]));
   // 건별로 getProfile 을 돌면 N+1 이 된다(진단 PERF-3). 한 번에 모아 온다.
   const [profiles, deadlineResult] = await Promise.all([
     getProfiles(
@@ -1463,6 +1465,7 @@ export async function listMeetingsAwaitingMyPrefs(
           {
             meeting,
             candidate,
+            reason: reasonByIntro.get(meeting.intro_id) ?? null,
             deadline_at: deadline?.deadline_at ?? null,
             server_as_of: deadline?.as_of ?? null,
           },
