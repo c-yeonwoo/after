@@ -27,6 +27,7 @@ import { BRAND, HUBS, isCompanyEmail, OPEN_HUBS } from "@/lib/brand";
 import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import {
   authErrorMessage,
+  createSignupProfile,
   loadProfileInterviewDraft,
   LOCAL_DEV_AUTH_BYPASS,
   OTP_MAX_LENGTH,
@@ -40,7 +41,7 @@ import {
   saveOnboardingStep,
   setPassword,
   startLocalDevSignup,
-  verifyEmailCode,
+  verifySignupEmail,
   type Profile,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
@@ -106,13 +107,14 @@ function Onboarding() {
   const navigate = useNavigate();
   const { edit } = Route.useSearch();
   const editing = Boolean(edit);
-  const { me, ready, refresh } = useMe();
+  const { me, ready, refresh, setMe } = useMe();
   const [step, setStep] = useState(editing ? 2 : 1);
   const [gender, setGender] = useState<Gender | null>(null);
   const [hubId, setHubId] = useState<string | null>(SKIP_HUB_STEP ? OPEN_HUBS[0].id : null);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [autoFilled, setAutoFilled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
@@ -160,6 +162,10 @@ function Onboarding() {
     if (!me) {
       // 수정 진입인데 세션이 없으면 나간다. 신규 가입은 아직 me 가 없는 게 정상이다.
       if (editing) navigate({ to: "/" });
+      return;
+    }
+    if (!editing && me.onboarding_step >= 7) {
+      navigate({ to: "/home", replace: true });
       return;
     }
     if (resumed) return;
@@ -519,8 +525,12 @@ function Onboarding() {
         step={shown(4)}
         total={TOTAL}
         eyebrow="회사 이메일 인증"
-        title="회사 이메일로 인증해 주세요"
-        description="주소는 프로필에 노출되지 않습니다."
+        title={emailVerified ? "로그인 비밀번호를 정해 주세요" : "회사 이메일로 인증해 주세요"}
+        description={
+          emailVerified
+            ? "다음부터는 이 비밀번호로 로그인할 수 있어요."
+            : "주소는 프로필에 노출되지 않습니다."
+        }
       >
         <label className="text-sm font-semibold text-foreground" htmlFor="work-email">
           회사 이메일
@@ -532,7 +542,14 @@ function Onboarding() {
           autoComplete="email"
           placeholder="name@company.co.kr"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setCodeSent(false);
+            setEmailVerified(false);
+            setCode("");
+            setAuthError(null);
+          }}
+          disabled={emailVerified}
           aria-invalid={email.length > 3 && !emailValid}
           aria-describedby={
             email.length > 3 && !emailValid ? "work-email-error" : "work-email-hint"
@@ -554,7 +571,7 @@ function Onboarding() {
           </p>
         )}
 
-        {codeSent && !LOCAL_DEV_AUTH_BYPASS ? (
+        {codeSent && !emailVerified && !LOCAL_DEV_AUTH_BYPASS ? (
           <div className="mt-6">
             <label className="text-sm font-semibold text-foreground" htmlFor="code">
               인증 코드
@@ -592,7 +609,7 @@ function Onboarding() {
           </div>
         ) : null}
 
-        {codeSent && LOCAL_DEV_AUTH_BYPASS ? (
+        {codeSent && !emailVerified && LOCAL_DEV_AUTH_BYPASS ? (
           <div className="mt-6 rounded-surface border border-primary/25 bg-primary/10 px-4 py-3">
             <p className="text-sm font-semibold text-foreground">로컬 개발 환경</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -611,7 +628,7 @@ function Onboarding() {
           </p>
         ) : null}
 
-        {codeSent ? (
+        {emailVerified ? (
           <div className="mt-6">
             <label className="text-sm font-semibold text-foreground" htmlFor="signup-password">
               비밀번호
@@ -631,7 +648,7 @@ function Onboarding() {
         ) : null}
 
         {/* 계정이 실제로 만들어지는 지점이므로 동의를 여기서 받는다 (PRD 266). */}
-        {codeSent ? (
+        {emailVerified ? (
           <label className="mt-7 flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
@@ -664,26 +681,16 @@ function Onboarding() {
           <Button variant="ghost" onClick={() => setStep(SKIP_HUB_STEP ? 1 : 3)}>
             이전
           </Button>
-          {codeSent ? (
+          {emailVerified ? (
             <Button
               className="flex-1"
               size="lg"
-              disabled={
-                (!LOCAL_DEV_AUTH_BYPASS && code.length < OTP_MIN_LENGTH) ||
-                pw.length < PASSWORD_MIN_LENGTH ||
-                !agreed ||
-                authBusy
-              }
+              disabled={pw.length < PASSWORD_MIN_LENGTH || !agreed || authBusy}
               onClick={async () => {
                 setAuthError(null);
                 setAuthBusy(true);
                 try {
-                  const created = await verifyEmailCode(
-                    email,
-                    code,
-                    gender ?? "female",
-                    hubId ?? "gangnam",
-                  );
+                  const created = await createSignupProfile(gender ?? "female", hubId ?? "gangnam");
                   // 동의는 서버에 시각·버전으로 남긴다. 이게 없으면
                   // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
                   // 인증 직후 바로 건다. 여기서 실패해도 계정은 이미 만들어진
@@ -694,9 +701,9 @@ function Onboarding() {
                   } catch {
                     toast("비밀번호는 나중에 설정에서 정해 주세요.");
                   }
-                  await recordConsent();
+                  setMe(await recordConsent());
                   setUserId(created.id);
-                  // 다시 인증하는 사람(이미 번호를 확인한 계정)은 건너뛴다.
+                  // 가입 중 재시도해 이미 번호를 확인한 계정이면 건너뛴다.
                   setStep(
                     (
                       carrierIdentityEnabled
@@ -713,11 +720,44 @@ function Onboarding() {
                 }
               }}
             >
-              {authBusy
-                ? "확인 중…"
-                : LOCAL_DEV_AUTH_BYPASS
-                  ? "개발 환경으로 계속"
-                  : "인증하고 계속"}
+              {authBusy ? "저장 중…" : "가입 계속하기"}
+            </Button>
+          ) : codeSent ? (
+            <Button
+              className="flex-1"
+              size="lg"
+              disabled={(!LOCAL_DEV_AUTH_BYPASS && code.length < OTP_MIN_LENGTH) || authBusy}
+              onClick={async () => {
+                setAuthError(null);
+                setAuthBusy(true);
+                try {
+                  const result = await verifySignupEmail(email, code);
+                  if (result.kind === "closed") {
+                    setAuthError(
+                      result.state === "withdrawn"
+                        ? "탈퇴한 계정입니다. 다른 회사 이메일로 새로 가입해 주세요."
+                        : "이용이 중지된 계정입니다. 문의해 주세요.",
+                    );
+                  } else if (result.kind === "existing") {
+                    setMe(result.profile);
+                    if (result.profile.onboarding_step >= 7) {
+                      toast("이미 가입된 계정으로 로그인했어요.");
+                      navigate({ to: "/home", replace: true });
+                    } else {
+                      toast("이전에 시작한 가입을 이어갈게요.");
+                      setStep(resumeStep(result.profile));
+                    }
+                  } else {
+                    setEmailVerified(true);
+                  }
+                } catch (err) {
+                  setAuthError(authErrorMessage(err));
+                } finally {
+                  setAuthBusy(false);
+                }
+              }}
+            >
+              {authBusy ? "확인 중…" : LOCAL_DEV_AUTH_BYPASS ? "계속하기" : "이메일 확인"}
             </Button>
           ) : (
             <Button
