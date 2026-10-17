@@ -4,6 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { phoneErrorMessage, sendPhoneCode, verifyPhoneCode, type Profile } from "@/lib/api";
+import { phoneInputDigits } from "@/lib/phone-input";
 
 /**
  * 휴대폰 인증 (s54). 가입 단계와 기존 회원용 화면(/verify-phone)이 같이 쓴다.
@@ -64,10 +65,10 @@ export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => vo
             type="tel"
             inputMode="numeric"
             autoComplete="tel"
-            placeholder="010-0000-0000"
+            placeholder="01000000000"
             value={raw}
             onChange={(e) => {
-              setRaw(e.target.value);
+              setRaw(phoneInputDigits(e.target.value));
               setPhone(null);
               setCode("");
             }}
@@ -75,7 +76,7 @@ export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => vo
           <Button
             variant="outline"
             className="shrink-0"
-            disabled={raw.replace(/\D/g, "").length < 10 || busy}
+            disabled={raw.length < 10 || busy}
             onClick={send}
           >
             {phone ? "다시 받기" : "인증번호 받기"}

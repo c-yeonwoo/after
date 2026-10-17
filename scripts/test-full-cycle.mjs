@@ -219,7 +219,15 @@ async function signup(person, i) {
     code = r.data;
     await route.fulfill({ json: { sent: true, phone } });
   });
-  await page.getByLabel("휴대폰 번호", { exact: true }).fill(`0100000008${i}`);
+  const phoneInput = page.getByLabel("휴대폰 번호", { exact: true });
+  assert.equal(await phoneInput.getAttribute("placeholder"), "01000000000");
+  await phoneInput.fill(
+    i % 3 === 0 ? `010-0000-008${i}` : i % 3 === 1 ? `+82 10-0000-008${i}` : `0100000008${i}`,
+  );
+  await page.waitForFunction(
+    (expected) => document.getElementById("phone")?.value === expected,
+    `0100000008${i}`,
+  );
   await page.getByRole("button", { name: "인증번호 받기" }).click();
   await page.getByLabel("인증번호", { exact: true }).waitFor();
   await page.getByLabel("인증번호", { exact: true }).fill(code);
