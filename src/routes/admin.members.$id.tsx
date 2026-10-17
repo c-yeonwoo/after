@@ -53,6 +53,11 @@ function MemberDetail() {
   const banned = p.account_state === "banned";
   const openMeetings = d.meetings.filter((m) => !m.cancelled_at && !m.completed_at).length;
   const pendingAgainst = d.reports_against.filter((r) => r.state === "pending").length;
+  const coordination = [
+    ["첫 만남", "first_date"],
+    ["연락 방식", "contact"],
+    ["약속 조율", "planning"],
+  ] as const;
 
   return (
     <>
@@ -107,6 +112,30 @@ function MemberDetail() {
         </div>
 
         <div className="min-w-0">
+          {coordination.some(
+            ([, key]) =>
+              (d.preferences?.choices?.[key]?.length ?? 0) > 0 ||
+              d.preferences?.choiceCustom?.[key],
+          ) ? (
+            <Section title="매칭·조율 참고">
+              <dl className="space-y-3 text-sm">
+                {coordination.map(([label, key]) => {
+                  const value = [
+                    ...(d.preferences?.choices?.[key] ?? []),
+                    d.preferences?.choiceCustom?.[key],
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+                  return value ? (
+                    <div key={key}>
+                      <dt className="text-xs text-muted-foreground">{label}</dt>
+                      <dd className="mt-1 text-foreground">{value}</dd>
+                    </div>
+                  ) : null;
+                })}
+              </dl>
+            </Section>
+          ) : null}
           <Section title={`티켓 ${d.tickets.length}`}>
             {d.tickets.length === 0 ? (
               <Empty>구매한 티켓이 없습니다.</Empty>

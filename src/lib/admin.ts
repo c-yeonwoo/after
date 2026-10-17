@@ -97,6 +97,7 @@ export type AdminMemberDetail = {
     | "onboarding_step"
     | "created_at"
     | "intro"
+    | "profile_story"
     | "details"
     | "terms_agreed_at"
     | "privacy_agreed_at"
@@ -107,6 +108,11 @@ export type AdminMemberDetail = {
     | "photo_reviewed_at"
     | "photo_reject_reason"
   >;
+  preferences?: {
+    version?: number;
+    choices?: Record<string, string[]>;
+    choiceCustom?: Record<string, string>;
+  };
   tickets: {
     id: string;
     kind: string;
@@ -392,9 +398,25 @@ export async function fetchMembers(f: MemberFilters = {}): Promise<AdminMember[]
 }
 
 export async function fetchMemberDetail(userId: string): Promise<AdminMemberDetail> {
-  const { data, error } = await supabase.rpc("admin_member_detail", { p_user: userId });
+  const [{ data, error }, story, preferences] = await Promise.all([
+    supabase.rpc("admin_member_detail", { p_user: userId }),
+    fetchAdminProfileStory(userId),
+    supabase.rpc("admin_profile_preferences", { p_user: userId }),
+  ]);
   if (error) throw error;
-  return data as unknown as AdminMemberDetail;
+  if (preferences.error) throw preferences.error;
+  const detail = data as unknown as AdminMemberDetail;
+  return {
+    ...detail,
+    profile: { ...detail.profile, profile_story: story },
+    preferences: preferences.data as AdminMemberDetail["preferences"],
+  };
+}
+
+export async function fetchAdminProfileStory(userId: string) {
+  const { data, error } = await supabase.rpc("admin_profile_story", { p_user: userId });
+  if (error) throw error;
+  return data;
 }
 
 /**

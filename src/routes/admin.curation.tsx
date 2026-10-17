@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { adminMeetWindows, isMeetWindowFresh, type AdminMeetWindow } from "@/lib/meetWindow";
 import {
   fetchCurationTargets,
+  fetchAdminProfileStory,
   fetchLikePool,
   fetchQueue,
   setQueue,
@@ -168,7 +169,9 @@ function Workbench({
   const [saved, setSaved] = useState<QueueCard[]>([]);
   // 화면에서 세우는 순서. female_id 배열이 그대로 admin_set_queue 의 인자가 된다.
   const [order, setOrder] = useState<string[]>([]);
-  const [preview, setPreview] = useState<LikePoolItem | QueueCard | null>(null);
+  const [preview, setPreview] = useState<
+    ((LikePoolItem | QueueCard) & { profile_story?: unknown }) | null
+  >(null);
   const [windows, setWindows] = useState<Map<string, AdminMeetWindow>>(new Map());
   const [windowError, setWindowError] = useState(false);
 
@@ -199,6 +202,17 @@ function Workbench({
   // 큐에 든 사람의 표시 정보. 이미 저장된 카드거나 방금 풀에서 옮긴 사람이다.
   const cardOf = (id: string) =>
     saved.find((c) => c.female_id === id) ?? (pool ?? []).find((p) => p.id === id) ?? null;
+
+  const showPreview = async (card: LikePoolItem | QueueCard | null) => {
+    if (!card) return;
+    const id = "female_id" in card ? card.female_id : card.id;
+    try {
+      const story = await fetchAdminProfileStory(id);
+      setPreview({ ...card, profile_story: story });
+    } catch {
+      toast.error("프로필을 불러오지 못했어요.");
+    }
+  };
 
   const inQueue = new Set(order);
   const available = (pool ?? []).filter((p) => !inQueue.has(p.id));
@@ -297,7 +311,7 @@ function Workbench({
                       </span>
                       <Thumb path={c?.photo_url ?? null} />
                       <button
-                        onClick={() => setPreview(c)}
+                        onClick={() => void showPreview(c)}
                         className="min-w-0 flex-1 text-left"
                         title="프로필 보기"
                       >
@@ -416,7 +430,7 @@ function Workbench({
               {available.map((p) => (
                 <li key={p.id} className="overflow-hidden rounded-surface border border-border">
                   <button
-                    onClick={() => setPreview(p)}
+                    onClick={() => void showPreview(p)}
                     className="block w-full"
                     title="프로필 보기"
                   >

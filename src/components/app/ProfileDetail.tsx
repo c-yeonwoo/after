@@ -3,6 +3,7 @@ import { UserRound } from "lucide-react";
 
 import { usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
+import type { ProfileStoryV3 } from "@/lib/profileStory";
 
 export type ProfileView = {
   name: string;
@@ -17,6 +18,7 @@ export type ProfileView = {
   photos: string[];
   headline: string;
   intro: string;
+  story?: ProfileStoryV3 | null;
   interests: string[];
   matchTags: string[];
   topics: string[];
@@ -149,7 +151,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </blockquote>
       ) : null}
 
-      {first ? (
+      {!p.story && first ? (
         <p data-selectable className="text-base leading-[1.8] whitespace-pre-line text-foreground">
           {first}
         </p>
@@ -157,15 +159,30 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
 
       <Photos paths={p.photos} name={p.name} />
 
-      {rest.map((para) => (
-        <p
-          key={para}
-          data-selectable
-          className="text-base leading-[1.8] whitespace-pre-line text-foreground"
-        >
-          {para}
-        </p>
+      {p.story?.sections.map((section) => (
+        <section key={section.id} className="border-t border-border pt-5">
+          <h3 className="break-keep text-sm font-semibold leading-relaxed text-muted-foreground">
+            {section.question}
+          </h3>
+          <p
+            data-selectable
+            className="mt-2 text-base leading-[1.8] whitespace-pre-line text-foreground"
+          >
+            {section.answer}
+          </p>
+        </section>
       ))}
+
+      {!p.story &&
+        rest.map((para) => (
+          <p
+            key={para}
+            data-selectable
+            className="text-base leading-[1.8] whitespace-pre-line text-foreground"
+          >
+            {para}
+          </p>
+        ))}
 
       {hasAnyFact ? (
         <dl className="grid grid-cols-3 gap-x-3 gap-y-4 border-t border-border pt-4">
@@ -185,13 +202,13 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </dl>
       ) : null}
 
-      {p.interests.length ? (
+      {!p.story && p.interests.length ? (
         <Section title="요즘 시간 쓰는 것">
           <Lines items={p.interests} />
         </Section>
       ) : null}
 
-      {p.answers.length ? (
+      {!p.story && p.answers.length ? (
         <Section title="조금 더">
           <div className="space-y-5">
             {p.answers.map((a) => (
@@ -209,13 +226,13 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </Section>
       ) : null}
 
-      {p.matchTags.length ? (
+      {!p.story && p.matchTags.length ? (
         <Section title="잘 맞았던 사람">
           <Lines items={p.matchTags} />
         </Section>
       ) : null}
 
-      {p.topics.length ? (
+      {!p.story && p.topics.length ? (
         <Section title="나누고 싶은 이야기">
           <Lines items={p.topics} />
         </Section>

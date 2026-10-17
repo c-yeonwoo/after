@@ -7,6 +7,7 @@ import {
 import { followUpFor } from "@/components/onboarding/profile";
 import { HUBS } from "@/lib/brand";
 import type { ProfileView } from "@/components/app/ProfileDetail";
+import { validProfileStory } from "@/lib/profileStory";
 
 /**
  * 프로필 행 → 화면이 쓰는 모양.
@@ -34,6 +35,7 @@ export type ProfileSource = {
   photo_paths?: string[] | null;
   headline: string | null;
   intro: string | null;
+  profile_story?: unknown;
   interests: string[] | null;
   match_tags: string[] | null;
   topics: string[] | null;
@@ -56,6 +58,7 @@ export function toProfileView(p: ProfileSource): ProfileView {
     photos: p.photo_paths?.length ? p.photo_paths : p.photo_url ? [p.photo_url] : [],
     headline: p.headline ?? "",
     intro: p.intro ?? "",
+    story: validProfileStory(p.profile_story) ? p.profile_story : null,
     interests,
     matchTags: p.match_tags ?? [],
     topics: p.topics ?? [],

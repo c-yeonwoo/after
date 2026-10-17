@@ -446,24 +446,50 @@ try {
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("heading", { name: "나를 소개해 볼까요?" }).waitFor();
+  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
+  await femalePage.getByRole("button", { name: "비흡연" }).click();
+  await femalePage.getByRole("button", { name: "안 마심" }).click();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "내 이야기를 시작해 볼까요?" }).waitFor();
   await checkPage(femalePage, "interview start mobile");
-  await femalePage.getByRole("button", { name: "이야기 시작하기" }).click();
-  await femalePage.getByText("이렇게 적어도 좋아요").waitFor();
+  await femalePage.getByRole("button", { name: "시작하기", exact: true }).click();
+  await femalePage.getByRole("button", { name: "동네 돌아보기" }).click();
+  await femalePage.getByRole("button", { name: "짧게 커피" }).click();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("button", { name: "영화·드라마" }).click();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await checkPage(femalePage, "interview question mobile");
-  await femalePage.getByLabel("내 이야기").fill("퇴근하면 동네를 천천히 걸어요");
+  await femalePage.getByLabel("내 답변").fill("퇴근하면 동네를 천천히 걸어요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
-  await femalePage
-    .getByRole("heading", { name: "처음 만난 사람과는 어떻게 친해지세요?" })
-    .waitFor();
-  await femalePage.getByLabel("내 이야기").fill("처음에는 서로 이야기를 듣는 편이에요");
+  await femalePage.getByRole("heading", { name: "어떤 만남에서 편해지나요?" }).waitFor();
+  await femalePage.getByLabel("내 답변").fill("처음에는 서로 이야기를 듣는 편이에요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
-  await femalePage
-    .getByRole("heading", { name: "처음 만나면 어떤 이야기를 하고 싶으세요?" })
-    .waitFor();
-  await femalePage.getByLabel("내 이야기").fill("주말에 본 영화를 이야기하고 싶어요");
+  await femalePage.getByRole("heading", { name: "만나면 어떤 이야기를 나누고 싶나요?" }).waitFor();
+  await femalePage.getByLabel("내 답변").fill("주말에 본 영화를 이야기하고 싶어요");
+  assert.equal(
+    await femalePage.getByLabel("내 답변").inputValue(),
+    "주말에 본 영화를 이야기하고 싶어요",
+  );
   await femalePage.getByText("저장 중…").waitFor();
   await femalePage.getByText("저장됨", { exact: true }).waitFor();
+  assert.equal(
+    await femalePage.getByLabel("내 답변").inputValue(),
+    "주말에 본 영화를 이야기하고 싶어요",
+    "current answer remains in the form after autosave",
+  );
+  assert.equal(
+    sql(`select data->>'stage' from public.profile_interview_drafts where user_id='${female.id}'`),
+    "story2",
+    "interview position is saved",
+  );
+  assert.equal(
+    sql(
+      `select data->'answers'->>'conversation' from public.profile_interview_drafts where user_id='${female.id}'`,
+    ),
+    "주말에 본 영화를 이야기하고 싶어요",
+    "current answer is saved",
+  );
   assert.equal(
     sql(`select headline from public.profiles where id='${female.id}'`),
     "퇴근 후 동네를 걷는 편이에요.",
@@ -489,21 +515,41 @@ try {
     "private basic edits survive reload",
   );
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByLabel("내 이야기").waitFor();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "만나면 어떤 이야기를 나누고 싶나요?" }).waitFor();
   assert.equal(
-    await femalePage.getByLabel("내 이야기").inputValue(),
+    sql(`select data->>'stage' from public.profile_interview_drafts where user_id='${female.id}'`),
+    "story2",
+    "editing basics does not reset the interview",
+  );
+  await femalePage.getByLabel("내 답변").waitFor();
+  assert.equal(
+    await femalePage.getByLabel("내 답변").inputValue(),
     "주말에 본 영화를 이야기하고 싶어요",
     "draft answer survives reload",
   );
-  await femalePage.getByRole("button", { name: "이야기 확인하기" }).click();
-  await femalePage.getByRole("button", { name: "이 정도로 계속하기" }).click();
-  await femalePage.getByRole("button", { name: "이 내용으로 소개글 만들기" }).click();
+  await femalePage.getByRole("button", { name: "답변 확인하기" }).click();
+  await femalePage.route("**/functions/v1/compose-profile-v3", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "error",
+        code: "config_error",
+        retryable: false,
+      }),
+    }),
+  );
+  await femalePage.getByRole("button", { name: "내용 정리하기" }).click();
+  await femalePage.getByRole("heading", { name: "답변은 그대로 있어요" }).waitFor();
+  await femalePage.getByRole("button", { name: "내가 직접 정리하기" }).click();
   await femalePage.getByRole("heading", { name: "이렇게 소개할까요?" }).waitFor();
+  await femalePage.getByLabel("한 줄 소개").fill("퇴근 후 동네를 걷는 시간");
+  await femalePage
+    .getByLabel("카드에서 보일 짧은 소개")
+    .fill("퇴근 후에는 동네를 걷고, 주말에 본 영화 이야기를 좋아해요.");
   await checkPage(femalePage, "interview preview mobile");
-  await femalePage.getByRole("button", { name: "이 소개글로 계속하기" }).click();
-  await femalePage.getByRole("button", { name: "비흡연" }).click();
-  await femalePage.getByRole("button", { name: "안 마심" }).click();
-  await femalePage.getByRole("button", { name: "저장", exact: true }).click();
+  await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   assert.notEqual(
     sql(`select headline from public.profiles where id='${female.id}'`),
@@ -518,18 +564,18 @@ try {
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("button", { name: "현재 소개글 직접 고치기" }).click();
-  await femalePage.getByLabel("소개글", { exact: true }).fill("연락은 010-1234-5678로 주세요.");
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("button", { name: "소개장 수정" }).click();
+  await femalePage.getByLabel("카드에서 보일 짧은 소개").fill("연락은 010-1234-5678로 주세요.");
   assert.equal(
-    await femalePage.getByRole("button", { name: "이 소개글로 계속하기" }).isDisabled(),
+    await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).isDisabled(),
     true,
     "contact details cannot be submitted from the preview",
   );
   await femalePage
-    .getByLabel("소개글", { exact: true })
+    .getByLabel("카드에서 보일 짧은 소개")
     .fill("이번에는 제가 직접 쓴 소개글이에요.");
-  await femalePage.getByRole("button", { name: "이 소개글로 계속하기" }).click();
-  await femalePage.getByRole("button", { name: "저장", exact: true }).click();
+  await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   assert.equal(
     sql(`select intro from public.profiles where id='${female.id}'`),
