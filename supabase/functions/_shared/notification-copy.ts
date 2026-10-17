@@ -17,6 +17,10 @@ export type NotificationKind =
   | "no_show_response_required"
   | "meeting_requested"
   | "meeting_request_reminder"
+  | "meeting_checkin_reminder"
+  | "meeting_checkin_final"
+  | "meeting_checkin_cancelled"
+  | "feedback_followup"
   | "prefs_submitted"
   | "meeting_confirmed"
   | "meeting_released"
@@ -69,6 +73,30 @@ export function notificationCopy(
         title: `${whoGa} 가능한 날짜를 보냈어요`,
         body: "하나를 고르면 약속이 정해지고 대화가 열려요.",
         path: m ? `/schedule?meetingId=${m}` : "/home",
+      };
+    case "meeting_checkin_reminder":
+      return {
+        title: "약속이 가까워졌어요",
+        body: "정해 둔 약속, 그대로 괜찮으세요? 약속 화면에서 참석을 확인해 주세요.",
+        path: m ? `/chat/${m}` : "/home",
+      };
+    case "meeting_checkin_final":
+      return {
+        title: "참석 확인을 한 번 더 부탁드려요",
+        body: "약속 2시간 전까지 두 분 모두 확인하지 않으면 약속은 자동취소돼요. 참석을 확인해 주세요.",
+        path: m ? `/chat/${m}` : "/home",
+      };
+    case "meeting_checkin_cancelled":
+      return {
+        title: "이번 약속이 취소됐어요",
+        body: "참석 확인 기한이 지나 약속을 정리했어요. 미응답이 반복되면 운영팀이 확인해요.",
+        path: "/home",
+      };
+    case "feedback_followup":
+      return {
+        title: "지난 만남은 어떠셨어요?",
+        body: "짧게 남겨 주셔도 다음 소개에 도움이 돼요. 답변은 상대에게 공개되지 않아요.",
+        path: m ? `/feedback?meetingId=${m}` : "/home",
       };
     case "meeting_confirmed":
       return {

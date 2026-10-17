@@ -4,6 +4,7 @@ import { CalendarCheck, Lock, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { MeetingCheckin } from "@/components/app/MeetingCheckin";
 import { Input } from "@/components/ui/input";
 import {
   isChannelOpenNow,
@@ -89,11 +90,17 @@ export function Conversation({
   const [channel, setChannel] = useState<MsgChannel>("coord");
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
+  const [now, setNow] = useState<number | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   const channelOpen = isChannelOpenNow(meeting, channel);
   const privateOpen = isChannelOpenNow(meeting, "private");
   const rows = useMemo(() => buildRows(messages, me?.id), [messages, me?.id]);
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +150,11 @@ export function Conversation({
         </div>
       ) : null}
 
+      {meeting.confirmed_at ? (
+        <div className="shrink-0">
+          <MeetingCheckin meetingId={meeting.id} />
+        </div>
+      ) : null}
       {privateOpen ? (
         <div className="mt-3 flex shrink-0 gap-1.5" role="tablist" aria-label="대화 채널">
           {(
@@ -231,7 +243,11 @@ export function Conversation({
             ),
           )}
 
-          {meeting.confirmed_at ? (
+          {meeting.confirmed_at &&
+          meeting.scheduled_at &&
+          !meeting.cancelled_at &&
+          now !== null &&
+          Date.parse(meeting.scheduled_at) <= now ? (
             <button
               type="button"
               onClick={() => navigate({ to: "/feedback", search: { meetingId: meeting.id } })}

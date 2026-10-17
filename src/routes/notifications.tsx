@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { Button } from "@/components/ui/button";
 import { markNotificationsRead, myNotifications, type MyNotification } from "@/lib/api";
 import { splitAppPath } from "@/lib/appPath";
 import { BRAND } from "@/lib/brand";
@@ -31,19 +32,36 @@ function relative(iso: string) {
  */
 function NotificationsPage() {
   const [items, setItems] = useState<MyNotification[] | null>(null);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    let alive = true;
+    setError(false);
     myNotifications()
       .then((list) => {
+        if (!alive) return;
         setItems(list);
         if (list.some((n) => !n.read_at)) void markNotificationsRead();
       })
-      .catch(() => setItems([]));
-  }, []);
+      .catch(() => {
+        if (alive) setError(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [retry]);
 
   return (
     <AppScreen title="알림" back="/home">
-      {items === null ? (
+      {error ? (
+        <div role="alert" className="mt-10 text-center">
+          <p className="text-sm text-muted-foreground">알림을 불러오지 못했어요.</p>
+          <Button variant="outline" className="mt-3" onClick={() => setRetry((v) => v + 1)}>
+            다시 불러오기
+          </Button>
+        </div>
+      ) : items === null ? (
         <p className="mt-10 text-center text-sm text-muted-foreground">불러오는 중…</p>
       ) : items.length === 0 ? (
         <p className="mt-16 text-center text-sm leading-relaxed text-muted-foreground">

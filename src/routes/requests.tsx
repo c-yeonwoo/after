@@ -4,6 +4,7 @@ import { ArrowRight, Clock, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
@@ -224,6 +225,7 @@ function SlotChoices({ meeting }: { meeting: Meeting }) {
         편한 시간을 하나 고르시면 바로 약속이 정해져요
       </p>
       <div className="mt-2 grid gap-2">
+        <MeetingPolicyNote />
         {slots.map((iso, i) => (
           <button
             key={iso}

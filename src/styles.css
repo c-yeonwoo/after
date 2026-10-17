@@ -466,8 +466,6 @@
 @utility pressable {
   transition:
     transform 140ms var(--ease-out),
-    background-color 140ms ease-out,
-    color 140ms ease-out,
     opacity 140ms ease-out;
   &:active:not(:disabled):not([aria-disabled="true"]) {
     transform: scale(0.98);
@@ -476,9 +474,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pressable {
-    transition:
-      background-color 100ms ease-out,
-      color 100ms ease-out;
+    transition: none;
     &:active {
       transform: none;
     }

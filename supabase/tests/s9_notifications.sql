@@ -173,8 +173,8 @@ select enqueue_feedback_due();
 
 select is(
   (select count(*)::int from mine where kind='feedback_due'),
-  0,
-  'T10 [통과] 성사 여부를 이미 답한 만남에는 후기 요청을 보내지 않는다'
+  2,
+  'T10 [통과] 한 사람의 만남 완료만으로 양측의 후기 요청을 막지 않는다'
 );
 
 -- ─────────────── 롤백되면 알림도 사라진다 ───────────────

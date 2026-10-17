@@ -4,6 +4,7 @@ import { Check, MapPin, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
@@ -349,6 +350,7 @@ function PrefsPage() {
         />
       </section>
 
+      <MeetingPolicyNote />
       <Button
         className="mt-8 w-full"
         size="lg"
