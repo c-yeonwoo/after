@@ -241,8 +241,11 @@ try {
     .click({ timeout: 2_000 })
     .catch(() => {
       // Signing in through local dev Auth can update the shared profile before
-      // this click; the route guard then takes the member home immediately.
+      // this click; the account gate then takes over immediately.
     });
+  await signupPage.getByRole("heading", { name: "이미 가입된 계정이 있어요" }).waitFor();
+  assert.equal(await signupPage.getByText(existing.name).count(), 0);
+  await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
   await signupPage.waitForURL("**/home", { timeout: 15_000 });
   assert.equal(
     sql(
@@ -267,8 +270,57 @@ try {
     "re-entering signup never resets an existing member's password",
   );
   await signupPage.goto(`${baseUrl}/signup`);
-  await signupPage.waitForURL("**/home", { timeout: 15_000 });
+  await signupPage.getByRole("heading", { name: "이미 가입된 계정이 있어요" }).waitFor();
+  assert.equal(await signupPage.getByText(existing.name).count(), 0);
+  await signupPage.getByRole("button", { name: "다른 계정으로 새로 가입" }).click();
+  await signupPage.getByRole("heading", { name: "성별을 알려주세요" }).waitFor();
   await signupPage.close();
+
+  const incomplete = await createPerson(
+    "incomplete-signup",
+    "female",
+    "member",
+    "eclipse-local-dev-auth-only",
+  );
+  sql(`update public.profiles set onboarding_step=3 where id='${incomplete.id}'`);
+  const incompletePage = await (
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
+  ).newPage();
+  await incompletePage.goto(`${baseUrl}/signup`);
+  const incompleteNext = incompletePage.getByRole("button", { name: "다음", exact: true });
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await incompletePage.getByRole("button", { name: "남성" }).click();
+    if (await incompleteNext.isEnabled()) break;
+    await incompletePage.waitForTimeout(250);
+  }
+  assert.equal(await incompleteNext.isEnabled(), true, "incomplete signup form did not hydrate");
+  await incompleteNext.click();
+  await incompletePage.getByLabel("회사 이메일").fill(incomplete.email);
+  await incompletePage.getByRole("button", { name: "개발 계정 만들기" }).click();
+  await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
+  assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
+  await incompletePage.getByRole("button", { name: "가입 이어하기" }).click();
+  await incompletePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  assert.equal(await incompletePage.getByLabel("이름").inputValue(), incomplete.name);
+  await incompletePage.goto(`${baseUrl}/signup`);
+  await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
+  assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
+  await incompletePage.getByRole("button", { name: "다른 계정으로 새로 가입" }).click();
+  await incompletePage.getByRole("heading", { name: "성별을 알려주세요" }).waitFor();
+  const clearedNext = incompletePage.getByRole("button", { name: "다음", exact: true });
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await incompletePage.getByRole("button", { name: "남성" }).click();
+    if (await clearedNext.isEnabled()) break;
+    await incompletePage.waitForTimeout(250);
+  }
+  assert.equal(await clearedNext.isEnabled(), true, "new account form did not hydrate");
+  await clearedNext.click();
+  assert.equal(
+    await incompletePage.getByLabel("회사 이메일").inputValue(),
+    "",
+    "starting a different account clears the previous email and draft",
+  );
+  await incompletePage.close();
 
   const freshEmail = `after-e2e-fresh-${randomUUID()}@verify.local`;
   const freshPage = await (
