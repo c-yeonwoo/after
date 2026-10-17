@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-import { BRAND, COVERAGE_LABEL } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 import { Button } from "@/components/ui/button";
@@ -77,18 +77,15 @@ function Landing() {
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
         <section className="pt-7 pb-12">
-          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <MapPin className="size-3.5" aria-hidden="true" />
-            {COVERAGE_LABEL} · 직장인 소개
-          </p>
-          <h1 className="mt-4 text-[clamp(1.875rem,8.3vw,2.25rem)] leading-[1.25] font-semibold tracking-[-0.045em] text-foreground">
-            퇴근 후,
-            <br />한 사람과의 <span className="text-primary-strong">약속.</span>
+          <h1 className="break-keep text-[clamp(1.875rem,8.3vw,2.25rem)] leading-[1.25] font-semibold tracking-[-0.045em] text-foreground">
+            하루 끝에,
+            <br />
+            <span className="text-primary-strong">설레는 시작.</span>
           </h1>
           <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted-foreground">
-            끝없는 탐색 대신, 만나고 싶은 한 사람.
+            나와 잘 맞는 직장인을 한 사람씩.
             <br />
-            소개부터 약속 조율까지 애프터와 함께해요.
+            소개부터 만날 약속까지 함께해요.
           </p>
           <div className="mt-6 overflow-hidden rounded-[1.25rem] bg-ink">
             <img
@@ -212,7 +209,7 @@ function SampleIntro() {
       <p className="mt-4 text-2xl leading-[1.3] font-semibold text-foreground">
         지원 <span className="font-sans text-base font-medium text-muted-foreground">31</span>
       </p>
-      <p className="mt-0.5 text-sm text-muted-foreground">회계 · {COVERAGE_LABEL}</p>
+      <p className="mt-0.5 text-sm text-muted-foreground">회계</p>
       <blockquote className="mt-4 border-l-2 border-brand-blush pl-3.5">
         <p className="serif break-keep text-pretty text-lg leading-[1.45] text-foreground">
           퇴근하고 한강까지 뛰는 게 요즘 제일 좋아하는 시간이에요.

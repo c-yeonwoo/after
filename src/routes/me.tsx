@@ -4,7 +4,7 @@ import { ArrowRight, Bell, CalendarDays, FileText, Receipt, Ticket, User } from 
 
 import { NotificationBell } from "@/components/app/NotificationBell";
 import { AppScreen } from "@/components/app/AppScreen";
-import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
+import { BRAND, HUBS } from "@/lib/brand";
 import { myStats, paymentsEnabled, remainingCandidates, signOut, type MyStats } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { usePhotoUrl } from "@/lib/photo";
@@ -146,7 +146,7 @@ function MePage() {
               로 읽힌다. 쓸모가 없으면 지우는 편이 낫다.
             */}
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {hub?.label ?? PRIMARY_HUB.label}
+              {hub ? `직장 지역 · ${hub.label}` : "직장 지역 확인 필요"}
             </p>
           </div>
         </div>

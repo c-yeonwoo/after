@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
-import { BRAND, HUBS, PRIMARY_HUB } from "@/lib/brand";
+import { BRAND, HUBS } from "@/lib/brand";
 import {
   homeStateV2,
   markMet,
@@ -222,7 +222,8 @@ function HomePage() {
   return (
     <AppScreen action={<NotificationBell />}>
       <p className="mt-5 text-xs font-medium text-muted-foreground">
-        {hub?.label ?? PRIMARY_HUB.label} · {me.name ? `${me.name}님` : "나의 애프터"}
+        {me.name ? `${me.name}님의 애프터` : "나의 애프터"}
+        {hub ? ` · ${hub.label}` : ""}
       </p>
       {/*
         예전에는 아랫줄을 브랜드 색으로 칠했다. 그런데 그 자리에 오는 문장은

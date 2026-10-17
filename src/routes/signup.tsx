@@ -75,17 +75,10 @@ export const Route = createFileRoute("/signup")({
 });
 
 /*
-  권역이 하나뿐이면 고를 것이 없다. 2단계를 건너뛰고 그 권역으로 정한다
-  (2026-10-10 진단: 고를 수 있는 값 1개와 비활성 "준비 중" 3개를 보여 주던 단계).
-  권역을 하나 더 열면(brand.ts available) 단계가 저절로 돌아온다.
-*/
-const SKIP_HUB_STEP = OPEN_HUBS.length === 1;
-
-/*
   단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
   두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
 
-    성별 → (권역) → 회사 이메일 → 기본 정보 → 생활 정보 → 인터뷰 → 소개장 확인
+    성별 → 직장 지역 → 회사 이메일 → 기본 정보 → 생활 정보 → 인터뷰 → 소개장 확인
 
   생활 정보는 소개장 생성 전에 받는다. 성격을 추측하는 근거로 쓰지 않고,
   본인 답변과 충돌할 때 확인하는 자료로만 사용한다.
@@ -94,7 +87,7 @@ const Q_FIRST = 11;
 const CONDITIONS = 15;
 /** 휴대폰 인증(s54). 회사 메일 다음, 기본 정보 앞. 프로필 행이 생긴 뒤라야 저장할 곳이 있다. */
 const PHONE = 5;
-const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, PHONE, 2, CONDITIONS, Q_FIRST];
+const ORDER = [1, 3, 4, PHONE, 2, CONDITIONS, Q_FIRST];
 const TOTAL = ORDER.length;
 /** 화면에 보이는 단계 번호. */
 const shown = (id: number) => ORDER.indexOf(id) + 1;
@@ -114,7 +107,8 @@ function Onboarding() {
   const { me, ready, refresh, setMe } = useMe();
   const [step, setStep] = useState(editing ? 2 : 1);
   const [gender, setGender] = useState<Gender | null>(null);
-  const [hubId, setHubId] = useState<string | null>(SKIP_HUB_STEP ? OPEN_HUBS[0].id : null);
+  // 모집 중인 지역이 하나여도 직장 위치를 추측해 자동 배정하지 않는다.
+  const [hubId, setHubId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -376,12 +370,7 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button
-            className="w-full"
-            size="lg"
-            disabled={!gender}
-            onClick={() => setStep(SKIP_HUB_STEP ? 4 : 3)}
-          >
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
             다음
           </Button>
         </div>
@@ -565,22 +554,24 @@ function Onboarding() {
       <StepShell
         step={shown(3)}
         total={TOTAL}
-        eyebrow="활동 지역"
-        title="주로 어디서 만나시겠어요?"
-        description="같은 지역 안에서만 소개됩니다."
+        eyebrow="직장 지역"
+        title="직장은 어느 지역에 있나요?"
+        description="직장과 가까운 지역의 사람을 소개해 드려요."
       >
         <div className="grid gap-3">
-          {HUBS.map((hub) => (
+          {OPEN_HUBS.map((hub) => (
             <ChoiceCard
               key={hub.id}
               selected={hubId === hub.id}
-              disabled={!hub.available}
               onClick={() => setHubId(hub.id)}
               title={hub.label}
-              body={hub.available ? hub.detail : `${hub.detail} · 준비 중`}
+              body={hub.detail}
             />
           ))}
         </div>
+        {OPEN_HUBS.length < HUBS.length ? (
+          <p className="mt-4 text-sm text-muted-foreground">다른 지역은 차례로 준비하고 있어요.</p>
+        ) : null}
         <div className="mt-8 flex gap-2">
           <Button variant="ghost" onClick={() => setStep(1)}>
             이전
@@ -752,19 +743,20 @@ function Onboarding() {
         ) : null}
 
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(SKIP_HUB_STEP ? 1 : 3)}>
+          <Button variant="ghost" onClick={() => setStep(3)}>
             이전
           </Button>
           {emailVerified ? (
             <Button
               className="flex-1"
               size="lg"
-              disabled={pw.length < PASSWORD_MIN_LENGTH || !agreed || authBusy}
+              disabled={pw.length < PASSWORD_MIN_LENGTH || !agreed || authBusy || !gender || !hubId}
               onClick={async () => {
+                if (!gender || !hubId) return;
                 setAuthError(null);
                 setAuthBusy(true);
                 try {
-                  const created = await createSignupProfile(gender ?? "female", hubId ?? "gangnam");
+                  const created = await createSignupProfile(gender, hubId);
                   // 동의는 서버에 시각·버전으로 남긴다. 이게 없으면
                   // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
                   // 인증 직후 바로 건다. 여기서 실패해도 계정은 이미 만들어진

@@ -164,6 +164,14 @@ async function checkPage(page, name, accessibility = true) {
   }
 }
 
+async function chooseWorkZone(page) {
+  await page.getByRole("heading", { name: "직장은 어느 지역에 있나요?" }).waitFor();
+  const next = page.getByRole("button", { name: "다음", exact: true });
+  assert.equal(await next.isEnabled(), false, "signup never guesses a work zone");
+  await page.getByRole("button", { name: /강남·역삼권/ }).click();
+  await next.click();
+}
+
 try {
   // The first scenario verifies paid-ticket behavior, even when a freshly
   // started Supabase defaults to free beta. The outer finally restores it.
@@ -219,6 +227,7 @@ try {
     "member",
     "eclipse-local-dev-auth-only",
   );
+  sql(`update public.profiles set hub_id='pangyo' where id='${existing.id}'`);
   const existingPasswordHash = sql(
     `select encrypted_password from auth.users where id='${existing.id}'`,
   );
@@ -234,6 +243,7 @@ try {
   }
   assert.equal(await signupNext.isEnabled(), true, "signup form did not hydrate");
   await signupNext.click();
+  await chooseWorkZone(signupPage);
   await signupPage.getByLabel("회사 이메일").fill(existing.email);
   await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await signupPage
@@ -247,6 +257,7 @@ try {
   assert.equal(await signupPage.getByText(existing.name).count(), 0);
   await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
   await signupPage.waitForURL("**/home", { timeout: 15_000 });
+  await signupPage.getByText(`${existing.name}님의 애프터 · 판교권`, { exact: true }).waitFor();
   assert.equal(
     sql(
       `select count(*) from public.profiles where lower(company_email)=lower('${existing.email}')`,
@@ -258,6 +269,11 @@ try {
     sql(`select gender from public.profiles where id='${existing.id}'`),
     "male",
     "signup choices cannot change an existing member's gender",
+  );
+  assert.equal(
+    sql(`select hub_id from public.profiles where id='${existing.id}'`),
+    "pangyo",
+    "an existing member keeps their own work zone when entering through signup",
   );
   assert.equal(
     sql(`select count(*) from auth.users where lower(email)=lower('${existing.email}')`),
@@ -295,6 +311,7 @@ try {
   }
   assert.equal(await incompleteNext.isEnabled(), true, "incomplete signup form did not hydrate");
   await incompleteNext.click();
+  await chooseWorkZone(incompletePage);
   await incompletePage.getByLabel("회사 이메일").fill(incomplete.email);
   await incompletePage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
@@ -323,6 +340,7 @@ try {
   }
   assert.equal(await clearedNext.isEnabled(), true, "new account form did not hydrate");
   await clearedNext.click();
+  await chooseWorkZone(incompletePage);
   assert.equal(
     await incompletePage.getByLabel("회사 이메일").inputValue(),
     "",
@@ -343,6 +361,7 @@ try {
   }
   assert.equal(await freshNext.isEnabled(), true, "fresh signup form did not hydrate");
   await freshNext.click();
+  await chooseWorkZone(freshPage);
   await freshPage.getByLabel("회사 이메일").fill(freshEmail);
   await freshPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await freshPage.getByText("로컬 개발 환경").waitFor();
@@ -365,6 +384,11 @@ try {
       and terms_agreed_at is not null and privacy_agreed_at is not null`),
     "1",
     "new signup creates exactly one consented profile",
+  );
+  assert.equal(
+    sql(`select hub_id from public.profiles where id='${freshId}'`),
+    "gangnam",
+    "the new profile stores the work zone explicitly chosen during signup",
   );
   await freshPage.close();
   const eligible = sql(`select count(*) from public.eligible_profiles
