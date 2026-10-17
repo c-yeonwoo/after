@@ -211,6 +211,102 @@ try {
   const male = await createPerson("male", "male", "member", password);
   const female = await createPerson("female", "female", "member", password);
   const admin = await createPerson("admin", "male", "admin", password);
+  // A signup attempt with an already registered work address must land in the
+  // existing account, not reset its password or treat it as a fresh profile.
+  const existing = await createPerson(
+    "existing-signup",
+    "male",
+    "member",
+    "eclipse-local-dev-auth-only",
+  );
+  const existingPasswordHash = sql(
+    `select encrypted_password from auth.users where id='${existing.id}'`,
+  );
+  const signupPage = await (
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
+  ).newPage();
+  await signupPage.goto(`${baseUrl}/signup`);
+  const signupNext = signupPage.getByRole("button", { name: "다음", exact: true });
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await signupPage.getByRole("button", { name: "여성" }).click();
+    if (await signupNext.isEnabled()) break;
+    await signupPage.waitForTimeout(250);
+  }
+  assert.equal(await signupNext.isEnabled(), true, "signup form did not hydrate");
+  await signupNext.click();
+  await signupPage.getByLabel("회사 이메일").fill(existing.email);
+  await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
+  await signupPage
+    .getByRole("button", { name: "계속하기" })
+    .click({ timeout: 2_000 })
+    .catch(() => {
+      // Signing in through local dev Auth can update the shared profile before
+      // this click; the route guard then takes the member home immediately.
+    });
+  await signupPage.waitForURL("**/home", { timeout: 15_000 });
+  assert.equal(
+    sql(
+      `select count(*) from public.profiles where lower(company_email)=lower('${existing.email}')`,
+    ),
+    "1",
+    "signup reused the existing account without creating another profile",
+  );
+  assert.equal(
+    sql(`select gender from public.profiles where id='${existing.id}'`),
+    "male",
+    "signup choices cannot change an existing member's gender",
+  );
+  assert.equal(
+    sql(`select count(*) from auth.users where lower(email)=lower('${existing.email}')`),
+    "1",
+    "the same work address keeps one auth identity",
+  );
+  assert.equal(
+    sql(`select encrypted_password from auth.users where id='${existing.id}'`),
+    existingPasswordHash,
+    "re-entering signup never resets an existing member's password",
+  );
+  await signupPage.goto(`${baseUrl}/signup`);
+  await signupPage.waitForURL("**/home", { timeout: 15_000 });
+  await signupPage.close();
+
+  const freshEmail = `after-e2e-fresh-${randomUUID()}@verify.local`;
+  const freshPage = await (
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
+  ).newPage();
+  await freshPage.goto(`${baseUrl}/signup`);
+  const freshNext = freshPage.getByRole("button", { name: "다음", exact: true });
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await freshPage.getByRole("button", { name: "남성" }).click();
+    if (await freshNext.isEnabled()) break;
+    await freshPage.waitForTimeout(250);
+  }
+  assert.equal(await freshNext.isEnabled(), true, "fresh signup form did not hydrate");
+  await freshNext.click();
+  await freshPage.getByLabel("회사 이메일").fill(freshEmail);
+  await freshPage.getByRole("button", { name: "개발 계정 만들기" }).click();
+  await freshPage.getByText("로컬 개발 환경").waitFor();
+  const freshId = sql(`select id from auth.users where email='${freshEmail}'`);
+  assert.ok(freshId, "fresh signup creates one synthetic auth identity");
+  ids.push(freshId);
+  await freshPage.getByRole("button", { name: "계속하기" }).click();
+  await freshPage.getByRole("heading", { name: "로그인 비밀번호를 정해 주세요" }).waitFor();
+  assert.equal(
+    sql(`select count(*) from public.profiles where id='${freshId}'`),
+    "0",
+    "email verification alone does not create a profile before consent",
+  );
+  await freshPage.getByLabel("비밀번호").fill(password);
+  await freshPage.getByRole("checkbox").check();
+  await freshPage.getByRole("button", { name: "가입 계속하기" }).click();
+  await freshPage.getByRole("heading", { name: "휴대폰 번호를 확인할게요" }).waitFor();
+  assert.equal(
+    sql(`select count(*) from public.profiles where id='${freshId}'
+      and terms_agreed_at is not null and privacy_agreed_at is not null`),
+    "1",
+    "new signup creates exactly one consented profile",
+  );
+  await freshPage.close();
   const eligible = sql(`select count(*) from public.eligible_profiles
     where id in ('${male.id}','${female.id}')`);
   assert.equal(eligible, "2", "synthetic pair must be ready before browser flow");
@@ -509,7 +605,7 @@ try {
   }
 
   process.stdout.write(
-    "Browser E2E: paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
+    "Browser E2E: existing/new signup, paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
   );
 } finally {
   sql(`update public.app_settings set payments_enabled=${originalPaymentsEnabled === "t"}`);

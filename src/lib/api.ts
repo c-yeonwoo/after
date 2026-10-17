@@ -36,7 +36,7 @@ export type MsgChannel = Database["public"]["Enums"]["msg_channel"];
 // ─────────────────────────── 인증 (이메일 OTP) ───────────────────────────
 // 회사 이메일 인증 = Supabase Auth 이메일 OTP. 온보딩 4단계의 "코드 받기 → 6자리
 // 입력" UI가 그대로 이 흐름과 맞아떨어진다. isCompanyEmail() 도메인 차단 목록은
-// 인증이 아니라 보조 수단이며, 실제 인증은 여기 verifyEmailCode() 가 한다.
+// 인증이 아니라 보조 수단이며, 실제 인증은 verifySignupEmail() 이 한다.
 
 /*
   로컬 DB에만 허용하는 가입 편의 경로다.
@@ -121,7 +121,7 @@ export async function devFetchLatestOtp(email: string): Promise<string | null> {
 
 /**
  * 로컬 가입은 메일함·OTP를 통과하지 않는다. `signUp`이 로컬 Auth의 auto-confirm
- * 설정으로 실제 세션을 만들고, 아래 verifyEmailCode는 그 세션을 검증한다.
+ * 설정으로 실제 세션을 만들고, 아래 verifySignupEmail은 그 세션을 검증한다.
  *
  * 이미 이 개발 경로로 만든 계정은 알려진 로컬 전용 비밀번호로 재진입할 수 있다.
  * 이전에 OTP 요청만 해 둔 미확인 계정은 보안상 이 경로로 탈취하지 않고 새 테스트
@@ -360,13 +360,13 @@ export async function unlinkKakao(): Promise<void> {
   if (unlinkError) throw unlinkError;
 }
 
-/** 코드 검증 + (최초 1회) 프로필 생성. gender/hubId 는 인증 이전 단계에서 이미 고른 값. */
-export async function verifyEmailCode(
-  email: string,
-  token: string,
-  gender: Gender,
-  hubId: string,
-): Promise<Profile> {
+/** 가입 화면에서도 OTP는 기존 계정의 로그인 수단이다. 인증 뒤에만 가입 여부를 판정한다. */
+export type SignupVerification =
+  | { kind: "new" }
+  | { kind: "existing"; profile: Profile }
+  | { kind: "closed"; state: "banned" | "withdrawn" };
+
+export async function verifySignupEmail(email: string, token: string): Promise<SignupVerification> {
   let uid: string | undefined;
   if (LOCAL_DEV_AUTH_BYPASS) {
     const {
@@ -384,9 +384,24 @@ export async function verifyEmailCode(
   }
   if (!uid) throw new Error("인증에 실패했습니다.");
 
+  const { data: profile, error: lookupError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", uid)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!profile) return { kind: "new" };
+  if (profile.account_state !== "active") {
+    await supabase.auth.signOut();
+    return { kind: "closed", state: profile.account_state };
+  }
+  return { kind: "existing", profile };
+}
+
+/** 새 계정으로 확인된 뒤에만 프로필을 만든다. 성별·권역·회사 메일은 서버가 확정한다. */
+export async function createSignupProfile(gender: Gender, hubId: string): Promise<Profile> {
   // 프로필은 서버가 만든다(s48). 회사 메일과 인증 시각은 auth.users 에서 읽고, 개인
-  // 도메인은 서버가 거절한다. 예전에는 여기서 profiles 에 직접 insert 했는데, 그 경로로
-  // role·email_verified_at 까지 자기 선언할 수 있었다. 재인증이면 기존 프로필을 돌려준다.
+  // 도메인은 서버가 거절한다. 재시도 시에는 같은 프로필만 돌려준다.
   const { data: profile, error: createError } = await supabase.rpc("create_my_profile", {
     p_gender: gender,
     p_hub_id: hubId,
