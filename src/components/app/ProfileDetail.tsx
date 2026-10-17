@@ -104,6 +104,26 @@ function Photos({ paths, name }: { paths: string[]; name: string }) {
   );
 }
 
+function InterviewAnswer({
+  section,
+}: {
+  section: NonNullable<ProfileView["story"]>["sections"][number];
+}) {
+  return (
+    <section className="border-t border-border pt-5">
+      <h3 className="break-keep text-sm leading-relaxed font-semibold text-muted-foreground">
+        {section.question}
+      </h3>
+      <p
+        data-selectable
+        className="mt-2 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
+      >
+        {section.answer}
+      </p>
+    </section>
+  );
+}
+
 export function ProfileDetail({ p }: { p: ProfileView }) {
   const paragraphs = (p.intro || "")
     .split(/\n\s*\n/)
@@ -112,6 +132,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
   // 가입 기본값이 "소개글 = 한 줄 소개" 라 둘이 같은 사람이 많다. 같은 문장을 두 번 쓰지 않는다.
   if (paragraphs[0] && paragraphs[0] === p.headline?.trim()) paragraphs.shift();
   const [first, ...rest] = paragraphs;
+  const [openingAnswer, ...otherAnswers] = p.story?.sections ?? [];
 
   /*
     기본 정보 3×2. MBTI·종교는 선택 항목이라 비어 있을 수 있는데, 비었다고 칸을
@@ -163,20 +184,12 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </p>
       ) : null}
 
+      {openingAnswer ? <InterviewAnswer section={openingAnswer} /> : null}
+
       <Photos paths={p.photos} name={p.name} />
 
-      {p.story?.sections.map((section) => (
-        <section key={section.id} className="border-t border-border pt-5">
-          <h3 className="break-keep text-sm font-semibold leading-relaxed text-muted-foreground">
-            {section.question}
-          </h3>
-          <p
-            data-selectable
-            className="mt-2 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
-          >
-            {section.answer}
-          </p>
-        </section>
+      {otherAnswers.map((section) => (
+        <InterviewAnswer key={section.id} section={section} />
       ))}
 
       {!p.story &&

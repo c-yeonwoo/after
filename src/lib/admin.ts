@@ -452,6 +452,10 @@ export type LikePoolItem = Database["public"]["Functions"]["admin_like_pool"]["R
  * 보내지 않은 채 공개 프로필 재료만 요약한다.
  */
 export type PairBrief = {
+  recommendation: {
+    text: string;
+    evidence: { person: "a" | "b"; sourceField: string; quote: string }[];
+  } | null;
   commonGround: {
     insight: string;
     evidence: {
@@ -467,9 +471,49 @@ export type PairBrief = {
     promptVersion: string;
     inputTokens: number;
     outputTokens: number;
-    runId: number;
+    runId?: number;
+    sourceHash: string;
+    cached: boolean;
+    draftRunId: number;
   };
 };
+
+export type CurationRecommendations = {
+  as_of: string;
+  batch: { last_success_at: string; pair_count: number } | null;
+  items: {
+    female_id: string;
+    score: number;
+    preference_dimensions: number;
+    shared_interests: number;
+    schedule_overlap: number | null;
+    liked_at: string;
+    computed_at: string;
+  }[];
+};
+
+export async function fetchCurationRecommendations(
+  maleId: string,
+): Promise<CurationRecommendations> {
+  const { data, error } = await supabase.rpc("admin_curation_recommendations", { p_male: maleId });
+  if (error) throw error;
+  return data as unknown as CurationRecommendations;
+}
+
+export async function approvePairReason(
+  maleId: string,
+  femaleId: string,
+  sourceHash: string,
+  runId: number,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_apply_pair_reason", {
+    p_male: maleId,
+    p_female: femaleId,
+    p_source_hash: sourceHash,
+    p_run_id: runId,
+  });
+  if (error) throw error;
+}
 
 export async function composePairBrief(maleId: string, femaleId: string): Promise<PairBrief> {
   const startedAt = performance.now();

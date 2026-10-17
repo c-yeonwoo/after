@@ -8,6 +8,7 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { SafetyMenu } from "@/components/app/SafetyMenu";
 import { GuideNote } from "@/components/app/GuideNote";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
+import { IntroductionReason } from "@/components/app/IntroductionReason";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -450,7 +451,7 @@ function IntroPage() {
       {maleAnswered || (isMale && reason) ? (
         <div className="mb-5">
           {isMale && reason && !maleAnswered ? (
-            <ReasonNote reason={reason} />
+            <IntroductionReason reason={reason} />
           ) : (
             <GuideNote>답을 받았어요. 다음 단계가 생기면 알려 드릴게요.</GuideNote>
           )}
@@ -571,18 +572,6 @@ function IntroPage() {
         </AlertDialogContent>
       </AlertDialog>
     </AppScreen>
-  );
-}
-
-/** 운영팀이 남긴 한 줄. 자동 안내와 구분해 "운영팀" 이 화자다. */
-function ReasonNote({ reason }: { reason: string }) {
-  return (
-    <div className="rounded-surface border border-border bg-card px-5 py-4">
-      <p className="text-xs font-medium text-muted-foreground">애프터 운영팀이 전하는 말</p>
-      <p data-selectable className="mt-2 text-base leading-[1.7] text-foreground">
-        {reason}
-      </p>
-    </div>
   );
 }
 

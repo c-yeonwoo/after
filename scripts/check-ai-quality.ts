@@ -17,6 +17,14 @@ import {
 } from "../supabase/functions/_shared/ai-grounding";
 import { includedAnswers, newProfileInterview, ownWordsDraft } from "../src/lib/profileInterview";
 import { CHOICE_QUESTIONS, storyFromAnswers, validProfileStory } from "../src/lib/profileStory";
+import {
+  pairSources,
+  validPairIntroduction,
+  type PairIntroductionBrief,
+} from "../supabase/functions/_shared/pair-material";
+import { demoStory } from "./lib/demo-profile-stories.mjs";
+import { addUsage, type ModelUsage } from "../supabase/functions/_shared/ai-usage";
+import { estimateUsageUsd } from "./lib/ai-cost.mjs";
 
 const headlines = [
   "퇴근 후 산책으로 머리를 식히는 편이에요.",
@@ -345,5 +353,140 @@ assert.equal(
 );
 checked += 6;
 
+const publicSources = pairSources({
+  job: "개발자",
+  profile_story: {
+    version: 3,
+    sections: [
+      {
+        id: "getting_closer",
+        question: "어떤 만남이 편해요?",
+        answer: "처음에는 조용한 카페에서 이야기하고 싶어요.",
+      },
+    ],
+  },
+  known_as: "비공개로 바꾼 예전 자료",
+  intro: "예전 소개",
+  details: { private: "비공개" },
+});
+assert.equal(publicSources.story_getting_closer, "처음에는 조용한 카페에서 이야기하고 싶어요.");
+assert.equal(publicSources.known_as, undefined);
+assert.equal(publicSources.intro, undefined);
+assert.equal(JSON.stringify(publicSources).includes("비공개"), false);
+const secondSources = { story_getting_closer: "첫 만남은 커피 한 잔이 편해요." };
+const pairDraft: PairIntroductionBrief = {
+  commonGround: [],
+  conversationStarters: [
+    "요즘 즐겨 마시는 커피 이야기를 꺼내 보세요.",
+    "처음 만날 때 편한 장소를 물어보세요.",
+    "최근의 일상부터 가볍게 나눠 보세요.",
+  ],
+  considerations: [],
+  recommendation: {
+    text: "처음에는 커피 한 잔을 앞에 두고 이야기하는 시간이 두 분 모두 편하다고 하셨어요. 편하게 대화를 시작해 보시면 좋겠어요.",
+    evidence: [
+      {
+        person: "a",
+        sourceField: "story_getting_closer",
+        quote: "조용한 카페에서 이야기하고 싶어요",
+      },
+      { person: "b", sourceField: "story_getting_closer", quote: "커피 한 잔이 편해요" },
+    ],
+  },
+};
+assert.equal(validPairIntroduction(pairDraft, publicSources, secondSources), true);
+assert.equal(
+  validPairIntroduction({ ...pairDraft, recommendation: null }, publicSources, secondSources),
+  true,
+);
+for (const text of [
+  "두 분의 궁합은 99%로 아주 잘 맞을 거예요.",
+  "회원님을 먼저 좋아한 분이라 소개드려요.",
+  "MBTI를 보니 두 분의 성격이 완벽하게 맞아요.",
+  "문의는 010-1234-5678로 주시면 될 것 같아요.",
+]) {
+  assert.equal(
+    validPairIntroduction(
+      { ...pairDraft, recommendation: { ...pairDraft.recommendation!, text } },
+      publicSources,
+      secondSources,
+    ),
+    false,
+  );
+}
+assert.equal(
+  validPairIntroduction(
+    {
+      ...pairDraft,
+      recommendation: {
+        ...pairDraft.recommendation!,
+        evidence: pairDraft.recommendation!.evidence.slice(0, 1),
+      },
+    },
+    publicSources,
+    secondSources,
+  ),
+  false,
+);
+assert.equal(
+  validPairIntroduction(
+    {
+      ...pairDraft,
+      recommendation: {
+        ...pairDraft.recommendation!,
+        evidence: [
+          pairDraft.recommendation!.evidence[0],
+          { person: "b", sourceField: "private_contact", quote: "커피 한 잔이 편해요" },
+        ],
+      },
+    },
+    publicSources,
+    secondSources,
+  ),
+  false,
+);
+assert.equal(
+  validPairIntroduction(
+    {
+      ...pairDraft,
+      recommendation: {
+        ...pairDraft.recommendation!,
+        evidence: [
+          pairDraft.recommendation!.evidence[0],
+          { person: "b", sourceField: "story_getting_closer", quote: "클라이밍을 아주 잘해요" },
+        ],
+      },
+    },
+    publicSources,
+    secondSources,
+  ),
+  false,
+);
+assert.equal(
+  pairSources({ interests: ["걷기"], details: { 걷기: "퇴근 후 가끔 걸어요", private: "숨김" } })
+    .interests,
+  "걷기: 퇴근 후 가끔 걸어요",
+);
+for (const key of ["m1", "m2", "m3", "m4", "f1", "f2", "f3", "f4", "f5"]) {
+  const story = demoStory(key, "첫 만남은 커피가 좋아요");
+  assert.equal(validProfileStory(story), true);
+  assert.equal(story!.sections.length, 3);
+}
+checked += 23;
+const modelUsage: ModelUsage = {};
+addUsage(modelUsage, "claude-sonnet-5-5", { input_tokens: 100, output_tokens: 20 });
+addUsage(modelUsage, "claude-sonnet-5-5", { input_tokens: 50, output_tokens: 10 });
+assert.deepEqual(modelUsage, {
+  "claude-sonnet-5-5": { input_tokens: 150, output_tokens: 30 },
+});
+assert.throws(() => addUsage(modelUsage, "invalid", { input_tokens: -1, output_tokens: 0 }));
+assert.throws(() => addUsage(modelUsage, "invalid", { input_tokens: 1.5, output_tokens: 0 }));
+assert.equal(estimateUsageUsd(modelUsage), 0.0006);
+assert.equal(estimateUsageUsd({}), 0);
+assert.equal(estimateUsageUsd({ unknown: { input_tokens: 1, output_tokens: 1 } }), null);
+assert.throws(() =>
+  estimateUsageUsd({ "claude-sonnet-5-5": { input_tokens: 0, output_tokens: -1 } }),
+);
+checked += 7;
 assert.ok(checked >= 50, "AI 품질 회귀 케이스는 최소 50개여야 합니다.");
 console.log(`AI quality gates passed: ${checked} cases`);

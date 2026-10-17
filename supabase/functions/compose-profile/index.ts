@@ -31,14 +31,15 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { escapeXml, validInterviewComposition } from "../_shared/ai-quality.ts";
 import { scrubUserText, sourceHash, validGroundedInterview } from "../_shared/ai-grounding.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { DEFAULT_TEXT_MODEL } from "../_shared/ai-models.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const MODEL = "claude-opus-5";
-const PROMPT_VERSION = "profile-copy-v6";
-const FOLLOWUP_VERSION = "profile-followup-v1";
+const MODEL = Deno.env.get("PROFILE_EDITOR_MODEL") || DEFAULT_TEXT_MODEL;
+const PROMPT_VERSION = "profile-copy-v7";
+const FOLLOWUP_VERSION = "profile-followup-v2";
 const FOLLOWUP_IDS = ["walk", "series", "conversation", "food", "music", "weekend"] as const;
 const TOPIC_LABELS = [
   "요즘 빠져 있는 것",

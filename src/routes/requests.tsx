@@ -8,6 +8,7 @@ import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
+import { IntroductionReason } from "@/components/app/IntroductionReason";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { acceptMeetingSlot, listMeetingsAwaitingMyPrefs, type Meeting } from "@/lib/api";
@@ -119,7 +120,7 @@ function RequestsPage() {
       </div>
 
       <ul className="mt-6 space-y-3">
-        {requests.map(({ meeting, candidate, deadline_at }) => {
+        {requests.map(({ meeting, candidate, deadline_at, reason }) => {
           const left =
             now === null || !deadline_at ? null : remainingLabel(Date.parse(deadline_at), now);
           return (
@@ -139,6 +140,11 @@ function RequestsPage() {
                     <p className="mt-3 line-clamp-2 text-sm leading-snug text-foreground/90">
                       “{candidate.headline}”
                     </p>
+                  ) : null}
+                  {reason ? (
+                    <div className="mt-4">
+                      <IntroductionReason reason={reason} />
+                    </div>
                   ) : null}
                   <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="size-3.5" aria-hidden="true" />

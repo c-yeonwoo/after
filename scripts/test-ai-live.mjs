@@ -113,7 +113,7 @@ const cases = [
 const output = `/tmp/after-ai-live-${randomUUID().slice(0, 8)}`;
 mkdirSync(output, { recursive: true });
 const report = {
-  version: "profile-story-v3-4",
+  version: "profile-story-v3-5",
   environment: "production-provider-synthetic-only",
   runs: [],
 };
