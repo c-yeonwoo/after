@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { createClient } from "@supabase/supabase-js";
@@ -93,11 +93,26 @@ async function login(page, person) {
     await delay(200);
   }
   await page.getByRole("button", { name: "로그인", exact: true }).click();
+  await waitForHome(page);
+}
+
+async function waitForHome(page) {
   await page.waitForURL("**/home");
   // WebKit can expose the new URL before the SPA has committed the screen.
   // Wait for the home UI, not a delay or a second forced navigation.
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
   await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
+}
+function localTotp(secret) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bits = [...secret.replace(/=+$/, "").toUpperCase()]
+    .map((c) => alphabet.indexOf(c).toString(2).padStart(5, "0"))
+    .join("");
+  const key = Buffer.from((bits.match(/.{8}/g) ?? []).map((byte) => parseInt(byte, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+  const hmac = createHmac("sha1", key).update(counter).digest();
+  return String((hmac.readUInt32BE(hmac[19] & 15) & 0x7fffffff) % 1000000).padStart(6, "0");
 }
 const personas = [
   {
@@ -369,7 +384,9 @@ async function readNotices(people) {
 }
 
 try {
-  sql("update app_settings set payments_enabled=false,identity_required=false");
+  sql(
+    "update app_settings set payments_enabled=false,identity_required=false,admin_mfa_required=false",
+  );
   server = spawn(
     process.execPath,
     ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "4178", "--strictPort"],
@@ -439,6 +456,41 @@ try {
   )
     throw Error("Photo review failed; dependent cycles cannot be trusted");
   const [m1, m2, f1, f2, f3] = personas;
+  let mfaSecret;
+  await check(
+    "operator enrolls real local TOTP and explicitly enables sensitive-action MFA",
+    async () => {
+      await ap.goto(`${base}/admin/settings`);
+      const security = ap.getByRole("region", { name: "관리자 보안", exact: true });
+      await security.getByRole("button", { name: "인증앱 등록 시작", exact: true }).waitFor();
+      const enrolled = ap.waitForResponse(
+        (r) =>
+          new URL(r.url()).pathname === "/auth/v1/factors" &&
+          r.request().method() === "POST" &&
+          r.ok(),
+      );
+      await security.getByRole("button", { name: "인증앱 등록 시작", exact: true }).click();
+      mfaSecret = (await (await enrolled).json()).totp.secret;
+      assert.ok(mfaSecret);
+      await security.getByLabel("인증앱 6자리 코드", { exact: true }).fill(localTotp(mfaSecret));
+      await security.getByRole("button", { name: "2단계 인증 확인", exact: true }).click();
+      await security.getByText(/현재 세션 2단계 인증 완료/).waitFor();
+      await security
+        .getByRole("checkbox", { name: "본인 복구수단을 별도로 확인했어요", exact: true })
+        .check();
+      await security
+        .getByRole("button", { name: "중요 조치 MFA 필수로 켜기", exact: true })
+        .click();
+      await security.getByText(/중요 조치 MFA 필수$/).waitFor();
+      assert.equal(sql("select admin_mfa_required from app_settings"), "t");
+      assert.equal(
+        await security.getByRole("img").count(),
+        0,
+        "verified setup no longer exposes its QR",
+      );
+      await screen(ap, "operator-security-verified");
+    },
+  );
   await check("operational phone contact is separately opt-in and can be revoked", async () => {
     await m1.page.goto(`${base}/settings`);
     const consent = m1.page.getByRole("checkbox", {
@@ -532,7 +584,7 @@ try {
       .getByRole("button", { name: /이 날로 정하기/ })
       .first()
       .click();
-    await f.page.waitForURL("**/home");
+    await waitForHome(f.page);
     assert.equal(
       sql(`select (confirmed_at is not null)::text from meetings where id='${success.id}'`),
       "true",
@@ -772,7 +824,7 @@ try {
     await m1.page.getByRole("button", { name: "대화가 편했어요", exact: true }).click();
     await screen(m1.page, "survey-mobile");
     await m1.page.getByRole("button", { name: "보내기", exact: true }).click();
-    await m1.page.waitForURL("**/home");
+    await waitForHome(m1.page);
     await m1.page.goto(`${base}/feedback?meetingId=${success.id}`);
     await m1.page.getByText("후기를 남겨주셨어요. 고마워요.", { exact: true }).waitFor();
     assert.equal(
@@ -806,7 +858,7 @@ try {
       .getByRole("button", { name: "좋았지만 인연은 아니에요", exact: true })
       .click();
     await success.female.page.getByRole("button", { name: "보내기", exact: true }).click();
-    await success.female.page.waitForURL("**/home");
+    await waitForHome(success.female.page);
     assert.equal(sql(`select count(*) from feedbacks where meeting_id='${success.id}'`), "2");
     assert.equal(
       sql(`select cardinality(completed_by) from meetings where id='${success.id}'`),
@@ -847,7 +899,7 @@ try {
         .getByRole("button", { name: /이 날로 정하기/ })
         .first()
         .click();
-      await f3.page.waitForURL("**/home");
+      await waitForHome(f3.page);
       shiftMeeting(silent.id, "now()+interval '20 hours'");
       sql("select meeting_lifecycle_tick()");
       shiftMeeting(silent.id, "now()+interval '1 hour'");
@@ -898,7 +950,7 @@ try {
         .getByRole("alertdialog")
         .getByRole("button", { name: "넘기기", exact: true })
         .click();
-      await m2.page.waitForURL("**/home");
+      await waitForHome(m2.page);
       assert.equal(
         sql(
           `select count(*) from intro_exclusions where user_lo=least('${m2.id}'::uuid,'${f3.id}'::uuid) and user_hi=greatest('${m2.id}'::uuid,'${f3.id}'::uuid)`,
@@ -966,7 +1018,7 @@ try {
       .getByRole("button", { name: /이 날로 정하기/ })
       .first()
       .click();
-    await extra.page.waitForURL("**/home");
+    await waitForHome(extra.page);
     for (const hours of [20, 3, 1]) {
       shiftMeeting(again.id, `now()+interval '${hours} hours'`);
       sql("select meeting_lifecycle_tick()");
@@ -1018,6 +1070,22 @@ try {
       await screen(ap, `operator-meetings-mobile-${width}`);
     }
   });
+  await check(
+    "fresh operator login challenges the existing authenticator without disabling MFA",
+    async () => {
+      assert.ok(mfaSecret);
+      const fresh = await pageFor(1440);
+      await login(fresh, admin);
+      await fresh.goto(`${base}/admin/settings`);
+      const security = fresh.getByRole("region", { name: "관리자 보안", exact: true });
+      await security.getByText(/현재 세션 추가 인증 필요/).waitFor();
+      await security.getByLabel("인증앱 6자리 코드", { exact: true }).fill(localTotp(mfaSecret));
+      await security.getByRole("button", { name: "2단계 인증 확인", exact: true }).click();
+      await security.getByText(/현재 세션 2단계 인증 완료/).waitFor();
+      assert.equal(sql("select admin_mfa_required from app_settings"), "t");
+      await screen(fresh, "operator-mfa-rechallenge");
+    },
+  );
 } catch (e) {
   report.checks.push({ name: "suite execution", status: "FAIL", error: e.message });
   console.error(e);
@@ -1026,6 +1094,10 @@ try {
   await browser?.close();
   server?.kill("SIGTERM");
   if (paths.length) await service.storage.from("profile-photos").remove(paths);
+  const old = JSON.parse(settings);
+  sql(`begin; set local request.jwt.claims='{"role":"service_role","aal":"aal2"}';
+    update app_settings set admin_mfa_required=${old.admin_mfa_required},payments_enabled=${old.payments_enabled},identity_required=${old.identity_required},
+      updated_at='${old.updated_at}'::timestamptz,updated_by=${old.updated_by ? `'${old.updated_by}'::uuid` : "null"}; commit;`);
   if (ids.length) {
     const listed = ids.map((id) => `'${id}'`).join(",");
     assert.equal(
@@ -1051,10 +1123,6 @@ try {
     sql(
       `delete from auth.users where id in (${ids.map((id) => `'${id}'`).join(",")}) and email like 'cycle-${run}-%@verify.local'`,
     );
-  const old = JSON.parse(settings);
-  sql(
-    `update app_settings set payments_enabled=${old.payments_enabled},identity_required=${old.identity_required}`,
-  );
   await writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
   console.log(`Evidence: ${output}/report.json`);
   console.log(

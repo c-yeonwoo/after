@@ -3259,6 +3259,7 @@ export type Database = {
       submit_meeting_prefs_v2: { Args: { p_meeting_id: string; p_prefs: Json }; Returns: Database["public"]["Tables"]["meetings"]["Row"] }
       confirm_meeting_v2: { Args: { p_meeting_id: string; p_scheduled_at: string; p_place_name: string; p_place_kind?: string }; Returns: Database["public"]["Tables"]["meetings"]["Row"] }
       admin_meeting_lifecycle: { Args: never; Returns: Json }
+      admin_set_mfa_requirement: { Args: { p_required: boolean; p_expected_required: boolean; p_recovery_confirmed: boolean; p_request_id: string }; Returns: boolean }
       my_meeting_checkin: { Args: { p_meeting_id: string }; Returns: Json }
       confirm_meeting_attendance: { Args: { p_meeting_id: string }; Returns: Json }
       submit_meeting_feedback: { Args: { p_meeting_id: string; p_met: boolean; p_result: string; p_body?: string }; Returns: string }

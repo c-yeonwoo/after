@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AdminSecurity } from "@/components/admin/AdminSecurity";
 
 import {
   approveAutomationRun,
@@ -129,6 +130,7 @@ function AdminSettingsPage() {
         </button>
       </div>
 
+      <AdminSecurity />
       {error ? (
         <p role="alert" className="mt-6 rounded-surface border border-destructive/30 p-4 text-sm">
           설정을 불러오지 못했습니다. 이전 수치를 현재 상태로 사용하지 마세요.
