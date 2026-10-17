@@ -605,7 +605,7 @@ try {
   }
 
   process.stdout.write(
-    "Browser E2E: paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
+    "Browser E2E: existing/new signup, paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
   );
 } finally {
   sql(`update public.app_settings set payments_enabled=${originalPaymentsEnabled === "t"}`);
