@@ -437,6 +437,11 @@ deno_version = 2
 [functions.kakao-unlink]
 verify_jwt = false
 
+# Account creation follows identity verification. This endpoint validates a
+# short-lived signup capability; provider completion RPCs remain service-only.
+[functions.signup-identity]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

@@ -28,6 +28,10 @@ export function carrierIdentityError(error: unknown): string {
   if (reason.includes("daily limit"))
     return "오늘 인증 시도 횟수를 넘었어요. 내일 다시 시도해 주세요.";
   if (reason.includes("verification expired")) return "인증 시간이 지났어요. 다시 시작해 주세요.";
+  if (reason.includes("signup expired"))
+    return "가입 확인 시간이 지났어요. 처음부터 다시 진행해 주세요.";
+  if (reason.includes("policy_version_mismatch"))
+    return "약관이 갱신됐어요. 새로고침 후 다시 확인해 주세요.";
   if (reason.includes("not configured"))
     return "본인확인 준비 중입니다. 잠시 후 다시 시도해 주세요.";
   if (reason.includes("not verified")) return "본인확인을 완료하지 못했어요. 다시 시도해 주세요.";

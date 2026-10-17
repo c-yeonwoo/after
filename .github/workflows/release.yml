@@ -65,6 +65,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CARRIER_IDENTITY_ENABLED: ${{ vars.CARRIER_IDENTITY_ENABLED || 'false' }}
 
       - name: Link production project
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
@@ -75,7 +76,7 @@ jobs:
       - name: Apply migrations
         run: supabase db push --yes
 
-      # 전부 다시 올린다. verify_jwt 는 config.toml 을 따른다(kakao-unlink 만 false).
+      # 전부 다시 올린다. 각 함수의 인증 방식은 config.toml 을 따른다.
       - name: Deploy edge functions
         run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
 

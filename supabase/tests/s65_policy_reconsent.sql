@@ -1,5 +1,7 @@
 begin;
 select plan(18);
+select set_config('test.policy_control_version',
+  (select version::text from public.policy_control where id), true);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 values
@@ -10,9 +12,9 @@ insert into public.profiles(id,gender,hub_id,company_email,email_verified_at,nam
   photo_paths,photo_state)
 values
  ('65000000-0000-0000-0000-000000000001','male','gangnam','admin65@corp.example',now(),'운영65',7,
-  'admin',now(),now(),'2026-10-17.1',now(),array['a','b','c'],'approved'),
+  'admin',now(),now(),'2026-10-17.2',now(),array['a','b','c'],'approved'),
  ('65000000-0000-0000-0000-000000000002','male','gangnam','man65@corp.example',now(),'회원65',7,
-  'member',now(),now(),'2026-10-17.1',now(),array['a','b','c'],'approved');
+  'member',now(),now(),'2026-10-17.2',now(),array['a','b','c'],'approved');
 
 select is((select required_reconsent_version from public.policy_control where id),null::text,
  'reconsent is not enforced before legal approval');
@@ -37,15 +39,15 @@ set local role authenticated;
 set local request.jwt.claims =
  '{"sub":"65000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal1"}';
 select throws_ok($$select public.admin_activate_policy_reconsent(
-  2,now()+interval '2 days','법률 검토 완료 후 적용합니다',gen_random_uuid())$$,
+  current_setting('test.policy_control_version')::integer,now()+interval '2 days','법률 검토 완료 후 적용합니다',gen_random_uuid())$$,
   '42501',null,'activation requires AAL2 even when global MFA flag is off');
 reset role;
 set local role authenticated;
 set local request.jwt.claims =
  '{"sub":"65000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}';
 select is((public.admin_activate_policy_reconsent(
-  2,now()+interval '2 days','법률 검토 완료 후 적용합니다',gen_random_uuid())->>'required_version'),
-  '2026-10-17.1','operator can schedule a future effective date');
+  current_setting('test.policy_control_version')::integer,now()+interval '2 days','법률 검토 완료 후 적용합니다',gen_random_uuid())->>'required_version'),
+  '2026-10-17.2','operator can schedule a future effective date');
 reset role;
 select is(public.member_policy_current('65000000-0000-0000-0000-000000000002'),true,
  'future effective date does not block current access');
@@ -65,19 +67,19 @@ select is(public.home_state_v2()->>'primary_state','policy_required',
  'home points to the dedicated reconsent flow');
 select throws_ok($$select public.create_ticket_order(1::smallint,'meeting'::public.ticket_kind)$$,'PT409',null,
  'new order is blocked while reconsent is required');
-select is((public.record_consent('2026-10-17.1')).agreed_policy_version,
- '2026-10-17.1','explicit consent is recorded for approved version');
+select is((public.record_consent('2026-10-17.2')).agreed_policy_version,
+ '2026-10-17.2','explicit consent is recorded for approved version');
 reset role;
 select is(public.member_policy_current('65000000-0000-0000-0000-000000000002'),true,
  'matching access resumes after explicit consent');
 set local role authenticated;
 set local request.jwt.claims =
  '{"sub":"65000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}';
-select is((public.admin_pause_policy_reconsent(3,'적용 결과 재검토를 위해 중지합니다',
+select is((public.admin_pause_policy_reconsent(current_setting('test.policy_control_version')::integer+1,'적용 결과 재검토를 위해 중지합니다',
  gen_random_uuid())->>'required_version'),null::text,
  'operator can pause the policy rollout with audit');
 reset role;
-select is((select version from public.policy_control where id),4,
+select is((select version from public.policy_control where id),current_setting('test.policy_control_version')::integer+2,
  'pause increments the policy control version');
 
 select * from finish();

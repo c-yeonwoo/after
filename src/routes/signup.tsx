@@ -25,7 +25,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BRAND, HUBS, isCompanyEmail, OPEN_HUBS } from "@/lib/brand";
-import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
+import { carrierIdentityEnabled, carrierIdentityError } from "@/lib/carrierIdentity";
+import {
+  beginSignup,
+  clearSignupSession,
+  finishSignupIdentity,
+  loadSignupSession,
+  pendingSignupIdentity,
+  signupToken,
+  startSignupIdentity,
+  type SignupSession,
+} from "@/lib/signupSession";
 import {
   authErrorMessage,
   createSignupProfile,
@@ -78,22 +88,26 @@ export const Route = createFileRoute("/signup")({
   단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
   두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
 
-    성별 → 직장 지역 → 회사 이메일 → 기본 정보 → 생활 정보 → 인터뷰 → 소개장 확인
+    동의 → 본인·성인 확인 → 회사 이메일 → 직장 지역 → 기본 정보 → 생활 정보 → 인터뷰
+    통신사 미개통 베타에서만 성별 수기 입력·가입 후 문자 OTP 경로를 유지한다.
 
   생활 정보는 소개장 생성 전에 받는다. 성격을 추측하는 근거로 쓰지 않고,
   본인 답변과 충돌할 때 확인하는 자료로만 사용한다.
 */
 const Q_FIRST = 11;
 const CONDITIONS = 15;
-/** 휴대폰 인증(s54). 회사 메일 다음, 기본 정보 앞. 프로필 행이 생긴 뒤라야 저장할 곳이 있다. */
+const CONSENT = 0;
 const PHONE = 5;
-const ORDER = [1, 3, 4, PHONE, 2, CONDITIONS, Q_FIRST];
+const ORDER = carrierIdentityEnabled
+  ? [CONSENT, PHONE, 4, 3, 2, CONDITIONS, Q_FIRST]
+  : [CONSENT, 1, 4, 3, PHONE, 2, CONDITIONS, Q_FIRST];
 const TOTAL = ORDER.length;
 /** 화면에 보이는 단계 번호. */
 const shown = (id: number) => ORDER.indexOf(id) + 1;
 type Gender = "female" | "male";
 
 function resumeStep(me: Profile) {
+  if (!me.terms_agreed_at || !me.privacy_agreed_at) return CONSENT;
   if (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at) return PHONE;
   if (me.onboarding_step < 4) return 2;
   if (!me.smoking || !me.drinking) return CONDITIONS;
@@ -105,7 +119,7 @@ function Onboarding() {
   const { edit } = Route.useSearch();
   const editing = Boolean(edit);
   const { me, ready, refresh, setMe } = useMe();
-  const [step, setStep] = useState(editing ? 2 : 1);
+  const [step, setStep] = useState(editing ? 2 : CONSENT);
   const [gender, setGender] = useState<Gender | null>(null);
   // 모집 중인 지역이 하나여도 직장 위치를 추측해 자동 배정하지 않는다.
   const [hubId, setHubId] = useState<string | null>(null);
@@ -113,7 +127,14 @@ function Onboarding() {
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [agreed, setAgreed] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const agreed = termsAgreed && privacyAgreed;
+  const [signupSession, setSignupSession] = useState<SignupSession | null>(null);
+  const [signupResumeRequired, setSignupResumeRequired] = useState(false);
+  const [signupRestoreError, setSignupRestoreError] = useState(false);
+  const [signupReady, setSignupReady] = useState(editing);
+  const signupRestored = useRef(false);
   const [autoFilled, setAutoFilled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   /*
@@ -143,6 +164,44 @@ function Onboarding() {
     return savedStep.current;
   };
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
+
+  useEffect(() => {
+    if (!ready || me || editing || signupRestored.current) return;
+    signupRestored.current = true;
+    void (async () => {
+      let session: SignupSession | null = null;
+      const query = new URLSearchParams(window.location.search);
+      const id = query.get("identityVerificationId");
+      const code = query.get("code");
+      try {
+        if (id || code) {
+          window.history.replaceState(null, "", "/signup");
+          if (code || !id || pendingSignupIdentity() !== id) throw new Error("not verified");
+          session = await finishSignupIdentity(id);
+        } else {
+          session = await loadSignupSession();
+        }
+      } catch (error) {
+        setAuthError(carrierIdentityError(error));
+        try {
+          session = await loadSignupSession();
+        } catch {
+          setSignupRestoreError(true);
+        }
+      }
+      if (session) {
+        setSignupSession(session);
+        setTermsAgreed(true);
+        setPrivacyAgreed(true);
+        if (session.gender) setGender(session.gender);
+        if (session.birth) setBasics((value) => ({ ...value, birth: session.birth! }));
+        if (session.verified) setAuthError(null);
+        setStep(carrierIdentityEnabled ? (session.verified ? 4 : PHONE) : 1);
+        setSignupResumeRequired(!id && !code);
+      }
+      setSignupReady(true);
+    })();
+  }, [ready, me, editing]);
 
   /**
    * 저장된 프로필을 불러온다. 두 경로가 여기로 온다:
@@ -200,9 +259,64 @@ function Onboarding() {
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
+  function restartSignup() {
+    clearSignupSession();
+    setSignupSession(null);
+    setSignupResumeRequired(false);
+    setTermsAgreed(false);
+    setPrivacyAgreed(false);
+    setGender(null);
+    setHubId(null);
+    setEmail("");
+    setCode("");
+    setCodeSent(false);
+    setEmailVerified(false);
+    setPw("");
+    setBasics(emptyBasics);
+    setAuthError(null);
+    setStep(CONSENT);
+  }
+
+  async function completeSignup() {
+    if (!hubId || (!carrierIdentityEnabled && !gender)) return;
+    const token = signupToken();
+    if (!token) {
+      setAuthError("가입 확인 시간이 지났어요. 약관부터 다시 확인해 주세요.");
+      setStep(CONSENT);
+      return;
+    }
+    setAuthBusy(true);
+    setAuthError(null);
+    try {
+      const created = await createSignupProfile(
+        hubId,
+        token,
+        carrierIdentityEnabled ? undefined : (gender ?? undefined),
+      );
+      try {
+        await setPassword(pw);
+      } catch {
+        toast("비밀번호는 나중에 설정에서 정해 주세요.");
+      }
+      clearSignupSession();
+      setMe(created);
+      setUserId(created.id);
+      if (created.birth) setBasics((value) => ({ ...value, birth: created.birth! }));
+      setStep(
+        (carrierIdentityEnabled ? created.identity_verified_at : created.phone_verified_at)
+          ? 2
+          : PHONE,
+      );
+    } catch (error) {
+      setAuthError(authErrorMessage(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
   // SSR·세션 복구 중에는 빈 가입 폼도 보여주지 않는다. 기존 회원 데이터가 뒤늦게
   // 폼에 채워져 '새 가입'처럼 보이던 순간적인 노출을 막는다.
-  if (!ready || (editing && !me)) {
+  if (!ready || (editing && !me) || (!editing && !me && !signupReady)) {
     return (
       <AppScreen title="가입" hideTabs>
         <p className="mt-16 text-center text-sm text-muted-foreground">계정을 확인하고 있어요…</p>
@@ -241,6 +355,7 @@ function Onboarding() {
                 setAuthBusy(true);
                 try {
                   await signOut();
+                  clearSignupSession();
                   // 이전 계정에서 불러온 폼 상태까지 버리고 새 화면을 연다.
                   window.location.replace("/signup");
                 } catch (err) {
@@ -259,6 +374,43 @@ function Onboarding() {
           ) : null}
         </div>
       </AppScreen>
+    );
+  }
+
+  if (!me && signupRestoreError) {
+    return (
+      <StepShell
+        step={shown(CONSENT)}
+        total={TOTAL}
+        eyebrow="가입"
+        title="가입 정보를 확인하지 못했어요"
+        description="연결 상태를 확인하고 다시 시도해 주세요."
+      >
+        <Button className="w-full" size="lg" onClick={() => window.location.reload()}>
+          다시 확인하기
+        </Button>
+      </StepShell>
+    );
+  }
+
+  if (!me && signupResumeRequired) {
+    return (
+      <StepShell
+        step={shown(CONSENT)}
+        total={TOTAL}
+        eyebrow="가입"
+        title="진행 중인 가입이 있어요"
+        description="이어서 진행하거나, 처음부터 다시 시작할 수 있어요."
+      >
+        <div className="grid gap-3">
+          <Button size="lg" onClick={() => setSignupResumeRequired(false)}>
+            가입 이어하기
+          </Button>
+          <Button size="lg" variant="outline" onClick={restartSignup}>
+            처음부터 시작하기
+          </Button>
+        </div>
+      </StepShell>
     );
   }
 
@@ -311,7 +463,104 @@ function Onboarding() {
     );
   }
 
+  if (step === CONSENT) {
+    return (
+      <StepShell
+        step={shown(CONSENT)}
+        total={TOTAL}
+        eyebrow="가입"
+        title="시작하기 전에, 확인해 주세요"
+        description="서비스 이용과 개인정보 처리에 대한 동의가 필요해요."
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            이미 가입하셨나요?{" "}
+            <Link to="/login" className="font-semibold text-primary-strong underline">
+              로그인
+            </Link>
+          </p>
+        }
+      >
+        <div className="divide-y divide-border rounded-surface border border-border bg-card px-4">
+          <label className="flex min-h-16 cursor-pointer items-center gap-3 py-4">
+            <input
+              type="checkbox"
+              aria-label="이용약관 동의 (필수)"
+              checked={termsAgreed}
+              onChange={(event) => setTermsAgreed(event.target.checked)}
+              className="size-5 shrink-0 accent-primary"
+            />
+            <span className="text-sm">
+              <Link
+                to="/terms"
+                target="_blank"
+                className="font-semibold text-primary-strong underline underline-offset-4"
+              >
+                이용약관
+              </Link>{" "}
+              동의 <span className="text-muted-foreground">(필수)</span>
+            </span>
+          </label>
+          <label className="flex min-h-16 cursor-pointer items-center gap-3 py-4">
+            <input
+              type="checkbox"
+              aria-label="개인정보 수집·이용 동의 (필수)"
+              checked={privacyAgreed}
+              onChange={(event) => setPrivacyAgreed(event.target.checked)}
+              className="size-5 shrink-0 accent-primary"
+            />
+            <span className="text-sm">
+              <Link
+                to="/privacy"
+                target="_blank"
+                className="font-semibold text-primary-strong underline underline-offset-4"
+              >
+                개인정보 수집·이용
+              </Link>{" "}
+              동의 <span className="text-muted-foreground">(필수)</span>
+            </span>
+          </label>
+        </div>
+        {authError ? (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {authError}
+          </p>
+        ) : null}
+        <Button
+          className="mt-8 w-full"
+          size="lg"
+          disabled={!agreed || authBusy}
+          onClick={async () => {
+            setAuthBusy(true);
+            setAuthError(null);
+            try {
+              if (me) {
+                const updated = await recordConsent();
+                setMe(updated);
+                setStep(resumeStep(updated));
+              } else {
+                const session = signupSession ?? (await beginSignup());
+                setSignupSession(session);
+                setStep(carrierIdentityEnabled ? (session.verified ? 4 : PHONE) : 1);
+              }
+            } catch (error) {
+              setAuthError(authErrorMessage(error));
+            } finally {
+              setAuthBusy(false);
+            }
+          }}
+        >
+          {authBusy ? "확인 중…" : "동의하고 시작하기"}
+        </Button>
+      </StepShell>
+    );
+  }
+
   if (step === PHONE) {
+    const alreadyVerified = me
+      ? carrierIdentityEnabled
+        ? me.identity_verified_at
+        : me.phone_verified_at
+      : signupSession?.verified;
     return (
       <StepShell
         step={shown(PHONE)}
@@ -324,12 +573,37 @@ function Onboarding() {
           carrierIdentityEnabled ? undefined : "한 사람이 한 계정만 쓰도록 하기 위해서예요."
         }
       >
-        {carrierIdentityEnabled ? (
+        {authError ? (
+          <p role="alert" className="mb-4 text-sm text-destructive">
+            {authError}
+          </p>
+        ) : null}
+        {alreadyVerified ? (
+          <div>
+            <p className="text-sm text-muted-foreground">인증을 마쳤어요. 가입을 이어가세요.</p>
+            <Button className="mt-6 w-full" size="lg" onClick={() => setStep(me ? 2 : 4)}>
+              다음
+            </Button>
+          </div>
+        ) : carrierIdentityEnabled ? (
           <CarrierIdentityForm
+            verifyIdentity={
+              !me
+                ? async () => {
+                    const session = await startSignupIdentity();
+                    if (!session.verified || !session.birth || !session.gender)
+                      throw new Error("not verified");
+                    setSignupSession(session);
+                    setGender(session.gender);
+                    return session.birth;
+                  }
+                : undefined
+            }
             onVerified={async (birth) => {
-              await refresh();
+              if (me) await refresh();
               setBasics((previous) => ({ ...previous, birth }));
-              setStep(2);
+              setAuthError(null);
+              setStep(me ? 2 : 4);
             }}
           />
         ) : (
@@ -340,6 +614,11 @@ function Onboarding() {
             }}
           />
         )}
+        {!me ? (
+          <Button variant="ghost" className="mt-4" onClick={restartSignup}>
+            처음부터 다시
+          </Button>
+        ) : null}
       </StepShell>
     );
   }
@@ -347,19 +626,11 @@ function Onboarding() {
   if (step === 1) {
     return (
       <StepShell
-        step={1}
+        step={shown(1)}
         total={TOTAL}
         eyebrow="가입"
         title="성별을 알려주세요"
         description="가입 후 변경할 수 없습니다."
-        footer={
-          <p className="text-center text-sm text-muted-foreground">
-            이미 가입하셨나요?{" "}
-            <Link to="/login" className="font-semibold text-primary-strong underline">
-              로그인
-            </Link>
-          </p>
-        }
       >
         <div className="grid gap-3">
           <ChoiceCard
@@ -370,7 +641,7 @@ function Onboarding() {
           <ChoiceCard selected={gender === "male"} onClick={() => setGender("male")} title="남성" />
         </div>
         <div className="mt-8">
-          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(3)}>
+          <Button className="w-full" size="lg" disabled={!gender} onClick={() => setStep(4)}>
             다음
           </Button>
         </div>
@@ -483,7 +754,10 @@ function Onboarding() {
         ) : null}
 
         <div className={cn("flex gap-2", issues.length ? "mt-5" : "mt-8")}>
-          <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(4))}>
+          <Button
+            variant="ghost"
+            onClick={() => (editing ? navigate({ to: "/me" }) : setStep(PHONE))}
+          >
             {editing ? "취소" : "이전"}
           </Button>
           <Button
@@ -572,12 +846,22 @@ function Onboarding() {
         {OPEN_HUBS.length < HUBS.length ? (
           <p className="mt-4 text-sm text-muted-foreground">다른 지역은 차례로 준비하고 있어요.</p>
         ) : null}
+        {authError ? (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {authError}
+          </p>
+        ) : null}
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(1)}>
+          <Button variant="ghost" onClick={() => setStep(4)}>
             이전
           </Button>
-          <Button className="flex-1" size="lg" disabled={!hubId} onClick={() => setStep(4)}>
-            다음
+          <Button
+            className="flex-1"
+            size="lg"
+            disabled={!hubId || authBusy}
+            onClick={completeSignup}
+          >
+            {authBusy ? "저장 중…" : "다음"}
           </Button>
         </div>
       </StepShell>
@@ -712,79 +996,16 @@ function Onboarding() {
           </div>
         ) : null}
 
-        {/* 계정이 실제로 만들어지는 지점이므로 동의를 여기서 받는다 (PRD 266). */}
-        {emailVerified ? (
-          <label className="mt-7 flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 size-5 shrink-0 accent-primary"
-            />
-            <span className="text-sm leading-relaxed text-foreground/85">
-              <Link
-                to="/terms"
-                target="_blank"
-                className="font-semibold text-primary-strong underline"
-              >
-                이용약관
-              </Link>
-              과{" "}
-              <Link
-                to="/privacy"
-                target="_blank"
-                className="font-semibold text-primary-strong underline"
-              >
-                개인정보 처리방침
-              </Link>
-              에 동의합니다. (필수)
-            </span>
-          </label>
-        ) : null}
-
         <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(3)}>
+          <Button variant="ghost" onClick={() => setStep(carrierIdentityEnabled ? PHONE : 1)}>
             이전
           </Button>
           {emailVerified ? (
             <Button
               className="flex-1"
               size="lg"
-              disabled={pw.length < PASSWORD_MIN_LENGTH || !agreed || authBusy || !gender || !hubId}
-              onClick={async () => {
-                if (!gender || !hubId) return;
-                setAuthError(null);
-                setAuthBusy(true);
-                try {
-                  const created = await createSignupProfile(gender, hubId);
-                  // 동의는 서버에 시각·버전으로 남긴다. 이게 없으면
-                  // eligible_profiles 를 통과하지 못해 매칭 대상이 되지 않는다.
-                  // 인증 직후 바로 건다. 여기서 실패해도 계정은 이미 만들어진
-                  // 뒤라 되돌릴 수 없으므로 가입은 계속 진행시키고, 나중에
-                  // 설정에서 정하게 안내한다 — 코드 로그인 경로가 살아 있다.
-                  try {
-                    await setPassword(pw);
-                  } catch {
-                    toast("비밀번호는 나중에 설정에서 정해 주세요.");
-                  }
-                  setMe(await recordConsent());
-                  setUserId(created.id);
-                  // 가입 중 재시도해 이미 번호를 확인한 계정이면 건너뛴다.
-                  setStep(
-                    (
-                      carrierIdentityEnabled
-                        ? created.identity_verified_at
-                        : created.phone_verified_at
-                    )
-                      ? 2
-                      : PHONE,
-                  );
-                } catch (err) {
-                  setAuthError(authErrorMessage(err));
-                } finally {
-                  setAuthBusy(false);
-                }
-              }}
+              disabled={pw.length < PASSWORD_MIN_LENGTH || !agreed || authBusy}
+              onClick={() => setStep(3)}
             >
               {authBusy ? "저장 중…" : "가입 계속하기"}
             </Button>
