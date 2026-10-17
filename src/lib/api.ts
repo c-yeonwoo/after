@@ -399,11 +399,15 @@ export async function verifySignupEmail(email: string, token: string): Promise<S
 }
 
 /** 새 계정으로 확인된 뒤에만 프로필을 만든다. 성별·권역·회사 메일은 서버가 확정한다. */
-export async function createSignupProfile(gender: Gender, hubId: string): Promise<Profile> {
-  // 프로필은 서버가 만든다(s48). 회사 메일과 인증 시각은 auth.users 에서 읽고, 개인
-  // 도메인은 서버가 거절한다. 재시도 시에는 같은 프로필만 돌려준다.
-  const { data: profile, error: createError } = await supabase.rpc("create_my_profile", {
-    p_gender: gender,
+export async function createSignupProfile(
+  hubId: string,
+  token: string,
+  legacyGender?: Gender,
+): Promise<Profile> {
+  // 통신사 인증 결과가 있으면 성별은 서버가 결정한다. 수기 값은 미개통 베타 경로에서만 쓴다.
+  const { data: profile, error: createError } = await supabase.rpc("create_signup_profile", {
+    p_token: token,
+    ...(legacyGender ? { p_gender: legacyGender } : {}),
     p_hub_id: hubId,
   });
   if (createError) throw createError;

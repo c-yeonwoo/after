@@ -37,6 +37,7 @@ const ids = [];
 const objectPaths = [];
 let browser;
 let server;
+let carrierServer;
 
 function sql(statement) {
   return execFileSync("psql", [dbUrl, "-v", "ON_ERROR_STOP=1", "-Atc", statement], {
@@ -46,10 +47,10 @@ function sql(statement) {
 
 const originalPaymentsEnabled = sql("select payments_enabled from public.app_settings");
 
-async function waitForServer() {
+async function waitForServer(target = baseUrl) {
   for (let attempt = 0; attempt < 90; attempt += 1) {
     try {
-      const response = await fetch(baseUrl, { signal: AbortSignal.timeout(1000) });
+      const response = await fetch(target, { signal: AbortSignal.timeout(1000) });
       if (response.ok) return;
     } catch {
       /* server is starting */
@@ -103,7 +104,7 @@ async function createPerson(kind, gender, role, password) {
       role,
       terms_agreed_at: new Date().toISOString(),
       privacy_agreed_at: new Date().toISOString(),
-      agreed_policy_version: "2026-10-17.1",
+      agreed_policy_version: "2026-10-17.2",
       phone_verified_at: new Date().toISOString(),
       photo_paths: paths,
       photo_state: "approved",
@@ -172,6 +173,16 @@ async function chooseWorkZone(page) {
   await next.click();
 }
 
+async function acceptSignupConsent(page) {
+  await page.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
+  const start = page.getByRole("button", { name: "동의하고 시작하기" });
+  assert.equal(await start.isEnabled(), false, "signup starts with explicit consent");
+  await page.getByRole("checkbox", { name: "이용약관 동의 (필수)", exact: true }).check();
+  assert.equal(await start.isEnabled(), false, "both required agreements must be explicit");
+  await page.getByRole("checkbox", { name: "개인정보 수집·이용 동의 (필수)", exact: true }).check();
+  await start.click();
+}
+
 try {
   // The first scenario verifies paid-ticket behavior, even when a freshly
   // started Supabase defaults to free beta. The outer finally restores it.
@@ -235,6 +246,7 @@ try {
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await signupPage.goto(`${baseUrl}/signup`);
+  await acceptSignupConsent(signupPage);
   const signupNext = signupPage.getByRole("button", { name: "다음", exact: true });
   for (let attempt = 0; attempt < 20; attempt += 1) {
     await signupPage.getByRole("button", { name: "여성" }).click();
@@ -243,7 +255,6 @@ try {
   }
   assert.equal(await signupNext.isEnabled(), true, "signup form did not hydrate");
   await signupNext.click();
-  await chooseWorkZone(signupPage);
   await signupPage.getByLabel("회사 이메일").fill(existing.email);
   await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await signupPage
@@ -289,7 +300,7 @@ try {
   await signupPage.getByRole("heading", { name: "이미 가입된 계정이 있어요" }).waitFor();
   assert.equal(await signupPage.getByText(existing.name).count(), 0);
   await signupPage.getByRole("button", { name: "다른 계정으로 새로 가입" }).click();
-  await signupPage.getByRole("heading", { name: "성별을 알려주세요" }).waitFor();
+  await signupPage.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
   await signupPage.close();
 
   const incomplete = await createPerson(
@@ -303,6 +314,7 @@ try {
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await incompletePage.goto(`${baseUrl}/signup`);
+  await acceptSignupConsent(incompletePage);
   const incompleteNext = incompletePage.getByRole("button", { name: "다음", exact: true });
   for (let attempt = 0; attempt < 20; attempt += 1) {
     await incompletePage.getByRole("button", { name: "남성" }).click();
@@ -311,7 +323,6 @@ try {
   }
   assert.equal(await incompleteNext.isEnabled(), true, "incomplete signup form did not hydrate");
   await incompleteNext.click();
-  await chooseWorkZone(incompletePage);
   await incompletePage.getByLabel("회사 이메일").fill(incomplete.email);
   await incompletePage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
@@ -331,7 +342,7 @@ try {
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
   await incompletePage.getByRole("button", { name: "다른 계정으로 새로 가입" }).click();
-  await incompletePage.getByRole("heading", { name: "성별을 알려주세요" }).waitFor();
+  await acceptSignupConsent(incompletePage);
   const clearedNext = incompletePage.getByRole("button", { name: "다음", exact: true });
   for (let attempt = 0; attempt < 20; attempt += 1) {
     await incompletePage.getByRole("button", { name: "남성" }).click();
@@ -340,7 +351,6 @@ try {
   }
   assert.equal(await clearedNext.isEnabled(), true, "new account form did not hydrate");
   await clearedNext.click();
-  await chooseWorkZone(incompletePage);
   assert.equal(
     await incompletePage.getByLabel("회사 이메일").inputValue(),
     "",
@@ -353,6 +363,7 @@ try {
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await freshPage.goto(`${baseUrl}/signup`);
+  await acceptSignupConsent(freshPage);
   const freshNext = freshPage.getByRole("button", { name: "다음", exact: true });
   for (let attempt = 0; attempt < 20; attempt += 1) {
     await freshPage.getByRole("button", { name: "남성" }).click();
@@ -361,7 +372,6 @@ try {
   }
   assert.equal(await freshNext.isEnabled(), true, "fresh signup form did not hydrate");
   await freshNext.click();
-  await chooseWorkZone(freshPage);
   await freshPage.getByLabel("회사 이메일").fill(freshEmail);
   await freshPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await freshPage.getByText("로컬 개발 환경").waitFor();
@@ -376,8 +386,8 @@ try {
     "email verification alone does not create a profile before consent",
   );
   await freshPage.getByLabel("비밀번호").fill(password);
-  await freshPage.getByRole("checkbox").check();
   await freshPage.getByRole("button", { name: "가입 계속하기" }).click();
+  await chooseWorkZone(freshPage);
   await freshPage.getByRole("heading", { name: "휴대폰 번호를 확인할게요" }).waitFor();
   assert.equal(
     sql(`select count(*) from public.profiles where id='${freshId}'
@@ -391,6 +401,131 @@ try {
     "the new profile stores the work zone explicitly chosen during signup",
   );
   await freshPage.close();
+
+  // Exercise the identity-first UI with a trusted-provider fixture. The HTTP
+  // response is simulated, but proof transfer and profile creation use real DB
+  // functions. No test result is presented as a live KCP verification.
+  const carrierBase = "http://127.0.0.1:4176";
+  carrierServer = spawn(
+    process.execPath,
+    ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "4176", "--strictPort"],
+    {
+      env: {
+        ...process.env,
+        TZ: "Asia/Seoul",
+        VITE_SUPABASE_URL: apiUrl,
+        VITE_SUPABASE_ANON_KEY: anonKey,
+        VITE_CARRIER_IDENTITY_ENABLED: "true",
+      },
+      stdio: "ignore",
+    },
+  );
+  await waitForServer(carrierBase);
+  const carrierPage = await (
+    await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
+  ).newPage();
+  await carrierPage.goto(`${carrierBase}/signup`);
+  await acceptSignupConsent(carrierPage);
+  await carrierPage.getByRole("heading", { name: "본인과 성인 여부를 확인할게요" }).waitFor();
+  await carrierPage.reload();
+  await carrierPage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
+  await carrierPage.getByRole("button", { name: "가입 이어하기" }).click();
+  await carrierPage.getByRole("heading", { name: "본인과 성인 여부를 확인할게요" }).waitFor();
+  assert.equal(await carrierPage.getByRole("heading", { name: "성별을 알려주세요" }).count(), 0);
+  assert.equal(
+    await carrierPage.getByLabel("회사 이메일").count(),
+    0,
+    "company email follows identity verification",
+  );
+  const signupProof = await carrierPage.evaluate(() =>
+    sessionStorage.getItem("after-signup-session"),
+  );
+  assert.ok(signupProof);
+  // A canceled mobile return keeps the verified-email screen inaccessible.
+  await carrierPage.goto(`${carrierBase}/signup?code=USER_CANCEL`);
+  await carrierPage.getByRole("heading", { name: "본인과 성인 여부를 확인할게요" }).waitFor();
+  await carrierPage.getByRole("alert").waitFor();
+  assert.equal(await carrierPage.getByLabel("회사 이메일").count(), 0);
+  const verificationId = `av${randomUUID().replaceAll("-", "")}`;
+  const { error: startIdentityError } = await service.rpc("start_signup_identity", {
+    p_token: signupProof,
+    p_id: verificationId,
+  });
+  if (startIdentityError) throw startIdentityError;
+  await carrierPage.evaluate(
+    (id) => sessionStorage.setItem("after-signup-identity", id),
+    verificationId,
+  );
+  await carrierPage.route("**/functions/v1/signup-identity", async (route) => {
+    const body = route.request().postDataJSON();
+    assert.equal(body.action, "complete");
+    assert.equal(body.token, signupProof);
+    assert.equal(body.identityVerificationId, verificationId);
+    const { data, error } = await service.rpc("finish_signup_identity", {
+      p_token: signupProof,
+      p_id: verificationId,
+      p_gender: "female",
+      p_birth: "1994-02-15",
+      p_phone: `+8210${Date.now().toString().slice(-8)}`,
+      p_di: `e2e-${randomUUID()}`,
+    });
+    if (error) throw error;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify(data),
+    });
+  });
+  await carrierPage.goto(`${carrierBase}/signup?identityVerificationId=${verificationId}`);
+  await carrierPage.getByRole("heading", { name: "회사 이메일로 인증해 주세요" }).waitFor();
+  assert.equal(new URL(carrierPage.url()).searchParams.has("identityVerificationId"), false);
+  assert.equal(await carrierPage.getByRole("heading", { name: "성별을 알려주세요" }).count(), 0);
+  const carrierEmail = `after-e2e-carrier-${randomUUID()}@verify.local`;
+  await carrierPage.route("**/rest/v1/rpc/signup_session_status", (route) => route.abort());
+  await carrierPage.reload();
+  await carrierPage.getByRole("heading", { name: "가입 정보를 확인하지 못했어요" }).waitFor();
+  assert.equal(
+    await carrierPage.evaluate(() => sessionStorage.getItem("after-signup-session")),
+    signupProof,
+    "a network outage never discards completed identity proof",
+  );
+  await carrierPage.unroute("**/rest/v1/rpc/signup_session_status");
+  await carrierPage.getByRole("button", { name: "다시 확인하기" }).click();
+  await carrierPage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
+  await carrierPage.getByRole("button", { name: "가입 이어하기" }).click();
+  await carrierPage.getByRole("heading", { name: "회사 이메일로 인증해 주세요" }).waitFor();
+  await carrierPage.getByLabel("회사 이메일").fill(carrierEmail);
+  await carrierPage.getByRole("button", { name: "개발 계정 만들기" }).click();
+  await carrierPage.getByText("로컬 개발 환경").waitFor();
+  const carrierUserId = sql(`select id from auth.users where email='${carrierEmail}'`);
+  assert.ok(carrierUserId);
+  ids.push(carrierUserId);
+  await carrierPage.getByRole("button", { name: "계속하기" }).click();
+  await carrierPage.getByRole("heading", { name: "로그인 비밀번호를 정해 주세요" }).waitFor();
+  await carrierPage.getByLabel("비밀번호").fill(password);
+  await carrierPage.getByRole("button", { name: "가입 계속하기" }).click();
+  await chooseWorkZone(carrierPage);
+  await carrierPage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  assert.equal(await carrierPage.getByLabel("생년월일").inputValue(), "1994-02-15");
+  assert.notEqual(await carrierPage.getByLabel("생년월일").getAttribute("readonly"), null);
+  assert.equal(
+    sql(
+      `select gender || ':' || birth::text || ':' || (identity_verified_at is not null)::text from public.profiles where id='${carrierUserId}'`,
+    ),
+    "female:1994-02-15:true",
+  );
+  assert.equal(
+    sql(
+      `select (p.terms_agreed_at=s.accepted_at and p.privacy_agreed_at=s.accepted_at)::text from public.profiles p join public.signup_sessions s on s.claimed_by=p.id where p.id='${carrierUserId}'`,
+    ),
+    "true",
+    "the first consent timestamp survives company authentication",
+  );
+  await carrierPage.close();
+  carrierServer.kill("SIGTERM");
+  carrierServer = null;
+
   const eligible = sql(`select count(*) from public.eligible_profiles
     where id in ('${male.id}','${female.id}')`);
   assert.equal(eligible, "2", "synthetic pair must be ready before browser flow");
@@ -740,12 +875,13 @@ try {
   }
 
   process.stdout.write(
-    "Browser E2E: existing/new signup, paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
+    "Browser E2E: consent/identity-first and beta signup, paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
   );
 } finally {
   sql(`update public.app_settings set payments_enabled=${originalPaymentsEnabled === "t"}`);
   await browser?.close();
   server?.kill("SIGTERM");
+  carrierServer?.kill("SIGTERM");
   if (objectPaths.length) {
     const { error } = await service.storage.from("profile-photos").remove(objectPaths);
     if (error) process.stderr.write(`Synthetic photo cleanup failed: ${error.message}\n`);

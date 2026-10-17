@@ -7,8 +7,10 @@ import { isNative } from "@/lib/native";
 
 export function CarrierIdentityForm({
   onVerified,
+  verifyIdentity = startCarrierIdentity,
 }: {
   onVerified: (birth: string) => void | Promise<void>;
+  verifyIdentity?: () => Promise<string>;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export function CarrierIdentityForm({
     setBusy(true);
     setError(null);
     try {
-      const birth = await startCarrierIdentity();
+      const birth = await verifyIdentity();
       await onVerified(birth);
     } catch (cause) {
       setError(carrierIdentityError(cause));

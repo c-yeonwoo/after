@@ -3807,6 +3807,18 @@ export type Database = {
         Args: { p_body: string; p_meeting_id: string }
         Returns: string
       }
+      begin_signup: {
+        Args: { p_token: string; p_policy_version: string }
+        Returns: Json
+      }
+      signup_session_status: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      create_signup_profile: {
+        Args: { p_token: string; p_hub_id: string; p_gender?: Database["public"]["Enums"]["gender"] }
+        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+      }
       create_my_profile: {
         Args: {
           p_gender: Database["public"]["Enums"]["gender"]
