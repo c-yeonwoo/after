@@ -55,13 +55,22 @@ export const emptyBasics: Basics = {
   religion: "",
 };
 
-export function ageFrom(birth: string) {
-  const d = new Date(birth);
-  if (Number.isNaN(d.getTime())) return null;
-  const now = new Date();
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+/** 서버와 같은 한국 날짜 기준. 날짜 문자열의 자동 보정(예: 2월 30일)은 허용하지 않는다. */
+export function ageFrom(birth: string, now = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birth) || Number.isNaN(now.getTime())) return null;
+  const d = new Date(`${birth}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== birth) return null;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
+  let age = part("year") - d.getUTCFullYear();
+  const m = part("month") - (d.getUTCMonth() + 1);
+  if (m < 0 || (m === 0 && part("day") < d.getUTCDate())) age -= 1;
   return age;
 }
 

@@ -1,5 +1,5 @@
 begin;
-select plan(4);
+select plan(6);
 
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, aud, role)
 values
@@ -29,6 +29,15 @@ select lives_ok($$
   insert into profiles (id, gender, hub_id, company_email, onboarding_step)
   values ('40000000-0000-0000-0000-000000000003', 'male', 'gangnam', 'empty40@test.local', 7)
 $$, 'T4 탈퇴·레거시 계정을 위해 빈 생년월일 자체는 허용한다');
+
+select throws_ok($$
+  update profiles set birth = (now() at time zone 'Asia/Seoul')::date + 1
+   where id = '40000000-0000-0000-0000-000000000001'
+$$, '23514', 'must be at least 19 years old', 'T5 미래 생년월일도 서버에서 거절한다');
+
+select ok((select identity_verified_at is null from profiles
+  where id = '40000000-0000-0000-0000-000000000001'),
+  'T6 자가 입력 성인 생년월일은 통신사 본인확인 완료로 기록하지 않는다');
 
 select * from finish();
 rollback;

@@ -204,6 +204,7 @@ try {
         TZ: "Asia/Seoul",
         VITE_SUPABASE_URL: apiUrl,
         VITE_SUPABASE_ANON_KEY: anonKey,
+        VITE_CARRIER_IDENTITY_ENABLED: "false",
       },
       stdio: "ignore",
     },
@@ -330,6 +331,20 @@ try {
   await incompletePage.getByRole("button", { name: "가입 이어하기" }).click();
   await incompletePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   assert.equal(await incompletePage.getByLabel("이름").inputValue(), incomplete.name);
+  await incompletePage.getByLabel("생년월일", { exact: true }).fill("2020-01-01");
+  await incompletePage.getByText("만 19~79세만 가입할 수 있습니다.", { exact: true }).waitFor();
+  assert.equal(await incompleteNext.isEnabled(), false, "a minor cannot continue beta signup");
+  await incompletePage.getByLabel("생년월일", { exact: true }).fill("");
+  await incompletePage
+    .getByText("입력한 생년월일 기준 만 19세 이상만 가입할 수 있어요.", { exact: true })
+    .waitFor();
+  assert.equal(await incompleteNext.isEnabled(), false, "a missing birth date blocks beta signup");
+  await incompletePage.getByLabel("생년월일", { exact: true }).fill("1993-05-12");
+  assert.equal(
+    await incompleteNext.isEnabled(),
+    true,
+    "an adult can continue with complete basics",
+  );
   await incompletePage.getByRole("button", { name: "3번째 사진 빼기" }).click();
   await incompletePage.getByText("1장 더 필요해요 (2/3)").waitFor();
   await incompletePage.getByText("다음으로 가려면 사진 1장이 필요해요.").waitFor();
@@ -399,6 +414,41 @@ try {
     sql(`select hub_id from public.profiles where id='${freshId}'`),
     "gangnam",
     "the new profile stores the work zone explicitly chosen during signup",
+  );
+  // Simulate delivery only: code issuance, wrong-code handling, consumption and
+  // profile updates use the actual local DB. Never send SMS to a synthetic number.
+  let smsCode;
+  await freshPage.route("**/functions/v1/phone-otp", async (route) => {
+    assert.equal(route.request().postDataJSON().phone, "01000000074");
+    const result = await service.rpc("issue_phone_code", {
+      p_user: freshId,
+      p_phone: "+821000000074",
+    });
+    assert.ifError(result.error);
+    smsCode = result.data;
+    await route.fulfill({ json: { sent: true, phone: "+821000000074" } });
+  });
+  await freshPage.getByLabel("휴대폰 번호", { exact: true }).fill("01000000074");
+  await freshPage.getByRole("button", { name: "인증번호 받기", exact: true }).click();
+  const smsInput = freshPage.getByLabel("인증번호", { exact: true });
+  await smsInput.waitFor();
+  assert.equal(await smsInput.inputValue(), "", "beta production UI does not prefill SMS codes");
+  await smsInput.fill(smsCode === "000000" ? "111111" : "000000");
+  await freshPage.getByRole("button", { name: "인증하고 계속", exact: true }).click();
+  await freshPage.getByText("인증번호가 맞지 않아요.", { exact: true }).waitFor();
+  await smsInput.fill(smsCode);
+  await freshPage.getByRole("button", { name: "인증하고 계속", exact: true }).click();
+  await freshPage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  assert.equal(await freshPage.getByLabel("생년월일", { exact: true }).inputValue(), "");
+  assert.equal(
+    await freshPage.getByLabel("생년월일", { exact: true }).getAttribute("readonly"),
+    null,
+  );
+  assert.equal(
+    sql(`select (phone_verified_at is not null)::text || ':' ||
+      (identity_verified_at is null)::text from public.profiles where id='${freshId}'`),
+    "true:true",
+    "SMS proves phone access only, never verified identity or adulthood",
   );
   await freshPage.close();
 

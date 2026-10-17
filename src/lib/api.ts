@@ -998,8 +998,10 @@ export async function verifyPhoneCode(phone: string, code: string): Promise<Prof
     );
     throw new Error(known ?? "verify failed");
   }
-  // 틀린 코드는 NULL로 돌려줘야 DB의 실패 횟수가 롤백되지 않는다.
-  if (data === null) throw new Error("wrong code");
+  // 실패 횟수를 보존하려고 SQL은 틀린 코드에 NULL composite를 반환한다.
+  // PostgREST는 이를 null이 아닌 모든 필드가 null인 객체로 직렬화할 수 있다.
+  // 실제로 확인된 번호와 인증 시각이 있어야 화면도 다음 단계로 진행한다.
+  if (!data?.id || !data.phone_verified_at || data.phone !== phone) throw new Error("wrong code");
   return data as Profile;
 }
 
