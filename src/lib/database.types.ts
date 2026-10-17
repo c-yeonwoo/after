@@ -1315,29 +1315,43 @@ export type Database = {
       }
       meet_windows: {
         Row: {
-          user_id: string
-          weekdays: number[]
           earliest_local: string
           updated_at: string
-        }
-        Insert: {
           user_id: string
           weekdays: number[]
+        }
+        Insert: {
           earliest_local: string
           updated_at?: string
+          user_id: string
+          weekdays: number[]
         }
         Update: {
-          user_id?: string
-          weekdays?: number[]
           earliest_local?: string
           updated_at?: string
+          user_id?: string
+          weekdays?: number[]
         }
         Relationships: [
           {
             foreignKeyName: "meet_windows_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meet_windows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meet_windows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2236,6 +2250,74 @@ export type Database = {
           },
         ]
       }
+      profile_generation_versions: {
+        Row: {
+          ai_run_id: number | null
+          analysis: Json
+          candidate: Json
+          created_at: string
+          id: number
+          model: string
+          prompt_version: string
+          source_hash: string
+          user_id: string
+          verification: Json
+        }
+        Insert: {
+          ai_run_id?: number | null
+          analysis: Json
+          candidate: Json
+          created_at?: string
+          id?: never
+          model: string
+          prompt_version: string
+          source_hash: string
+          user_id: string
+          verification: Json
+        }
+        Update: {
+          ai_run_id?: number | null
+          analysis?: Json
+          candidate?: Json
+          created_at?: string
+          id?: never
+          model?: string
+          prompt_version?: string
+          source_hash?: string
+          user_id?: string
+          verification?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_generation_versions_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_generation_versions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_generation_versions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_generation_versions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_interview_drafts: {
         Row: {
           data: Json
@@ -2260,7 +2342,21 @@ export type Database = {
             foreignKeyName: "profile_interview_drafts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "eligible_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_interview_drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_interview_drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2305,6 +2401,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -2352,6 +2450,8 @@ export type Database = {
           photo_state?: Database["public"]["Enums"]["photo_state"]
           photo_url?: string | null
           privacy_agreed_at?: string | null
+          profile_preferences?: Json
+          profile_story?: Json | null
           religion?: string | null
           role?: string
           smoking?: string | null
@@ -2399,6 +2499,8 @@ export type Database = {
           photo_state?: Database["public"]["Enums"]["photo_state"]
           photo_url?: string | null
           privacy_agreed_at?: string | null
+          profile_preferences?: Json
+          profile_story?: Json | null
           religion?: string | null
           role?: string
           smoking?: string | null
@@ -2873,6 +2975,7 @@ export type Database = {
           name: string | null
           photo_paths: string[] | null
           photo_url: string | null
+          profile_story: Json | null
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -2892,6 +2995,7 @@ export type Database = {
           name?: string | null
           photo_paths?: string[] | null
           photo_url?: string | null
+          profile_story?: Json | null
           religion?: string | null
           smoking?: string | null
           topics?: string[] | null
@@ -2911,6 +3015,7 @@ export type Database = {
           name?: string | null
           photo_paths?: string[] | null
           photo_url?: string | null
+          profile_story?: Json | null
           religion?: string | null
           smoking?: string | null
           topics?: string[] | null
@@ -2919,19 +3024,6 @@ export type Database = {
       }
     }
     Functions: {
-      create_meeting_help_request: {
-        Args: { p_meeting_id: string; p_body: string }
-        Returns: string
-      }
-      admin_meet_windows: {
-        Args: { p_users: string[] }
-        Returns: {
-          user_id: string
-          weekdays: number[]
-          earliest_local: string
-          updated_at: string
-        }[]
-      }
       accept_meeting_slot: {
         Args: { p_index: number; p_meeting_id: string }
         Returns: {
@@ -3106,6 +3198,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_meet_windows: {
+        Args: { p_users: string[] }
+        Returns: {
+          earliest_local: string
+          updated_at: string
+          user_id: string
+          weekdays: number[]
+        }[]
+      }
       admin_meetings: {
         Args: { p_state?: string }
         Returns: {
@@ -3224,6 +3325,8 @@ export type Database = {
       }
       admin_policy_preview: { Args: never; Returns: Json }
       admin_preview_ops_backfill: { Args: never; Returns: Json }
+      admin_profile_preferences: { Args: { p_user: string }; Returns: Json }
+      admin_profile_story: { Args: { p_user: string }; Returns: Json }
       admin_queue: {
         Args: { p_male: string }
         Returns: {
@@ -3344,6 +3447,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -3405,6 +3510,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -3659,6 +3766,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      clear_my_meet_window: { Args: never; Returns: undefined }
       confirm_meeting: {
         Args: {
           p_meeting_id: string
@@ -3694,6 +3802,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_meeting_help_request: {
+        Args: { p_body: string; p_meeting_id: string }
+        Returns: string
       }
       create_my_profile: {
         Args: {
@@ -3739,6 +3851,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -3872,6 +3986,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -3892,7 +4008,6 @@ export type Database = {
           p_error_code: string
           p_id: string
           p_lease_token: string
-          p_retryable?: boolean
           p_results?: Json
           p_state: string
         }
@@ -3920,6 +4035,7 @@ export type Database = {
           name: string | null
           photo_paths: string[] | null
           photo_url: string | null
+          profile_story: Json | null
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -3948,6 +4064,7 @@ export type Database = {
           name: string | null
           photo_paths: string[] | null
           photo_url: string | null
+          profile_story: Json | null
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -3959,7 +4076,6 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      clear_my_meet_window: { Args: never; Returns: undefined }
       home_state: { Args: never; Returns: Json }
       home_state_v2: { Args: never; Returns: Json }
       home_state_v2_base: { Args: never; Returns: Json }
@@ -4097,14 +4213,6 @@ export type Database = {
           station: string
         }[]
       }
-      save_my_meet_window: {
-        Args: { p_weekdays: number[]; p_earliest_local: string }
-        Returns: Json
-      }
-      suggested_meeting_slots: {
-        Args: { p_intro_id: string }
-        Returns: { slot: string }[]
-      }
       member_policy_current: { Args: { p_user: string }; Returns: boolean }
       member_readiness: { Args: { p_user: string }; Returns: Json }
       member_readiness_snapshot: {
@@ -4112,9 +4220,9 @@ export type Database = {
         Returns: Json
       }
       my_carrier_adult_verified: { Args: never; Returns: boolean }
-      my_meet_window: { Args: never; Returns: Json }
       my_gender: { Args: never; Returns: Database["public"]["Enums"]["gender"] }
       my_hub_id: { Args: never; Returns: string }
+      my_meet_window: { Args: never; Returns: Json }
       my_notification_preferences: { Args: never; Returns: Json }
       my_notifications: {
         Args: { p_limit?: number }
@@ -4166,6 +4274,7 @@ export type Database = {
           name: string | null
           photo_paths: string[] | null
           photo_url: string | null
+          profile_story: Json | null
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -4271,10 +4380,6 @@ export type Database = {
         Args: { p_confirmed: string; p_scheduled: string }
         Returns: string
       }
-      publish_profile_interview: {
-        Args: { p_conditions: Json; p_expected_revision: number }
-        Returns: Database["public"]["Tables"]["profiles"]["Row"]
-      }
       profile_candidate_ready: {
         Args: { p: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: boolean
@@ -4284,6 +4389,122 @@ export type Database = {
         Returns: boolean
       }
       promote_intro_queue: { Args: { p_male: string }; Returns: number }
+      publish_profile_interview: {
+        Args: { p_conditions: Json; p_expected_revision: number }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          evening_note: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
+          interests: string[]
+          intro: string | null
+          job: string | null
+          known_as: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
+          onboarding_step: number
+          paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          photo_paths: string[] | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      publish_profile_interview_v3: {
+        Args: { p_conditions: Json; p_expected_revision: number }
+        Returns: {
+          account_state: Database["public"]["Enums"]["account_state"]
+          agreed_policy_version: string | null
+          banned_reason: string | null
+          birth: string | null
+          company_email: string
+          created_at: string
+          details: Json
+          drinking: string | null
+          email_verified_at: string | null
+          evening_note: string | null
+          feedback_emails: boolean
+          gender: Database["public"]["Enums"]["gender"]
+          headline: string | null
+          hub_id: string
+          id: string
+          identity_verification_id: string | null
+          identity_verified_at: string | null
+          interests: string[]
+          intro: string | null
+          job: string | null
+          known_as: string | null
+          match_note: string | null
+          match_tags: string[]
+          mbti: string | null
+          name: string | null
+          notification_email: string | null
+          notification_email_verified_at: string | null
+          onboarding_step: number
+          paused_at: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          photo_paths: string[] | null
+          photo_reject_reason: string | null
+          photo_reviewed_at: string | null
+          photo_reviewed_by: string | null
+          photo_state: Database["public"]["Enums"]["photo_state"]
+          photo_url: string | null
+          privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
+          religion: string | null
+          role: string
+          smoking: string | null
+          terms_agreed_at: string | null
+          topic_note: string | null
+          topics: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_consent: {
         Args: { p_policy_version: string }
         Returns: {
@@ -4325,6 +4546,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -4488,10 +4711,6 @@ export type Database = {
         }
         Returns: Json
       }
-      save_profile_interview_draft: {
-        Args: { p_data: Json; p_expected_revision: number }
-        Returns: number
-      }
       reserve_paid_order_cancel: {
         Args: { p_order_id: string }
         Returns: {
@@ -4575,6 +4794,14 @@ export type Database = {
         Args: { p_id: string; p_response: string }
         Returns: undefined
       }
+      save_my_meet_window: {
+        Args: { p_earliest_local: string; p_weekdays: number[] }
+        Returns: Json
+      }
+      save_profile_interview_draft: {
+        Args: { p_data: Json; p_expected_revision: number }
+        Returns: number
+      }
       set_my_request_reminders: { Args: { p_enabled: boolean }; Returns: Json }
       set_paused: {
         Args: { p_on: boolean }
@@ -4617,6 +4844,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -4667,6 +4896,12 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      suggested_meeting_slots: {
+        Args: { p_intro_id: string }
+        Returns: {
+          slot: string
+        }[]
+      }
       sync_email_verified: {
         Args: never
         Returns: {
@@ -4708,6 +4943,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null
@@ -4817,6 +5054,8 @@ export type Database = {
           photo_state: Database["public"]["Enums"]["photo_state"]
           photo_url: string | null
           privacy_agreed_at: string | null
+          profile_preferences: Json
+          profile_story: Json | null
           religion: string | null
           role: string
           smoking: string | null

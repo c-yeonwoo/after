@@ -16,6 +16,7 @@ import {
   validGroundedProfile,
 } from "../supabase/functions/_shared/ai-grounding";
 import { includedAnswers, newProfileInterview, ownWordsDraft } from "../src/lib/profileInterview";
+import { CHOICE_QUESTIONS, storyFromAnswers, validProfileStory } from "../src/lib/profileStory";
 
 const headlines = [
   "퇴근 후 산책으로 머리를 식히는 편이에요.",
@@ -290,6 +291,29 @@ assert.equal(containsContact("무작정 연락하지 않습니다"), false);
 assert.equal((await sourceHash({ a: "one" })).length, 64);
 assert.notEqual(await sourceHash({ a: "one" }), await sourceHash({ a: "two" }));
 checked += 6;
+
+const story = storyFromAnswers({
+  daily_life: "퇴근 후에는 동네를 걷는 편이에요.",
+  getting_closer: "커피 한 잔 하며 이야기 나누면 편해요.",
+  conversation: "서로의 일과 요즘 본 영화가 궁금해요.",
+});
+story.headline = "퇴근 후 동네를 걷는 시간";
+story.summary = "퇴근 후에는 동네를 걷고, 커피를 마시며 이야기해요.";
+assert.equal(validProfileStory(story), true);
+assert.equal(validProfileStory({ ...story, headline: "음.." }), false);
+assert.equal(validProfileStory({ ...story, sections: [] }), false);
+assert.equal(
+  validProfileStory({ ...story, sections: [story.sections[0], story.sections[0]] }),
+  false,
+);
+assert.equal(
+  validProfileStory({ ...story, sections: [{ ...story.sections[0], question: "딴 질문" }] }),
+  false,
+);
+assert.equal(validProfileStory({ ...story, summary: "연락 010-1234-5678" }), false);
+assert.equal(storyFromAnswers({ daily_life: "몰라" }).sections.length, 0);
+assert.equal(CHOICE_QUESTIONS.length, 6);
+checked += 8;
 
 const briefInterview = newProfileInterview();
 briefInterview.profile.eveningNote = "퇴근 후 동네를 걸어요";

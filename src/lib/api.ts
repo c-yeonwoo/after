@@ -603,6 +603,24 @@ export async function publishProfileInterview(revision: number, conditions: Basi
   return data;
 }
 
+export async function publishProfileInterviewV3(revision: number, conditions: Basics) {
+  const { data, error } = await supabase.rpc("publish_profile_interview_v3", {
+    p_expected_revision: revision,
+    p_conditions: {
+      name: conditions.name,
+      birth: conditions.birth,
+      job: conditions.job,
+      photos: conditions.photos,
+      mbti: conditions.mbti,
+      smoking: conditions.smoking,
+      drinking: conditions.drinking,
+      religion: conditions.religion,
+    },
+  });
+  if (error) throw error;
+  return data;
+}
+
 // ─────────────────────── 호·불 평가 (D2) ───────────────────────
 
 /** affinity_submitted 계측은 DB 트리거(affinities_log_submitted)가 남긴다 — 여기서 남기지 않는다. */
@@ -994,6 +1012,57 @@ export type ComposedProfile = {
     runId: number;
   };
 };
+
+export type StoryAnalysis = {
+  facts: { text: string; sourceIds: string[] }[];
+  summary: { text: string; sourceIds: string[] }[];
+  contradictions: string[];
+  followupIds: string[];
+};
+
+export type StoryGenerationResult =
+  | { status: "success"; analysis: StoryAnalysis; sourceHash: string; requestId: string }
+  | {
+      status: "success";
+      story: import("@/lib/profileStory").ProfileStoryV3;
+      runId: number;
+      requestId: string;
+    }
+  | { status: "needs_input"; questionIds: string[] }
+  | { status: "error"; code: string; retryable: boolean; requestId?: string };
+
+export async function generateProfileStory(input: {
+  mode: "analyze" | "compose";
+  answers: Record<string, string>;
+  choices: Record<string, string[]>;
+  choiceCustom?: Record<string, string>;
+  followups: Record<string, string>;
+  publicIds: string[];
+  smoking: string;
+  drinking: string;
+  confirmed?: { text: string; sourceIds: string[] }[];
+}): Promise<StoryGenerationResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke<StoryGenerationResult>(
+      "compose-profile-v3",
+      { body: input },
+    );
+    if (error) {
+      const context = (error as { context?: Response }).context;
+      const response =
+        context && typeof context.json === "function"
+          ? await context.json().catch(() => null)
+          : null;
+      if (response?.status === "error" || response?.status === "needs_input") return response;
+      return { status: "error", code: "provider_unavailable", retryable: true };
+    }
+    if (data?.status === "success" || data?.status === "needs_input" || data?.status === "error")
+      return data;
+    return { status: "error", code: "invalid_output", retryable: true };
+  } catch {
+    return { status: "error", code: "provider_unavailable", retryable: true };
+  }
+}
 
 /** Records only the disposition of an AI draft, never its source or generated text. */
 export async function recordMyAiDecision(

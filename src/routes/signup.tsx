@@ -8,7 +8,7 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { CarrierIdentityForm } from "@/components/app/CarrierIdentityForm";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
-import { ProfileInterview } from "@/components/onboarding/ProfileInterview";
+import { ProfileInterviewV3 } from "@/components/onboarding/ProfileInterviewV3";
 import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
@@ -37,7 +37,7 @@ import {
   requestEmailCode,
   recordConsent,
   recordMyAiDecision,
-  publishProfileInterview,
+  publishProfileInterviewV3,
   saveProfileInterviewDraft,
   saveOnboardingStep,
   setPassword,
@@ -48,7 +48,8 @@ import {
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { isNative } from "@/lib/native";
-import { isProfileInterviewData, newProfileInterview } from "@/lib/profileInterview";
+import { isProfileInterviewData } from "@/lib/profileInterview";
+import { isProfileInterviewV3Data, newProfileInterviewV3 } from "@/lib/profileInterviewV3";
 import { pruneMyPhotos } from "@/lib/photo";
 import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,7 @@ export const Route = createFileRoute("/signup")({
       { title: `가입 — ${BRAND.name}` },
       {
         name: "description",
-        content: "회사 이메일을 확인하고, 세 가지 질문으로 나를 소개하는 글을 함께 써요.",
+        content: "회사 이메일을 확인하고, 내 이야기를 담은 소개장을 함께 써요.",
       },
       { property: "og:title", content: `가입 — ${BRAND.name}` },
       {
@@ -84,16 +85,16 @@ const SKIP_HUB_STEP = OPEN_HUBS.length === 1;
   단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
   두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
 
-    성별 → (권역) → 회사 이메일 → 기본 정보 → 인터뷰 ①~③ → 소개장 확인 → 알아 두면 좋은 것
+    성별 → (권역) → 회사 이메일 → 기본 정보 → 생활 정보 → 인터뷰 → 소개장 확인
 
-  조건(흡연·음주·종교·MBTI)을 맨 뒤로 뺐다. 예전에는 기본 정보 화면에서 먼저 물어서
-  가입이 스펙 비교로 시작했다. 소개장은 "문장이 주인공"이다(D3).
+  생활 정보는 소개장 생성 전에 받는다. 성격을 추측하는 근거로 쓰지 않고,
+  본인 답변과 충돌할 때 확인하는 자료로만 사용한다.
 */
 const Q_FIRST = 11;
 const CONDITIONS = 15;
 /** 휴대폰 인증(s54). 회사 메일 다음, 기본 정보 앞. 프로필 행이 생긴 뒤라야 저장할 곳이 있다. */
 const PHONE = 5;
-const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, PHONE, 2, Q_FIRST, CONDITIONS];
+const ORDER = [1, ...(SKIP_HUB_STEP ? [] : [3]), 4, PHONE, 2, CONDITIONS, Q_FIRST];
 const TOTAL = ORDER.length;
 /** 화면에 보이는 단계 번호. */
 const shown = (id: number) => ORDER.indexOf(id) + 1;
@@ -102,6 +103,7 @@ type Gender = "female" | "male";
 function resumeStep(me: Profile) {
   if (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at) return PHONE;
   if (me.onboarding_step < 4) return 2;
+  if (!me.smoking || !me.drinking) return CONDITIONS;
   return Q_FIRST;
 }
 
@@ -136,11 +138,6 @@ function Onboarding() {
   const [editDraftLoadError, setEditDraftLoadError] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
-  const [interviewRevision, setInterviewRevision] = useState<number | null>(null);
-  const [acceptedRunId, setAcceptedRunId] = useState<number | undefined>();
-  const [acceptedDecision, setAcceptedDecision] = useState<
-    "accepted" | "edited" | "discarded" | undefined
-  >();
   /*
     저장할 onboarding_step. **내려가지 않는다.** 완료된 회원(7)이 수정하면서 4·5 를
     쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다. 예전 수정 흐름은 관심사·
@@ -192,9 +189,12 @@ function Onboarding() {
     if (editing) {
       void loadProfileInterviewDraft(me.id)
         .then((row) => {
-          if (row && !isProfileInterviewData(row.data)) throw new Error("invalid draft");
+          if (row && !isProfileInterviewData(row.data) && !isProfileInterviewV3Data(row.data))
+            throw new Error("invalid draft");
           const restoredBasics =
-            row && isProfileInterviewData(row.data) ? row.data.basics : undefined;
+            row && (isProfileInterviewData(row.data) || isProfileInterviewV3Data(row.data))
+              ? row.data.basics
+              : undefined;
           if (restoredBasics) setBasics((current) => ({ ...current, ...restoredBasics }));
           setEditDraftReady(true);
         })
@@ -509,12 +509,17 @@ function Onboarding() {
                 try {
                   if (editing) {
                     const row = await loadProfileInterviewDraft(userId);
-                    if (row && !isProfileInterviewData(row.data))
+                    if (
+                      row &&
+                      !isProfileInterviewData(row.data) &&
+                      !isProfileInterviewV3Data(row.data)
+                    )
                       throw new Error("저장된 인터뷰를 읽을 수 없습니다.");
                     const draft =
-                      row && isProfileInterviewData(row.data)
+                      row &&
+                      (isProfileInterviewData(row.data) || isProfileInterviewV3Data(row.data))
                         ? row.data
-                        : newProfileInterview(me ?? undefined);
+                        : newProfileInterviewV3(me, basics);
                     await saveProfileInterviewDraft(
                       {
                         ...draft,
@@ -537,14 +542,14 @@ function Onboarding() {
                     // 묶음에서 뺀 사진 파일을 치운다. 저장이 끝난 뒤라야 안전하다.
                     void pruneMyPhotos(basics.photos);
                   }
-                  setStep(Q_FIRST);
+                  setStep(CONDITIONS);
                 } catch {
                   toast.error("저장하지 못했어요. 다시 시도해 주세요.");
                 } finally {
                   setSaving(false);
                 }
               } else {
-                setStep(Q_FIRST);
+                setStep(CONDITIONS);
               }
             }}
           >
@@ -873,25 +878,40 @@ function Onboarding() {
 
   if (step === Q_FIRST && userId) {
     return (
-      <ProfileInterview
+      <ProfileInterviewV3
         userId={userId}
         member={me}
         basics={basics}
         editing={editing}
         progressStep={shown(Q_FIRST)}
         progressTotal={TOTAL}
-        onBack={() => setStep(2)}
-        onDone={(revision, runId, decision) => {
-          setInterviewRevision(revision);
-          setAcceptedRunId(runId);
-          setAcceptedDecision(decision);
-          setStep(CONDITIONS);
+        onBack={() => setStep(CONDITIONS)}
+        onDone={async (revision, runId, decision) => {
+          setSaving(true);
+          try {
+            await publishProfileInterviewV3(revision, basics);
+            if (editing) void pruneMyPhotos(basics.photos);
+            if (runId && decision) {
+              try {
+                await recordMyAiDecision(runId, decision);
+              } catch {
+                /* Telemetry must not undo an approved profile. */
+              }
+            }
+            await refresh();
+            toast.success(editing ? "소개장을 고쳤어요." : "소개장이 완성됐어요.");
+            if (editing) navigate({ to: "/profile" });
+            else if (isNative && (await pushPermission()) === "prompt") setStep(10);
+            else navigate({ to: "/home" });
+          } finally {
+            setSaving(false);
+          }
         }}
       />
     );
   }
 
-  // 마지막 — 만나기 전에 알아 두면 좋은 것 (조건은 인터뷰 뒤로, 리부팅 C)
+  // 생활 정보는 소개장 분석과 작성 전에 고른다.
   if (step === CONDITIONS) {
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
     const missingConditions = [
@@ -909,9 +929,9 @@ function Onboarding() {
       <StepShell
         step={shown(CONDITIONS)}
         total={TOTAL}
-        eyebrow="마지막"
+        eyebrow="생활 정보"
         title="만나기 전에 알아 두면 좋은 것"
-        description="소개장 맨 아래에 작게 실려요."
+        description="흡연·음주는 소개 전에 알려드려요. MBTI·종교는 선택입니다."
       >
         <div className="space-y-5">
           <div>
@@ -992,39 +1012,36 @@ function Onboarding() {
         ) : null}
 
         <div className={cn("flex gap-2", missingConditions.length ? "mt-5" : "mt-8")}>
-          <Button variant="ghost" onClick={() => setStep(Q_FIRST)}>
+          <Button variant="ghost" onClick={() => setStep(2)}>
             이전
           </Button>
           <Button
             className="flex-1"
             size="lg"
-            disabled={!conditionsValid(basics) || saving || !userId || interviewRevision === null}
+            disabled={!conditionsValid(basics) || saving || !userId}
             onClick={async () => {
-              if (!userId || interviewRevision === null) return;
+              if (!userId) return;
               setSaving(true);
               try {
-                await publishProfileInterview(interviewRevision, basics);
-                if (editing) void pruneMyPhotos(basics.photos);
-                if (acceptedRunId && acceptedDecision) {
-                  try {
-                    await recordMyAiDecision(acceptedRunId, acceptedDecision);
-                  } catch {
-                    /* A saved profile must not be undone by telemetry. */
-                  }
+                if (editing) {
+                  const row = await loadProfileInterviewDraft(userId);
+                  const draft =
+                    row && (isProfileInterviewData(row.data) || isProfileInterviewV3Data(row.data))
+                      ? row.data
+                      : newProfileInterviewV3(me, basics);
+                  await saveProfileInterviewDraft(
+                    { ...draft, basics } as unknown as import("@/lib/database.types").Json,
+                    row?.revision ?? 0,
+                  );
+                } else {
+                  await saveOnboardingStep(userId, keepStep(4), {
+                    smoking: basics.smoking,
+                    drinking: basics.drinking,
+                    mbti: basics.mbti || null,
+                    religion: basics.religion || null,
+                  });
                 }
-                // 완료 직전까지 읽고 있던 me 는 프로필을 쓰기 전 값이다. 갱신하지 않으면
-                // /profile 이 소개글 없이 그려져 새로고침해야만 방금 쓴 내용이 보인다.
-                await refresh();
-                toast.success(editing ? "소개장을 고쳤어요." : "소개장이 완성됐어요.");
-                /*
-                  가입을 막 끝낸 사람이 볼 곳은 "다음에 일어나는 일" 이 있는 홈이다.
-                  알림 메일이 없으면 그 전에 한 화면 들른다 — 없으면 소개가 와도 메일이
-                  한 통도 나가지 않는다.
-                */
-                if (editing) navigate({ to: "/profile" });
-                // 앱이면 알림 허용을 한 번 묻는다. 웹은 푸시가 없어 바로 홈으로.
-                else if (isNative && (await pushPermission()) === "prompt") setStep(10);
-                else navigate({ to: "/home" });
+                setStep(Q_FIRST);
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
               } finally {
@@ -1032,7 +1049,7 @@ function Onboarding() {
               }
             }}
           >
-            {saving ? "저장 중…" : editing ? "저장" : "가입 마치기"}
+            {saving ? "저장 중…" : "다음"}
           </Button>
         </div>
       </StepShell>
