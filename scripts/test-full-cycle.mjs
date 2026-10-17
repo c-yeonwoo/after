@@ -554,6 +554,30 @@ try {
     await m1.page.getByRole("switch", { name: "소개 잠시 멈추기" }).waitFor();
     assert.equal(sql(`select count(*) from tickets where user_id='${m1.id}'`), "0");
   });
+  await check("home background failure preserves state and retry recovers", async () => {
+    const headline = await m1.page.getByRole("heading", { level: 1 }).innerText();
+    await m1.page.route("**/rest/v1/rpc/home_state_v2", (route) =>
+      route.fulfill({
+        status: 503,
+        json: { message: "QA temporary outage" },
+      }),
+    );
+    await m1.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await m1.page
+      .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(await m1.page.getByRole("heading", { level: 1 }).innerText(), headline);
+    await m1.page.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).waitFor();
+    await m1.page.unroute("**/rest/v1/rpc/home_state_v2");
+    await m1.page.getByRole("button", { name: "상태 다시 확인", exact: true }).click();
+    await m1.page
+      .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
+        exact: true,
+      })
+      .waitFor({ state: "hidden" });
+  });
   for (const [f, choices] of [
     [f1, ["like", "pass"]],
     [f2, ["like", "like"]],
@@ -566,9 +590,100 @@ try {
         const current = (await f.page.getByRole("main").innerText()).includes(m1.name) ? m1 : m2;
         const verdict = choices[current === m1 ? 0 : 1];
         await f.page.getByText(current.name).first().waitFor();
+        const photos = f.page.getByRole("region", {
+          name: `${current.name} 사진 3장`,
+          exact: true,
+        });
+        const inset = await photos.evaluate((el) => {
+          const bounds = el.getBoundingClientRect();
+          const main = el.closest("main").getBoundingClientRect();
+          return { left: bounds.left - main.left, right: main.right - bounds.right };
+        });
+        assert.ok(inset.left >= 19 && inset.right >= 19, "photo rail retains both page gutters");
+        await photos.evaluate((el) => {
+          el.scrollLeft = el.scrollWidth;
+        });
+        await f.page.waitForFunction((name) => {
+          const el = document.querySelector(`[aria-label="${name} 사진 3장"]`);
+          return (
+            el &&
+            el.lastElementChild.getBoundingClientRect().right <=
+              el.getBoundingClientRect().right + 1
+          );
+        }, current.name);
+        await photos.evaluate((el) => {
+          el.scrollLeft = 0;
+        });
+        if (f === f1 && verdict === "like") {
+          await f.page.route("**/rest/v1/affinities*", (route) =>
+            route.fulfill({
+              status: 503,
+              json: { code: "QA_OUTAGE", message: "temporary outage" },
+            }),
+          );
+          await f.page.getByRole("button", { name: "좋아요", exact: true }).click();
+          await f.page
+            .getByText("좋아요를 저장하지 못했어요. 다시 눌러주세요.", { exact: true })
+            .waitFor();
+          await f.page
+            .getByRole("main")
+            .getByRole("heading", { name: new RegExp(current.name) })
+            .waitFor();
+          assert.equal(
+            sql(
+              `select count(*) from affinities where from_id='${f.id}' and to_id='${current.id}'`,
+            ),
+            "0",
+          );
+          await f.page.unroute("**/rest/v1/affinities*");
+        }
         await f.page
           .getByRole("button", { name: verdict === "like" ? "좋아요" : "관심 없어요", exact: true })
           .click();
+        if (verdict === "pass") {
+          const dialog = f.page.getByRole("alertdialog");
+          await dialog.waitFor();
+          await f.page.waitForFunction(() => document.activeElement?.textContent === "취소");
+          assert.equal(
+            sql(
+              `select count(*) from affinities where from_id='${f.id}' and to_id='${current.id}'`,
+            ),
+            "0",
+          );
+          await dialog.getByRole("button", { name: "취소", exact: true }).click();
+          await f.page.waitForFunction(() =>
+            document.activeElement?.textContent?.includes("관심 없어요"),
+          );
+          await f.page.getByText(current.name).first().waitFor();
+          assert.equal(
+            sql(
+              `select count(*) from affinities where from_id='${f.id}' and to_id='${current.id}'`,
+            ),
+            "0",
+          );
+          await f.page.getByRole("button", { name: "관심 없어요", exact: true }).click();
+          await f.page.route("**/rest/v1/affinities*", (route) =>
+            route.fulfill({
+              status: 503,
+              json: { code: "QA_OUTAGE", message: "temporary outage" },
+            }),
+          );
+          await dialog.getByRole("button", { name: "넘기기", exact: true }).click();
+          await f.page
+            .getByText("처리하지 못했어요. 다시 시도해 주세요.", { exact: true })
+            .waitFor();
+          assert.equal(
+            sql(
+              `select count(*) from affinities where from_id='${f.id}' and to_id='${current.id}'`,
+            ),
+            "0",
+          );
+          await dialog
+            .getByRole("heading", { name: `${current.name}님을 넘길까요?`, exact: true })
+            .waitFor();
+          await f.page.unroute("**/rest/v1/affinities*");
+          await dialog.getByRole("button", { name: "넘기기", exact: true }).click();
+        }
         await f.page.getByText(current.name).first().waitFor({ state: "hidden" });
       }
       assert.equal(
@@ -577,8 +692,46 @@ try {
         ),
         "2",
       );
+      await f.page.goto(`${base}/home`);
+      await f.page
+        .getByRole("heading", { name: "마음을 남긴 소개가 있어요.", exact: true })
+        .waitFor();
+      await f.page.getByText("애프터가 어울릴 소개를 살펴봐요.", { exact: true }).waitFor();
+      await f.page
+        .getByText("만남 요청이 오면 이곳에서 확인할 수 있어요.", { exact: true })
+        .waitFor();
     });
   }
+  if (
+    sql(
+      `select count(*) from affinities where from_id in ('${f1.id}','${f2.id}','${f3.id}') and to_id in ('${m1.id}','${m2.id}')`,
+    ) !== "6"
+  )
+    throw new Error("Introduction decisions failed; dependent meeting scenarios cannot be trusted");
+  await check("request refresh failure retains the last list and retry recovers", async () => {
+    await f1.page.goto(`${base}/requests`);
+    await f1.page.getByText("아직 받은 요청이 없습니다", { exact: true }).waitFor();
+    await f1.page.route("**/rest/v1/intros**", (route) =>
+      route.fulfill({
+        status: 503,
+        json: { message: "QA temporary outage" },
+      }),
+    );
+    await f1.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await f1.page
+      .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
+        exact: true,
+      })
+      .waitFor();
+    await f1.page.getByText("아직 받은 요청이 없습니다", { exact: true }).waitFor();
+    await f1.page.unroute("**/rest/v1/intros**");
+    await f1.page.getByRole("button", { name: "상태 다시 확인", exact: true }).click();
+    await f1.page
+      .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
+        exact: true,
+      })
+      .waitFor({ state: "hidden" });
+  });
   for (const m of [m1, m2])
     await check(`operator curates ${m.key} queue in UI`, async () => {
       await ap.goto(`${base}/admin/curation?male=${m.id}`);
@@ -602,15 +755,36 @@ try {
       );
   let success, unanswered;
   await check("m1 requests; selected female accepts proposed time", async () => {
+    const firstId = sql(
+      `select female_id from intro_queue where male_id='${m1.id}' and delivered_at is not null and opened_at is null order by position limit 1`,
+    );
+    const waitingFemale = personas.find((p) => p.id === firstId);
+    await waitingFemale.page.goto(`${base}/requests`);
+    await waitingFemale.page.getByText("아직 받은 요청이 없습니다", { exact: true }).waitFor();
+    const homeObserver = await pageFor();
+    await login(homeObserver, waitingFemale);
+    await homeObserver
+      .getByRole("heading", { name: "마음을 남긴 소개가 있어요.", exact: true })
+      .waitFor();
     success = await openAndRequest(m1);
     const f = personas.find((p) => p.id === success.female_id);
     success.female = f;
-    await f.page.goto(`${base}/requests`);
+    await homeObserver
+      .getByRole("link", { name: "요청 확인하기", exact: true })
+      .waitFor({ timeout: 25000 });
+    await f.page
+      .getByRole("button", { name: /이 날로 정하기/ })
+      .first()
+      .waitFor({ timeout: 25000 });
     await f.page
       .getByRole("button", { name: /이 날로 정하기/ })
       .first()
       .click();
     await waitForHome(f.page);
+    await homeObserver
+      .getByRole("heading", { name: "만남이 잡혔어요.", exact: true })
+      .waitFor({ timeout: 25000 });
+    await homeObserver.close();
     assert.equal(
       sql(`select (confirmed_at is not null)::text from meetings where id='${success.id}'`),
       "true",
@@ -899,6 +1073,16 @@ try {
       assert.equal(declined.female_id, f2.id);
       await f2.page.goto(`${base}/requests`);
       await f2.page.getByRole("button", { name: "이번엔 정중히 거절할게요", exact: true }).click();
+      await f2.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+      await f2.page
+        .getByRole("alertdialog")
+        .getByRole("button", { name: "돌아가기", exact: true })
+        .click();
+      assert.equal(
+        sql(`select (cancelled_at is null)::text from meetings where id='${declined.id}'`),
+        "true",
+      );
+      await f2.page.getByRole("button", { name: "이번엔 정중히 거절할게요", exact: true }).click();
       await f2.page
         .getByRole("alertdialog")
         .getByRole("button", { name: "거절하기", exact: true })
@@ -1026,6 +1210,11 @@ try {
       await extra.page
         .getByRole("button", { name: current === m1 ? "좋아요" : "관심 없어요", exact: true })
         .click();
+      if (current !== m1)
+        await extra.page
+          .getByRole("alertdialog")
+          .getByRole("button", { name: "넘기기", exact: true })
+          .click();
       await extra.page.getByText(current.name).first().waitFor({ state: "hidden" });
     }
   });

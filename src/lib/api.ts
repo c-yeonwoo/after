@@ -487,6 +487,7 @@ export async function homeState(): Promise<HomeState> {
 
 export type HomeStateV2 = HomeState & {
   schema_version: 2;
+  intro_progress?: { has_likes: boolean };
   as_of: string;
   primary_state:
     | "account_unavailable"
@@ -513,8 +514,9 @@ export type HomeStateV2 = HomeState & {
   ticket_summary: { intro_available: number; meeting_available: number };
 };
 
-export async function homeStateV2(): Promise<HomeStateV2> {
-  const { data, error } = await supabase.rpc("home_state_v2");
+export async function homeStateV2(signal?: AbortSignal): Promise<HomeStateV2> {
+  const request = supabase.rpc("home_state_v2");
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
   if (error) throw error;
   const state = data as unknown as HomeStateV2;
   if (state.schema_version !== 2 || !state.primary_state || !state.readiness) {
@@ -628,11 +630,17 @@ export async function publishProfileInterviewV3(revision: number, conditions: Ba
 // ─────────────────────── 호·불 평가 (D2) ───────────────────────
 
 /** affinity_submitted 계측은 DB 트리거(affinities_log_submitted)가 남긴다 — 여기서 남기지 않는다. */
-export async function submitAffinity(toId: string, verdict: "like" | "pass") {
+export async function submitAffinity(
+  toId: string,
+  verdict: "like" | "pass",
+  expectedActor?: string,
+) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) throw new Error("로그인이 필요합니다.");
+  if (expectedActor && session.user.id !== expectedActor)
+    throw new Error("로그인한 계정이 바뀌었어요.");
 
   const { error } = await supabase
     .from("affinities")
@@ -1398,11 +1406,15 @@ export type MeetingRequest = {
  *
  * 오래 기다린 요청이 먼저다 — 환불 기한이 먼저 닥치기 때문이다.
  */
-export async function listMeetingsAwaitingMyPrefs(): Promise<MeetingRequest[]> {
+export async function listMeetingsAwaitingMyPrefs(
+  expectedActor?: string,
+): Promise<MeetingRequest[]> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) return [];
+  if (expectedActor && session.user.id !== expectedActor)
+    throw new Error("로그인한 계정이 바뀌었어요.");
 
   const { data: intros, error: introErr } = await supabase
     .from("intros")

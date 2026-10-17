@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { respondNoShow, type NoShowReport } from "@/lib/api";
+import { useInteractionHold } from "@/lib/useMemberLiveQuery";
 
 /**
  * 나에게 접수된 노쇼 신고에 답하는 카드 (P4).
@@ -24,12 +25,22 @@ import { respondNoShow, type NoShowReport } from "@/lib/api";
 export function NoShowPrompt({
   report,
   onResolved,
+  onInteractionStart,
 }: {
   report: NoShowReport;
   onResolved: () => void;
+  onInteractionStart?: () => () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const sending = useRef(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { hold, finish } = useInteractionHold(onInteractionStart);
+  const changeOpen = (open: boolean) => {
+    if (sending.current) return;
+    if (open) hold();
+    else finish();
+    setConfirmOpen(open);
+  };
 
   const deadline = new Date(report.confirm_by);
   const deadlineLabel = deadline.toLocaleString("ko-KR", {
@@ -40,6 +51,9 @@ export function NoShowPrompt({
   });
 
   async function respond(admit: boolean) {
+    if (sending.current) return;
+    sending.current = true;
+    hold();
     setBusy(true);
     try {
       await respondNoShow(report.id, admit);
@@ -49,7 +63,9 @@ export function NoShowPrompt({
       toast.error(err instanceof Error ? err.message : "처리에 실패했습니다.");
     } finally {
       setBusy(false);
+      sending.current = false;
       setConfirmOpen(false);
+      finish();
     }
   }
 
@@ -75,13 +91,13 @@ export function NoShowPrompt({
           variant="destructive"
           className="flex-1"
           disabled={busy}
-          onClick={() => setConfirmOpen(true)}
+          onClick={() => changeOpen(true)}
         >
           인정합니다
         </Button>
       </div>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog open={confirmOpen} onOpenChange={changeOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>노쇼를 인정하시겠어요?</AlertDialogTitle>
