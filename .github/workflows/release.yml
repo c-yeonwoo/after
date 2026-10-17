@@ -15,9 +15,30 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  quality:
+  scope:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 3
+    outputs:
+      run_full: ${{ steps.scope.outputs.run_full }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: node --test scripts/ci-change-scope.test.mjs
+      - id: scope
+        run: node scripts/ci-change-scope.mjs
+        env:
+          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_DIFF_HEAD: ${{ github.sha }}
+
+  core:
+    needs: scope
+    if: needs.scope.outputs.run_full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -32,18 +53,68 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: supabase start
       - run: npm run release:check
-      - run: npx playwright install --with-deps chromium webkit
+
+  # Each matrix entry owns a separate runner AND local Supabase. The browser
+  # fixtures change app_settings; they must never run concurrently on one DB.
+  browsers:
+    needs: scope
+    if: needs.scope.outputs.run_full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    env:
+      AFTER_TEST_BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - run: npm ci
+      - run: supabase start
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run test:browser-e2e
       - run: npm run test:full-cycle
-      - run: AFTER_TEST_BROWSER=webkit npm run test:browser-e2e
-      - run: AFTER_TEST_BROWSER=webkit npm run test:full-cycle
+
+  # Keep the existing required check name. A failed/cancelled dependency must
+  # FAIL this gate, not silently skip it. Documentation also reports a check,
+  # rather than using paths-ignore and leaving branch protection pending.
+  quality:
+    if: always()
+    needs: [scope, core, browsers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the complete selected gate
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          RUN_FULL: ${{ needs.scope.outputs.run_full }}
+          CORE_RESULT: ${{ needs.core.result }}
+          BROWSER_RESULT: ${{ needs.browsers.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$RUN_FULL" = false ]; then
+            test "$CORE_RESULT" = skipped
+            test "$BROWSER_RESULT" = skipped
+            echo "Documentation-only change: no runtime build or deployment needed."
+          else
+            test "$RUN_FULL" = true
+            test "$CORE_RESULT" = success
+            test "$BROWSER_RESULT" = success
+          fi
 
   # main 머지 = 운영 배포. 순서가 중요하다: DB → edge function → 프론트.
   # 새 화면은 새 RPC 를 부르므로, 프론트가 먼저 나가면 DB 가 따라올 때까지 화면이 깨진다
   # (2026-10-10 리부팅 배포에서 CI 가 프론트만 올리게 되어 있던 것을 고쳤다).
   deploy:
-    needs: quality
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY_ENABLED == 'true'
+    needs: [quality, scope]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY_ENABLED == 'true' && needs.scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
