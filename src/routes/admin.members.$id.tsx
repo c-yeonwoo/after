@@ -261,6 +261,8 @@ const TIMELINE_LABEL: Record<string, string> = {
   payment_attention: "결제 확인 필요",
   payment_reconciled: "결제 확인 완료",
   meeting_confirmed: "약속 확정",
+  meeting_attendance_confirmed: "참석 의사 확인",
+  meeting_response_warning: "미응답 경고 기록",
   meeting_canceled: "약속 취소",
   ticket_issued: "티켓 발급",
   ticket_consumed: "티켓 사용",

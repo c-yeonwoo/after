@@ -810,7 +810,7 @@ export async function requestMeeting(
   slots: string[],
   place: { placeId: string } | { placeName: string },
 ): Promise<Meeting> {
-  const { data, error } = await supabase.rpc("request_meeting", {
+  const { data, error } = await supabase.rpc("request_meeting_v2", {
     p_intro_id: introId,
     p_slots: slots,
     p_place_id: "placeId" in place ? place.placeId : (null as unknown as string),
@@ -822,7 +822,7 @@ export async function requestMeeting(
 
 /** 여성: 후보 하나를 고르면 그 자리에서 약속이 확정된다. */
 export async function acceptMeetingSlot(meetingId: string, index: number): Promise<Meeting> {
-  const { data, error } = await supabase.rpc("accept_meeting_slot", {
+  const { data, error } = await supabase.rpc("accept_meeting_slot_v2", {
     p_meeting_id: meetingId,
     p_index: index,
   });
@@ -1312,7 +1312,7 @@ export async function unusedTicketCount(kind?: TicketKind): Promise<number> {
 // ─────────────────────── 만남 조율 (F6) ───────────────────────
 
 export async function submitMeetingPrefs(meetingId: string, prefs: MeetPrefs): Promise<Meeting> {
-  const { data, error } = await supabase.rpc("submit_meeting_prefs", {
+  const { data, error } = await supabase.rpc("submit_meeting_prefs_v2", {
     p_meeting_id: meetingId,
     p_prefs: prefs as unknown as Database["public"]["Tables"]["meetings"]["Row"]["prefs"],
   });
@@ -1326,7 +1326,7 @@ export async function confirmMeeting(
   placeName: string,
   placeKind?: string,
 ): Promise<Meeting> {
-  const { data, error } = await supabase.rpc("confirm_meeting", {
+  const { data, error } = await supabase.rpc("confirm_meeting_v2", {
     p_meeting_id: meetingId,
     p_scheduled_at: scheduledAt,
     p_place_name: placeName,
@@ -1568,15 +1568,19 @@ export async function submitFeedback(
   result?: string,
   body?: string,
 ) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) throw new Error("로그인이 필요합니다.");
-
-  const { error } = await supabase
-    .from("feedbacks")
-    .insert({ meeting_id: meetingId, author_id: session.user.id, met, result, body });
-  if (error) throw error;
+  const { error } = await supabase.rpc("submit_meeting_feedback", {
+    p_meeting_id: meetingId,
+    p_met: met,
+    p_result: result ?? (met ? "again" : "noshow"),
+    p_body: body,
+  });
+  if (error) {
+    if (error.message.includes("feedback already submitted"))
+      throw new Error("이미 후기를 남기셨어요. 홈에서 확인해 주세요.");
+    if (error.message.includes("meeting_not_yet_eligible"))
+      throw new Error("만남이 지난 뒤 후기를 남길 수 있어요. 약속 상태를 확인해 주세요.");
+    throw new Error("후기를 저장하지 못했어요. 다시 시도해 주세요.");
+  }
 }
 
 // ─────────────────────── 노쇼 (P4) ───────────────────────

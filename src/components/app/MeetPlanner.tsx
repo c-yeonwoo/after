@@ -3,6 +3,7 @@ import { CalendarCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { Input } from "@/components/ui/input";
 import { describePrefs, formatMeetTime } from "@/lib/meet";
 import { confirmMeeting, type Meeting } from "@/lib/api";
@@ -114,6 +115,7 @@ export function MeetPlanner({
         ))}
       </div>
 
+      <MeetingPolicyNote />
       <Button
         className="mt-5 w-full"
         disabled={!date || !placeName.trim() || busy}

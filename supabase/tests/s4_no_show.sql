@@ -79,6 +79,10 @@ select confirm_meeting(
 
 -- ═════════ T1 — 참가자만 노쇼를 신고할 수 있다 ═════════
 
+-- 노쇼는 실제 약속 시각이 지난 뒤에만 신고할 수 있다.
+update meetings set scheduled_at=now()-interval '1 day'
+ where intro_id in (select id from intros where male_id='cccc0002-0000-0000-0000-000000000002');
+
 set local "request.jwt.claims" to '{"sub":"cccc0003-0000-0000-0000-000000000003","role":"authenticated"}';
 set local role authenticated;
 select throws_ok(

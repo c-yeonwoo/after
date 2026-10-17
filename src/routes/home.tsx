@@ -4,6 +4,7 @@ import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationBell } from "@/components/app/NotificationBell";
+import { MeetingCheckin } from "@/components/app/MeetingCheckin";
 import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
@@ -272,7 +273,10 @@ function HomePage() {
             onDone={(m) => setMeeting(m)}
           />
         ) : meeting?.confirmed_at ? (
-          <ConfirmedCard meeting={meeting} counterpart={candidate} />
+          <>
+            <ConfirmedCard meeting={meeting} counterpart={candidate} />
+            <MeetingCheckin meetingId={meeting.id} />
+          </>
         ) : meeting?.prefs_submitted_at ? (
           // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
           isMale ? (

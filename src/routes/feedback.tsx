@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
@@ -7,7 +7,8 @@ import { Chip } from "@/components/onboarding/Chip";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND } from "@/lib/brand";
-import { markMet, reportNoShow, submitFeedback } from "@/lib/api";
+import { submitFeedback } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/feedback")({
   validateSearch: (search: Record<string, unknown>): { meetingId?: string } => ({
@@ -50,6 +51,40 @@ function FeedbackPage() {
   const [notes, setNotes] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [gate, setGate] = useState<"loading" | "ready" | "submitted" | "unavailable" | "error">(
+    "loading",
+  );
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    if (!meetingId) return;
+    let alive = true;
+    setGate("loading");
+    void (async () => {
+      try {
+        const [status, feedback] = await Promise.all([
+          supabase.rpc("my_meeting_checkin", { p_meeting_id: meetingId }),
+          supabase.from("feedbacks").select("id").eq("meeting_id", meetingId).maybeSingle(),
+        ]);
+        if (status.error || feedback.error) throw new Error("unavailable");
+        const m = status.data as unknown as {
+          scheduledAt: string | null;
+          asOf: string;
+          cancelled: boolean;
+        };
+        const next = feedback.data
+          ? "submitted"
+          : m?.scheduledAt && !m.cancelled && Date.parse(m.scheduledAt) <= Date.parse(m.asOf)
+            ? "ready"
+            : "unavailable";
+        if (alive) setGate(next);
+      } catch {
+        if (alive) setGate("error");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [meetingId, retry]);
 
   if (!meetingId) {
     return (
@@ -60,6 +95,39 @@ function FeedbackPage() {
       </AppScreen>
     );
   }
+
+  if (gate !== "ready")
+    return (
+      <AppScreen title="만남 후 피드백" hideTabs back="/home">
+        <div className="mt-16 text-center">
+          <p
+            role={gate === "error" ? "alert" : undefined}
+            className="text-sm text-muted-foreground"
+          >
+            {gate === "loading"
+              ? "만남을 확인하고 있어요…"
+              : gate === "submitted"
+                ? "후기를 남겨주셨어요. 고마워요."
+                : gate === "unavailable"
+                  ? "예정된 만남이 지난 뒤 후기를 남길 수 있어요. 취소된 약속에는 후기를 받지 않아요."
+                  : "만남 정보를 불러오지 못했어요."}
+          </p>
+          {gate === "error" ? (
+            <Button variant="outline" className="mt-4" onClick={() => setRetry((v) => v + 1)}>
+              다시 확인하기
+            </Button>
+          ) : gate !== "loading" ? (
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => void navigate({ to: "/home" })}
+            >
+              홈으로
+            </Button>
+          ) : null}
+        </div>
+      </AppScreen>
+    );
 
   return (
     <AppScreen title="만남 후 피드백" hideTabs back="/chats">
@@ -78,22 +146,30 @@ function FeedbackPage() {
         </div>
       </section>
 
-      <section className="mt-7">
-        <h2 className="text-sm font-semibold">기억에 남은 점 (복수 선택)</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {NOTES.map((n) => (
-            <Chip
-              key={n}
-              selected={notes.includes(n)}
-              onClick={() =>
-                setNotes((prev) => (prev.includes(n) ? prev.filter((v) => v !== n) : [...prev, n]))
-              }
-            >
-              {n}
-            </Chip>
-          ))}
-        </div>
-      </section>
+      {result === "noshow" ? (
+        <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+          상대에게 사실 확인을 요청하고 운영팀이 검토해요. 신고만으로 바로 제재하지 않습니다.
+        </p>
+      ) : (
+        <section className="mt-7">
+          <h2 className="text-sm font-semibold">기억에 남은 점 (복수 선택)</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {NOTES.map((n) => (
+              <Chip
+                key={n}
+                selected={notes.includes(n)}
+                onClick={() =>
+                  setNotes((prev) =>
+                    prev.includes(n) ? prev.filter((v) => v !== n) : [...prev, n],
+                  )
+                }
+              >
+                {n}
+              </Chip>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-7">
         <label className="text-sm font-semibold" htmlFor="fb">
@@ -102,6 +178,7 @@ function FeedbackPage() {
         <Textarea
           id="fb"
           rows={5}
+          maxLength={1500}
           className="mt-2"
           placeholder="안전과 관련된 일은 반드시 알려주세요."
           value={text}
@@ -121,15 +198,14 @@ function FeedbackPage() {
             setBusy(true);
             try {
               const met = result !== "noshow";
-              const body = [notes.join(" · "), text.trim()].filter(Boolean).join("\n") || undefined;
+              const body =
+                [met ? notes.join(" · ") : "", text.trim()].filter(Boolean).join("\n") || undefined;
               await submitFeedback(meetingId, met, result, body);
               if (met) {
-                await markMet(meetingId);
                 toast.success("피드백이 저장되었습니다.");
               } else {
                 // "만나지 못했어요" = 노쇼 신고. 신고만으로는 제재가 없고
                 // 상대 확인(24시간)을 거친다 — P4.
-                await reportNoShow(meetingId);
                 toast.success("신고가 접수되었습니다. 상대 확인을 요청했습니다.");
               }
               navigate({ to: "/home" });

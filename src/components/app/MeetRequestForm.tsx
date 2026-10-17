@@ -4,6 +4,7 @@ import { MapPin, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { Input } from "@/components/ui/input";
 import { meetPlacesForMe, requestMeeting, type Meeting, type MeetPlace } from "@/lib/api";
 import {
@@ -280,6 +281,7 @@ export function MeetRequestForm({
       </section>
 
       <div>
+        <MeetingPolicyNote />
         <Button
           className="w-full"
           size="lg"

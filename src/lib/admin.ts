@@ -16,7 +16,10 @@ export type Gender = Database["public"]["Enums"]["gender"];
 export type AccountState = Database["public"]["Enums"]["account_state"];
 export type AdminReport = Database["public"]["Functions"]["admin_reports"]["Returns"][number];
 export type AdminMember = Database["public"]["Functions"]["admin_members"]["Returns"][number];
-export type AdminMeeting = Database["public"]["Functions"]["admin_meetings"]["Returns"][number];
+export type AdminMeeting = Database["public"]["Functions"]["admin_meetings"]["Returns"][number] & {
+  proposed_slots: string[] | null;
+  response_due_at: string | null;
+};
 
 export type SupportItem =
   Database["public"]["Functions"]["admin_support_requests"]["Returns"][number] & {
@@ -630,11 +633,12 @@ export async function resolveNoShow(
 // ─────────────────── 만남 ───────────────────
 
 export async function fetchMeetings(state?: MeetingFilter): Promise<AdminMeeting[]> {
-  const { data, error } = await supabase.rpc("admin_meetings", {
+  const { data, error } = await supabase.rpc("admin_meetings_v2", {
     p_state: state ?? undefined,
   });
   if (error) throw error;
-  return data ?? [];
+  if (!Array.isArray(data)) throw new Error("만남 목록을 확인할 수 없습니다.");
+  return data as unknown as AdminMeeting[];
 }
 
 export async function cancelMeeting(

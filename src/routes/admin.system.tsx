@@ -29,6 +29,7 @@ const JOB_LABELS: Record<string, string> = {
   expire_intro_queue_15m: "소개 큐 만료",
   enqueue_feedback_due_hourly: "만남 후기 요청",
   automation_reminder_tick: "미응답 요청 리마인드 점검",
+  meeting_lifecycle_5m: "참석 확인·자동취소·후기 점검",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -56,6 +57,7 @@ const JOB_INTERVAL_MINUTES: Record<string, number> = {
   expire_intro_queue_15m: 15,
   enqueue_feedback_due_hourly: 60,
   automation_reminder_tick: 5,
+  meeting_lifecycle_5m: 5,
 };
 
 function jobHealth(job: AdminSystemOverview["jobs"][number], now: number) {

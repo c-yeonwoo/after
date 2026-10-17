@@ -73,7 +73,7 @@ export function DeclineRequest({
                 남겨 두지 않으려면 앞의 문장이 먼저 나와야 한다.
               */}
               <b className="font-semibold text-foreground">
-                상대가 쓴 만남 티켓은 바로 환불됩니다.
+                상대가 쓴 만남 티켓은 바로 돌려드려요.
               </b>{" "}
               거절한 사실이나 이유는 상대에게 전해지지 않아요. 다만{" "}
               <b className="font-semibold text-foreground">두 분은 다시 소개되지 않습니다.</b>
