@@ -6,21 +6,21 @@ export type InterviewBasics = Pick<Basics, "name" | "birth" | "job" | "photos">;
 export const CORE_QUESTIONS = [
   {
     key: "eveningNote",
-    title: "요즘 퇴근 후나 쉬는 날, 어떻게 시간을 보내세요?",
+    title: "퇴근 후에는 어떻게 시간을 보내세요?",
     alternative: "최근에 쉬면서 좋았던 순간이 있었나요?",
     hint: "특별한 취미가 없어도 괜찮아요.",
     examples: ["집에서 밥 먹고 드라마 봐요.", "시간이 나면 동네를 걸어요."],
   },
   {
     key: "knownAs",
-    title: "처음 만난 사람과는 어떻게 가까워지는 편인가요?",
+    title: "처음 만난 사람과는 어떻게 친해지세요?",
     alternative: "첫 만남은 어떤 분위기면 편할까요?",
     hint: "말이 많아도, 천천히 친해져도 괜찮아요.",
     examples: ["처음에는 듣다가 익숙해지면 말이 많아져요.", "같이 걸으며 얘기하면 편해요."],
   },
   {
     key: "topicNote",
-    title: "처음 만나면 어떤 이야기를 나눠보고 싶어요?",
+    title: "처음 만나면 어떤 이야기를 하고 싶으세요?",
     alternative: "요즘 자주 보거나 듣거나 찾아보는 게 있나요?",
     hint: "앞에서 적은 이야기로 해도 괜찮아요.",
     examples: ["요즘 보는 드라마요.", "서로 주말을 어떻게 보내는지요."],

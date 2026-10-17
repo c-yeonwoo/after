@@ -7,6 +7,7 @@ export function StepShell({
   step,
   total,
   eyebrow,
+  eyebrowAction,
   title,
   description,
   children,
@@ -16,6 +17,7 @@ export function StepShell({
   step: number;
   total: number;
   eyebrow: string;
+  eyebrowAction?: ReactNode;
   title: string;
   description?: string;
   children: ReactNode;
@@ -64,8 +66,11 @@ export function StepShell({
       </header>
 
       <main className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-8 pb-10">
-        <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
-        <h1 className="mt-2 text-[1.75rem] leading-[1.3] font-semibold tracking-[-0.035em]">
+        <div className="flex min-h-5 items-center justify-between gap-3">
+          <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
+          {eyebrowAction}
+        </div>
+        <h1 className="mt-2 break-keep text-balance text-[1.75rem] leading-[1.3] font-semibold tracking-[-0.035em]">
           {title}
         </h1>
         {description ? (
