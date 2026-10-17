@@ -4,6 +4,7 @@ import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
+import { AppScreen } from "@/components/app/AppScreen";
 import { CarrierIdentityForm } from "@/components/app/CarrierIdentityForm";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
@@ -40,6 +41,7 @@ import {
   saveProfileInterviewDraft,
   saveOnboardingStep,
   setPassword,
+  signOut,
   startLocalDevSignup,
   verifySignupEmail,
   type Profile,
@@ -128,6 +130,8 @@ function Onboarding() {
   const [saving, setSaving] = useState(false);
   /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
   const [resumed, setResumed] = useState(false);
+  /** 기존 세션의 사진·이름은 사용자가 명시적으로 '이어하기'를 고르기 전에는 불러오지 않는다. */
+  const [resumeConfirmed, setResumeConfirmed] = useState(false);
   const [editDraftReady, setEditDraftReady] = useState(!editing);
   const [editDraftLoadError, setEditDraftLoadError] = useState(false);
 
@@ -164,10 +168,8 @@ function Onboarding() {
       if (editing) navigate({ to: "/" });
       return;
     }
-    if (!editing && me.onboarding_step >= 7) {
-      navigate({ to: "/home", replace: true });
-      return;
-    }
+    if (!editing && me.onboarding_step >= 7) return;
+    if (!editing && !resumeConfirmed) return;
     if (resumed) return;
     setResumed(true);
     setUserId(me.id);
@@ -200,9 +202,71 @@ function Onboarding() {
     }
     if (!editing) setStep(resumeStep(me));
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
-  }, [editing, ready, me, navigate, resumed]);
+  }, [editing, ready, me, navigate, resumed, resumeConfirmed]);
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
+
+  // SSR·세션 복구 중에는 빈 가입 폼도 보여주지 않는다. 기존 회원 데이터가 뒤늦게
+  // 폼에 채워져 '새 가입'처럼 보이던 순간적인 노출을 막는다.
+  if (!ready || (editing && !me)) {
+    return (
+      <AppScreen title="가입" hideTabs>
+        <p className="mt-16 text-center text-sm text-muted-foreground">계정을 확인하고 있어요…</p>
+      </AppScreen>
+    );
+  }
+
+  if (!editing && me && (me.onboarding_step >= 7 || !resumeConfirmed)) {
+    const completed = me.onboarding_step >= 7;
+    return (
+      <AppScreen title="가입" hideTabs>
+        <div className="pt-12">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            {completed ? "이미 가입된 계정이 있어요" : "진행 중인 가입이 있어요"}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {completed
+              ? "기존 계정을 이용하거나, 로그아웃한 뒤 다른 계정으로 시작할 수 있어요."
+              : "이 계정으로 이어가거나, 로그아웃한 뒤 다른 계정으로 시작할 수 있어요."}
+          </p>
+          <div className="mt-8 grid gap-3">
+            <Button
+              size="lg"
+              onClick={() => {
+                if (completed) navigate({ to: "/home", replace: true });
+                else setResumeConfirmed(true);
+              }}
+            >
+              {completed ? "기존 계정으로 계속" : "가입 이어하기"}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={authBusy}
+              onClick={async () => {
+                setAuthBusy(true);
+                try {
+                  await signOut();
+                  // 이전 계정에서 불러온 폼 상태까지 버리고 새 화면을 연다.
+                  window.location.replace("/signup");
+                } catch (err) {
+                  setAuthError(authErrorMessage(err));
+                  setAuthBusy(false);
+                }
+              }}
+            >
+              {authBusy ? "로그아웃 중…" : "다른 계정으로 새로 가입"}
+            </Button>
+          </div>
+          {authError ? (
+            <p role="alert" className="mt-4 text-sm text-destructive">
+              {authError}
+            </p>
+          ) : null}
+        </div>
+      </AppScreen>
+    );
+  }
 
   if (editing && step === 2 && !editDraftReady) {
     return (
@@ -744,10 +808,12 @@ function Onboarding() {
                       toast("이미 가입된 계정으로 로그인했어요.");
                       navigate({ to: "/home", replace: true });
                     } else {
-                      toast("이전에 시작한 가입을 이어갈게요.");
-                      setStep(resumeStep(result.profile));
+                      // 코드 확인은 로그인일 뿐, 저장된 사진·이름을 가입 폼에
+                      // 자동으로 불러오는 데 대한 선택은 아니다.
+                      toast("진행 중인 가입이 있어요.");
                     }
                   } else {
+                    setResumeConfirmed(true);
                     setEmailVerified(true);
                   }
                 } catch (err) {
