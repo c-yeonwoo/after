@@ -771,6 +771,7 @@ try {
   await checkPage(femalePage, "interview preview mobile");
   await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
+  await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.notEqual(
     sql(`select headline from public.profiles where id='${female.id}'`),
     "퇴근 후 동네를 걷는 편이에요.",
@@ -797,6 +798,7 @@ try {
     .fill("이번에는 제가 직접 쓴 소개글이에요.");
   await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
+  await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.equal(
     sql(`select intro from public.profiles where id='${female.id}'`),
     "이번에는 제가 직접 쓴 소개글이에요.",

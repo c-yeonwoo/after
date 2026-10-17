@@ -1,0 +1,188 @@
+{
+  "run": "d01e78b5",
+  "environment": "local",
+  "browser": "webkit",
+  "fixtures": [
+    "company email",
+    "SMS delivery",
+    "PG provider"
+  ],
+  "checks": [
+    {
+      "name": "signup m1: consent → SMS → photos → profile",
+      "status": "PASS"
+    },
+    {
+      "name": "signup m2: consent → SMS → photos → profile",
+      "status": "PASS"
+    },
+    {
+      "name": "signup f1: consent → SMS → photos → profile",
+      "status": "PASS"
+    },
+    {
+      "name": "signup f2: consent → SMS → photos → profile",
+      "status": "PASS"
+    },
+    {
+      "name": "signup f3: consent → SMS → photos → profile",
+      "status": "PASS"
+    },
+    {
+      "name": "operator approves all five photo sets in UI",
+      "status": "PASS"
+    },
+    {
+      "name": "operator enrolls real local TOTP and explicitly enables sensitive-action MFA",
+      "status": "PASS"
+    },
+    {
+      "name": "operational phone contact is separately opt-in and can be revoked",
+      "status": "PASS"
+    },
+    {
+      "name": "male pauses and resumes introductions without charging",
+      "status": "PASS"
+    },
+    {
+      "name": "f1 evaluates both men with explicit like/pass",
+      "status": "PASS"
+    },
+    {
+      "name": "f2 evaluates both men with explicit like/pass",
+      "status": "PASS"
+    },
+    {
+      "name": "f3 evaluates both men with explicit like/pass",
+      "status": "PASS"
+    },
+    {
+      "name": "operator curates m1 queue in UI",
+      "status": "PASS"
+    },
+    {
+      "name": "operator curates m2 queue in UI",
+      "status": "PASS"
+    },
+    {
+      "name": "m1 buys intro: real order + fixture PG + real ticket issue",
+      "status": "PASS"
+    },
+    {
+      "name": "m1 buys meeting: real order + fixture PG + real ticket issue",
+      "status": "PASS"
+    },
+    {
+      "name": "m2 buys intro: real order + fixture PG + real ticket issue",
+      "status": "PASS"
+    },
+    {
+      "name": "m2 buys meeting: real order + fixture PG + real ticket issue",
+      "status": "PASS"
+    },
+    {
+      "name": "m1 requests; selected female accepts proposed time",
+      "status": "PASS"
+    },
+    {
+      "name": "mutual rescheduling preserves ticket and invalidates the previous schedule",
+      "status": "PASS"
+    },
+    {
+      "name": "two participants exchange chat without reload and sending is deduplicated",
+      "status": "PASS"
+    },
+    {
+      "name": "chat refresh failure preserves history and offers retry",
+      "status": "PASS"
+    },
+    {
+      "name": "incoming message does not interrupt reading older chat",
+      "status": "PASS"
+    },
+    {
+      "name": "future meeting cannot be reported as no-show",
+      "status": "PASS"
+    },
+    {
+      "name": "future meeting cannot receive feedback",
+      "status": "PASS"
+    },
+    {
+      "name": "future feedback deep-link explains eligibility instead of submitting",
+      "status": "PASS"
+    },
+    {
+      "name": "m2 unanswered request cancels once and restores one meeting ticket",
+      "status": "PASS"
+    },
+    {
+      "name": "D-24h check-in nudge and first participant response in UI",
+      "status": "PASS"
+    },
+    {
+      "name": "D-4h only the unconfirmed person is nudged",
+      "status": "PASS"
+    },
+    {
+      "name": "one response prevents D-2h auto-cancel; operator sees actionable state",
+      "status": "PASS"
+    },
+    {
+      "name": "operator contact task masks non-consenting phone and records a next check",
+      "status": "PASS"
+    },
+    {
+      "name": "second participant confirms; operator auto-refresh observes both responses",
+      "status": "PASS"
+    },
+    {
+      "name": "both participants receive independent midnight feedback requests",
+      "status": "PASS"
+    },
+    {
+      "name": "first survey submission finishes once and retry deep-link is calm",
+      "status": "PASS"
+    },
+    {
+      "name": "one bounded follow-up reaches only the remaining survey participant",
+      "status": "PASS"
+    },
+    {
+      "name": "female politely declines a beta request; ticket returns without warning",
+      "status": "PASS"
+    },
+    {
+      "name": "both silent after two nudges: cancel + one restored ticket + two warnings",
+      "status": "PASS"
+    },
+    {
+      "name": "male can pass next introduction and permanent exclusion prevents requeue",
+      "status": "PASS"
+    },
+    {
+      "name": "notification load failure is not shown as an empty inbox",
+      "status": "PASS"
+    },
+    {
+      "name": "additional persona signs up for repeat-warning scenario",
+      "status": "PASS"
+    },
+    {
+      "name": "second real silence produces review flag, never an automatic ban",
+      "status": "PASS"
+    },
+    {
+      "name": "baseline lifecycle capability audit",
+      "status": "PASS"
+    },
+    {
+      "name": "operator meeting dashboard mobile/desktop access",
+      "status": "PASS"
+    },
+    {
+      "name": "fresh operator login challenges the existing authenticator without disabling MFA",
+      "status": "PASS"
+    }
+  ]
+}
