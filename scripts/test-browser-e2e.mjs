@@ -139,7 +139,8 @@ async function login(page, person) {
   );
   await submit.click();
   await page.waitForURL("**/home", { timeout: 15_000 });
-  await page.getByRole("main").waitFor();
+  await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
+  await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
 }
 
 async function checkPage(page, name, accessibility = true) {

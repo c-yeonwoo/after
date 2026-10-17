@@ -94,6 +94,10 @@ async function login(page, person) {
   }
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await page.waitForURL("**/home");
+  // WebKit can expose the new URL before the SPA has committed the screen.
+  // Wait for the home UI, not a delay or a second forced navigation.
+  await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
+  await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
 }
 const personas = [
   {
