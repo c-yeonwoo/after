@@ -7,15 +7,13 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { GuideNote } from "@/components/app/GuideNote";
+import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
-import {
-  acceptMeetingSlot,
-  listMeetingsAwaitingMyPrefs,
-  type Meeting,
-  type MeetingRequest,
-} from "@/lib/api";
+import { acceptMeetingSlot, listMeetingsAwaitingMyPrefs, type Meeting } from "@/lib/api";
 import { formatMeetTime } from "@/lib/meet";
+import { useMe } from "@/lib/me";
+import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 
 export const Route = createFileRoute("/requests")({
   head: () => ({
@@ -42,10 +40,16 @@ function remainingLabel(deadline: number, now: number) {
  * 각 요청은 **독립적으로** 답한다 — 하나를 답한다고 나머지가 사라지지 않는다.
  */
 function RequestsPage() {
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
-  const [requests, setRequests] = useState<MeetingRequest[]>([]);
+  const { me, ready } = useMe();
+  const live = useMemberLiveQuery(
+    "member-requests",
+    me?.id,
+    () => listMeetingsAwaitingMyPrefs(me?.id),
+    ready,
+  );
+  const requests = live.data ?? [];
+  const loading = live.isPending && !live.isPaused;
+  const loadError = (live.isError || live.isPaused) && !live.data;
   const [now, setNow] = useState<number | null>(null);
   const serverClockOffset = useRef(0);
 
@@ -55,31 +59,18 @@ function RequestsPage() {
     return () => window.clearInterval(t);
   }, []);
 
+  const asOf = live.data?.[0]?.server_as_of;
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(false);
-    (async () => {
-      try {
-        const list = await listMeetingsAwaitingMyPrefs();
-        if (!cancelled) {
-          const serverTime = list[0]?.server_as_of ? Date.parse(list[0].server_as_of) : NaN;
-          if (Number.isFinite(serverTime)) {
-            serverClockOffset.current = serverTime - Date.now();
-            setNow(Date.now() + serverClockOffset.current);
-          }
-          setRequests(list);
-        }
-      } catch {
-        if (!cancelled) setLoadError(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [retryKey]);
+    const serverTime = asOf ? Date.parse(asOf) : NaN;
+    if (Number.isFinite(serverTime)) {
+      serverClockOffset.current = serverTime - Date.now();
+      setNow(Date.now() + serverClockOffset.current);
+    }
+  }, [asOf]);
+  const refreshNotice =
+    (live.isError || live.isPaused) && live.data ? (
+      <LiveRefreshNotice retry={() => void live.refetch()} />
+    ) : null;
 
   if (loading) {
     return (
@@ -94,7 +85,7 @@ function RequestsPage() {
       <AppScreen title="만남 요청" back="/home">
         <div role="alert" className="mt-10 rounded-surface border border-border bg-card p-6">
           <p className="text-sm">요청 목록을 확인할 수 없습니다.</p>
-          <Button className="mt-4" variant="outline" onClick={() => setRetryKey((key) => key + 1)}>
+          <Button className="mt-4" variant="outline" onClick={() => void live.refetch()}>
             다시 확인
           </Button>
         </div>
@@ -105,6 +96,7 @@ function RequestsPage() {
   if (requests.length === 0) {
     return (
       <AppScreen title="만남 요청" back="/home">
+        {refreshNotice}
         <div className="mt-16 px-6 py-12 text-center">
           <p className="headline text-base">아직 받은 요청이 없습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -117,6 +109,7 @@ function RequestsPage() {
 
   return (
     <AppScreen title="만남 요청" back="/home">
+      {refreshNotice}
       <div className="mt-3">
         <GuideNote>
           {requests.length > 1
@@ -170,13 +163,14 @@ function RequestsPage() {
                   <DeclineRequest
                     meetingId={meeting.id}
                     candidateName={candidate.name}
+                    onInteractionStart={live.beginInteraction}
                     onDone={() =>
-                      setRequests((list) => list.filter((r) => r.meeting.id !== meeting.id))
+                      live.update((list) => list.filter((r) => r.meeting.id !== meeting.id))
                     }
                   />
                 </div>
                 {meeting.proposed_slots?.length ? (
-                  <SlotChoices meeting={meeting} />
+                  <SlotChoices meeting={meeting} onInteractionStart={live.beginInteraction} />
                 ) : (
                   <Link
                     to="/prefs"
@@ -208,9 +202,16 @@ function RequestsPage() {
  * 다시 보내고 상대가 고르기를 기다리던 왕복이 없다. 결정은 마지막까지 그녀의 몫이다:
  * 맞는 날이 없으면 다른 날을 제안하고, 원치 않으면 위에서 거절한다.
  */
-function SlotChoices({ meeting }: { meeting: Meeting }) {
+function SlotChoices({
+  meeting,
+  onInteractionStart,
+}: {
+  meeting: Meeting;
+  onInteractionStart: () => () => void;
+}) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState<number | null>(null);
+  const busyRef = useRef(false);
   const slots = meeting.proposed_slots ?? [];
 
   return (
@@ -232,6 +233,9 @@ function SlotChoices({ meeting }: { meeting: Meeting }) {
             type="button"
             disabled={busy !== null}
             onClick={async () => {
+              if (busyRef.current) return;
+              busyRef.current = true;
+              const release = onInteractionStart();
               setBusy(i);
               try {
                 await acceptMeetingSlot(meeting.id, i);
@@ -240,6 +244,9 @@ function SlotChoices({ meeting }: { meeting: Meeting }) {
               } catch {
                 toast.error("이 시간으로 정하지 못했습니다. 다시 시도해 주세요.");
                 setBusy(null);
+                busyRef.current = false;
+              } finally {
+                release();
               }
             }}
             className="flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"

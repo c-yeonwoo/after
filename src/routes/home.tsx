@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
+import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { BRAND, HUBS } from "@/lib/brand";
 import {
   homeStateV2,
@@ -19,12 +20,12 @@ import {
   paymentsEnabled,
   setPaused,
   type Meeting,
-  type NoShowReport,
   type PublicProfile,
   type HomeStateV2,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { myMeetWindow, type MeetWindow } from "@/lib/meetWindow";
+import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -98,20 +99,40 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
 function HomePage() {
   const { me, ready, refresh } = useMe();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
-  const [serverState, setServerState] = useState<HomeStateV2 | null>(null);
-  const [candidate, setCandidate] = useState<PublicProfile | null>(null);
-  /** 큐에서 전송된 카드 수 · 소개 티켓 보유량(v2). 홈의 안내 근거다. */
-  const [queued, setQueued] = useState(0);
-  const [introTickets, setIntroTickets] = useState(0);
-  const [introPaymentsEnabled, setIntroPaymentsEnabled] = useState<boolean | null>(null);
-  const [meetWindow, setMeetWindow] = useState<MeetWindow | null>(null);
-  const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [noShow, setNoShow] = useState<NoShowReport | null>(null);
-  // 여성은 동시에 여러 건을 받을 수 있다 — 개수를 세어 목록으로 보낸다.
-  const [requestCount, setRequestCount] = useState(0);
+  const live = useMemberLiveQuery(
+    "member-home",
+    me?.id,
+    async (signal) => {
+      const [stateResult, paymentResult, windowResult] = await Promise.allSettled([
+        homeStateV2(signal),
+        paymentsEnabled(),
+        myMeetWindow(),
+      ]);
+      if (stateResult.status === "rejected") throw stateResult.reason;
+      if (stateResult.value.me?.id && stateResult.value.me.id !== me?.id)
+        throw new Error("로그인한 계정이 바뀌었어요.");
+      return {
+        state: stateResult.value,
+        payments: paymentResult.status === "fulfilled" ? paymentResult.value : null,
+        window: windowResult.status === "fulfilled" ? windowResult.value : null,
+      };
+    },
+    ready && Boolean(me && me.onboarding_step >= 7),
+  );
+  const serverState = live.data?.state ?? null;
+  const currentProfile = serverState?.me ?? me;
+  const candidate = serverState?.candidate ?? null;
+  const meeting = serverState?.meeting ?? null;
+  const noShow = serverState?.pending_no_show?.responded_at
+    ? null
+    : (serverState?.pending_no_show ?? null);
+  const queued = serverState?.queued_intros ?? 0;
+  const introTickets = serverState?.ticket_summary?.intro_available ?? 0;
+  const introPaymentsEnabled = live.data?.payments ?? null;
+  const meetWindow = live.data?.window ?? null;
+  const requestCount = serverState?.request_count ?? 0;
+  const loading = live.isPending && !live.isPaused;
+  const loadError = (live.isError || live.isPaused) && !live.data;
   // 환불 기한 카운트다운용. 서버 시각이 권위이고 이건 표시 전용이다.
   const [now, setNow] = useState<number | null>(null);
   const serverClockOffset = useRef(0);
@@ -129,58 +150,18 @@ function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!ready || !me || me.onboarding_step < 7) return;
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(false);
-    (async () => {
-      try {
-        const [stateResult, paymentResult, windowResult] = await Promise.allSettled([
-          homeStateV2(),
-          paymentsEnabled(),
-          myMeetWindow(),
-        ]);
-        if (stateResult.status === "rejected") throw stateResult.reason;
-        const state = stateResult.value;
-        const payments = paymentResult.status === "fulfilled" ? paymentResult.value : null;
-        /*
-        **여기서 소개를 열지 않는다.** 예전에는 열린 소개가 없으면 openIntro() 를
-        대신 불러줬는데, v2 부터 그 호출은 소개 티켓 1장을 차감한다 — 홈을 열기만
-        해도 5,000원이 빠지게 된다. 홈은 "도착했다" 까지만 말하고, 차감은 /intro
-        의 열람 확인이 받는다.
-      */
-        if (cancelled) return;
-        const serverTime = Date.parse(state.as_of);
-        if (Number.isFinite(serverTime)) {
-          serverClockOffset.current = serverTime - Date.now();
-          setNow(Date.now() + serverClockOffset.current);
-        }
-        setServerState(state);
-        setCandidate(state.candidate);
-        setMeeting(state.meeting);
-        setRequestCount(state.request_count);
-        // 답변한 신고는 운영자 검토 큐다. 판정 전까지 같은 질문을 반복하지 않는다.
-        setNoShow(state.pending_no_show?.responded_at ? null : state.pending_no_show);
-        setQueued(state.queued_intros);
-        setIntroTickets(state.ticket_summary.intro_available);
-        setIntroPaymentsEnabled(payments);
-        if (windowResult.status === "fulfilled") setMeetWindow(windowResult.value);
-      } catch {
-        if (!cancelled) setLoadError(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, me, retryKey]);
+    const serverTime = Date.parse(serverState?.as_of ?? "");
+    if (Number.isFinite(serverTime)) {
+      serverClockOffset.current = serverTime - Date.now();
+      setNow(Date.now() + serverClockOffset.current);
+    }
+  }, [serverState?.as_of]);
 
-  const hub = HUBS.find((h) => h.id === me?.hub_id);
+  const hub = HUBS.find((h) => h.id === currentProfile?.hub_id);
   const isMale = me?.gender === "male";
   const primaryState = serverState?.primary_state;
   const needsPhone = primaryState === "identity_required" || primaryState === "phone_required";
-  const photoCount = me?.photo_paths?.length ?? 0;
+  const photoCount = currentProfile?.photo_paths?.length ?? 0;
   const needsPhotos = primaryState === "photos_required";
   const blocksNewIntro = Boolean(
     primaryState &&
@@ -209,7 +190,9 @@ function HomePage() {
   const headline = loadError
     ? "상태를 확인할 수 없어요."
     : primaryState
-      ? stateHeadline(primaryState, isMale)
+      ? primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
+        ? "마음을 남긴 소개가 있어요."
+        : stateHeadline(primaryState, isMale)
       : "지금 상태를 확인하고 있어요.";
 
   if (!ready || !me || me.onboarding_step < 7) {
@@ -223,7 +206,7 @@ function HomePage() {
   return (
     <AppScreen action={<NotificationBell />}>
       <p className="mt-5 text-xs font-medium text-muted-foreground">
-        {me.name ? `${me.name}님의 애프터` : "나의 애프터"}
+        {currentProfile?.name ? `${currentProfile.name}님의 애프터` : "나의 애프터"}
         {hub ? ` · ${hub.label}` : ""}
       </p>
       {/*
@@ -239,9 +222,23 @@ function HomePage() {
         {headline}
       </h1>
 
+      {(live.isError || live.isPaused) && live.data ? (
+        <LiveRefreshNotice retry={() => void live.refetch()} />
+      ) : null}
+
       {!loadError && noShow ? (
         <div className="mt-5">
-          <NoShowPrompt report={noShow} onResolved={() => setNoShow(null)} />
+          <NoShowPrompt
+            key={noShow.id}
+            report={noShow}
+            onInteractionStart={live.beginInteraction}
+            onResolved={() =>
+              live.update((previous) => ({
+                ...previous,
+                state: { ...previous.state, pending_no_show: null },
+              }))
+            }
+          />
         </div>
       ) : null}
 
@@ -258,24 +255,30 @@ function HomePage() {
         ) : loadError ? (
           <div role="alert" className="rounded-surface border border-border bg-card p-6">
             <p className="text-sm text-muted-foreground">현재 진행 상태를 불러오지 못했습니다.</p>
-            <Button
-              className="mt-4"
-              variant="outline"
-              onClick={() => setRetryKey((key) => key + 1)}
-            >
+            <Button className="mt-4" variant="outline" onClick={() => void live.refetch()}>
               다시 확인
             </Button>
           </div>
         ) : awaitingOutcome && meeting ? (
           <AfterMeetingCard
+            key={meeting.id}
             meeting={meeting}
             counterpart={candidate}
-            onDone={(m) => setMeeting(m)}
+            onInteractionStart={live.beginInteraction}
+            onDone={(m) =>
+              live.update((previous) => ({
+                ...previous,
+                state: { ...previous.state, meeting: m },
+              }))
+            }
           />
         ) : meeting?.confirmed_at ? (
           <>
             <ConfirmedCard meeting={meeting} counterpart={candidate} />
-            <MeetingCheckin meetingId={meeting.id} />
+            <MeetingCheckin
+              key={`${meeting.id}:${meeting.schedule_revision}`}
+              meetingId={meeting.id}
+            />
           </>
         ) : meeting?.prefs_submitted_at ? (
           // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
@@ -298,7 +301,7 @@ function HomePage() {
           <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
             {requestCount > 1
               ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
-              : "만나고 싶다는 요청이 도착했어요. 보내 준 시간 중 하나만 고르시면 약속이 정해져요."}
+              : "만나고 싶다는 요청이 도착했어요. 날짜를 확인하고 답해 주세요."}
           </GuideNote>
         ) : meeting ? (
           <WaitingCard
@@ -333,7 +336,9 @@ function HomePage() {
           <>
             {isMale ? null : (
               <GuideNote>
-                천천히 읽어보고 답해 주세요. 답은 상대에게 바로 보이지 않습니다.
+                {serverState?.intro_progress?.has_likes
+                  ? "마음을 남긴 소개가 있어요. 만남 요청이 오면 홈에서 확인할 수 있어요."
+                  : "좋아요는 만남 확정이 아니에요. 요청이 오면 날짜를 보고 결정해요."}
               </GuideNote>
             )}
             <div className={isMale ? undefined : "mt-4"}>
@@ -375,6 +380,20 @@ function HomePage() {
         ) : null}
       </div>
 
+      {!isMale &&
+      !meeting &&
+      !candidate &&
+      requestCount === 0 &&
+      !blocksNewIntro &&
+      primaryState !== "paused" &&
+      serverState?.intro_progress?.has_likes ? (
+        <div className="mt-5">
+          <GuideNote>
+            애프터가 어울릴 소개를 살펴봐요. 만남 요청이 오면 이곳에서 확인할 수 있어요.
+          </GuideNote>
+        </div>
+      ) : null}
+
       {(needsPhone || needsPhotos) && !loading && !loadError && blocksNewIntro ? (
         <section className="mt-8 border-t border-border pt-5" aria-labelledby="home-ready-title">
           <h2 id="home-ready-title" className="text-sm font-semibold text-foreground">
@@ -398,7 +417,9 @@ function HomePage() {
                 search={{ edit: true }}
                 className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
               >
-                <span>{me.photo_state === "rejected" ? "사진 다시 올리기" : "사진 추가"}</span>
+                <span>
+                  {currentProfile?.photo_state === "rejected" ? "사진 다시 올리기" : "사진 추가"}
+                </span>
                 {photoCount < MIN_PHOTOS ? (
                   <span className="ml-auto text-xs text-muted-foreground">
                     {photoCount}/{MIN_PHOTOS}장
@@ -430,17 +451,20 @@ function HomePage() {
       !(isMale && queued > 0) ? (
         <ReadinessPanel
           isMale={isMale}
-          paused={me?.paused_at !== null && me?.paused_at !== undefined}
+          paused={currentProfile?.paused_at !== null && currentProfile?.paused_at !== undefined}
           introTickets={introTickets}
           introPaymentsEnabled={introPaymentsEnabled}
           meetWindow={meetWindow}
           onToggle={async (next) => {
+            const release = live.beginInteraction();
             try {
               await setPaused(next);
               await refresh();
               toast.success(next ? "새 소개를 멈췄습니다." : "다시 소개를 받습니다.");
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+            } finally {
+              release();
             }
           }}
         />
@@ -659,10 +683,12 @@ function AfterMeetingCard({
   meeting,
   counterpart,
   onDone,
+  onInteractionStart,
 }: {
   meeting: Meeting;
   counterpart: PublicProfile | null;
   onDone: (m: Meeting) => void;
+  onInteractionStart: () => () => void;
 }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -692,6 +718,7 @@ function AfterMeetingCard({
           type="button"
           disabled={busy}
           onClick={async () => {
+            const release = onInteractionStart();
             setBusy(true);
             try {
               // 북극성 기록. 성사 여부만 먼저 받고, 자세한 후기는 다음 화면에서.
@@ -702,6 +729,7 @@ function AfterMeetingCard({
               toast.error(err instanceof Error ? err.message : "기록에 실패했습니다.");
             } finally {
               setBusy(false);
+              release();
             }
           }}
           className="min-h-12 rounded-control bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"

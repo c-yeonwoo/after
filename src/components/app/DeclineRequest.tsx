@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { declineMeeting } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useInteractionHold } from "@/lib/useMemberLiveQuery";
 
 /**
  * 만남 요청 거절 (여성).
@@ -36,21 +37,31 @@ export function DeclineRequest({
   candidateName,
   onDone,
   className,
+  onInteractionStart,
 }: {
   meetingId: string;
   candidateName?: string | null;
   /** 거절 후. 보통 목록을 다시 읽거나 홈으로 보낸다 */
   onDone?: () => void;
   className?: string;
+  onInteractionStart?: () => () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const sending = useRef(false);
+  const { hold, finish } = useInteractionHold(onInteractionStart);
+  const changeOpen = (next: boolean) => {
+    if (!next && sending.current) return;
+    if (next) hold();
+    else finish();
+    setOpen(next);
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => changeOpen(true)}
         className={cn(
           "min-h-11 w-full text-xs text-muted-foreground transition-colors",
           "hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
@@ -60,7 +71,7 @@ export function DeclineRequest({
         이번엔 정중히 거절할게요
       </button>
 
-      <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialog open={open} onOpenChange={changeOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -85,15 +96,19 @@ export function DeclineRequest({
               disabled={busy}
               onClick={async (e) => {
                 e.preventDefault();
+                if (sending.current) return;
+                sending.current = true;
                 setBusy(true);
                 try {
                   await declineMeeting(meetingId);
                   toast.success("거절했습니다. 상대에게는 알려지지 않아요.");
                   setOpen(false);
+                  finish();
                   onDone?.();
                 } catch {
                   toast.error("처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
                 } finally {
+                  sending.current = false;
                   setBusy(false);
                 }
               }}
