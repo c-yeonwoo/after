@@ -205,20 +205,20 @@ function Landing() {
  */
 function SampleIntro() {
   return (
-    <figure className="mt-6 rounded-[1.25rem] border border-border bg-card p-6">
+    <figure className="mt-5 rounded-[1.25rem] border border-border bg-card px-5 pt-5 pb-6">
       <figcaption className="text-xs font-medium text-muted-foreground">
         소개 예시 · 가상의 프로필
       </figcaption>
-      <p className="mt-5 text-2xl leading-[1.3] font-semibold text-foreground">
+      <p className="mt-4 text-2xl leading-[1.3] font-semibold text-foreground">
         지원 <span className="font-sans text-base font-medium text-muted-foreground">31</span>
       </p>
       <p className="mt-0.5 text-sm text-muted-foreground">회계 · {COVERAGE_LABEL}</p>
-      <blockquote className="mt-5 border-l-2 border-brand-blush pl-4">
-        <p className="serif text-lg leading-[1.65] text-foreground">
+      <blockquote className="mt-4 border-l-2 border-brand-blush pl-3.5">
+        <p className="serif break-keep text-pretty text-lg leading-[1.45] text-foreground">
           퇴근하고 한강까지 뛰는 게 요즘 제일 좋아하는 시간이에요.
         </p>
       </blockquote>
-      <p className="mt-5 text-sm leading-[1.8] text-muted-foreground">
+      <p className="mt-4 break-keep text-pretty text-[0.9375rem] leading-[1.55] text-foreground/80">
         처음 만나는 자리라면 길게 걷기보다 가볍게 저녁을 먹으며 이야기하는 쪽이 편해요. 최근에 본
         전시 이야기를 나누고 싶어요.
       </p>

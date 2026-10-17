@@ -128,7 +128,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
   const hasAnyFact = facts.some((f) => f.v);
 
   return (
-    <article className="space-y-7 pb-4">
+    <article className="space-y-6 pb-4">
       <header>
         <h2 className="text-[1.875rem] leading-[1.25] font-semibold tracking-[-0.035em] text-foreground">
           {p.name}
@@ -145,14 +145,20 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
 
       {p.headline ? (
         <blockquote className="border-l-2 border-brand-blush pl-4">
-          <p data-selectable className="serif text-xl leading-[1.65] text-foreground">
+          <p
+            data-selectable
+            className="serif break-keep break-words text-pretty text-[1.1875rem] leading-[1.5] text-foreground"
+          >
             {p.headline}
           </p>
         </blockquote>
       ) : null}
 
       {!p.story && first ? (
-        <p data-selectable className="text-base leading-[1.8] whitespace-pre-line text-foreground">
+        <p
+          data-selectable
+          className="break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
+        >
           {first}
         </p>
       ) : null}
@@ -166,7 +172,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
           </h3>
           <p
             data-selectable
-            className="mt-2 text-base leading-[1.8] whitespace-pre-line text-foreground"
+            className="mt-2 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
           >
             {section.answer}
           </p>
@@ -178,7 +184,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
           <p
             key={para}
             data-selectable
-            className="text-base leading-[1.8] whitespace-pre-line text-foreground"
+            className="break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
           >
             {para}
           </p>
@@ -216,7 +222,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
                 <p className="text-sm font-semibold text-foreground">{a.q}</p>
                 <p
                   data-selectable
-                  className="mt-1.5 text-base leading-[1.75] whitespace-pre-line text-foreground"
+                  className="mt-1.5 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
                 >
                   {a.a}
                 </p>

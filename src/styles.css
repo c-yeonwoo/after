@@ -498,7 +498,7 @@
 @utility serif {
   font-family: var(--font-serif);
   font-synthesis-weight: none;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.025em;
 }
 
 /* 워드마크 — 소문자 after와 살구 포인트를 사용한다. */
