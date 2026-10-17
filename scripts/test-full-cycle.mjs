@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { createClient } from "@supabase/supabase-js";
 import AxeBuilder from "@axe-core/playwright";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 // Production URLs, real payments, outbound messages and real identities are
 // deliberately excluded. Auth/SMS/PG are explicit fixtures, never release proof.
@@ -28,6 +28,7 @@ const output = `/tmp/after-full-cycle-${run}`;
 const report = {
   run,
   environment: "local",
+  browser: process.env.AFTER_TEST_BROWSER === "webkit" ? "webkit" : "chromium",
   fixtures: ["company email", "SMS delivery", "PG provider"],
   checks: [],
   personas: [],
@@ -56,6 +57,8 @@ async function check(name, fn) {
 async function pageFor(width = 390) {
   const context = await browser.newContext({
     viewport: { width, height: 900 },
+    isMobile: width < 768,
+    hasTouch: width < 768,
     locale: "ko-KR",
     timezoneId: "Asia/Seoul",
   });
@@ -354,7 +357,7 @@ function shiftMeeting(id, when) {
 async function readNotices(people) {
   for (const person of people) {
     const read = person.page.waitForResponse(
-      (r) => r.url().includes("/rest/v1/rpc/mark_notifications_read") && r.ok(),
+      (r) => r.url().includes("/rest/v1/rpc/mark_displayed_notifications_read") && r.ok(),
     );
     await person.page.goto(`${base}/notifications`);
     await read;
@@ -384,7 +387,9 @@ try {
     } catch {}
     await delay(200);
   }
-  browser = await chromium.launch({ headless: true });
+  browser = await (process.env.AFTER_TEST_BROWSER === "webkit" ? webkit : chromium).launch({
+    headless: true,
+  });
   for (const [i, person] of personas.entries())
     await check(`signup ${person.key}: consent → SMS → photos → profile`, () => signup(person, i));
   if (personas.some((p) => !p.id || !paths.some((x) => x.startsWith(p.id))))
@@ -423,7 +428,38 @@ try {
     );
     await screen(ap, "operator-photos");
   });
+  if (
+    sql(
+      `select count(*) from profiles where id in (${personas.map((p) => `'${p.id}'`).join(",")}) and photo_state='approved'`,
+    ) !== "5"
+  )
+    throw Error("Photo review failed; dependent cycles cannot be trusted");
   const [m1, m2, f1, f2, f3] = personas;
+  await check("operational phone contact is separately opt-in and can be revoked", async () => {
+    await m1.page.goto(`${base}/settings`);
+    const consent = m1.page.getByRole("checkbox", {
+      name: "약속 확인을 위한 운영팀 연락에 동의해요 (선택)",
+      exact: true,
+    });
+    await consent.check();
+    await m1.page.getByRole("button", { name: "운영 연락 설정 저장", exact: true }).click();
+    await m1.page.getByText("운영 연락 동의를 저장했어요.", { exact: true }).waitFor();
+    assert.equal(
+      sql(`select allowed from member_contact_preferences where user_id='${m1.id}'`),
+      "t",
+    );
+    await consent.uncheck();
+    await m1.page.getByRole("button", { name: "운영 연락 설정 저장", exact: true }).click();
+    await m1.page.getByText("운영 연락 동의를 해제했어요.", { exact: true }).waitFor();
+    assert.equal(
+      sql(`select allowed from member_contact_preferences where user_id='${m1.id}'`),
+      "f",
+    );
+    await consent.check();
+    await m1.page.getByRole("button", { name: "운영 연락 설정 저장", exact: true }).click();
+    await m1.page.getByText("운영 연락 동의를 저장했어요.", { exact: true }).waitFor();
+    await screen(m1.page, "contact-consent-mobile");
+  });
   await check("male pauses and resumes introductions without charging", async () => {
     await m1.page.goto(`${base}/home`);
     await m1.page.getByRole("switch", { name: "소개 잠시 멈추기" }).click();
@@ -498,6 +534,100 @@ try {
       "true",
     );
     await screen(f.page, "female-confirmed");
+  });
+  await check(
+    "mutual rescheduling preserves ticket and invalidates the previous schedule",
+    async () => {
+      const target = sql(
+        `select to_char(((now() at time zone 'Asia/Seoul')::date+n),'YYYY-MM-DD') from generate_series(4,12)n where extract(isodow from ((now() at time zone 'Asia/Seoul')::date+n))<=5 order by n limit 1`,
+      );
+      await m1.page.goto(`${base}/chat/${success.id}`);
+      await m1.page.getByRole("button", { name: "약속 시간 바꾸기", exact: true }).click();
+      const proposal = m1.page.getByRole("dialog");
+      await proposal.getByLabel("변경할 날짜", { exact: true }).fill(target);
+      await proposal.getByLabel("변경할 시간", { exact: true }).selectOption("19:30");
+      await screen(m1.page, "reschedule-proposal-mobile");
+      await proposal.getByRole("button", { name: "새 시간 제안하기", exact: true }).click();
+      await proposal.getByRole("button", { name: "변경 제안 취소", exact: true }).waitFor();
+      assert.equal(sql(`select schedule_revision from meetings where id='${success.id}'`), "1");
+      await success.female.page.goto(`${base}/chat/${success.id}`);
+      await success.female.page
+        .getByRole("button", { name: "새 일정 제안 확인하기", exact: true })
+        .click();
+      await success.female.page
+        .getByRole("dialog")
+        .getByRole("button", { name: "이 시간으로 변경할게요", exact: true })
+        .click();
+      await success.female.page.getByRole("dialog").waitFor({ state: "hidden" });
+      assert.equal(sql(`select schedule_revision from meetings where id='${success.id}'`), "2");
+      assert.equal(
+        sql(`select ticket_id from meetings where id='${success.id}'`),
+        success.ticket_id,
+      );
+      assert.equal(
+        sql(`select count(*) from tickets where restored_from_ticket_id='${success.ticket_id}'`),
+        "0",
+      );
+    },
+  );
+  await check(
+    "two participants exchange chat without reload and sending is deduplicated",
+    async () => {
+      await m1.page.goto(`${base}/chat/${success.id}`);
+      await success.female.page.goto(`${base}/chat/${success.id}`);
+      const body = `QA 인사 ${run}`;
+      await m1.page.getByLabel("메시지", { exact: true }).fill(body);
+      await m1.page.getByRole("button", { name: "보내기", exact: true }).evaluate((el) => {
+        el.click();
+        el.click();
+      });
+      await success.female.page.getByText(body, { exact: true }).waitFor();
+      await success.female.page.getByLabel("메시지", { exact: true }).fill(`QA 답변 ${run}`);
+      await success.female.page.getByRole("button", { name: "보내기", exact: true }).click();
+      await m1.page.getByText(`QA 답변 ${run}`, { exact: true }).waitFor();
+      assert.equal(
+        sql(`select count(*) from messages where meeting_id='${success.id}' and body='${body}'`),
+        "1",
+      );
+    },
+  );
+  await check("chat refresh failure preserves history and offers retry", async () => {
+    await success.female.page.route("**/rest/v1/messages**", (route) =>
+      route.request().method() === "GET" ? route.abort("failed") : route.continue(),
+    );
+    await success.female.page
+      .getByText("대화를 새로 불러오지 못했어요.", { exact: false })
+      .waitFor();
+    await success.female.page.getByText(`QA 인사 ${run}`, { exact: true }).waitFor();
+    await success.female.page.unroute("**/rest/v1/messages**");
+    await success.female.page
+      .getByRole("button", { name: "대화 다시 불러오기", exact: true })
+      .click();
+    await success.female.page
+      .getByText("대화를 새로 불러오지 못했어요.", { exact: false })
+      .waitFor({ state: "hidden" });
+  });
+  await check("incoming message does not interrupt reading older chat", async () => {
+    asUser(
+      m1,
+      `insert into messages(meeting_id,sender_id,channel,body) select '${success.id}','${m1.id}','coord','QA 대화 '||n||' '||repeat('일정 확인을 위한 합성 대화입니다. ',12) from generate_series(1,25)n`,
+    );
+    const log = success.female.page.getByRole("log", { name: "대화 내용" });
+    await log.getByText("QA 대화 25 ", { exact: false }).waitFor({ state: "attached" });
+    await log.evaluate((el) => {
+      el.scrollTop = 0;
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await m1.page.getByLabel("메시지", { exact: true }).fill(`QA 최신 ${run}`);
+    await m1.page.getByRole("button", { name: "보내기", exact: true }).click();
+    await success.female.page
+      .getByRole("button", { name: "최근 메시지 보기", exact: true })
+      .waitFor();
+    assert.ok(await log.evaluate((el) => el.scrollTop < 8));
+    await success.female.page
+      .getByRole("button", { name: "최근 메시지 보기", exact: true })
+      .click();
+    assert.ok(await log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop < 64));
   });
   await check("future meeting cannot be reported as no-show", async () => {
     assert.ok(success);
@@ -575,6 +705,35 @@ try {
       await ap.goto(`${base}/admin/meetings`);
       await ap.getByText("참석 미확인 · 운영 확인 필요", { exact: true }).waitFor();
       await screen(ap, "operator-checkin-help");
+    },
+  );
+  await check(
+    "operator contact task masks non-consenting phone and records a next check",
+    async () => {
+      const caseId = sql(
+        `select id from ops_cases where case_type='meeting_followup' and source_id='${success.id}' and status not in ('resolved','superseded')`,
+      );
+      assert.ok(caseId);
+      await ap.goto(`${base}/admin/tasks?caseId=${caseId}`);
+      const pane = ap
+        .locator("section")
+        .filter({ has: ap.getByRole("heading", { name: "약속 참석 확인 연락", exact: true }) });
+      await pane.getByRole("button", { name: "동의한 회원 연락처 확인", exact: true }).click();
+      await pane.getByText("운영 연락 미동의 · 앱 문의로 조율", { exact: false }).waitFor();
+      assert.equal(await pane.locator('a[href^="tel:"]').count(), 1);
+      await pane
+        .getByLabel("처리 사유", { exact: true })
+        .fill("QA: 한쪽 참석 응답을 확인했고 상대에게 앱 확인을 요청했습니다.");
+      const next = new Date(Date.now() + 10 * 60_000)
+        .toLocaleString("sv-SE", { timeZone: "Asia/Seoul" })
+        .slice(0, 16)
+        .replace(" ", "T");
+      await pane.getByLabel("보류 시 다음 확인 시각", { exact: true }).fill(next);
+      await pane.getByRole("button", { name: "답변 대기", exact: true }).click();
+      await pane.getByRole("button", { name: "처리 시작", exact: true }).waitFor();
+      assert.equal(sql(`select status from ops_cases where id='${caseId}'`), "waiting");
+      await screen(ap, "operator-contact-task");
+      await ap.goto(`${base}/admin/meetings`);
     },
   );
   await check(
@@ -817,7 +976,13 @@ try {
     await ap.goto(`${base}/admin/meetings`);
     await ap.getByText("반복 미응답 검토", { exact: false }).first().waitFor();
     await screen(ap, "operator-repeat-warning");
-    await ap.getByRole("link", { name: "회원 확인", exact: true }).first().click();
+    await ap.getByRole("link", { name: "검토 작업 보기", exact: true }).first().click();
+    await ap.getByRole("heading", { name: "반복 미응답 검토", exact: true }).waitFor();
+    await ap
+      .getByLabel("처리 사유", { exact: true })
+      .fill("QA: 두 약속 기록을 검토했고 우선 안내 후 관찰합니다.");
+    await ap.getByRole("button", { name: "검토 완료", exact: true }).click();
+    await ap.getByRole("link", { name: "관련 회원 보기", exact: true }).click();
     await ap.getByText("미응답 경고 기록", { exact: true }).first().waitFor();
     await screen(ap, "operator-warning-timeline");
   });

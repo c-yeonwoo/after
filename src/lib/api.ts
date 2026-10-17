@@ -941,8 +941,8 @@ export async function unreadNotificationCount(): Promise<number> {
   return data ?? 0;
 }
 
-export async function markNotificationsRead(): Promise<void> {
-  const { error } = await supabase.rpc("mark_notifications_read");
+export async function markNotificationsRead(ids: string[]): Promise<void> {
+  const { error } = await supabase.rpc("mark_displayed_notifications_read", { p_ids: ids });
   if (error) throw error;
 }
 
@@ -1527,9 +1527,11 @@ export async function listMessages(meetingId: string, channel: MsgChannel): Prom
     .select("*")
     .eq("meeting_id", meetingId)
     .eq("channel", channel)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1000);
   if (error) throw error;
-  return data;
+  return data.reverse();
 }
 
 export async function sendMessage(

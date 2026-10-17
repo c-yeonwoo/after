@@ -21,6 +21,7 @@
     "test:meeting-concurrency": "node scripts/test-meeting-concurrency.mjs",
     "test:browser-e2e": "node scripts/test-browser-e2e.mjs",
     "test:full-cycle": "node scripts/test-full-cycle.mjs",
+    "test:ai-live": "node scripts/test-ai-live.mjs",
     "format": "prettier --write .",
     "check:contrast": "bun scripts/check-contrast.mjs",
     "check:ai": "bun scripts/check-ai-quality.ts",

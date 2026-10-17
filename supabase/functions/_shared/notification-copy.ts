@@ -21,6 +21,8 @@ export type NotificationKind =
   | "meeting_checkin_final"
   | "meeting_checkin_cancelled"
   | "feedback_followup"
+  | "meeting_change_requested"
+  | "meeting_changed"
   | "prefs_submitted"
   | "meeting_confirmed"
   | "meeting_released"
@@ -38,6 +40,18 @@ export function notificationCopy(
   const m = ctx.meetingId;
 
   switch (kind) {
+    case "meeting_change_requested":
+      return {
+        title: "약속 일정 변경 제안이 왔어요",
+        body: "새 시간을 확인해 주세요. 서로 동의하기 전까지는 기존 약속이 유지돼요.",
+        path: m ? `/chat/${m}` : "/chats",
+      };
+    case "meeting_changed":
+      return {
+        title: "약속 일정이 변경됐어요",
+        body: "두 분이 동의한 새 시간을 대화방에서 확인해 주세요. 장소와 티켓은 그대로예요.",
+        path: m ? `/chat/${m}` : "/chats",
+      };
     case "intro_delivered":
       return {
         title: "새 소개가 도착했어요",

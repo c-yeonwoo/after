@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
 
 import {
   applyOpsBackfill,
@@ -14,7 +16,7 @@ import {
 } from "@/lib/admin";
 
 type TaskSearch = { caseId?: string; status?: string; type?: string };
-const STATES = ["open", "in_progress", "waiting", "snoozed"];
+const STATES = ["open", "in_progress", "waiting", "snoozed", "resolved"];
 const TYPES = [
   "support",
   "photo_review",
@@ -22,6 +24,8 @@ const TYPES = [
   "no_show_report",
   "payment_unknown",
   "notification_failure",
+  "meeting_followup",
+  "response_review",
 ];
 const TYPE_LABEL: Record<string, string> = {
   support: "고객 문의",
@@ -30,6 +34,8 @@ const TYPE_LABEL: Record<string, string> = {
   no_show_report: "노쇼 신고",
   payment_unknown: "결제 확인",
   notification_failure: "알림 결과 확인",
+  meeting_followup: "약속 참석 확인 연락",
+  response_review: "반복 미응답 검토",
 };
 const ACTION_LABEL: Record<string, string> = {
   start: "처리 시작",
@@ -53,6 +59,8 @@ const SOURCE_LINK: Record<string, string> = {
   no_show_report: "/admin/reports",
   payment_unknown: "/admin/orders",
   notification_failure: "/admin/system",
+  meeting_followup: "/admin/meetings",
+  response_review: "/admin/members",
 };
 
 export const Route = createFileRoute("/admin/tasks")({
@@ -87,9 +95,18 @@ function TasksTab() {
   const [reason, setReason] = useState("");
   const [nextCheck, setNextCheck] = useState("");
   const [acting, setActing] = useState(false);
+  const [bothConfirmed, setBothConfirmed] = useState(false);
+  const [contacts, setContacts] = useState<
+    { userId: string; name: string; allowed: boolean; phone: string | null }[] | null
+  >(null);
+  const epoch = useRef(0);
+  const invalidate = useCallback(() => {
+    epoch.current++;
+  }, []);
 
   const load = useCallback(
     async (append = false) => {
+      const request = ++epoch.current;
       setLoading(true);
       setError(null);
       try {
@@ -99,13 +116,15 @@ function TasksTab() {
           cursor: append ? cursor : null,
           limit: 30,
         });
+        if (request !== epoch.current) return;
         setRows((current) => (append && current ? [...current, ...page.items] : page.items));
         setTotal(page.total);
         setCursor(page.next_cursor);
       } catch {
-        setError("작업 목록을 확인할 수 없습니다. 다시 시도해 주세요.");
+        if (request === epoch.current)
+          setError("작업 목록을 확인할 수 없습니다. 다시 시도해 주세요.");
       } finally {
-        setLoading(false);
+        if (request === epoch.current) setLoading(false);
       }
     },
     [search.status, search.type, cursor],
@@ -113,11 +132,32 @@ function TasksTab() {
 
   useEffect(() => {
     void load(false);
+    return () => {
+      invalidate();
+    };
     // A changed filter starts a new list; cursor is intentionally ignored.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search.status, search.type]);
+  }, [search.status, search.type, invalidate]);
+
+  const live = useRef({ load, count: rows?.length ?? 0, loading, acting });
+  live.current = { load, count: rows?.length ?? 0, loading, acting };
+  useEffect(() => {
+    const tick = () => {
+      const s = live.current;
+      if (document.visibilityState === "visible" && s.count <= 30 && !s.loading && !s.acting)
+        void s.load(false);
+    };
+    const timer = setInterval(tick, 30_000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, []);
 
   useEffect(() => {
+    setContacts(null);
+    setBothConfirmed(false);
     if (!search.caseId) {
       setDetail(null);
       setDetailError(false);
@@ -210,6 +250,35 @@ function TasksTab() {
     }
   };
 
+  const completeMeetingOperation = async () => {
+    if (!detail || reason.trim().length < 3) {
+      setError("처리 사유를 3자 이상 입력해 주세요.");
+      return;
+    }
+    setActing(true);
+    setError(null);
+    try {
+      const r = await supabase.rpc("admin_complete_meeting_operation", {
+        p_case_id: detail.case.id,
+        p_expected_version: detail.case.version,
+        p_note: reason.trim(),
+        p_request_id: crypto.randomUUID(),
+        p_both_confirmed: bothConfirmed,
+      });
+      if (r.error) throw r.error;
+      setContacts(null);
+      setReason("");
+      setBothConfirmed(false);
+      setDetail(await fetchOpsCaseDetail(detail.case.id));
+      await load(false);
+    } catch {
+      setError("상태가 바뀌었거나 확인이 부족합니다. 최신 작업을 다시 확인해 주세요.");
+      setDetail(await fetchOpsCaseDetail(detail.case.id).catch(() => null));
+    } finally {
+      setActing(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -284,12 +353,17 @@ function TasksTab() {
           active={search.status === "snoozed"}
           onClick={() => changeFilter({ status: "snoozed" })}
         />
+        <Filter
+          label="완료"
+          active={search.status === "resolved"}
+          onClick={() => changeFilter({ status: "resolved" })}
+        />
         <span className="mx-1 h-7 w-px bg-border" aria-hidden="true" />
         <select
           aria-label="작업 유형"
           value={search.type ?? ""}
           onChange={(e) => changeFilter({ type: e.target.value || undefined })}
-          className="h-8 rounded-full border border-border bg-card px-3 text-xs"
+          className="min-h-11 rounded-full border border-border bg-card px-3 text-xs"
         >
           <option value="">모든 유형</option>
           {TYPES.map((type) => (
@@ -387,12 +461,22 @@ function TasksTab() {
                     발생 {dateTime(detail.case.opened_at)} · 기한 {dateTime(detail.case.due_at)}
                   </p>
                 </div>
-                <Link
-                  to={SOURCE_LINK[detail.case.case_type] ?? "/admin"}
-                  className="text-xs text-primary-strong hover:underline"
-                >
-                  원본 업무 보기
-                </Link>
+                {detail.context?.meetingId ? (
+                  <Link
+                    to="/admin/meetings"
+                    search={{ meeting: detail.context.meetingId }}
+                    className="inline-flex min-h-11 items-center text-xs text-primary-strong hover:underline"
+                  >
+                    연결된 약속 보기
+                  </Link>
+                ) : (
+                  <Link
+                    to={SOURCE_LINK[detail.case.case_type] ?? "/admin"}
+                    className="text-xs text-primary-strong hover:underline"
+                  >
+                    원본 업무 보기
+                  </Link>
+                )}
               </div>
               {detail.case.subject_id ? (
                 <Link
@@ -402,6 +486,77 @@ function TasksTab() {
                 >
                   관련 회원 보기
                 </Link>
+              ) : null}
+              {detail.context?.femaleId ? (
+                <Link
+                  to="/admin/members/$id"
+                  params={{ id: detail.context.femaleId }}
+                  className="ml-3 mt-2 inline-flex min-h-11 items-center text-xs text-primary-strong hover:underline"
+                >
+                  상대 회원 보기
+                </Link>
+              ) : null}
+              {detail.case.case_type === "response_review" ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  최근 90일 경고 {detail.context?.warningCount ?? 0}건. 양측 기록을 확인하고 판단
+                  근거를 남겨 주세요. 검토 완료는 경고 삭제·이용 제한을 뜻하지 않습니다.
+                </p>
+              ) : null}
+              {detail.case.case_type === "meeting_followup" ? (
+                <div className="mt-4 space-y-2 text-sm">
+                  <p className="text-muted-foreground">
+                    앱 참석 확인이 부족한 약속입니다. 연락 시도와 결과는 아래 사유에 기록하고, 답이
+                    없으면 다음 확인 시각을 정해 보류하세요.
+                  </p>
+                  {detail.source_open ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={acting}
+                      onClick={async () => {
+                        setActing(true);
+                        setError(null);
+                        try {
+                          const r = await supabase.rpc("admin_meeting_contact_details", {
+                            p_case_id: detail.case.id,
+                            p_expected_version: detail.case.version,
+                            p_request_id: crypto.randomUUID(),
+                          });
+                          if (r.error) throw r.error;
+                          setContacts(r.data as unknown as NonNullable<typeof contacts>);
+                          setDetail(await fetchOpsCaseDetail(detail.case.id));
+                        } catch {
+                          setError(
+                            "연락처를 확인할 수 없습니다. 최신 작업과 관리자 인증 상태를 확인하세요.",
+                          );
+                        } finally {
+                          setActing(false);
+                        }
+                      }}
+                    >
+                      동의한 회원 연락처 확인
+                    </Button>
+                  ) : null}
+                  {contacts ? (
+                    <ul className="rounded-control bg-muted p-3 text-xs">
+                      {contacts.map((p) => (
+                        <li key={p.userId} className="py-1">
+                          {p.name} ·{" "}
+                          {p.allowed && p.phone ? (
+                            <a
+                              className="inline-flex min-h-11 items-center text-primary-strong underline"
+                              href={`tel:${p.phone}`}
+                            >
+                              {p.phone}
+                            </a>
+                          ) : (
+                            "운영 연락 미동의 · 앱 문의로 조율"
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
               ) : null}
               {!detail.source_open && detail.case.status !== "resolved" ? (
                 <p className="mt-4 rounded-md bg-muted px-3 py-2 text-xs">
@@ -465,6 +620,37 @@ function TasksTab() {
                       </button>
                     ))}
                   </div>
+                  {detail.source_open &&
+                  detail.case.case_type === "meeting_followup" &&
+                  detail.context?.canConfirm ? (
+                    <>
+                      <label className="mt-4 flex min-h-11 items-center gap-2 text-xs">
+                        <input
+                          type="checkbox"
+                          className="size-5 shrink-0"
+                          checked={bothConfirmed}
+                          onChange={(e) => setBothConfirmed(e.target.checked)}
+                        />
+                        두 분 모두에게 현재 약속의 참석 의사를 직접 확인했어요
+                      </label>
+                      <Button
+                        className="mt-2"
+                        disabled={acting || !bothConfirmed}
+                        onClick={() => void completeMeetingOperation()}
+                      >
+                        양측 참석 확인 기록
+                      </Button>
+                    </>
+                  ) : null}
+                  {detail.source_open && detail.case.case_type === "response_review" ? (
+                    <Button
+                      className="mt-3"
+                      disabled={acting}
+                      onClick={() => void completeMeetingOperation()}
+                    >
+                      검토 완료
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </>
@@ -488,7 +674,7 @@ function Filter({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs transition-colors ${active ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`}
+      className={`min-h-11 rounded-full px-3 py-1.5 text-xs ${active ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`}
     >
       {label}
     </button>

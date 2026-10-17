@@ -42,7 +42,10 @@ function NotificationsPage() {
       .then((list) => {
         if (!alive) return;
         setItems(list);
-        if (list.some((n) => !n.read_at)) void markNotificationsRead();
+        if (list.some((n) => !n.read_at))
+          void markNotificationsRead(list.filter((n) => !n.read_at).map((n) => n.id)).catch(() => {
+            // Keep the server's unread state if acknowledgement fails.
+          });
       })
       .catch(() => {
         if (alive) setError(true);

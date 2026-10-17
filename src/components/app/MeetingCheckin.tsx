@@ -14,6 +14,7 @@ type Checkin = {
   scheduledAt: string;
   cancelled: boolean;
   completed: boolean;
+  operatorConfirmed: boolean;
 };
 
 export function MeetingCheckin({ meetingId }: { meetingId: string }) {
@@ -66,7 +67,7 @@ export function MeetingCheckin({ meetingId }: { meetingId: string }) {
         </Button>
       </div>
     );
-  if (!state?.enrolled || state.completed) return null;
+  if (!state || (!state.enrolled && !state.operatorConfirmed) || state.completed) return null;
   if (state.cancelled)
     return (
       <div className="mt-4 text-sm">
@@ -98,22 +99,26 @@ export function MeetingCheckin({ meetingId }: { meetingId: string }) {
       className="mt-4 rounded-control border border-border bg-background p-4"
     >
       <p className="text-sm font-semibold">
-        {state.confirmed && state.partnerConfirmed
-          ? "두 분 모두 참석을 확인했어요"
-          : state.confirmed
-            ? "참석 의사를 전달했어요"
-            : "약속, 그대로 괜찮으세요?"}
+        {state.operatorConfirmed
+          ? "운영팀과 참석을 확인했어요"
+          : state.confirmed && state.partnerConfirmed
+            ? "두 분 모두 참석을 확인했어요"
+            : state.confirmed
+              ? "참석 의사를 전달했어요"
+              : "약속, 그대로 괜찮으세요?"}
       </p>
       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-        {state.confirmed
-          ? state.partnerConfirmed
-            ? "정해진 시간과 장소에서 만나요."
-            : "상대의 확인을 기다리고 있어요. 필요하면 운영팀에 도움을 요청해 주세요."
-          : opens
-            ? `${due}까지 참석을 확인해 주세요.`
-            : "약속 24시간 전부터 참석을 한 번 더 확인할게요."}
+        {state.operatorConfirmed
+          ? "운영팀이 두 분의 참석 의사를 확인했어요. 정해진 시간과 장소에서 만나요."
+          : state.confirmed
+            ? state.partnerConfirmed
+              ? "정해진 시간과 장소에서 만나요."
+              : "상대의 확인을 기다리고 있어요. 필요하면 운영팀에 도움을 요청해 주세요."
+            : opens
+              ? `${due}까지 참석을 확인해 주세요.`
+              : "약속 24시간 전부터 참석을 한 번 더 확인할게요."}
       </p>
-      {!state.confirmed ? (
+      {!state.confirmed && !state.operatorConfirmed ? (
         <>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             안내를 읽은 뒤에도 약속 2시간 전까지 두 분 모두 확인하지 않으면 자동취소되고 만남 티켓은

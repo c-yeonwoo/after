@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { NoteAction } from "@/components/admin/NoteAction";
 import { MeetingLifecyclePanel } from "@/components/admin/MeetingLifecyclePanel";
@@ -73,6 +73,10 @@ function MeetingsTab() {
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState(false);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const epoch = useRef(0);
+  const invalidate = useCallback(() => {
+    epoch.current++;
+  }, []);
   const sortedRows = rows
     ? [...rows].sort(
         (a, b) =>
@@ -83,16 +87,18 @@ function MeetingsTab() {
   const outcomeCount = rows?.filter((m) => urgency(m, now) === 1).length ?? 0;
 
   const load = useCallback(async () => {
+    const request = ++epoch.current;
     try {
       const fetched = await fetchMeetings(
         meeting || state === "all" ? undefined : (state ?? "active"),
       );
+      if (request !== epoch.current) return;
       setRows(meeting ? fetched.filter((row) => row.id === meeting) : fetched);
       setError(false);
       setCheckedAt(new Date());
       setNow(Date.now());
     } catch {
-      setError(true);
+      if (request === epoch.current) setError(true);
     }
   }, [state, meeting]);
 
@@ -104,10 +110,11 @@ function MeetingsTab() {
     const timer = setInterval(tick, 30_000);
     document.addEventListener("visibilitychange", tick);
     return () => {
+      invalidate();
       clearInterval(timer);
       document.removeEventListener("visibilitychange", tick);
     };
-  }, [load]);
+  }, [load, invalidate]);
 
   // 기본은 진행 중이다 — 운영자가 손댈 수 있는 건 그것뿐이다.
   useEffect(() => {

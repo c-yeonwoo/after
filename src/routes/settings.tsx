@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { MeetingContactPreference } from "@/components/app/MeetingContactPreference";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { enablePush, pushPermission, type PushPermission } from "@/lib/push";
@@ -237,7 +238,7 @@ function SettingsPage() {
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">만남 후 후기 요청 알림</span>
             <span className="block text-xs text-muted-foreground">
-              만나신 다음 날 한 번만 보냅니다.
+              만남 다음 날 안내하고, 미작성 시 한 번 더 알려드려요.
             </span>
           </span>
         </label>
@@ -261,6 +262,7 @@ function SettingsPage() {
         상대가 이미 티켓을 썼다면 그 돈이 걸려 있으므로 내가 쉬겠다고 그 약속을
         깰 수는 없다. 그 사실을 화면에서도 분명히 말한다.
       */}
+      <MeetingContactPreference />
       <section className="mt-9">
         {/*
           남성 쪽에는 효과가 하나 더 붙는다(v2). paused_at 은 여성 평가 큐에서
@@ -309,7 +311,9 @@ function SettingsPage() {
         요구하면 애초에 없는 사람이 막힌다). 세션을 가진 사람만 닿는 화면이다.
       */}
       <section className="mt-9">
-        <h2 className="text-sm font-semibold">비밀번호</h2>
+        <h2 className="text-sm font-semibold">
+          <label htmlFor="settings-password">비밀번호</label>
+        </h2>
         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
           다음 로그인부터 이메일과 이 비밀번호로 들어오실 수 있습니다. {PASSWORD_MIN_LENGTH}자 이상.
         </p>

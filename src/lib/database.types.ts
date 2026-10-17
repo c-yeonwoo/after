@@ -1358,6 +1358,7 @@ export type Database = {
       }
       meetings: {
         Row: {
+          schedule_revision: number
           attendance_policy_version: string | null
           male_attendance_at: string | null
           female_attendance_at: string | null
@@ -1383,6 +1384,7 @@ export type Database = {
           ticket_id: string
         }
         Insert: {
+          schedule_revision?: number
           attendance_policy_version?: string | null
           male_attendance_at?: string | null
           female_attendance_at?: string | null
@@ -1408,6 +1410,7 @@ export type Database = {
           ticket_id: string
         }
         Update: {
+          schedule_revision?: number
           attendance_policy_version?: string | null
           male_attendance_at?: string | null
           female_attendance_at?: string | null
@@ -1803,6 +1806,8 @@ export type Database = {
       }
       notifications: {
         Row: {
+          schedule_revision: number
+          event_version: string
           attempts: number
           created_at: string
           dispatch_state: string
@@ -1820,6 +1825,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          schedule_revision?: number
+          event_version?: string
           attempts?: number
           created_at?: string
           dispatch_state?: string
@@ -1837,6 +1844,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          schedule_revision?: number
+          event_version?: string
           attempts?: number
           created_at?: string
           dispatch_state?: string
@@ -3036,6 +3045,7 @@ export type Database = {
       accept_meeting_slot: {
         Args: { p_index: number; p_meeting_id: string }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -3094,6 +3104,7 @@ export type Database = {
       admin_cancel_meeting: {
         Args: { p_meeting: string; p_note: string; p_refund?: boolean }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -3799,6 +3810,7 @@ export type Database = {
           p_scheduled_at: string
         }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -4180,6 +4192,7 @@ export type Database = {
       mark_met: {
         Args: { p_meeting_id: string }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -4214,6 +4227,7 @@ export type Database = {
       mark_met_base: {
         Args: { p_meeting_id: string }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -4246,6 +4260,14 @@ export type Database = {
         }
       }
       mark_notifications_read: { Args: never; Returns: undefined }
+      mark_displayed_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
+      my_meeting_change: { Args: { p_meeting_id: string }; Returns: Json }
+      request_meeting_change: { Args: { p_meeting_id: string; p_proposed_at: string; p_expected_revision: number; p_request_id: string }; Returns: Json }
+      respond_meeting_change: { Args: { p_change_id: string; p_accept: boolean }; Returns: Database["public"]["Tables"]["meetings"]["Row"] }
+      admin_complete_meeting_operation: { Args: { p_case_id: string; p_expected_version: number; p_note: string; p_request_id: string; p_both_confirmed?: boolean }; Returns: undefined }
+      admin_meeting_contact_details: { Args: { p_case_id: string; p_expected_version: number; p_request_id: string }; Returns: Json }
+      my_meeting_contact_preference: { Args: never; Returns: boolean }
+      set_meeting_contact_preference: { Args: { p_allowed: boolean; p_version: string }; Returns: boolean }
       meet_places_for_me: {
         Args: never
         Returns: {
@@ -4716,6 +4738,7 @@ export type Database = {
           p_slots: string[]
         }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -4916,6 +4939,7 @@ export type Database = {
       submit_meeting_prefs: {
         Args: { p_meeting_id: string; p_prefs: Json }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -5035,6 +5059,7 @@ export type Database = {
       use_meeting_ticket: {
         Args: { p_intro_id: string }
         Returns: {
+          schedule_revision: number
           accepted_slot: number | null
           attendance_policy_version: string | null
           male_attendance_at: string | null
@@ -5160,6 +5185,8 @@ export type Database = {
         | "meeting_checkin_final"
         | "meeting_checkin_cancelled"
         | "feedback_followup"
+        | "meeting_change_requested"
+        | "meeting_changed"
       photo_state: "pending" | "approved" | "rejected"
       report_kind: "profile" | "message"
       report_state: "pending" | "confirmed" | "dismissed"
@@ -5319,6 +5346,8 @@ export const Constants = {
         "meeting_checkin_final",
         "meeting_checkin_cancelled",
         "feedback_followup",
+        "meeting_change_requested",
+        "meeting_changed",
       ],
       photo_state: ["pending", "approved", "rejected"],
       report_kind: ["profile", "message"],

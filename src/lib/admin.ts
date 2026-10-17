@@ -821,6 +821,14 @@ export type OpsCaseDetail = {
   source_open: boolean;
   events: OpsCaseEvent[];
   allowed_actions: string[];
+  context?: {
+    meetingId?: string;
+    scheduledAt?: string;
+    maleId?: string;
+    femaleId?: string;
+    canConfirm?: boolean;
+    warningCount?: number;
+  };
 };
 export type OpsBackfillPreview = {
   as_of: string;

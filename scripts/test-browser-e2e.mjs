@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -210,7 +210,9 @@ try {
     },
   );
   await waitForServer();
-  browser = await chromium.launch({ headless: true });
+  browser = await (process.env.AFTER_TEST_BROWSER === "webkit" ? webkit : chromium).launch({
+    headless: true,
+  });
 
   const publicPage = await (
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
