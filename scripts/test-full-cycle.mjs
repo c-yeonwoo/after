@@ -101,6 +101,7 @@ async function waitForHome(page) {
   // WebKit can expose the new URL before the SPA has committed the screen.
   // Wait for the home UI, not a delay or a second forced navigation.
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
+  await page.getByRole("main").getByText(/님의 애프터|나의 애프터/).waitFor();
   await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
 }
 function localTotp(secret) {
