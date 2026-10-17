@@ -144,7 +144,10 @@ async function login(page, person) {
 async function waitForHome(page) {
   await page.waitForURL("**/home", { timeout: 15_000 });
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
-  await page.getByRole("main").getByText(/님의 애프터|나의 애프터/).waitFor();
+  await page
+    .getByRole("main")
+    .getByText(/님의 애프터|나의 애프터/)
+    .waitFor();
   await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
 }
 

@@ -470,8 +470,7 @@ function PushStatus() {
   if (state === "unsupported") {
     return (
       <p className="rounded-surface bg-surface-subtle px-5 py-4 text-xs leading-relaxed text-muted-foreground">
-        웹에서는 푸시 알림이 오지 않아요. 상단 종 아이콘에서 확인하실 수 있고, 앱을 쓰시면 바로 알려
-        드려요.
+        웹을 닫으면 별도 알림이 오지 않아요. 상단 종 아이콘에서 요청과 약속을 확인해 주세요.
       </p>
     );
   }

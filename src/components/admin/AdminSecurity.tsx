@@ -103,7 +103,7 @@ export function AdminSecurity() {
           </details>
         </div>
       ) : null}
-      {pending || factors.length > 0 ? (
+      {pending || (!aal2 && factors.length > 0) ? (
         <form
           className="mt-4 space-y-3"
           onSubmit={(event) => {
@@ -217,16 +217,18 @@ export function AdminSecurity() {
       ) : null}
       {!pending && !loading && required !== null ? (
         <div className="mt-5 border-t border-border pt-4">
-          <label className="flex min-h-11 items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={recovery}
-              disabled={busy || !aal2}
-              onChange={(event) => setRecovery(event.target.checked)}
-              className="size-5 shrink-0 accent-primary"
-            />
-            본인 복구수단을 별도로 확인했어요
-          </label>
+          {!required ? (
+            <label className="flex min-h-11 items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={recovery}
+                disabled={busy || !aal2}
+                onChange={(event) => setRecovery(event.target.checked)}
+                className="size-5 shrink-0 accent-primary"
+              />
+              본인 복구수단을 별도로 확인했어요
+            </label>
+          ) : null}
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             강제를 켠 뒤에는 로그인할 때 이 화면에서 다시 인증할 수 있어요. 유일한 인증앱을 삭제하지
             마세요. 분실 시 프로젝트 소유자의 본인 확인 후 별도 복구가 필요합니다.
