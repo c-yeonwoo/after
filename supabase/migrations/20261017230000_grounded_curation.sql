@@ -43,6 +43,9 @@ alter table public.pair_reason_approvals enable row level security;
 revoke all on public.curation_recommendations,public.curation_batch_state,public.pair_brief_drafts
   from public,anon,authenticated;
 revoke all on public.pair_reason_approvals from public,anon,authenticated;
+-- Supabase's fresh-project default privileges may grant service_role ALL.
+-- Do not depend on the creator's local defaults for this write boundary.
+revoke all on public.pair_brief_drafts from service_role;
 grant select on public.pair_brief_drafts to service_role;
 
 -- Includes only material already approved for a public introduction. Private
