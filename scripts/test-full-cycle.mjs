@@ -101,7 +101,10 @@ async function waitForHome(page) {
   // WebKit can expose the new URL before the SPA has committed the screen.
   // Wait for the home UI, not a delay or a second forced navigation.
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
-  await page.getByRole("main").getByText(/님의 애프터|나의 애프터/).waitFor();
+  await page
+    .getByRole("main")
+    .getByText(/님의 애프터|나의 애프터/)
+    .waitFor();
   await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
 }
 function localTotp(secret) {
@@ -114,6 +117,20 @@ function localTotp(secret) {
   counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
   const hmac = createHmac("sha1", key).update(counter).digest();
   return String((hmac.readUInt32BE(hmac[19] & 15) & 0x7fffffff) % 1000000).padStart(6, "0");
+}
+
+async function setPaymentsInUI(page, enabled) {
+  await page.goto(`${base}/admin/orders`);
+  await page
+    .getByPlaceholder("전환 사유 (필수 — 기록에 남습니다)")
+    .fill("QA: 로컬 결제 대역 모드 검증. 실제 청구 없음.");
+  await page
+    .getByRole("button", { name: enabled ? "결제 켜기" : "결제 끄기 (베타로)", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: enabled ? "결제 끄기 (베타로)" : "결제 켜기", exact: true })
+    .waitFor();
+  assert.equal(sql("select payments_enabled from app_settings"), enabled ? "t" : "f");
 }
 const personas = [
   {
@@ -569,7 +586,7 @@ try {
       );
       await screen(ap, `operator-queue-${m.key}`);
     });
-  sql("update app_settings set payments_enabled=true");
+  await setPaymentsInUI(ap, true);
   for (const m of [m1, m2])
     for (const kind of ["intro", "meeting"])
       await check(`${m.key} buys ${kind}: real order + fixture PG + real ticket issue`, () =>
@@ -866,7 +883,7 @@ try {
       "2",
     );
   });
-  sql("update app_settings set payments_enabled=false");
+  await setPaymentsInUI(ap, false);
   await check(
     "female politely declines a beta request; ticket returns without warning",
     async () => {
