@@ -1,5 +1,5 @@
 /** 만남 조율에 쓰이는 선택지 */
-import { HUBS, PRIMARY_HUB } from "@/lib/brand";
+import { HUBS } from "@/lib/brand";
 
 export type MeetPrefs = {
   /** 가능한 저녁 (ISO datetime) */
@@ -20,12 +20,11 @@ export type MeetPrefs = {
  * 강남 역만 나온다. 권역을 여는 스위치와 그 권역의 역이 같은 자리에 있어야
  * 그 사고가 안 난다.
  *
- * hubId 를 모르면(구 데이터·로딩 중) 첫 열린 권역으로 떨어진다. 빈 목록을 주면
- * 검색이 조용히 아무것도 안 찾는 화면이 되는데, 그건 고장과 구분이 안 된다.
+ * 회원의 권역을 모르면 역을 추천하지 않는다. 다른 지역을 임의로 대신하지 않는다.
  */
 /* hubId 는 DB 컬럼(text)에서 그대로 온다 — HubId 로 좁히면 호출부마다 캐스팅이 붙는다. */
 export function stationsFor(hubId: string | null | undefined): readonly string[] {
-  return (HUBS.find((h) => h.id === hubId) ?? PRIMARY_HUB).stations;
+  return HUBS.find((h) => h.id === hubId)?.stations ?? [];
 }
 
 export function searchStations(

@@ -4,9 +4,9 @@ export const BRAND = {
   nameEn: "after",
   domain: "aftersunset.kr",
 
-  tagline: "퇴근 후, 한 사람과의 약속.",
+  tagline: "하루 끝에, 설레는 시작.",
   description:
-    "회사 이메일을 확인한 직장인을 한 사람씩 소개하고, 회사 근처에서 만날 약속을 정하도록 돕습니다.",
+    "나와 잘 맞는 직장인을 한 사람씩. 서로의 이야기를 알아가고, 만날 약속까지 애프터가 함께합니다.",
 } as const;
 
 /**
@@ -103,10 +103,6 @@ export type HubId = (typeof HUBS)[number]["id"];
 
 /** 지금 가입을 받는 권역. 하드코딩한 "강남·역삼권" 을 대신한다. */
 export const OPEN_HUBS = HUBS.filter((h) => h.available);
-/** 허브를 알 수 없을 때의 기본값(가입 첫 화면·표시용 폴백). */
-export const PRIMARY_HUB = OPEN_HUBS[0] ?? HUBS[0];
-/** 상태 문구용 — 권역이 둘 이상이면 "강남·역삼권 · 판교권" 으로 늘어난다. */
-export const COVERAGE_LABEL = OPEN_HUBS.map((h) => h.label).join(" · ");
 
 /**
  * 만남 티켓 가격 (D 확정: 30,000원).
