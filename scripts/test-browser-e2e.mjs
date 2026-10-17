@@ -553,6 +553,7 @@ try {
   await inquiry.getByRole("button", { name: "답변하기" }).click();
   await inquiry.getByLabel("답변").fill("테스트 문의를 확인했습니다.");
   await inquiry.getByRole("button", { name: "답변 등록" }).click();
+  await adminPage.getByText("답변을 등록했습니다.").waitFor();
   assert.equal(
     sql(`select count(*) from public.support_requests where user_id='${female.id}'
       and response='테스트 문의를 확인했습니다.'`),
