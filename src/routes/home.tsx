@@ -586,7 +586,7 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
         {candidate.headline ? (
-          <p className="serif mt-4 line-clamp-2 border-l-2 border-brand-blush pl-3 text-lg leading-[1.65] text-foreground">
+          <p className="serif mt-4 line-clamp-2 break-keep break-words border-l-2 border-brand-blush pl-3 text-lg leading-[1.5] text-foreground">
             {candidate.headline}
           </p>
         ) : null}
