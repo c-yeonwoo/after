@@ -67,6 +67,20 @@ function LoginPage() {
   const [mode, setMode] = useState<"password" | "code">("password");
   /** 카카오에 다녀오는 동안. 자동 이동(아래 useEffect)을 잠가 둔다. */
   const [oauthBusy, setOauthBusy] = useState(false);
+  const leaving = useRef(false);
+  const goTo = useCallback(
+    async (to: "/home" | "/signup") => {
+      if (leaving.current) return;
+      leaving.current = true;
+      try {
+        await navigate({ to, replace: true });
+      } catch (err) {
+        leaving.current = false;
+        throw err;
+      }
+    },
+    [navigate],
+  );
 
   const actionsRef = useRef<HTMLDivElement>(null);
   const keyboardOpen = useKeyboardOpen();
@@ -90,26 +104,28 @@ function LoginPage() {
         */
         await supabase.auth.signOut();
         toast("가입 이력이 없는 계정입니다. 회사 메일로 가입해 주세요.");
-        navigate({ to: "/signup" });
+        await goTo("/signup");
         return;
       }
       if (result.kind === "incomplete") {
         toast("남은 가입 절차를 마쳐주세요.");
-        navigate({ to: "/signup" });
+        await goTo("/signup");
         return;
       }
-      navigate({ to: "/home" });
+      await goTo("/home");
     },
-    [navigate],
+    [goTo],
   );
 
   // 이미 로그인돼 있으면 가입 완료 여부에 맞는 화면으로 보낸다.
   // 카카오에 다녀오는 중에는 판정(land)이 끝나기 전이라 잠가 둔다.
   useEffect(() => {
-    if (ready && me && !oauthBusy) {
-      navigate({ to: me.onboarding_step < 7 ? "/signup" : "/home" });
+    if (ready && me && !oauthBusy && !busy) {
+      void goTo(me.onboarding_step < 7 ? "/signup" : "/home").catch(() =>
+        setError("화면을 열지 못했어요. 다시 로그인해 주세요."),
+      );
     }
-  }, [ready, me, navigate, oauthBusy]);
+  }, [ready, me, goTo, oauthBusy, busy]);
 
   /*
     카카오에서 돌아왔다. 두 경로가 여기로 온다.

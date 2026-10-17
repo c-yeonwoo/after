@@ -22,6 +22,12 @@ type Item = {
   female_warnings: number;
   male_notice_read: boolean;
   female_notice_read: boolean;
+  operator_confirmed: boolean;
+  male_review_pending: boolean;
+  female_review_pending: boolean;
+  male_review_case: string | null;
+  female_review_case: string | null;
+  contact_case: string | null;
 };
 type Overview = { as_of: string; total: number; items: Item[] };
 
@@ -30,6 +36,7 @@ function status(item: Item, now: number) {
     return item.cancel_reason === "checkin_no_response" ? "미응답 취소 · 티켓 복구" : "취소";
   if (item.feedback_count === 2) return "양측 후기 완료";
   if (Date.parse(item.scheduled_at) <= now) return `후기 ${item.feedback_count}/2명`;
+  if (item.operator_confirmed) return "운영팀이 양측 참석 확인";
   if (!item.attendance_policy_version) return "기존 약속 · 참석 확인 미적용";
   if (item.male_attendance_at && item.female_attendance_at) return "양측 참석 확인";
   if (Date.parse(item.scheduled_at) <= now + 2 * 3600_000) {
@@ -135,18 +142,33 @@ export function MeetingLifecyclePanel() {
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {new Date(item.scheduled_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} ·
               참석 {item.male_attendance_at ? "남 확인" : "남 미확인"} /{" "}
-              {item.female_attendance_at ? "여 확인" : "여 미확인"} · 인앱 알림 {item.nudge_count}회
+              {item.female_attendance_at ? "여 확인" : "여 미확인"} · 누적 인앱 알림{" "}
+              {item.nudge_count}회
             </p>
-            {item.male_warnings >= 2 || item.female_warnings >= 2 ? (
+            {item.contact_case ? (
+              <Link
+                to="/admin/tasks"
+                search={{ caseId: item.contact_case }}
+                className="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-primary-strong underline underline-offset-4"
+              >
+                연락 작업 보기
+              </Link>
+            ) : null}
+            {item.male_review_pending || item.female_review_pending ? (
               <p className="mt-2 text-xs font-medium text-primary-strong">
                 반복 미응답 검토 ·{" "}
-                <Link
-                  to="/admin/members/$id"
-                  params={{ id: item.male_warnings >= 2 ? item.male_id : item.female_id }}
-                  className="underline underline-offset-4"
-                >
-                  회원 확인
-                </Link>{" "}
+                {([item.male_review_case, item.female_review_case].filter(Boolean) as string[]).map(
+                  (id) => (
+                    <Link
+                      key={id}
+                      to="/admin/tasks"
+                      search={{ caseId: id }}
+                      className="mr-2 inline-flex min-h-11 items-center underline underline-offset-4"
+                    >
+                      검토 작업 보기
+                    </Link>
+                  ),
+                )}{" "}
                 (자동정지 없음)
               </p>
             ) : null}

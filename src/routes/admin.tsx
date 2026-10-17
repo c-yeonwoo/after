@@ -115,11 +115,12 @@ function AdminLayout() {
     서버의 is_admin() 이고, 그걸 통과 못 하면 자식 화면의 모든 호출이 42501 로
     튕긴다. 클라이언트가 PostgREST 를 직접 부르는 구조라 프론트 가드는 우회된다.
   */
+  const allowed = isAdmin === true && me?.role === "admin";
   return (
-    <Shell showTabs={isAdmin === true}>
-      {!ready || isAdmin === null ? (
+    <Shell showTabs={allowed}>
+      {!ready || !me || isAdmin === null ? (
         <p className="text-sm text-muted-foreground">불러오는 중…</p>
-      ) : isAdmin ? (
+      ) : allowed ? (
         <Outlet />
       ) : (
         <p className="text-sm text-muted-foreground">운영자만 볼 수 있는 화면입니다.</p>

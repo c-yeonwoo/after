@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { MeetingCheckin } from "@/components/app/MeetingCheckin";
+import { MeetingChange } from "@/components/app/MeetingChange";
 import { Input } from "@/components/ui/input";
 import {
   isChannelOpenNow,
@@ -79,7 +80,7 @@ function buildRows(messages: Message[], myId: string | undefined): Row[] {
 
 export function Conversation({
   meeting,
-  onMeetingChange: _onMeetingChange,
+  onMeetingChange,
 }: {
   meeting: Meeting;
   onMeetingChange?: (m: Meeting) => void;
@@ -92,10 +93,20 @@ export function Conversation({
   const [text, setText] = useState("");
   const [now, setNow] = useState<number | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const bottom = useRef(true);
+  const mutation = useRef(0);
+  const sendingRef = useRef(false);
+  const context = useRef("");
+  const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState(false);
+  const [chatLoading, setChatLoading] = useState(true);
+  const [chatRetry, setChatRetry] = useState(0);
+  const [newBelow, setNewBelow] = useState(false);
 
   const channelOpen = isChannelOpenNow(meeting, channel);
   const privateOpen = isChannelOpenNow(meeting, "private");
   const rows = useMemo(() => buildRows(messages, me?.id), [messages, me?.id]);
+  const lastMessageId = messages.at(-1)?.id;
   useEffect(() => {
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -104,30 +115,74 @@ export function Conversation({
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const list = await listMessages(meeting.id, channel);
-      if (!cancelled) setMessages(list);
-    })();
+    let loading = false;
+    const key = `${meeting.id}:${channel}`;
+    if (context.current !== key) {
+      context.current = key;
+      setMessages([]);
+      setChatLoading(true);
+      setNewBelow(false);
+      bottom.current = true;
+    }
+    async function load() {
+      if (loading) return;
+      loading = true;
+      const started = mutation.current;
+      try {
+        const list = await listMessages(meeting.id, channel);
+        if (!cancelled && started === mutation.current) {
+          setMessages(list);
+          setChatError(false);
+        }
+      } catch {
+        if (!cancelled) setChatError(true);
+      } finally {
+        loading = false;
+        if (!cancelled) setChatLoading(false);
+      }
+    }
+    void load();
+    const visible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const timer = setInterval(visible, 3000);
+    document.addEventListener("visibilitychange", visible);
     return () => {
       cancelled = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", visible);
     };
-  }, [meeting.id, channel]);
+  }, [meeting.id, channel, chatRetry]);
 
   // 새 메시지가 오면 로그 맨 아래로. 페이지가 아니라 로그만 움직인다.
   useEffect(() => {
     const el = logRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [rows.length, channel]);
+    if (el && bottom.current) {
+      el.scrollTop = el.scrollHeight;
+      setNewBelow(false);
+    } else if (el) setNewBelow(true);
+  }, [rows.length, lastMessageId, channel]);
 
   async function send(value: string) {
     const t = value.trim();
-    if (!t || !channelOpen) return;
+    if (!t || !channelOpen || sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
+    mutation.current++;
+    const target = context.current;
     try {
       const created = await sendMessage(meeting.id, channel, t);
-      setMessages((prev) => [...prev, created]);
-      setText("");
+      mutation.current++;
+      if (target === context.current) {
+        bottom.current = true;
+        setMessages((prev) => (prev.some((m) => m.id === created.id) ? prev : [...prev, created]));
+        setText((current) => (current.trim() === t ? "" : current));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "전송에 실패했습니다.");
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
     }
   }
 
@@ -152,7 +207,8 @@ export function Conversation({
 
       {meeting.confirmed_at ? (
         <div className="shrink-0">
-          <MeetingCheckin meetingId={meeting.id} />
+          <MeetingCheckin key={meeting.scheduled_at} meetingId={meeting.id} />
+          <MeetingChange meeting={meeting} onChange={onMeetingChange} />
         </div>
       ) : null}
       {privateOpen ? (
@@ -170,7 +226,7 @@ export function Conversation({
               aria-selected={channel === c.id}
               onClick={() => setChannel(c.id)}
               className={cn(
-                "min-h-11 rounded-control border px-3.5 text-xs font-medium transition-colors",
+                "min-h-11 rounded-control border px-3.5 text-xs font-medium",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 channel === c.id
                   ? "border-primary bg-primary text-primary-foreground"
@@ -184,11 +240,44 @@ export function Conversation({
       ) : null}
 
       {/* 로그 — 아래에 붙어 있고 여기만 스크롤된다 */}
-      <div ref={logRef} className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-4">
+      {chatError ? (
+        <p role="alert" className="mt-2 shrink-0 text-xs text-destructive">
+          대화를 새로 불러오지 못했어요.{" "}
+          <Button variant="ghost" size="sm" onClick={() => setChatRetry((v) => v + 1)}>
+            대화 다시 불러오기
+          </Button>
+        </p>
+      ) : null}
+      {messages.length === 1000 ? (
+        <p className="mt-1 shrink-0 text-xs text-muted-foreground">
+          최근 메시지 1,000개를 표시하고 있어요.
+        </p>
+      ) : null}
+      <div
+        ref={logRef}
+        role="log"
+        aria-label="대화 내용"
+        aria-live="off"
+        tabIndex={0}
+        onScroll={() => {
+          const el = logRef.current;
+          if (el) {
+            bottom.current = el.scrollHeight - el.clientHeight - el.scrollTop < 64;
+            if (bottom.current) setNewBelow(false);
+          }
+        }}
+        className="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pt-4 focus-visible:outline-2 focus-visible:outline-ring"
+      >
         <div className="flex min-h-full flex-col justify-end gap-1">
           {rows.length === 0 ? (
             <p className="mb-2 text-center text-xs leading-relaxed text-muted-foreground">
-              {channelOpen ? "먼저 인사를 건네 보세요." : "아직 열리지 않은 대화입니다."}
+              {chatLoading
+                ? "대화를 불러오고 있어요…"
+                : chatError
+                  ? "연결을 다시 확인해 주세요."
+                  : channelOpen
+                    ? "먼저 인사를 건네 보세요."
+                    : "아직 열리지 않은 대화입니다."}
             </p>
           ) : null}
 
@@ -259,6 +348,20 @@ export function Conversation({
         </div>
       </div>
 
+      {newBelow ? (
+        <Button
+          className="mt-1 shrink-0"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            bottom.current = true;
+            if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+            setNewBelow(false);
+          }}
+        >
+          최근 메시지 보기
+        </Button>
+      ) : null}
       {/* 입력 — fixed 가 아니라 플렉스 흐름의 마지막. 탭바 계산이 필요 없다. */}
       <form
         className="flex shrink-0 items-center gap-2 pt-3 pb-2"
@@ -280,13 +383,15 @@ export function Conversation({
           placeholder={channelOpen ? "메시지 입력" : "아직 열리지 않은 대화입니다"}
           disabled={!channelOpen}
           autoComplete="off"
+          maxLength={2000}
+          enterKeyHint="send"
           className="rounded-control"
         />
         <Button
           type="submit"
           size="icon"
           className="size-11 shrink-0"
-          disabled={!text.trim() || !channelOpen}
+          disabled={!text.trim() || !channelOpen || sending}
           aria-label="보내기"
         >
           <Send className="size-4" aria-hidden="true" />

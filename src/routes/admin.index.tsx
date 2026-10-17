@@ -22,6 +22,8 @@ const TYPE_LABEL: Record<string, string> = {
   no_show_report: "노쇼 신고",
   payment_unknown: "결제 확인",
   notification_failure: "알림 결과 확인",
+  meeting_followup: "약속 참석 확인 연락",
+  response_review: "반복 미응답 검토",
 };
 
 function timeLabel(iso: string) {

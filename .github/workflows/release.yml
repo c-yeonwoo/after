@@ -17,7 +17,7 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -32,9 +32,11 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: supabase start
       - run: npm run release:check
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:browser-e2e
       - run: npm run test:full-cycle
+      - run: AFTER_TEST_BROWSER=webkit npm run test:browser-e2e
+      - run: AFTER_TEST_BROWSER=webkit npm run test:full-cycle
 
   # main 머지 = 운영 배포. 순서가 중요하다: DB → edge function → 프론트.
   # 새 화면은 새 RPC 를 부르므로, 프론트가 먼저 나가면 DB 가 따라올 때까지 화면이 깨진다

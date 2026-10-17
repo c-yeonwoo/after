@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AdminSecurity } from "@/components/admin/AdminSecurity";
+import { useMe } from "@/lib/me";
 
 import {
   approveAutomationRun,
@@ -22,6 +24,7 @@ const MODE_LABEL: Record<AutomationRule["mode"], string> = {
 };
 
 function AdminSettingsPage() {
+  const { me } = useMe();
   const [data, setData] = useState<AutomationOverview | null>(null);
   const [policy, setPolicy] = useState<AdminPolicyPreview | null>(null);
   const [policyError, setPolicyError] = useState(false);
@@ -129,6 +132,7 @@ function AdminSettingsPage() {
         </button>
       </div>
 
+      <AdminSecurity key={me?.id} />
       {error ? (
         <p role="alert" className="mt-6 rounded-surface border border-destructive/30 p-4 text-sm">
           설정을 불러오지 못했습니다. 이전 수치를 현재 상태로 사용하지 마세요.

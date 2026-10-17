@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -138,8 +138,17 @@ async function login(page, person) {
     `login form did not hydrate: ${pageErrors.join(" | ") || "no page error"}`,
   );
   await submit.click();
+  await waitForHome(page);
+}
+
+async function waitForHome(page) {
   await page.waitForURL("**/home", { timeout: 15_000 });
-  await page.getByRole("main").waitFor();
+  await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
+  await page
+    .getByRole("main")
+    .getByText(/님의 애프터|나의 애프터/)
+    .waitFor();
+  await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
 }
 
 async function checkPage(page, name, accessibility = true) {
@@ -210,7 +219,9 @@ try {
     },
   );
   await waitForServer();
-  browser = await chromium.launch({ headless: true });
+  browser = await (process.env.AFTER_TEST_BROWSER === "webkit" ? webkit : chromium).launch({
+    headless: true,
+  });
 
   const publicPage = await (
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
@@ -268,7 +279,7 @@ try {
   await signupPage.getByRole("heading", { name: "이미 가입된 계정이 있어요" }).waitFor();
   assert.equal(await signupPage.getByText(existing.name).count(), 0);
   await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
-  await signupPage.waitForURL("**/home", { timeout: 15_000 });
+  await waitForHome(signupPage);
   await signupPage.getByText(`${existing.name}님의 애프터 · 판교권`, { exact: true }).waitFor();
   assert.equal(
     sql(
@@ -634,7 +645,7 @@ try {
     .getByRole("button", { name: /이 날로 정하기/ })
     .first()
     .click();
-  await femalePage.waitForURL("**/home");
+  await waitForHome(femalePage);
   assert.equal(
     sql(`select count(*) from public.meetings m join public.intros i on i.id=m.intro_id
     where i.male_id='${male.id}' and i.female_id='${female.id}'
@@ -760,6 +771,7 @@ try {
   await checkPage(femalePage, "interview preview mobile");
   await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
+  await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.notEqual(
     sql(`select headline from public.profiles where id='${female.id}'`),
     "퇴근 후 동네를 걷는 편이에요.",
@@ -786,6 +798,7 @@ try {
     .fill("이번에는 제가 직접 쓴 소개글이에요.");
   await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
+  await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.equal(
     sql(`select intro from public.profiles where id='${female.id}'`),
     "이번에는 제가 직접 쓴 소개글이에요.",
@@ -853,7 +866,7 @@ try {
         .click();
     }
     await betaFemalePage.getByRole("button", { name: "저장하기" }).click();
-    await betaFemalePage.waitForURL("**/home");
+    await waitForHome(betaFemalePage);
     await betaFemalePage.close();
 
     const betaMalePage = await (
@@ -872,7 +885,7 @@ try {
         .click();
     }
     await betaMalePage.getByRole("button", { name: "저장하기" }).click();
-    await betaMalePage.waitForURL("**/home");
+    await waitForHome(betaMalePage);
     assert.equal(
       sql(
         `select count(*) from public.meet_windows where user_id in ('${betaMale.id}','${betaFemale.id}')`,

@@ -17,7 +17,7 @@ select throws_ok($$ select public.begin_signup(repeat('a',64),'obsolete-version'
   'PT409','policy_version_mismatch','현재 약관 버전에 동의해야 한다');
 
 set local role anon;
-select lives_ok($$ select public.begin_signup(repeat('a',64),'2026-10-17.2') $$,
+select lives_ok($$ select public.begin_signup(repeat('a',64),'2026-10-17.3') $$,
   '계정 생성 전에 두 필수 동의를 서버 시각으로 기록할 수 있다');
 select is((public.signup_session_status(repeat('a',64))->>'verified')::boolean,false,
   '동의만으로는 본인확인 완료가 되지 않는다');
@@ -74,7 +74,7 @@ select throws_ok($$ select public.create_my_profile('male','gangnam') $$,
   '42501','signup identity required','운영 게이트가 켜지면 구형 가입 RPC로 우회할 수 없다');
 reset role;
 
-select public.begin_signup(repeat('b',64),'2026-10-17.2');
+select public.begin_signup(repeat('b',64),'2026-10-17.3');
 set local role authenticated;
 select throws_ok($$ select public.create_signup_profile(repeat('b',64),'gangnam','male') $$,
   '42501','signup identity required','미인증 가입 세션은 회사 메일을 확인해도 가입할 수 없다');
@@ -86,7 +86,7 @@ select throws_ok($$ select public.start_signup_identity(repeat('b',64),
   'av00000000000000000000000000000006') $$,
   'P0001','daily limit','한 가입 세션에서 인증을 무한히 재시도할 수 없다');
 
-select public.begin_signup(repeat('c',64),'2026-10-17.2');
+select public.begin_signup(repeat('c',64),'2026-10-17.3');
 select public.start_signup_identity(repeat('c',64),'av73000000000000000000000000000003');
 select throws_ok($$ select public.finish_signup_identity(repeat('c',64),
   'av73000000000000000000000000000003','female','1994-02-15',
