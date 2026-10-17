@@ -13,10 +13,10 @@ import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
   MBTI_AXES,
-  MIN_PHOTOS,
   RELIGION_OPTIONS,
   SMOKING_OPTIONS,
   ageFrom,
+  basicsIssues,
   basicsValid,
   conditionsValid,
   emptyBasics,
@@ -391,6 +391,7 @@ function Onboarding() {
 
   if (step === 2) {
     const age = ageFrom(basics.birth);
+    const issues = basicsIssues(basics);
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
 
     return (
@@ -403,9 +404,7 @@ function Onboarding() {
       >
         <div className="space-y-5">
           <div>
-            <p className="text-sm font-semibold text-foreground">
-              프로필 사진 ({MIN_PHOTOS}장 이상)
-            </p>
+            <p className="text-sm font-semibold text-foreground">프로필 사진</p>
             <p className="mt-1 mb-3 text-sm text-muted-foreground">
               얼굴이 잘 보이는 사진과 평소 모습이 담긴 사진을 섞어 주세요.
             </p>
@@ -453,7 +452,7 @@ function Onboarding() {
               value={basics.birth}
               onChange={(e) => setB({ birth: e.target.value })}
               readOnly={Boolean(me?.identity_verified_at)}
-              aria-invalid={Boolean(basics.birth) && (age === null || age < 19)}
+              aria-invalid={Boolean(basics.birth) && (age === null || age < 19 || age > 79)}
               aria-describedby="birth-help"
             />
             <p
@@ -461,15 +460,15 @@ function Onboarding() {
               aria-live="polite"
               className={cn(
                 "mt-2 text-sm",
-                basics.birth && (age === null || age < 19)
+                basics.birth && (age === null || age < 19 || age > 79)
                   ? "font-medium text-destructive"
                   : "text-muted-foreground",
               )}
             >
               {basics.birth
-                ? age !== null && age >= 19
+                ? age !== null && age >= 19 && age <= 79
                   ? `만 ${age}세`
-                  : "만 19세 이상만 가입할 수 있습니다."
+                  : "만 19~79세만 가입할 수 있습니다."
                 : "만 나이로 표시됩니다."}
             </p>
           </div>
@@ -488,7 +487,13 @@ function Onboarding() {
           </div>
         </div>
 
-        <div className="mt-8 flex gap-2">
+        {issues.length ? (
+          <p role="status" className="mt-6 text-sm leading-relaxed text-muted-foreground">
+            다음으로 가려면 {issues.join(" · ")}이 필요해요.
+          </p>
+        ) : null}
+
+        <div className={cn("flex gap-2", issues.length ? "mt-5" : "mt-8")}>
           <Button variant="ghost" onClick={() => (editing ? navigate({ to: "/me" }) : setStep(4))}>
             {editing ? "취소" : "이전"}
           </Button>
@@ -889,6 +894,10 @@ function Onboarding() {
   // 마지막 — 만나기 전에 알아 두면 좋은 것 (조건은 인터뷰 뒤로, 리부팅 C)
   if (step === CONDITIONS) {
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
+    const missingConditions = [
+      !basics.smoking ? "흡연" : null,
+      !basics.drinking ? "음주" : null,
+    ].filter(Boolean);
     const pickMbti = (i: number, letter: string) => {
       const next = [...mbtiParts];
       next[i] = next[i] === letter ? "" : letter;
@@ -976,7 +985,13 @@ function Onboarding() {
           </div>
         </div>
 
-        <div className="mt-8 flex gap-2">
+        {missingConditions.length ? (
+          <p role="status" className="mt-6 text-sm text-muted-foreground">
+            아직 {missingConditions.join(" · ")} 선택이 필요해요.
+          </p>
+        ) : null}
+
+        <div className={cn("flex gap-2", missingConditions.length ? "mt-5" : "mt-8")}>
           <Button variant="ghost" onClick={() => setStep(Q_FIRST)}>
             이전
           </Button>

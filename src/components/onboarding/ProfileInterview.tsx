@@ -63,7 +63,6 @@ export function ProfileInterview({
   const [composing, setComposing] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [editingCopy, setEditingCopy] = useState(false);
-  const [showExamples, setShowExamples] = useState(false);
   const revisionRef = useRef(0);
   const lastSavedRef = useRef<string | null>(null);
   const queueRef = useRef<Promise<number>>(Promise.resolve(0));
@@ -137,7 +136,6 @@ export function ProfileInterview({
     try {
       await persist(next);
       setData(next);
-      setShowExamples(false);
     } catch {
       setActionError("저장하지 못했어요. 다시 시도해 주세요.");
     }
@@ -247,12 +245,31 @@ export function ProfileInterview({
     setEditingCopy(!result);
   };
 
+  const saveIndicator =
+    loaded && data.stage !== "start" ? (
+      <p
+        aria-live="polite"
+        className={`shrink-0 text-xs font-medium ${
+          saveStatus === "error" || saveStatus === "conflict"
+            ? "text-destructive"
+            : "text-muted-foreground"
+        }`}
+      >
+        {saveStatus === "saving"
+          ? "저장 중…"
+          : saveStatus === "error" || saveStatus === "conflict"
+            ? "저장 확인 필요"
+            : "저장됨"}
+      </p>
+    ) : null;
+
   const shell = (title: string, description: string, children: ReactNode, eyebrow = "소개글") => (
     <StepShell
       step={progressStep}
       total={progressTotal}
       progressLabel="소개글"
       eyebrow={eyebrow}
+      eyebrowAction={saveIndicator}
       title={title}
       description={description}
     >
@@ -291,10 +308,6 @@ export function ProfileInterview({
         <p role="alert" className="mt-5 text-sm text-destructive">
           저장되지 않았어요. 다음을 눌러 다시 시도할 수 있어요.
         </p>
-      ) : loaded ? (
-        <p aria-live="polite" className="mt-5 text-sm text-muted-foreground">
-          {saveStatus === "saving" ? "저장 중…" : "작성한 내용이 저장됐어요."}
-        </p>
       ) : null}
     </StepShell>
   );
@@ -319,11 +332,10 @@ export function ProfileInterview({
 
   if (data.stage === "start")
     return shell(
-      "어떤 사람인지, 조금만 들려주세요.",
-      "짧게 답하면 소개글 초안을 정리해드려요. 마지막에 직접 고칠 수 있어요.",
+      "나를 소개해 볼까요?",
+      "세 가지 질문에 답하면 소개글 초안을 만들어요.",
       <>
-        <p className="text-sm text-muted-foreground">질문 3개 · 필요한 경우 추가 질문 최대 2개</p>
-        <div className="mt-8 space-y-3">
+        <div className="space-y-3">
           <Button
             className="w-full"
             size="lg"
@@ -354,11 +366,10 @@ export function ProfileInterview({
             {editing ? "현재 소개글 직접 고치기" : "직접 소개글 쓰기"}
           </Button>
         </div>
-        <p className="mt-7 text-sm leading-relaxed text-muted-foreground">
-          AI에 답변을 보내 필요한 질문과 소개글을 정리해요. 직접 쓰기를 고르면 AI에 보내지 않아요.
-          마지막에 저장한 내용만 상대에게 보여요.
+        <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+          답변은 AI가 정리해요. 직접 쓰기를 고르면 AI에 보내지 않아요.
         </p>
-        <Button variant="ghost" className="mt-5" onClick={onBack}>
+        <Button variant="ghost" className="mt-6" onClick={onBack}>
           이전
         </Button>
       </>,
@@ -409,24 +420,18 @@ export function ProfileInterview({
         {value.length >= 250 ? (
           <p className="mt-2 text-sm text-muted-foreground">{300 - value.length}자 남았어요.</p>
         ) : null}
-        <button
-          type="button"
-          className="mt-3 min-h-11 text-sm text-primary-strong underline underline-offset-4"
-          aria-expanded={showExamples}
-          onClick={() => setShowExamples((open) => !open)}
-        >
-          예시 {showExamples ? "닫기" : "보기"}
-        </button>
-        {showExamples ? (
-          <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+        <div className="mt-4 rounded-control bg-muted/50 px-4 py-3">
+          <p className="text-xs font-medium text-muted-foreground">이렇게 적어도 좋아요</p>
+          <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
             {activeQuestion.examples.map((example) => (
-              <li key={example}>{example}</li>
+              <li key={example}>“{example}”</li>
             ))}
           </ul>
-        ) : null}
-        <button
-          type="button"
-          className="mt-2 block min-h-11 text-sm text-primary-strong underline underline-offset-4"
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-3 mt-2"
           onClick={() =>
             setData((current) => ({
               ...current,
@@ -436,8 +441,8 @@ export function ProfileInterview({
             }))
           }
         >
-          다른 질문으로 답하기
-        </button>
+          질문 바꾸기
+        </Button>
         <div className="mt-7 flex gap-2">
           <Button
             variant="ghost"

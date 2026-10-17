@@ -302,6 +302,14 @@ try {
   await incompletePage.getByRole("button", { name: "가입 이어하기" }).click();
   await incompletePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   assert.equal(await incompletePage.getByLabel("이름").inputValue(), incomplete.name);
+  await incompletePage.getByRole("button", { name: "3번째 사진 빼기" }).click();
+  await incompletePage.getByText("1장 더 필요해요 (2/3)").waitFor();
+  await incompletePage.getByText("다음으로 가려면 사진 1장이 필요해요.").waitFor();
+  assert.equal(
+    await incompletePage.getByRole("button", { name: "다음", exact: true }).isEnabled(),
+    false,
+    "missing photos are explained while Next stays disabled",
+  );
   await incompletePage.goto(`${baseUrl}/signup`);
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
@@ -438,20 +446,24 @@ try {
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "나를 소개해 볼까요?" }).waitFor();
+  await checkPage(femalePage, "interview start mobile");
   await femalePage.getByRole("button", { name: "이야기 시작하기" }).click();
+  await femalePage.getByText("이렇게 적어도 좋아요").waitFor();
+  await checkPage(femalePage, "interview question mobile");
   await femalePage.getByLabel("내 이야기").fill("퇴근하면 동네를 천천히 걸어요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
   await femalePage
-    .getByRole("heading", { name: "처음 만난 사람과는 어떻게 가까워지는 편인가요?" })
+    .getByRole("heading", { name: "처음 만난 사람과는 어떻게 친해지세요?" })
     .waitFor();
   await femalePage.getByLabel("내 이야기").fill("처음에는 서로 이야기를 듣는 편이에요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
   await femalePage
-    .getByRole("heading", { name: "처음 만나면 어떤 이야기를 나눠보고 싶어요?" })
+    .getByRole("heading", { name: "처음 만나면 어떤 이야기를 하고 싶으세요?" })
     .waitFor();
   await femalePage.getByLabel("내 이야기").fill("주말에 본 영화를 이야기하고 싶어요");
   await femalePage.getByText("저장 중…").waitFor();
-  await femalePage.getByText("작성한 내용이 저장됐어요.").waitFor();
+  await femalePage.getByText("저장됨", { exact: true }).waitFor();
   assert.equal(
     sql(`select headline from public.profiles where id='${female.id}'`),
     "퇴근 후 동네를 걷는 편이에요.",
@@ -541,6 +553,7 @@ try {
   await inquiry.getByRole("button", { name: "답변하기" }).click();
   await inquiry.getByLabel("답변").fill("테스트 문의를 확인했습니다.");
   await inquiry.getByRole("button", { name: "답변 등록" }).click();
+  await adminPage.getByText("답변을 등록했습니다.").waitFor();
   assert.equal(
     sql(`select count(*) from public.support_requests where user_id='${female.id}'
       and response='테스트 문의를 확인했습니다.'`),

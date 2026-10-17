@@ -93,7 +93,7 @@ export function PhotoSetEditor({
       </div>
       <p aria-live="polite" className="mt-2 text-sm text-muted-foreground">
         {photos.length < MIN_PHOTOS
-          ? `${MIN_PHOTOS}장 이상 올려 주세요 (${photos.length}/${MAX_PHOTOS})`
+          ? `${MIN_PHOTOS - photos.length}장 더 필요해요 (${photos.length}/${MIN_PHOTOS})`
           : `${photos.length}/${MAX_PHOTOS}장 · 사진을 누르면 대표 사진이 돼요`}
       </p>
     </div>

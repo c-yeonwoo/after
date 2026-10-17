@@ -65,17 +65,20 @@ export function ageFrom(birth: string) {
   return age;
 }
 
-export function basicsValid(b: Basics) {
+export function basicsIssues(b: Basics): string[] {
   const age = ageFrom(b.birth);
+  const issues: string[] = [];
   // 사진 3장 이상(D5 → s53). 서버의 후보 조건도 승인된 3장을 요구한다.
-  return (
-    b.photos.length >= MIN_PHOTOS &&
-    b.name.trim().length >= 2 &&
-    age !== null &&
-    age >= 19 &&
-    age <= 79 &&
-    b.job.trim().length >= 2
-  );
+  if (b.photos.length < MIN_PHOTOS) issues.push(`사진 ${MIN_PHOTOS - b.photos.length}장`);
+  if (b.name.trim().length < 2) issues.push("이름 2자 이상");
+  if (!b.birth) issues.push("생년월일");
+  else if (age === null || age < 19 || age > 79) issues.push("만 19~79세 생년월일");
+  if (b.job.trim().length < 2) issues.push("직업 2자 이상");
+  return issues;
+}
+
+export function basicsValid(b: Basics) {
+  return basicsIssues(b).length === 0;
 }
 
 /**
