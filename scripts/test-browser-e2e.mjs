@@ -1053,6 +1053,7 @@ try {
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "내 이야기를 시작해 볼까요?" }).waitFor();
   const delayedDraftSave = "**/rest/v1/rpc/save_profile_interview_draft";
