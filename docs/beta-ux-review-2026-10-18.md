@@ -44,6 +44,8 @@ AFT-24 보완 후 `npm run check`, 아래 Playwright 코드의 `node --check --i
 
 ### 재실행 가능한 합성 Playwright 요청 대역
 
+2026-10-19 후속: 오류 토스트와 본문 상태에 같은 문구가 표시되는 네 개의 대기는 `main` 영역으로 한정했다. 기존 실패 이력과 시나리오 단언은 유지한다. 이번 수정의 구문·선택자 검사는 실제 브라우저 재실행이나 실사용 검증을 뜻하지 않는다.
+
 로컬 환경에서 다음 두 명령을 별도 터미널에서 실행한다. 운영 API·실회원 데이터는 사용하지 않는다. 첫 명령은 이 worktree의 Vite만 실행한다. Playwright 검증은 코드 파일을 만들지 않고 stdin으로 실행한다.
 
 ```sh
@@ -128,12 +130,12 @@ try {
   createMode = "fail";
   await page.getByLabel("문의 내용").fill("생성 실패 후에도 보존할 합성 본문입니다.");
   await page.getByRole("button", { name: "문의 보내기" }).click();
-  await page.getByText("문의가 접수되지 않았어요.", { exact: false }).waitFor();
+  await page.getByRole("main").getByText("문의가 접수되지 않았어요.", { exact: false }).waitFor();
   assert.equal(await page.getByLabel("문의 내용").inputValue(), "생성 실패 후에도 보존할 합성 본문입니다.");
 
   createMode = "unknown";
   await page.getByRole("button", { name: "문의 보내기" }).click();
-  await page.getByText("접수 여부를 확인할 수 없어요.", { exact: false }).waitFor();
+  await page.getByRole("main").getByText("접수 여부를 확인할 수 없어요.", { exact: false }).waitFor();
   assert.equal(await page.getByLabel("문의 내용").inputValue(), "생성 실패 후에도 보존할 합성 본문입니다.");
 
   createMode = "slow";
@@ -171,7 +173,7 @@ try {
   }, session);
   createMode = "unknown";
   releaseCreate();
-  await page.getByText("접수 여부를 확인할 수 없어요.", { exact: false }).waitFor();
+  await page.getByRole("main").getByText("접수 여부를 확인할 수 없어요.", { exact: false }).waitFor();
   assert.equal(await page.getByLabel("문의 내용").inputValue(), "결과 불명확한 합성 요청입니다.");
 
   rows[0].status = "answered";
@@ -184,7 +186,7 @@ try {
   assert.equal(await page.getByLabel("문의 내용").getAttribute("maxlength"), "1000");
   await page.getByLabel("문의 내용").fill("합성 약속 문의 중복 안내 확인입니다.");
   await page.getByRole("button", { name: "문의 보내기" }).click();
-  await page.getByText("이 약속의 문의가 이미 접수되어 있어요.", { exact: false }).waitFor();
+  await page.getByRole("main").getByText("이 약속의 문의가 이미 접수되어 있어요.", { exact: false }).waitFor();
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 720 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${width}px 가로 넘침 없음`);
