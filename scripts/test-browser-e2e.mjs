@@ -357,6 +357,45 @@ try {
   await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
   await waitForHome(signupPage);
   await signupPage.getByText(`${existing.name}님의 애프터 · 판교권`, { exact: true }).waitFor();
+  // A landscape brand photo must remain uncropped at every app-shell width.
+  // The old portrait + fixed 160px cover box discarded most of the scene.
+  const readiness = signupPage.getByRole("region", { name: "소개 설정", exact: true });
+  const readinessPhoto = readiness.locator('img[src="/brand/after-first-conversation.jpg"]');
+  await readinessPhoto.waitFor();
+  await readinessPhoto.evaluate((image) => image.decode());
+  for (const width of [320, 390, 430, 768, 1440]) {
+    await signupPage.setViewportSize({ width, height: 900 });
+    const imageSize = await readinessPhoto.evaluate((image) => ({
+      width: image.getBoundingClientRect().width,
+      height: image.getBoundingClientRect().height,
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight,
+      declaredWidth: Number(image.getAttribute("width")),
+      declaredHeight: Number(image.getAttribute("height")),
+    }));
+    assert.ok(imageSize.width > 0 && imageSize.naturalWidth > 0, "waiting photo loaded");
+    assert.equal(
+      imageSize.declaredWidth / imageSize.declaredHeight,
+      imageSize.naturalWidth / imageSize.naturalHeight,
+      "photo reserves its intrinsic ratio before loading",
+    );
+    assert.ok(
+      Math.abs(
+        imageSize.width / imageSize.height - imageSize.naturalWidth / imageSize.naturalHeight,
+      ) < 0.01,
+      `waiting photo is uncropped at ${width}px`,
+    );
+    await checkPage(signupPage, `waiting home ${width}px`, width === 390);
+    if (screenshotDir && [320, 390, 1440].includes(width)) {
+      await signupPage.screenshot({ path: join(screenshotDir, `waiting-home-${width}px.png`) });
+    }
+  }
+  await signupPage.setViewportSize({ width: 390, height: 844 });
+  await readiness.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).click();
+  await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).waitFor();
+  assert.equal(await readinessPhoto.count(), 0, "paused introductions do not show a waiting photo");
+  await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).click();
+  await readinessPhoto.waitFor();
   assert.equal(
     sql(
       `select count(*) from public.profiles where lower(company_email)=lower('${existing.email}')`,
