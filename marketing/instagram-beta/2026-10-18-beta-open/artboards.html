@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>애프터 · 첫 무료 베타에 초대합니다</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <style>
+      :root {
+        --paper: #faf8f3;
+        --ink: #23302b;
+        --pine: #38594f;
+        --coral: #ac5147;
+        --cream: #eeeae1;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: "Pretendard Variable", Pretendard, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .canvas {
+        display: none;
+        flex-direction: column;
+        width: 1080px;
+        height: 1350px;
+        padding: 76px;
+        overflow: hidden;
+        position: relative;
+      }
+      .canvas.active {
+        display: flex;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .logo {
+        font-size: 76px;
+        font-weight: 720;
+        letter-spacing: -0.04em;
+        line-height: 1;
+      }
+      .logo b {
+        color: var(--coral);
+      }
+      .status {
+        font-size: 30px;
+        font-weight: 550;
+      }
+      h1,
+      h2,
+      p {
+        margin: 0;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      h1,
+      h2 {
+        font-size: 88px;
+        line-height: 1.23;
+        letter-spacing: -0.035em;
+        font-weight: 650;
+        text-wrap: balance;
+      }
+      .body {
+        font-size: 38px;
+        line-height: 1.6;
+        letter-spacing: -0.015em;
+      }
+      footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+        padding-top: 26px;
+        border-top: 1px solid currentColor;
+        font-size: 29px;
+        line-height: 1.45;
+      }
+      .cover h1 {
+        margin-top: 76px;
+      }
+      .cover .photo {
+        width: calc(100% + 152px);
+        margin-left: -76px;
+        height: 480px;
+        object-fit: cover;
+        object-position: center 64%;
+        margin-top: 44px;
+      }
+      .cover footer {
+        border: 0;
+        padding-top: 24px;
+      }
+      .dark {
+        background: var(--pine);
+        color: var(--paper);
+      }
+      .dark .logo b,
+      .recruit .logo b {
+        color: var(--paper);
+      }
+      .selection h2 {
+        margin-top: 110px;
+      }
+      .selection .body {
+        margin-top: 54px;
+      }
+      .principles {
+        margin-top: 72px;
+      }
+      .principles p {
+        display: flex;
+        align-items: baseline;
+        gap: 42px;
+        padding: 23px 0;
+        border-top: 1px solid #9aada4;
+        font-size: 42px;
+        font-weight: 550;
+      }
+      .principles span {
+        width: 210px;
+        flex: 0 0 210px;
+        font-size: 30px;
+        font-weight: 400;
+      }
+      .profile h2 {
+        margin-top: 76px;
+      }
+      .source {
+        margin-top: 54px;
+        padding: 26px 0;
+        border-top: 1px solid #b8c3bc;
+        border-bottom: 1px solid #b8c3bc;
+        font-size: 36px;
+        line-height: 1.5;
+      }
+      .source small {
+        display: block;
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+      .qa {
+        margin-top: 40px;
+      }
+      .qa h3 {
+        font-size: 36px;
+        font-weight: 600;
+        margin: 0 0 22px;
+      }
+      .qa p {
+        font-size: 44px;
+        line-height: 1.58;
+        letter-spacing: -0.02em;
+      }
+      .profile .note {
+        font-size: 30px;
+        line-height: 1.55;
+        margin-top: 34px;
+      }
+      .planning {
+        background: var(--cream);
+      }
+      .planning h2 {
+        margin-top: 100px;
+      }
+      .planning .body {
+        margin-top: 48px;
+      }
+      .steps {
+        margin: 60px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .steps li {
+        display: flex;
+        align-items: center;
+        gap: 34px;
+        padding: 28px 0;
+        border-top: 1px solid #aab6ad;
+        font-size: 45px;
+        font-weight: 550;
+      }
+      .steps span {
+        font-size: 30px;
+        color: var(--pine);
+      }
+      .planning .note {
+        margin-top: 36px;
+        font-size: 31px;
+        line-height: 1.55;
+      }
+      .recruit {
+        background: var(--coral);
+        color: var(--paper);
+      }
+      .recruit h2 {
+        margin-top: 106px;
+        font-size: 86px;
+      }
+      .recruit .body {
+        margin-top: 50px;
+        font-size: 42px;
+      }
+      .join {
+        display: block;
+        margin-top: 48px;
+        padding: 32px 0;
+        border-top: 1px solid var(--paper);
+        border-bottom: 1px solid var(--paper);
+        font-size: 43px;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+      .recruit .note {
+        margin-top: 36px;
+        font-size: 30px;
+        line-height: 1.65;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="canvas cover" id="01-cover" aria-label="모집 표지">
+      <header>
+        <div class="logo">after<b>.</b></div>
+        <span class="status">직장인 무료 베타 모집</span>
+      </header>
+      <h1>퇴근했는데,<br />소개팅까지<br />일이 될 순 없으니까.</h1>
+      <img
+        class="photo"
+        src="../../../public/brand/after-hours.jpg"
+        alt="저녁 무렵 카페 창가의 커피 한 잔"
+      />
+      <footer><span>하루 끝에, 설레는 시작.</span><span>1 / 5</span></footer>
+    </section>
+    <section class="canvas dark selection" id="02-one-person" aria-label="한 사람씩 알아가는 소개">
+      <header>
+        <div class="logo">after<b>.</b></div>
+        <span class="status">직장인을 위한 소개</span>
+      </header>
+      <h2>많이 고르는 일보다,<br />한 사람을<br />알아가는 일.</h2>
+      <p class="body">계속 넘기는 프로필 대신,<br />서로의 이야기를 읽는 소개를 준비했어요.</p>
+      <div class="principles">
+        <p><span>가입할 때</span>회사 이메일 확인</p>
+        <p><span>소개할 때</span>생활권·선호를 함께 고려</p>
+        <p><span>만나기 전에</span>서로의 선택 먼저</p>
+      </div>
+      <footer><span>랜덤한 시작보다, 이유 있는 소개.</span><span>2 / 5</span></footer>
+    </section>
+    <section class="canvas profile" id="03-profile" aria-label="AI 프로필 정리">
+      <header>
+        <div class="logo">after<b>.</b></div>
+        <span class="status">나를 전하는 프로필</span>
+      </header>
+      <h2>짧게 답해도,<br />나답게 전해지도록.</h2>
+      <div class="source">
+        <small>이렇게 답하면</small>주말엔 혼자 빵집 가요.<br />빵 고르는 시간이 좋아요.
+      </div>
+      <div class="qa">
+        <h3>쉬는 날엔 어떤 시간을 좋아하세요?</h3>
+        <p>
+          주말에는 혼자 빵집에 들르곤 해요.<br />빵을 천천히 고르는 시간이<br />저만의 작은
+          즐거움이에요.
+        </p>
+      </div>
+      <p class="note">
+        답변을 바탕으로 AI가 문장을 정리해요.<br />직접 읽고 고친 뒤, 마음에 들 때 완성하세요.
+      </p>
+      <footer><span>가상의 답변을 활용한 편집 예시</span><span>3 / 5</span></footer>
+    </section>
+    <section class="canvas planning" id="04-planning" aria-label="만남 일정 조율">
+      <header>
+        <div class="logo">after<b>.</b></div>
+        <span class="status">소개 다음의 일까지</span>
+      </header>
+      <h2>잘 맞는 것 같아요.<br />그래서, 언제 볼까요?</h2>
+      <p class="body">연락을 시작하는 데서 멈추지 않고,<br />만날 일정을 정하는 과정도 함께해요.</p>
+      <ol class="steps">
+        <li><span>01</span>서로 만나고 싶다면</li>
+        <li><span>02</span>가능한 일정 확인</li>
+        <li><span>03</span>두 사람의 약속 확정</li>
+      </ol>
+      <p class="note">
+        베타에서는 운영팀도 진행 상황을 살피며<br />조율이 필요한 순간을 도와드려요.
+      </p>
+      <footer><span>소개에서 약속까지, 애프터와 함께.</span><span>4 / 5</span></footer>
+    </section>
+    <section class="canvas recruit" id="05-invitation" aria-label="무료 베타 신청 안내">
+      <header>
+        <div class="logo">after<b>.</b></div>
+        <span class="status">첫 무료 베타</span>
+      </header>
+      <h2>연애할 마음은 있는데,<br />탐색할 힘은 없다면.</h2>
+      <p class="body">애프터를 함께 시작할<br />직장인 여러분을 초대합니다.</p>
+      <div class="join">프로필 링크에서 시작하기<br />aftersunset.kr</div>
+      <p class="note">
+        베타 기간 소개·일정 조율 서비스 이용료 무료<br />카페·식사 등 개인 데이트 비용은
+        별도입니다.<br /><br />생활권·선호와 서로의 선택에 따라 순차 소개하며,<br />가입 현황에 따라
+        대기할 수 있어요.
+      </p>
+      <footer><span>좋았던 점도, 아쉬웠던 점도 들려주세요.</span><span>5 / 5</span></footer>
+    </section>
+    <script>
+      const frame = new URLSearchParams(location.search).get("frame") || "01-cover";
+      (document.getElementById(frame) || document.getElementById("01-cover")).classList.add(
+        "active",
+      );
+    </script>
+  </body>
+</html>

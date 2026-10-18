@@ -970,13 +970,21 @@ function Onboarding() {
         ) : null}
 
         {authError ? (
-          <p
+          <div
             role="alert"
             className="mt-4 flex items-start gap-1.5 text-sm font-medium text-destructive"
           >
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            <span>{authError}</span>
-          </p>
+            <div>
+              <p>{authError}</p>
+              <Link
+                to="/login"
+                className="mt-2 inline-flex min-h-11 items-center text-foreground underline underline-offset-4"
+              >
+                로그인 화면으로
+              </Link>
+            </div>
+          </div>
         ) : null}
 
         {emailVerified ? (

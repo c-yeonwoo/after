@@ -16,6 +16,8 @@ import { supabase } from "@/lib/supabase";
 
 import type { Database, Json } from "./database.types";
 
+export { authErrorMessage } from "./authErrors";
+
 export type Gender = Database["public"]["Enums"]["gender"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 /**
@@ -57,37 +59,6 @@ export const LOCAL_DEV_AUTH_BYPASS =
   })();
 
 const LOCAL_DEV_PASSWORD = "eclipse-local-dev-auth-only";
-
-/**
- * Supabase Auth 의 영어 에러를 화면에 그대로 노출하지 않는다.
- * ("Token has expired or is invalid" 이 한국어 화면에 그대로 떴다)
- */
-export function authErrorMessage(err: unknown): string {
-  // PostgREST 에러는 Error 인스턴스가 아니라 { message, code } 객체다. String() 에
-  // 넘기면 "[object Object]" 가 화면에 그대로 떴다.
-  const raw =
-    err instanceof Error
-      ? err.message
-      : typeof err === "object" &&
-          err !== null &&
-          typeof (err as { message?: unknown }).message === "string"
-        ? (err as { message: string }).message
-        : String(err ?? "");
-  const m = raw.toLowerCase();
-  if (m.includes("personal email")) {
-    return "개인 메일은 사용할 수 없습니다. 회사 이메일로 인증해 주세요.";
-  }
-  if (m.includes("expired") || m.includes("invalid")) {
-    return "코드가 맞지 않거나 만료되었습니다. 코드를 다시 받아 주세요.";
-  }
-  if (m.includes("rate limit") || m.includes("too many")) {
-    return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
-  }
-  if (m.includes("email") && m.includes("not") && m.includes("confirm")) {
-    return "이메일 인증이 완료되지 않았습니다.";
-  }
-  return raw || "인증에 실패했습니다.";
-}
 
 /**
  * 개발환경 전용: 로컬 Mailpit 에서 방금 발송된 코드를 읽어온다.

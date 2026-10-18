@@ -290,6 +290,59 @@ try {
   }
   assert.equal(await signupNext.isEnabled(), true, "signup form did not hydrate");
   await signupNext.click();
+
+  // Synthetic provider failures only: never send a real OTP or create a user.
+  // Exercise the SDK's code-only and '{}' message shapes through the actual UI.
+  let authFailure = { error_code: "user_already_exists", msg: "{}" };
+  const authRoute = /\/auth\/v1\/(?:signup|token)(?:\?|$)/;
+  await signupPage.route(authRoute, (route) =>
+    route.fulfill({
+      status: 422,
+      contentType: "application/json",
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Supabase-Api-Version",
+        "X-Supabase-Api-Version": "2024-01-01",
+      },
+      body: JSON.stringify(authFailure),
+    }),
+  );
+  await signupPage.getByLabel("회사 이메일").fill("synthetic-error@verify.local");
+  await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
+  await signupPage.getByRole("alert").waitFor();
+  assert.equal(
+    await signupPage.getByRole("alert").locator("p").innerText(),
+    "이미 가입된 계정이 있어요. 기존 계정으로 로그인해 주세요.",
+  );
+  assert.equal(
+    await signupPage.getByRole("link", { name: "로그인 화면으로" }).getAttribute("href"),
+    "/login",
+  );
+  await checkPage(signupPage, "signup duplicate account mobile");
+  if (screenshotDir) {
+    await mkdir(screenshotDir, { recursive: true });
+    await signupPage.screenshot({
+      path: join(screenshotDir, "signup-error-mobile.png"),
+      fullPage: true,
+    });
+  }
+  await signupPage.setViewportSize({ width: 1440, height: 900 });
+  await checkPage(signupPage, "signup duplicate account desktop", false);
+  if (screenshotDir) {
+    await signupPage.screenshot({
+      path: join(screenshotDir, "signup-error-desktop.png"),
+      fullPage: true,
+    });
+  }
+  await signupPage.setViewportSize({ width: 390, height: 844 });
+  authFailure = {};
+  await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
+  await signupPage
+    .getByRole("alert")
+    .getByText("인증을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.", { exact: true })
+    .waitFor();
+  assert.equal((await signupPage.getByRole("alert").innerText()).includes("{}"), false);
+  await signupPage.unroute(authRoute);
   await signupPage.getByLabel("회사 이메일").fill(existing.email);
   await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await signupPage
