@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { scrubUserText, sourceHash } from "../_shared/ai-grounding.ts";
-import { PROFILE_EDITOR_VOICE } from "../_shared/profile-voice.ts";
+import { PROFILE_EDITOR_VOICE, PROFILE_VERIFIER_VOICE } from "../_shared/profile-voice.ts";
 import { DEFAULT_TEXT_MODEL } from "../_shared/ai-models.ts";
 import { addUsage, type ModelUsage } from "../_shared/ai-usage.ts";
 
@@ -12,7 +12,7 @@ const API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const ANALYSIS_MODEL = Deno.env.get("PROFILE_ANALYSIS_MODEL") || DEFAULT_TEXT_MODEL;
 const EDITOR_MODEL = Deno.env.get("PROFILE_EDITOR_MODEL") || DEFAULT_TEXT_MODEL;
 const VERIFIER_MODEL = Deno.env.get("PROFILE_VERIFIER_MODEL") || DEFAULT_TEXT_MODEL;
-const VERSION = "profile-story-v3-5";
+const VERSION = "profile-story-v3-6";
 const SECTION_IDS = ["daily_life", "getting_closer", "conversation"] as const;
 const QUESTION_IDS = ["walk", "series", "conversation", "food", "music", "weekend"] as const;
 const QUESTIONS: Record<string, string> = {
@@ -524,7 +524,7 @@ Deno.serve(async (req) => {
     }
     let verification = await call(
       VERIFIER_MODEL,
-      `원자료와 소개장의 모든 표현을 대조하세요. sections 문장뿐 아니라 headline·summary·conversationHooks도 검사합니다. sourceIds 존재만으로 통과시키지 마세요. 원자료 question이 정한 시간·상황 범위를 보존했는지도 확인하세요. 예를 들어 퇴근 후 빈 시간의 선택을 주말이나 쉬는 날 습관으로 바꾸면 오류입니다. 새 사실·감정·성격·경험, 부정/희망/빈도 왜곡, 비공개 정보 유출을 찾으세요. 자연스러운 의역은 허용합니다. findings는 문제가 있는 표현만 지적하고, pass는 문제가 없을 때만 true입니다.`,
+      PROFILE_VERIFIER_VOICE,
       { sources: publicSources, draft },
       verificationSchema,
       15000,
@@ -532,7 +532,7 @@ Deno.serve(async (req) => {
     if (!verification.pass) {
       draft = await call(
         EDITOR_MODEL,
-        `애프터 소개장 편집자입니다. 아래 검토 지적만 반영해 문장을 고치세요. 원자료에 없는 사실은 추가하지 마세요. 기존 스키마와 sourceIds를 유지하세요.`,
+        `${PROFILE_EDITOR_VOICE}\n아래 검토 지적을 반영해 문장을 고치세요. 기존 스키마와 sourceIds를 유지하세요.`,
         { sources: publicSources, draft, findings: verification.findings },
         storySchema,
         25000,
@@ -547,7 +547,7 @@ Deno.serve(async (req) => {
       }
       verification = await call(
         VERIFIER_MODEL,
-        `원자료와 소개장을 다시 대조하세요. 새로운 의미·성격·감정·빈도·비공개 정보가 없을 때만 pass=true입니다.`,
+        PROFILE_VERIFIER_VOICE,
         { sources: publicSources, draft },
         verificationSchema,
         15000,

@@ -823,6 +823,65 @@ try {
   await femalePage.getByRole("button", { name: "프로필 저장하기" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
+  const profileArticle = femalePage.locator("article");
+  assert.equal(
+    await profileArticle.evaluate((article) => {
+      const headline = article.querySelector("blockquote");
+      const photos = article.querySelector('[role="region"]');
+      const facts = article.querySelector("dl");
+      const interview = article.querySelector("section");
+      return (
+        [headline, photos, facts, interview].every(Boolean) &&
+        Boolean(headline.compareDocumentPosition(photos) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+        Boolean(photos.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+        Boolean(facts.compareDocumentPosition(interview) & Node.DOCUMENT_POSITION_FOLLOWING)
+      );
+    }),
+    true,
+    "profile reads headline, photos, facts, then interview",
+  );
+  const photoOpener = femalePage.getByRole("button", { name: /프로필 사진 1 크게 보기/ });
+  await photoOpener.click();
+  const photoDialog = femalePage.getByRole("dialog");
+  await photoDialog.getByRole("img", { name: /사진 1 확대/ }).waitFor();
+  await photoDialog.evaluate(async (dialog) => {
+    await Promise.all(
+      dialog
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => {})),
+    );
+  });
+  assert.equal(await photoDialog.getByRole("button", { name: "이전 사진" }).isDisabled(), true);
+  await checkPage(femalePage, "profile photo viewer mobile");
+  await photoDialog.getByRole("button", { name: "다음 사진" }).click();
+  await photoDialog.getByRole("img", { name: /사진 2 확대/ }).waitFor();
+  await photoDialog.getByRole("button", { name: "더 크게 보기" }).click();
+  await photoDialog.getByLabel("확대한 사진 스크롤 영역").waitFor();
+  await photoDialog.getByRole("button", { name: "원래 크기로" }).click();
+  await femalePage.keyboard.press("ArrowRight");
+  await photoDialog.getByRole("img", { name: /사진 3 확대/ }).waitFor();
+  assert.equal(await photoDialog.getByRole("button", { name: "다음 사진" }).isDisabled(), true);
+  await femalePage.keyboard.press("Escape");
+  await photoDialog.waitFor({ state: "hidden" });
+  assert.equal(
+    await photoOpener.evaluate((button) => button === document.activeElement),
+    true,
+    "closing returns focus to the opened photo",
+  );
+  const photoSigningRoute = "**/storage/v1/object/sign/profile-photos/**";
+  await femalePage.route(photoSigningRoute, (route) =>
+    route.fulfill({
+      status: 403,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Photo unavailable" }),
+    }),
+  );
+  await photoOpener.click();
+  await photoDialog.getByText("사진을 불러오지 못했어요. 닫은 뒤 다시 열어 주세요.").waitFor();
+  assert.equal(await photoDialog.getByRole("button", { name: "더 크게 보기" }).isDisabled(), true);
+  await photoDialog.getByRole("button", { name: "닫기", exact: true }).click();
+  await photoDialog.waitFor({ state: "hidden" });
+  await femalePage.unroute(photoSigningRoute);
   assert.notEqual(
     sql(`select headline from public.profiles where id='${female.id}'`),
     "퇴근 후 동네를 걷는 편이에요.",
