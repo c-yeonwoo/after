@@ -820,8 +820,28 @@ try {
     .getByLabel("카드에서 보일 짧은 소개")
     .fill("퇴근 후에는 동네를 걷고, 주말에 본 영화 이야기를 좋아해요.");
   await checkPage(femalePage, "interview preview mobile");
+  // Keep publication in flight past the 800ms autosave debounce. A pending
+  // autosave must not advance the revision between final save and publication.
+  const publishRoute = "**/rest/v1/rpc/publish_profile_interview_v3";
+  await femalePage.route(publishRoute, async (route) => {
+    await delay(1200);
+    await route.continue();
+  });
+  await femalePage
+    .getByLabel("카드에서 보일 짧은 소개")
+    .fill("퇴근 후에는 동네를 걷고, 첫 만남에는 커피를 마시고 싶어요.");
+  const publication = femalePage.waitForResponse((response) =>
+    response.url().endsWith("/rpc/publish_profile_interview_v3"),
+  );
   await femalePage.getByRole("button", { name: "프로필 저장하기" }).click();
+  assert.equal(
+    await femalePage.getByLabel("카드에서 보일 짧은 소개").isDisabled(),
+    true,
+    "publication locks its approved snapshot",
+  );
+  assert.equal((await publication).status(), 200, "pending autosave must not race publication");
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
+  await femalePage.unroute(publishRoute);
   await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   const profileArticle = femalePage.locator("article");
   assert.equal(

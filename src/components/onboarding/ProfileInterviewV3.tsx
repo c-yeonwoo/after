@@ -92,6 +92,7 @@ export function ProfileInterviewV3({
   const currentDataRef = useRef(data);
   currentDataRef.current = data;
   const queueRef = useRef<Promise<number>>(Promise.resolve(0));
+  const publishingRef = useRef(false);
   const conflictRef = useRef(false);
   const initialInputsRef = useRef({ member, basics });
   const loadStartedRef = useRef(false);
@@ -155,10 +156,18 @@ export function ProfileInterviewV3({
   }, []);
 
   useEffect(() => {
-    if (!loaded || conflictRef.current || JSON.stringify(data) === lastSavedRef.current) return;
+    if (
+      !loaded ||
+      publishingRef.current ||
+      conflictRef.current ||
+      JSON.stringify(data) === lastSavedRef.current
+    )
+      return;
     setSaveStatus("saving");
     const timer = window.setTimeout(() => {
-      void persist(data).catch(() => undefined);
+      // Publication uses the final saved revision. A previously scheduled
+      // autosave must not increment it while onDone is still in flight.
+      if (!publishingRef.current) void persist(data).catch(() => undefined);
     }, 800);
     return () => window.clearTimeout(timer);
   }, [data, loaded, persist]);
@@ -814,7 +823,7 @@ export function ProfileInterviewV3({
     <>
       {story ? <ProfileDetail p={preview} /> : null}
       {editingCopy ? (
-        <div className="mt-7 space-y-5 border-t border-border pt-6">
+        <fieldset disabled={busy} className="mt-7 min-w-0 space-y-5 border-t border-border pt-6">
           <div>
             <label htmlFor="story-headline" className="text-sm font-semibold">
               한 줄 소개
@@ -865,9 +874,14 @@ export function ProfileInterviewV3({
           <Button variant="outline" onClick={() => setEditingCopy(false)}>
             수정 마치기
           </Button>
-        </div>
+        </fieldset>
       ) : (
-        <Button variant="outline" className="mt-7 w-full" onClick={() => setEditingCopy(true)}>
+        <Button
+          variant="outline"
+          disabled={busy}
+          className="mt-7 w-full"
+          onClick={() => setEditingCopy(true)}
+        >
           프로필 수정
         </Button>
       )}
@@ -875,6 +889,7 @@ export function ProfileInterviewV3({
         <Button
           variant="ghost"
           className="mt-3 w-full"
+          disabled={busy}
           onClick={() => updateStory(data.generatedStory!)}
         >
           처음 제안한 글 다시 보기
@@ -885,8 +900,10 @@ export function ProfileInterviewV3({
         className="mt-8 w-full"
         disabled={!complete || busy || saveStatus === "conflict"}
         onClick={async () => {
-          if (!complete) return;
+          if (!complete || publishingRef.current) return;
+          publishingRef.current = true;
           setBusy(true);
+          setActionError("");
           try {
             const revision = await persist(data);
             await onDone(
@@ -901,6 +918,7 @@ export function ProfileInterviewV3({
           } catch {
             setActionError("저장하지 못했어요. 다시 시도해 주세요.");
           } finally {
+            publishingRef.current = false;
             setBusy(false);
           }
         }}
@@ -916,6 +934,7 @@ export function ProfileInterviewV3({
       <Button
         variant="ghost"
         className="mt-3 w-full"
+        disabled={busy}
         onClick={() =>
           void advance({ ...data, stage: data.mode === "manual" ? "start" : "review" })
         }
