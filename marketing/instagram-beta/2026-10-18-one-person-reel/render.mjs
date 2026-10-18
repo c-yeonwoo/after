@@ -44,7 +44,10 @@ const slides = [
 ];
 const mediaData = new Map();
 for (const name of ["01-crowded-mixer.png", "02-one-person.png", "03-product-example.png"]) {
-  mediaData.set(name, `data:image/png;base64,${(await readFile(join(folder, name))).toString("base64")}`);
+  mediaData.set(
+    name,
+    `data:image/png;base64,${(await readFile(join(folder, name))).toString("base64")}`,
+  );
 }
 
 const escapeHtml = (value) =>
@@ -53,7 +56,8 @@ const htmlFor = (slide) => {
   const photo = slide.image
     ? `<img class="${slide.theme === "product" ? "product" : "background"}" src="${mediaData.get(slide.image)}" />`
     : "";
-  const label = slide.theme === "product" ? "<div class=\"disclosure\">소개장 예시 · 가상 프로필</div>" : "";
+  const label =
+    slide.theme === "product" ? '<div class="disclosure">소개장 예시 · 가상 프로필</div>' : "";
   return `<!doctype html><html lang="ko"><meta charset="utf-8"><style>
     *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden}
     body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#FAF8F3}
@@ -83,7 +87,10 @@ const htmlFor = (slide) => {
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({
+    viewport: { width: 1080, height: 1920 },
+    deviceScaleFactor: 1,
+  });
   for (const slide of slides) {
     await page.setContent(htmlFor(slide));
     await page.evaluate(() => Promise.all([...document.images].map((image) => image.decode())));
@@ -102,8 +109,9 @@ const inputs = durations.flatMap((duration, index) => [
   "-i",
   join(framesDir, `${slides[index].id}.png`),
 ]);
-const filters = slides.map((_, index) =>
-  `[${index}:v]fps=30,zoompan=z='min(zoom+0.00035,1.045)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30,setsar=1,format=yuv420p[v${index}]`,
+const filters = slides.map(
+  (_, index) =>
+    `[${index}:v]fps=30,zoompan=z='min(zoom+0.00035,1.045)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30,setsar=1,format=yuv420p[v${index}]`,
 );
 filters.push(
   "[v0][v1]xfade=transition=fade:duration=0.3:offset=3.9[v01]",
@@ -113,11 +121,40 @@ filters.push(
 const output = join(folder, "after-one-person-beta-reel.mp4");
 execFileSync(
   "ffmpeg",
-  ["-hide_banner", "-loglevel", "error", "-y", ...inputs, "-filter_complex", filters.join(";"), "-map", "[out]", "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", output],
+  [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    ...inputs,
+    "-filter_complex",
+    filters.join(";"),
+    "-map",
+    "[out]",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "fast",
+    "-crf",
+    "20",
+    "-pix_fmt",
+    "yuv420p",
+    "-movflags",
+    "+faststart",
+    "-an",
+    output,
+  ],
   { stdio: "inherit" },
 );
-await writeFile(join(folder, "after-one-person-beta-reel-cover.png"), await readFile(join(framesDir, "01-hook.png")));
-const metadata = JSON.parse(execFileSync("ffprobe", ["-v", "quiet", "-show_streams", "-show_format", "-of", "json", output], { encoding: "utf8" }));
+await writeFile(
+  join(folder, "after-one-person-beta-reel-cover.png"),
+  await readFile(join(framesDir, "01-hook.png")),
+);
+const metadata = JSON.parse(
+  execFileSync("ffprobe", ["-v", "quiet", "-show_streams", "-show_format", "-of", "json", output], {
+    encoding: "utf8",
+  }),
+);
 const video = metadata.streams.find((stream) => stream.codec_type === "video");
 assert.equal(video.width, 1080);
 assert.equal(video.height, 1920);
