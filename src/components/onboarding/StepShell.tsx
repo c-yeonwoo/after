@@ -1,7 +1,8 @@
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { Logo } from "@/components/Logo";
 import { useKeepActionsVisible, useKeyboardOpen } from "@/lib/keyboard";
+import { useContentArrival } from "@/lib/contentMotion";
 
 export function StepShell({
   step,
@@ -13,6 +14,7 @@ export function StepShell({
   children,
   footer,
   progressLabel,
+  transitionKey,
 }: {
   step: number;
   total: number;
@@ -23,6 +25,7 @@ export function StepShell({
   children: ReactNode;
   footer?: ReactNode;
   progressLabel?: string;
+  transitionKey?: string;
 }) {
   /*
     가입은 모든 단계가 "입력하고 → 아래 버튼을 누른다" 구조다. 키보드가 뜨면
@@ -33,6 +36,13 @@ export function StepShell({
   useKeepActionsVisible(endRef, [step]);
   // 키보드가 떠 있으면 하단 고정 영역을 접는다 — 그만큼 본문이 넓어진다.
   const keyboardOpen = useKeyboardOpen();
+  const mainRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const contentKey = transitionKey ?? `${step}:${eyebrow}`;
+  useContentArrival(contentRef, contentKey);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [contentKey]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
@@ -65,19 +75,26 @@ export function StepShell({
         </div>
       </header>
 
-      <main className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-8 pb-10">
-        <div className="flex min-h-5 items-center justify-between gap-3">
-          <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
-          {eyebrowAction}
+      <main
+        ref={mainRef}
+        className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-6 pb-8"
+      >
+        <div ref={contentRef}>
+          <div className="flex min-h-5 items-center justify-between gap-3">
+            <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
+            {eyebrowAction}
+          </div>
+          <h1 className="mt-2 break-keep text-balance text-[clamp(1.5rem,7vw,1.75rem)] leading-[1.3] font-semibold tracking-[-0.03em]">
+            {title}
+          </h1>
+          {description ? (
+            <p className="mt-2.5 break-keep text-sm leading-relaxed text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+          <div className="mt-6">{children}</div>
+          <div ref={endRef} aria-hidden="true" />
         </div>
-        <h1 className="mt-2 break-keep text-balance text-[1.75rem] leading-[1.3] font-semibold tracking-[-0.035em]">
-          {title}
-        </h1>
-        {description ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
-        <div className="mt-8">{children}</div>
-        <div ref={endRef} aria-hidden="true" />
       </main>
 
       {footer && !keyboardOpen ? (

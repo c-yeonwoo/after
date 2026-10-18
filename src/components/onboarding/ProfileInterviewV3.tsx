@@ -331,6 +331,7 @@ export function ProfileInterviewV3({
       step={progressStep}
       total={progressTotal}
       progressLabel="소개장 작성"
+      transitionKey={data.stage}
       eyebrow={eyebrow}
       eyebrowAction={indicator}
       title={title}

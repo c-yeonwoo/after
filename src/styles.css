@@ -120,6 +120,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-scrim: var(--scrim);
   --color-ring-offset-background: var(--background);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -185,6 +186,9 @@
   /* 입력과 버튼은 같은 12px 모서리로 묶는다. */
   --radius-field-value: 0.75rem;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-feedback: 140ms;
+  --motion-arrive: 200ms;
+  --motion-exit: 140ms;
 
   /* 브랜드 원천 값: 뉴트럴 70 · 잉크/그린 25 · 코럴 5 */
   --brand-50: oklch(0.9793 0.007 88.6); /* #FAF8F3 Warm Paper */
@@ -215,6 +219,7 @@
 
   --surface: oklch(1 0 0);
   --surface-subtle: var(--brand-100);
+  --scrim: oklch(0.18 0.015 169 / 48%);
   --success: oklch(0.492 0.06 164); /* #3F6C58 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
 
@@ -272,6 +277,7 @@
 }
 
 .dark {
+  --scrim: oklch(0.12 0.012 169 / 64%);
   color-scheme: dark;
 
   /* 밤 종이 위의 같은 잉크 */
@@ -445,6 +451,18 @@
     font-weight: 600;
     letter-spacing: -0.018em;
     text-wrap: balance;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--primary-strong);
   }
 
   /* 키보드 포커스는 어떤 요소에서도 항상 뚜렷하게 보이도록 */
@@ -465,14 +483,36 @@
 
 @utility pressable {
   transition:
-    transform 140ms var(--ease-out),
-    opacity 140ms ease-out;
+    transform var(--motion-feedback) var(--ease-out),
+    background-color var(--motion-feedback) ease-out,
+    border-color var(--motion-feedback) ease-out,
+    color var(--motion-feedback) ease-out,
+    opacity var(--motion-feedback) ease-out;
   &:active:not(:disabled):not([aria-disabled="true"]) {
     transform: scale(0.98);
   }
 }
 
+.landing-photo {
+  animation: after-photo-arrive 420ms var(--ease-out);
+}
+
+@keyframes after-photo-arrive {
+  from {
+    clip-path: inset(0 0 12% 0 round 1rem);
+    opacity: 0.86;
+  }
+  to {
+    clip-path: inset(0 round 1rem);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .landing-photo {
+    animation: none;
+  }
+
   .pressable {
     transition: none;
     &:active {

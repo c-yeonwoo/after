@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>애프터 · 다양한 목소리로</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang&display=swap"
+    />
+    <style>
+      :root {
+        --paper: #faf8f3;
+        --ink: #23302b;
+        --pine: #38594f;
+        --coral: #ac5147;
+        --cream: #eeeae1;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: "Pretendard Variable", Pretendard, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .canvas {
+        position: relative;
+        width: 1080px;
+        height: 1350px;
+        padding: 76px;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--paper);
+      }
+      .canvas.active {
+        display: flex;
+      }
+      .dark {
+        color: var(--paper);
+        background: var(--pine);
+      }
+      .logo {
+        font-size: 76px;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+      .logo b {
+        color: var(--coral);
+      }
+      .dark .logo b {
+        color: #e9a49b;
+      }
+      h1,
+      h2,
+      p {
+        margin: 0;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      h1,
+      h2 {
+        font-weight: 650;
+        letter-spacing: -0.035em;
+        text-wrap: balance;
+      }
+      .meta {
+        font-size: 34px;
+        line-height: 1.5;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 30px;
+      }
+      .bottom {
+        margin-top: auto;
+        border-top: 1px solid currentColor;
+        padding-top: 28px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        font-size: 32px;
+        line-height: 1.5;
+      }
+      .poster h1 {
+        margin-top: 160px;
+        font-size: 136px;
+        line-height: 1.18;
+      }
+      .poster .promise {
+        margin-top: 65px;
+        font-size: 46px;
+        line-height: 1.6;
+      }
+      .interview .question {
+        margin-top: 112px;
+        font-size: 80px;
+        line-height: 1.28;
+      }
+      .interview .answer {
+        margin-top: 70px;
+        font-family: "Gowun Batang", serif;
+        font-size: 65px;
+        line-height: 1.65;
+        letter-spacing: -0.025em;
+      }
+      .interview .note {
+        margin-top: 56px;
+        font-size: 40px;
+        line-height: 1.5;
+      }
+      .carousel h1 {
+        margin-top: 96px;
+        font-size: 84px;
+        line-height: 1.22;
+      }
+      .input-example {
+        margin-top: 70px;
+        padding: 42px 0;
+        border-top: 1px solid currentColor;
+        border-bottom: 1px solid currentColor;
+      }
+      .input-example p {
+        margin-top: 26px;
+        font-size: 54px;
+        line-height: 1.6;
+      }
+      .carousel .story {
+        margin-top: 48px;
+        font-size: 54px;
+        line-height: 1.5;
+      }
+      .carousel .explain {
+        margin-top: 36px;
+        font-size: 38px;
+        line-height: 1.5;
+      }
+      .verbs {
+        margin-top: 58px;
+        display: grid;
+        gap: 8px;
+        font-size: 98px;
+        line-height: 1.25;
+        font-weight: 600;
+        letter-spacing: -0.035em;
+      }
+      .verbs span:last-child {
+        color: var(--coral);
+      }
+      .proof {
+        background: #fff;
+      }
+      .proof h1 {
+        margin-top: 48px;
+        font-size: 80px;
+        line-height: 1.22;
+      }
+      .proof .product {
+        margin-top: 28px;
+        width: 100%;
+        height: 830px;
+        object-fit: contain;
+        object-position: center top;
+      }
+      .proof .bottom {
+        border: 0;
+        padding-top: 10px;
+      }
+      .letter {
+        padding: 86px;
+        background: var(--cream);
+      }
+      .letter .letter-copy {
+        margin-top: 135px;
+      }
+      .letter h1 {
+        font-family: "Gowun Batang", serif;
+        font-size: 65px;
+        line-height: 1.65;
+        font-weight: 400;
+        letter-spacing: -0.025em;
+      }
+      .letter .letter-copy p {
+        margin-top: 54px;
+        font-size: 45px;
+        line-height: 1.8;
+      }
+      .reel {
+        height: 1920px;
+        padding: 160px 88px 245px;
+      }
+      .reel h1 {
+        margin-top: 230px;
+        font-size: 112px;
+        line-height: 1.25;
+      }
+      .reel .body {
+        margin-top: 90px;
+        font-size: 62px;
+        line-height: 1.65;
+      }
+      .reel .bottom {
+        font-size: 38px;
+      }
+      .reel .sample-label {
+        margin-top: 60px;
+        font-size: 32px;
+        line-height: 1.5;
+      }
+      .reel .reel-question {
+        margin-top: 75px;
+        font-size: 42px;
+        line-height: 1.5;
+      }
+      .reel .body.serif {
+        font-family: "Gowun Batang", serif;
+        font-size: 65px;
+      }
+      .reel-close {
+        color: var(--paper);
+        background: var(--ink);
+      }
+      .reel-close img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.3;
+      }
+      .reel-close > :not(img) {
+        position: relative;
+      }
+      .reel-close h1 {
+        margin-top: 290px;
+      }
+      .reel-close .body {
+        font-size: 48px;
+      }
+      .reel-close .logo b {
+        color: #e9a49b;
+      }
+      .reel-close .bottom {
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <article id="01-manifesto" class="canvas dark poster">
+      <div class="top">
+        <div class="logo">after<b>.</b></div>
+        <p class="meta">직장인을 위한 소개팅</p>
+      </div>
+      <h1>소개팅도,<br />덜 애써도<br />됐으면.</h1>
+      <p class="promise">새로운 사람을 만나는 일까지<br />또 하나의 업무가 되지 않도록.</p>
+      <footer class="bottom">
+        <span>소개글부터 만날 약속까지.</span><span>aftersunset.kr</span>
+      </footer>
+    </article>
+    <article id="02-interview" class="canvas interview">
+      <div class="logo">after<b>.</b></div>
+      <h1 class="question">퇴근 후에는<br />어떻게 보내세요?</h1>
+      <p class="answer">저녁을 먹고<br />동네를 한 바퀴 걸어요.<br />하루가 조금 정리돼요.</p>
+      <p class="note">이런 이야기가,<br />누군가에겐 대화의 시작.</p>
+      <footer class="bottom">
+        <span>가상의 답변 예시<br />회원 후기 아님</span><span>직장인 소개팅, 애프터.</span>
+      </footer>
+    </article>
+    <article id="03-carousel-1" class="canvas carousel">
+      <div class="top">
+        <div class="logo">after<b>.</b></div>
+        <span class="meta">1 / 3</span>
+      </div>
+      <h1>짧게 답해도<br />괜찮아요.</h1>
+      <div class="input-example">
+        <span class="meta">설명용 답변 예시</span>
+        <p>퇴근하고 집 근처 산책해요.<br />계획 없이 걷다 보면<br />하루가 정리돼요.</p>
+      </div>
+      <p class="explain">처음부터 잘 쓴 소개글보다,<br />내가 평소에 쓰는 말로.</p>
+      <footer class="bottom">
+        <span>다음 장에서 소개장으로 이어져요</span><span aria-hidden="true">→</span>
+      </footer>
+    </article>
+    <article id="03-carousel-2" class="canvas dark carousel">
+      <div class="top">
+        <div class="logo">after<b>.</b></div>
+        <span class="meta">2 / 3</span>
+      </div>
+      <h1>그 말 안의 장면을<br />잘 전해요.</h1>
+      <p class="meta" style="margin-top: 56px">퇴근 후에는 어떻게 보내세요?</p>
+      <p class="story">
+        퇴근 후에는 집 근처를<br />산책하는 편이에요.<br />계획 없이 걷다 보면<br />하루가 정리돼요.
+      </p>
+      <p class="explain">답변의 뜻은 그대로,<br />읽기 편한 문장으로.</p>
+      <footer class="bottom">
+        <span>설명용 편집 예시 · 실제 생성 결과 아님</span><span>→</span>
+      </footer>
+    </article>
+    <article id="03-carousel-3" class="canvas carousel">
+      <div class="top">
+        <div class="logo">after<b>.</b></div>
+        <span class="meta">3 / 3</span>
+      </div>
+      <h1>마지막 문장은,<br />내가 정해요.</h1>
+      <div class="verbs"><span>읽고.</span><span>고치고.</span><span>저장.</span></div>
+      <p class="explain">내가 저장한 소개장만<br />상대에게 보여요.</p>
+      <footer class="bottom">
+        <span>나를 과장하지 않아도 괜찮은 소개팅.</span><span>aftersunset.kr</span>
+      </footer>
+    </article>
+    <article id="04-product" class="canvas proof">
+      <div class="logo">after<b>.</b></div>
+      <h1>소개장은 이렇게.</h1>
+      <img
+        class="product"
+        src="app-profile-example.png"
+        alt="실제 서비스에서 캡처한 가상의 프로필 소개장"
+      />
+      <footer class="bottom">
+        <span>실제 서비스 화면 · 가상 프로필</span><span>aftersunset.kr</span>
+      </footer>
+    </article>
+    <article id="05-letter" class="canvas letter">
+      <div class="logo">after<b>.</b></div>
+      <div class="letter-copy">
+        <h1>어쩌면 필요한 건,<br />말을 잘하는 사람이 아니라<br />말을 잘 들어주는 소개.</h1>
+        <p>몇 가지의 선택,<br />세 가지의 이야기.<br />애프터는 거기서 시작해요.</p>
+        <p>나를 과장하지 않아도 괜찮은 소개팅,<br />함께 만들어가고 있어요.</p>
+      </div>
+      <footer class="bottom">
+        <span>하루 끝에, 설레는 시작.</span><span>aftersunset.kr</span>
+      </footer>
+    </article>
+    <article id="reel-1" class="canvas dark reel">
+      <div class="logo">after<b>.</b></div>
+      <h1>소개팅 준비가<br />또 다른 일처럼<br />느껴진다면.</h1>
+      <p class="body">퇴근한 나에게,<br />조금 덜 막막한 시작.</p>
+      <footer class="bottom"><span>직장인을 위한 소개팅, 애프터.</span></footer>
+    </article>
+    <article id="reel-2" class="canvas reel">
+      <div class="logo">after<b>.</b></div>
+      <h1>짧게 답하고.</h1>
+      <p class="reel-question">퇴근 후에는 어떻게 보내세요?</p>
+      <p class="body">퇴근하고 집 근처 산책해요.<br />계획 없이 걷다 보면<br />하루가 정리돼요.</p>
+      <p class="sample-label">가상의 답변 예시 · 회원 후기 아님</p>
+      <footer class="bottom"><span>세 가지 이야기에서 시작해요.</span></footer>
+    </article>
+    <article id="reel-3" class="canvas dark reel">
+      <div class="logo">after<b>.</b></div>
+      <h1>내 말로 읽히는<br />소개장으로.</h1>
+      <p class="reel-question">퇴근 후에는 어떻게 보내세요?</p>
+      <p class="body serif">
+        퇴근 후에는 집 근처를<br />산책하는 편이에요.<br />계획 없이 걷다 보면<br />하루가 정리돼요.
+      </p>
+      <p class="sample-label">설명용 편집 예시 · 실제 생성 결과 아님</p>
+      <footer class="bottom"><span>AI가 다듬고, 내가 확인해요.</span></footer>
+    </article>
+    <article id="reel-4" class="canvas reel reel-close">
+      <img src="reel-background.jpg" alt="" />
+      <div class="logo">after<b>.</b></div>
+      <h1>하루 끝에,<br />설레는 시작.</h1>
+      <p class="body">직장인을 위한 소개팅.<br />참여 안내는 프로필 링크에서.</p>
+      <footer class="bottom"><span>aftersunset.kr</span><span>콘셉트 이미지</span></footer>
+    </article>
+    <script>
+      const frame = new URLSearchParams(location.search).get("frame") || "01-manifesto";
+      const selected = document.getElementById(frame);
+      if (selected) selected.classList.add("active");
+    </script>
+  </body>
+</html>
