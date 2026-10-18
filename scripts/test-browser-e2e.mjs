@@ -726,6 +726,7 @@ try {
   await femalePage.getByRole("button", { name: "동네 돌아보기" }).click();
   await femalePage.getByRole("button", { name: "짧게 커피" }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("button", { name: "틈틈이 짧게", exact: true }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "영화·드라마" }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
