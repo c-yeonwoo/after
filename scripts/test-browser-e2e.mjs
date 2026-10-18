@@ -76,7 +76,9 @@ async function waitForServer(target = baseUrl) {
 }
 
 const tinyPng = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==",
+  // Valid 1×1 RGBA PNG: both chunk CRCs and the zlib checksum are verified.
+  // WebKit can reject the old corrupt IDAT even when another decoder tolerates it.
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGO4NK3pPwAHEgLqTt8GBgAAAABJRU5ErkJggg==",
   "base64",
 );
 async function createPerson(kind, gender, role, password) {
