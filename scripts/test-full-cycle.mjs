@@ -268,7 +268,7 @@ async function signup(person, i) {
     .fill(person.story.split(".")[0].slice(0, 34));
   await page.getByLabel("카드에서 보일 짧은 소개", { exact: true }).fill(person.story);
   await page.locator('textarea[id^="section-"]').first().fill(person.story);
-  await page.getByRole("button", { name: "이 소개장으로 완료", exact: true }).click();
+  await page.getByRole("button", { name: "프로필 저장하기", exact: true }).click();
   await page.waitForURL(/\/(home|profile)$/);
   paths.push(
     ...JSON.parse(sql(`select to_json(photo_paths) from profiles where id='${person.id}'`)),

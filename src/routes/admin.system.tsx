@@ -387,7 +387,7 @@ function SystemTab() {
                   <tr key={run.id}>
                     <Td className="font-semibold">
                       {run.feature === "profile_copy"
-                        ? "소개장 생성·검토"
+                        ? "프로필 생성·검토"
                         : run.feature === "profile_followup"
                           ? "인터뷰 분석"
                           : "페어 브리프"}

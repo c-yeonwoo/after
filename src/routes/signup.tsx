@@ -72,12 +72,12 @@ export const Route = createFileRoute("/signup")({
       { title: `가입 — ${BRAND.name}` },
       {
         name: "description",
-        content: "회사 이메일을 확인하고, 내 이야기를 담은 소개장을 함께 써요.",
+        content: "회사 이메일을 확인하고, 내 이야기를 담은 프로필을 함께 써요.",
       },
       { property: "og:title", content: `가입 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "회사 이메일 인증 · 소개장 인터뷰",
+        content: "회사 이메일 인증 · 프로필 인터뷰",
       },
     ],
   }),
@@ -1114,7 +1114,7 @@ function Onboarding() {
               }
             }
             await refresh();
-            toast.success(editing ? "소개장을 고쳤어요." : "소개장이 완성됐어요.");
+            toast.success(editing ? "프로필을 고쳤어요." : "프로필이 완성됐어요.");
             if (editing) navigate({ to: "/profile" });
             else if (isNative && (await pushPermission()) === "prompt") setStep(10);
             else navigate({ to: "/home" });

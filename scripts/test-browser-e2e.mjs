@@ -726,6 +726,7 @@ try {
   await femalePage.getByRole("button", { name: "동네 돌아보기" }).click();
   await femalePage.getByRole("button", { name: "짧게 커피" }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("button", { name: "틈틈이 짧게", exact: true }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "영화·드라마" }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
@@ -819,7 +820,7 @@ try {
     .getByLabel("카드에서 보일 짧은 소개")
     .fill("퇴근 후에는 동네를 걷고, 주말에 본 영화 이야기를 좋아해요.");
   await checkPage(femalePage, "interview preview mobile");
-  await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
+  await femalePage.getByRole("button", { name: "프로필 저장하기" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.notEqual(
@@ -836,17 +837,17 @@ try {
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("button", { name: "소개장 수정" }).click();
+  await femalePage.getByRole("button", { name: "프로필 수정" }).click();
   await femalePage.getByLabel("카드에서 보일 짧은 소개").fill("연락은 010-1234-5678로 주세요.");
   assert.equal(
-    await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).isDisabled(),
+    await femalePage.getByRole("button", { name: "프로필 저장하기" }).isDisabled(),
     true,
     "contact details cannot be submitted from the preview",
   );
   await femalePage
     .getByLabel("카드에서 보일 짧은 소개")
     .fill("이번에는 제가 직접 쓴 소개글이에요.");
-  await femalePage.getByRole("button", { name: "이 소개장으로 완료" }).click();
+  await femalePage.getByRole("button", { name: "프로필 저장하기" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.equal(
