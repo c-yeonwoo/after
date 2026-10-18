@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import {
   escapeXml,
@@ -16,7 +17,16 @@ import {
   validGroundedProfile,
 } from "../supabase/functions/_shared/ai-grounding";
 import { includedAnswers, newProfileInterview, ownWordsDraft } from "../src/lib/profileInterview";
-import { CHOICE_QUESTIONS, storyFromAnswers, validProfileStory } from "../src/lib/profileStory";
+import {
+  CHOICE_QUESTIONS,
+  STORY_QUESTIONS,
+  storyFromAnswers,
+  validProfileStory,
+} from "../src/lib/profileStory";
+import {
+  PROFILE_EDITOR_VOICE,
+  PROFILE_VERIFIER_VOICE,
+} from "../supabase/functions/_shared/profile-voice";
 import {
   pairSources,
   validPairIntroduction,
@@ -322,6 +332,91 @@ assert.equal(validProfileStory({ ...story, summary: "연락 010-1234-5678" }), f
 assert.equal(storyFromAnswers({ daily_life: "몰라" }).sections.length, 0);
 assert.equal(CHOICE_QUESTIONS.length, 6);
 checked += 8;
+
+// These are static prompt/contract checks, not evidence of actual model output quality.
+const composeSource = readFileSync(
+  new URL("../supabase/functions/compose-profile-v3/index.ts", import.meta.url),
+  "utf8",
+);
+const analysisPrompt =
+  composeSource.match(
+    /if \(input\.mode === "analyze"\) \{\s*const analysis = await call\(\s*ANALYSIS_MODEL,\s*`([^`]+)`/,
+  )?.[1] ?? "";
+const promptRules: { name: string; prompt: string; rules: RegExp[] }[] = [
+  {
+    name: "editor",
+    prompt: PROFILE_EDITOR_VOICE,
+    rules: [
+      /직접 적은 구체적인 장면·행동을 먼저 살리세요.*선택 칩은.*보조 단서/s,
+      /칩과 직접 쓴 답변이 같은 뜻이면 한 번만.*칩을 별도 경험처럼 반복하지 마세요/s,
+      /직접 적은 장면이 부족하면 칩의 선택 내용만.*칩 하나에서.*확장하지 마세요/s,
+      /원문에 없는 성격·감정·이유·빈도·경험/,
+    ],
+  },
+  {
+    name: "verifier",
+    prompt: PROFILE_VERIFIER_VOICE,
+    rules: [
+      /직접 적은 장면이 칩보다 앞에 살아 있는지 검사하세요.*칩은 보조 단서/s,
+      /같은 뜻의 칩과 직접 쓴 답변을 별개 사실처럼 반복하면 지적하세요/,
+      /직접 적은 장면이 부족할 때는 칩의 선택 내용만 허용하고.*확장하면 지적하세요/s,
+      /원문에 없는 성격·감정·이유·빈도·경험/,
+    ],
+  },
+  {
+    name: "analyze",
+    prompt: analysisPrompt,
+    rules: [
+      /직접 적은 구체적인 장면·행동을 선택 칩보다 우선하세요.*칩은 보조 단서/s,
+      /칩과 직접 쓴 답변이 같은 뜻이면 한 번만.*별개 사실로 반복하지 마세요/s,
+      /직접 적은 장면이 부족하면 칩의 선택 내용만.*확장하지 마세요/s,
+      /원문에 없는 성격·감정·이유·빈도·경험/,
+    ],
+  },
+];
+for (const { name, prompt, rules } of promptRules) {
+  for (const rule of rules) {
+    assert.match(prompt, rule, `${name} prompt: ${rule}`);
+    checked += 1;
+  }
+}
+
+const expectedStoryQuestions = [
+  { id: "daily_life", questionId: "daily_life_v1", question: "퇴근 후에는 어떻게 보내세요?" },
+  { id: "getting_closer", questionId: "getting_closer_v1", question: "어떤 만남에서 편해지나요?" },
+  {
+    id: "conversation",
+    questionId: "conversation_v1",
+    question: "만나면 어떤 이야기를 나누고 싶나요?",
+  },
+];
+assert.deepEqual(STORY_QUESTIONS, expectedStoryQuestions);
+const questionBlock =
+  composeSource.match(/const QUESTIONS: Record<string, string> = \{([^}]+)\};/)?.[1] ?? "";
+const composeQuestions = Object.fromEntries(
+  [...questionBlock.matchAll(/^\s*(\w+): "([^"]+)",?$/gm)].map((match) => [match[1], match[2]]),
+);
+assert.deepEqual(
+  composeQuestions,
+  Object.fromEntries(expectedStoryQuestions.map(({ id, question }) => [id, question])),
+);
+const publicStoryBody =
+  composeSource.match(/function publicStory\([^]*?\n\}\n\nDeno\.serve/)?.[0] ?? "";
+for (const field of [
+  /version: 3/,
+  /id: s\.id/,
+  /questionId: `\$\{s\.id\}_v1`/,
+  /questionVersion: 1/,
+  /question: QUESTIONS\[s\.id\]/,
+  /answer: s\.sentences\.map\(\(sentence\) => sentence\.text\.trim\(\)\)\.join\(" "\)/,
+]) {
+  assert.match(publicStoryBody, field, `public story compatibility: ${field}`);
+}
+assert.match(composeSource, /const VERSION = "profile-story-v3-7"/);
+assert.match(composeSource, /const hash = await sourceHash\(\{\s*material,\s*version: VERSION/);
+assert.match(composeSource, /p_prompt_version: VERSION/);
+assert.match(composeSource, /prompt_version: VERSION/);
+checked += 1 + 1 + 6 + 4;
 
 const briefInterview = newProfileInterview();
 briefInterview.profile.eveningNote = "퇴근 후 동네를 걸어요";
