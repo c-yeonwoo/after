@@ -1037,9 +1037,16 @@ try {
   );
   sql(`insert into public.profile_interview_drafts(user_id,revision,data)
     values('${female.id}',1,jsonb_build_object(
-      'version',2,'mode','interview','profile',jsonb_build_object(
-        'eveningNote','예전에는 퇴근 후 책을 읽었어요'
-      )
+      'version',2,'stage','start','mode','interview',
+      'profile',jsonb_build_object(
+        'headline','','eveningNote','예전에는 퇴근 후 책을 읽었어요',
+        'knownAs','','interests','[]'::jsonb,'details','{}'::jsonb,
+        'matchTags','[]'::jsonb,'matchNote','','topics','[]'::jsonb,'topicNote',''
+      ),
+      'intro','','included',jsonb_build_array('eveningNote'),
+      'skipped','[]'::jsonb,'alternatives','[]'::jsonb,
+      'followupIds','[]'::jsonb,'followupAnswers','{}'::jsonb,
+      'followupIndex',0,'analyzed',false,'suggestedTopics','[]'::jsonb
     ))
     on conflict (user_id) do update set revision=1,data=excluded.data`);
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
