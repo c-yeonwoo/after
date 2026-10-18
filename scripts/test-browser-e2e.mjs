@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 
 import AxeBuilder from "@axe-core/playwright";
@@ -28,7 +29,18 @@ if (
   throw new Error("Browser E2E requires local Supabase only");
 }
 
-const baseUrl = "http://127.0.0.1:4174";
+const testPort = Number(process.env.AFTER_TEST_PORT ?? 4174);
+assert.ok(Number.isInteger(testPort) && testPort >= 1024 && testPort <= 65535);
+const baseUrl = `http://127.0.0.1:${testPort}`;
+await new Promise((resolve, reject) => {
+  const probe = createServer();
+  probe.once("error", () =>
+    reject(new Error(`Port ${testPort} is occupied; set AFTER_TEST_PORT to a free port.`)),
+  );
+  probe.listen(testPort, "127.0.0.1", () =>
+    probe.close((error) => (error ? reject(error) : resolve())),
+  );
+});
 const koreanBrowser = { locale: "ko-KR", timezoneId: "Asia/Seoul" };
 const service = createClient(apiUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -203,7 +215,7 @@ try {
       "--host",
       "127.0.0.1",
       "--port",
-      "4174",
+      String(testPort),
       "--strictPort",
       "--force",
     ],
@@ -229,10 +241,18 @@ try {
   await publicPage.goto(baseUrl);
   await publicPage.getByRole("link", { name: "로그인" }).waitFor();
   await checkPage(publicPage, "landing mobile");
-  for (const width of [360, 768, 1440]) {
+  for (const width of [320, 360, 768, 1440]) {
     await publicPage.setViewportSize({ width, height: 900 });
     await checkPage(publicPage, `landing ${width}`, false);
   }
+  await publicPage.emulateMedia({ reducedMotion: "reduce" });
+  assert.equal(
+    await publicPage
+      .locator(".landing-photo")
+      .evaluate((element) => getComputedStyle(element).animationName),
+    "none",
+    "reduced motion removes the landing photo reveal",
+  );
   await publicPage.goto(`${baseUrl}/support`);
   await publicPage.getByText("1:1 문의").waitFor();
   await checkPage(publicPage, "public support");
@@ -615,6 +635,36 @@ try {
     "browser opened exactly one introduction",
   );
   await checkPage(malePage, "male opened introduction");
+  await malePage.setViewportSize({ width: 320, height: 568 });
+  await malePage.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
+  await malePage.getByRole("button", { name: "더보기", exact: true }).click();
+  await malePage.getByRole("menuitem", { name: "신고하기", exact: true }).click();
+  const reportDialog = malePage.getByRole("alertdialog");
+  await reportDialog.waitFor();
+  assert.equal(
+    await reportDialog.evaluate((element) => getComputedStyle(element).animationName),
+    "none",
+    "reduced motion overrides the Radix open-state animation",
+  );
+  assert.equal(
+    await reportDialog.evaluate((element) => getComputedStyle(element).transitionProperty),
+    "none",
+    "viewport changes never animate dialog layout properties",
+  );
+  assert.equal(
+    await malePage
+      .locator(".bg-scrim")
+      .evaluate((element) => getComputedStyle(element).animationName),
+    "none",
+    "reduced motion also removes the scrim animation",
+  );
+  const reportBox = await reportDialog.boundingBox();
+  assert.ok(reportBox.x >= 19 && reportBox.x + reportBox.width <= 301);
+  assert.ok(reportBox.y >= 0 && reportBox.y + reportBox.height <= 568);
+  await reportDialog.getByRole("button", { name: "취소", exact: true }).click();
+  await reportDialog.waitFor({ state: "hidden" });
+  await malePage.emulateMedia({ reducedMotion: "no-preference", colorScheme: "light" });
+  await malePage.setViewportSize({ width: 390, height: 844 });
   await malePage.getByRole("button", { name: "만남 티켓 쓰기" }).click();
   await malePage.getByRole("heading", { name: "언제 만날까요?" }).waitFor();
   await malePage.getByRole("group", { name: "날짜" }).getByRole("button").first().click();

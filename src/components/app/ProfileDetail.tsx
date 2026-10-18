@@ -39,7 +39,7 @@ export type ProfileView = {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-t border-border pt-5">
+    <section className="border-t border-border pt-4">
       <h3 className="text-base leading-snug font-semibold text-foreground">{title}</h3>
       <div className="mt-3">{children}</div>
     </section>
@@ -110,13 +110,13 @@ function InterviewAnswer({
   section: NonNullable<ProfileView["story"]>["sections"][number];
 }) {
   return (
-    <section className="border-t border-border pt-5">
-      <h3 className="break-keep text-sm leading-relaxed font-semibold text-muted-foreground">
+    <section className="border-t border-border pt-4">
+      <h3 className="break-keep text-sm leading-[1.45] font-semibold text-muted-foreground">
         {section.question}
       </h3>
       <p
         data-selectable
-        className="mt-2 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
+        className="mt-2 break-keep break-words text-pretty text-base leading-[1.6] whitespace-pre-line text-foreground"
       >
         {section.answer}
       </p>
@@ -151,7 +151,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
   return (
     <article className="space-y-6 pb-4">
       <header>
-        <h2 className="text-[1.875rem] leading-[1.25] font-semibold tracking-[-0.035em] text-foreground">
+        <h2 className="text-[1.875rem] leading-[1.25] font-semibold tracking-[-0.03em] text-foreground">
           {p.name}
           {p.age ? (
             <span className="ml-2 font-sans text-base font-medium text-muted-foreground">
@@ -165,7 +165,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       </header>
 
       {p.headline ? (
-        <blockquote className="border-l-2 border-brand-blush pl-4">
+        <blockquote className="border-l border-brand-blush pl-3.5">
           <p
             data-selectable
             className="serif break-keep break-words text-pretty text-[1.1875rem] leading-[1.5] text-foreground"

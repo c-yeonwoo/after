@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, Home, MessageCircle, User } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
+import { useContentArrival } from "@/lib/contentMotion";
 
 /**
  * 탭 라벨은 성별과 무관하게 "소개" 하나로 둔다.
@@ -77,6 +78,7 @@ export function AppScreen({
     요소다. 네이티브 화면 전환은 항상 맨 위에서 시작하므로 그 쪽에 맞춘다.
   */
   const mainRef = useRef<HTMLElement>(null);
+  useContentArrival(mainRef, pathname, !fill);
   useEffect(() => {
     /*
       다음 프레임에 한 번 더 되돌린다.
@@ -188,7 +190,7 @@ export function AppScreen({
                   >
                     <span
                       className={cn(
-                        "flex h-7 w-12 items-center justify-center rounded-full",
+                        "flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none",
                         active && "bg-surface-subtle",
                       )}
                     >

@@ -61,7 +61,7 @@ function Landing() {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       <header
-        className="z-20 shrink-0 bg-background px-6 pb-3"
+        className="z-20 shrink-0 bg-background px-5 pb-3"
         style={{ paddingTop: "var(--safe-top)" }}
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
@@ -75,9 +75,9 @@ function Landing() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6">
-        <section className="pt-7 pb-12">
-          <h1 className="break-keep text-[clamp(1.875rem,8.3vw,2.25rem)] leading-[1.25] font-semibold tracking-[-0.045em] text-foreground">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5">
+        <section className="pt-6 pb-10">
+          <h1 className="break-keep text-[clamp(1.875rem,8.3vw,2.25rem)] leading-[1.25] font-semibold tracking-[-0.03em] text-foreground">
             하루 끝에,
             <br />
             <span className="text-primary-strong">설레는 시작.</span>
@@ -87,7 +87,7 @@ function Landing() {
             <br />
             소개부터 만날 약속까지 함께해요.
           </p>
-          <div className="mt-6 overflow-hidden rounded-[1.25rem] bg-ink">
+          <div className="landing-photo mt-6 overflow-hidden rounded-surface bg-ink">
             <img
               src="/brand/after-hours.jpg"
               alt=""
@@ -105,18 +105,14 @@ function Landing() {
           </p>
         </section>
 
-        <section aria-labelledby="sample-title" className="pb-12">
-          <p className="text-xs font-medium text-primary-strong">한 번에 한 사람</p>
-          <h2
-            id="sample-title"
-            className="mt-2 text-2xl leading-snug font-semibold text-foreground"
-          >
+        <section aria-labelledby="sample-title" className="pb-10">
+          <h2 id="sample-title" className="text-2xl leading-snug font-semibold text-foreground">
             조건 너머의 이야기를 읽어요.
           </h2>
           <SampleIntro />
         </section>
 
-        <section aria-labelledby="steps-title" className="border-t border-border py-10">
+        <section aria-labelledby="steps-title" className="border-t border-border py-8">
           <h2 id="steps-title" className="text-2xl font-semibold text-foreground">
             소개에서 약속까지.
           </h2>
@@ -142,7 +138,7 @@ function Landing() {
           </ol>
         </section>
 
-        <section aria-labelledby="cost-title" className="border-t border-border py-10">
+        <section aria-labelledby="cost-title" className="border-t border-border py-8">
           <h2 id="cost-title" className="text-base font-semibold text-foreground">
             무료 베타 안내
           </h2>
@@ -202,7 +198,7 @@ function Landing() {
  */
 function SampleIntro() {
   return (
-    <figure className="mt-5 rounded-[1.25rem] border border-border bg-card px-5 pt-5 pb-6">
+    <figure className="mt-5 rounded-surface border border-border bg-card p-5">
       <figcaption className="text-xs font-medium text-muted-foreground">
         소개 예시 · 가상의 프로필
       </figcaption>
@@ -210,15 +206,24 @@ function SampleIntro() {
         지원 <span className="font-sans text-base font-medium text-muted-foreground">31</span>
       </p>
       <p className="mt-0.5 text-sm text-muted-foreground">회계</p>
-      <blockquote className="mt-4 border-l-2 border-brand-blush pl-3.5">
-        <p className="serif break-keep text-pretty text-lg leading-[1.45] text-foreground">
-          퇴근하고 한강까지 뛰는 게 요즘 제일 좋아하는 시간이에요.
-        </p>
-      </blockquote>
-      <p className="mt-4 break-keep text-pretty text-[0.9375rem] leading-[1.55] text-foreground/80">
-        처음 만나는 자리라면 길게 걷기보다 가볍게 저녁을 먹으며 이야기하는 쪽이 편해요. 최근에 본
-        전시 이야기를 나누고 싶어요.
-      </p>
+      <dl className="mt-5 space-y-5">
+        <div>
+          <dt className="text-xs leading-relaxed font-medium text-muted-foreground">
+            퇴근 후에는 어떻게 보내세요?
+          </dt>
+          <dd className="serif mt-2 break-keep text-pretty text-lg leading-[1.5] text-foreground">
+            퇴근하고 한강까지 뛰는 게 요즘 제일 좋아하는 시간이에요.
+          </dd>
+        </div>
+        <div className="border-t border-border pt-4">
+          <dt className="text-xs leading-relaxed font-medium text-muted-foreground">
+            어떤 만남에서 편해지나요?
+          </dt>
+          <dd className="mt-2 break-keep text-pretty text-[0.9375rem] leading-[1.6] text-foreground">
+            처음 만나는 자리라면 길게 걷기보다 가볍게 저녁을 먹으며 이야기하는 쪽이 편해요.
+          </dd>
+        </div>
+      </dl>
     </figure>
   );
 }
