@@ -1011,6 +1011,7 @@ try {
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "프로필 수정" }).click();
   await femalePage.getByLabel("카드에서 보일 짧은 소개").fill("연락은 010-1234-5678로 주세요.");
@@ -1052,10 +1053,23 @@ try {
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "내 이야기를 시작해 볼까요?" }).waitFor();
+  const delayedDraftSave = "**/rest/v1/rpc/save_profile_interview_draft";
+  await femalePage.route(delayedDraftSave, async (route) => {
+    await delay(250);
+    await route.continue();
+  });
   await femalePage.getByRole("button", { name: "시작하기", exact: true }).click();
-  for (let page = 0; page < 3; page += 1) {
+  // Advancing persists asynchronously; wait for the distinct choice group so
+  // consecutive clicks cannot hit the previous screen's still-visible button.
+  for (const question of [
+    "퇴근 후 시간이 생기면 주로 어떻게 보내세요?",
+    "일하는 날에는 어떻게 연락하는 편인가요?",
+    "어떤 순간에 상대와 가까워졌다고 느끼나요?",
+  ]) {
+    await femalePage.getByRole("group", { name: question, exact: true }).waitFor();
     await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   }
   await femalePage
@@ -1071,6 +1085,7 @@ try {
     publicStoryBeforeV2,
     "migrating a private v2 draft leaves the published story intact",
   );
+  await femalePage.unroute(delayedDraftSave);
   await femalePage.close();
 
   const adminPage = await (
