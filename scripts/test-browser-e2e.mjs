@@ -712,6 +712,9 @@ try {
 
   // An existing member can revise her introduction without changing the
   // public copy until the final confirmation. A reload resumes the draft.
+  const publicProfileBeforeInterview = sql(`select row_to_json(p)::text from (
+    select headline,intro,profile_story from public.profiles where id='${female.id}'
+  ) p`);
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
@@ -730,19 +733,51 @@ try {
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "영화·드라마" }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage
+    .getByRole("heading", { name: "최근 퇴근 후 기억에 남는 작은 순간이 있나요?" })
+    .waitFor();
+  await femalePage.getByText("집에 돌아오는 길처럼, 떠오르는 장면 하나만 적어 주세요.").waitFor();
+  assert.equal(await femalePage.getByText("동네 돌아보기", { exact: true }).count(), 0);
+  assert.equal(await femalePage.getByText("고른 답:", { exact: false }).count(), 0);
   await checkPage(femalePage, "interview question mobile");
   await femalePage.getByLabel("내 답변").fill("퇴근하면 동네를 천천히 걸어요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
-  await femalePage.getByRole("heading", { name: "어떤 만남에서 편해지나요?" }).waitFor();
+  await femalePage
+    .getByRole("heading", { name: "누군가와 어색함이 풀렸던 순간이 있나요?" })
+    .waitFor();
+  await femalePage.getByText("함께 있던 때나 오간 말을 한두 문장으로 적어도 좋아요.").waitFor();
+  assert.equal(await femalePage.getByText("짧게 커피", { exact: true }).count(), 0);
   await femalePage.getByLabel("내 답변").fill("처음에는 서로 이야기를 듣는 편이에요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
-  await femalePage.getByRole("heading", { name: "만나면 어떤 이야기를 나누고 싶나요?" }).waitFor();
+  await femalePage
+    .getByRole("heading", { name: "요즘 누군가에게 들려주고 싶은 이야기가 있나요?" })
+    .waitFor();
+  await femalePage.getByText("최근 본 것처럼 가벼운 이야기부터 적어도 좋아요.").waitFor();
+  assert.equal(await femalePage.getByText("영화·드라마", { exact: true }).count(), 0);
   await femalePage.getByLabel("내 답변").fill("주말에 본 영화를 이야기하고 싶어요");
+  await femalePage.getByText("저장 중…").waitFor();
+  await femalePage.getByText("저장됨", { exact: true }).waitFor();
+  await femalePage.getByRole("button", { name: "이전", exact: true }).click();
+  await femalePage
+    .getByRole("heading", { name: "누군가와 어색함이 풀렸던 순간이 있나요?" })
+    .waitFor();
+  assert.equal(
+    await femalePage.getByLabel("내 답변").inputValue(),
+    "처음에는 서로 이야기를 듣는 편이에요",
+  );
+  assert.equal(
+    sql(`select data->>'stage' from public.profile_interview_drafts where user_id='${female.id}'`),
+    "story1",
+    "previous story stage is saved",
+  );
+  await femalePage.getByRole("button", { name: "다음 이야기" }).click();
+  await femalePage
+    .getByRole("heading", { name: "요즘 누군가에게 들려주고 싶은 이야기가 있나요?" })
+    .waitFor();
   assert.equal(
     await femalePage.getByLabel("내 답변").inputValue(),
     "주말에 본 영화를 이야기하고 싶어요",
   );
-  await femalePage.getByText("저장 중…").waitFor();
   await femalePage.getByText("저장됨", { exact: true }).waitFor();
   assert.equal(
     await femalePage.getByLabel("내 답변").inputValue(),
@@ -767,6 +802,13 @@ try {
     "unpublished answers do not change the public headline",
   );
   assert.equal(
+    sql(`select row_to_json(p)::text from (
+      select headline,intro,profile_story from public.profiles where id='${female.id}'
+    ) p`),
+    publicProfileBeforeInterview,
+    "unpublished answers do not change the existing public copy or story",
+  );
+  assert.equal(
     sql(`select job from public.profiles where id='${female.id}'`),
     "제품 기획자",
     "unpublished basics do not change the public job",
@@ -787,11 +829,20 @@ try {
   );
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("heading", { name: "만나면 어떤 이야기를 나누고 싶나요?" }).waitFor();
+  await femalePage
+    .getByRole("heading", { name: "요즘 누군가에게 들려주고 싶은 이야기가 있나요?" })
+    .waitFor();
   assert.equal(
     sql(`select data->>'stage' from public.profile_interview_drafts where user_id='${female.id}'`),
     "story2",
     "editing basics does not reset the interview",
+  );
+  assert.equal(
+    sql(
+      `select data->>'version' from public.profile_interview_drafts where user_id='${female.id}'`,
+    ),
+    "3",
+    "v3 draft version is retained after reload",
   );
   await femalePage.getByLabel("내 답변").waitFor();
   assert.equal(
@@ -912,6 +963,38 @@ try {
     "서비스 기획자",
     "confirmed interview publishes private basic edits",
   );
+  const publishedSections = JSON.parse(
+    sql(`select profile_story->'sections' from public.profiles where id='${female.id}'`),
+  );
+  assert.deepEqual(
+    publishedSections.map(({ id, questionId, questionVersion, question }) => ({
+      id,
+      questionId,
+      questionVersion,
+      question,
+    })),
+    [
+      {
+        id: "daily_life",
+        questionId: "daily_life_v1",
+        questionVersion: 1,
+        question: "퇴근 후에는 어떻게 보내세요?",
+      },
+      {
+        id: "getting_closer",
+        questionId: "getting_closer_v1",
+        questionVersion: 1,
+        question: "어떤 만남에서 편해지나요?",
+      },
+      {
+        id: "conversation",
+        questionId: "conversation_v1",
+        questionVersion: 1,
+        question: "만나면 어떤 이야기를 나누고 싶나요?",
+      },
+    ],
+    "published question identities stay unchanged by the input-only prompts",
+  );
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
   await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
@@ -933,6 +1016,40 @@ try {
     sql(`select intro from public.profiles where id='${female.id}'`),
     "이번에는 제가 직접 쓴 소개글이에요.",
     "manual editing works without generating a new introduction",
+  );
+
+  // A locally seeded v2 draft still opens through the existing migration path.
+  const publicStoryBeforeV2 = sql(
+    `select profile_story::text from public.profiles where id='${female.id}'`,
+  );
+  sql(`insert into public.profile_interview_drafts(user_id,revision,data)
+    values('${female.id}',1,jsonb_build_object(
+      'version',2,'mode','interview','profile',jsonb_build_object(
+        'eveningNote','예전에는 퇴근 후 책을 읽었어요'
+      )
+    ))
+    on conflict (user_id) do update set revision=1,data=excluded.data`);
+  await femalePage.goto(`${baseUrl}/signup?edit=1`);
+  await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "내 이야기를 시작해 볼까요?" }).waitFor();
+  await femalePage.getByRole("button", { name: "시작하기", exact: true }).click();
+  for (let page = 0; page < 3; page += 1) {
+    await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  }
+  await femalePage
+    .getByRole("heading", { name: "최근 퇴근 후 기억에 남는 작은 순간이 있나요?" })
+    .waitFor();
+  assert.equal(
+    await femalePage.getByLabel("내 답변").inputValue(),
+    "예전에는 퇴근 후 책을 읽었어요",
+    "v2 answer is available in the new input screen",
+  );
+  assert.equal(
+    sql(`select profile_story::text from public.profiles where id='${female.id}'`),
+    publicStoryBeforeV2,
+    "migrating a private v2 draft leaves the published story intact",
   );
   await femalePage.close();
 

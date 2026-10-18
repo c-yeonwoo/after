@@ -23,6 +23,7 @@ import {
   type ProfileInterviewV3Data,
 } from "@/lib/profileInterviewV3";
 import { hasContactDetail } from "@/lib/profileInterview";
+import { PROFILE_INTERVIEW_PROMPTS } from "@/lib/profileInterviewPrompts";
 import { toProfileView } from "@/lib/profileView";
 import {
   CHOICE_QUESTIONS,
@@ -522,20 +523,12 @@ export function ProfileInterviewV3({
   if (data.stage.startsWith("story")) {
     const index = Number(data.stage.slice(-1));
     const question = STORY_QUESTIONS[index];
+    const prompt = PROFILE_INTERVIEW_PROMPTS[question.id];
     const value = data.answers[question.id];
-    const selected =
-      index === 0
-        ? data.choices.rhythm
-        : index === 1
-          ? data.choices.first_date
-          : data.choices.topics;
     return shell(
-      question.question,
-      "한두 문장이어도 충분해요.",
+      prompt.question,
+      prompt.guide,
       <>
-        {selected?.length ? (
-          <p className="mb-4 text-sm text-muted-foreground">고른 답: {selected.join(" · ")}</p>
-        ) : null}
         <label htmlFor="story-answer" className="sr-only">
           내 답변
         </label>
