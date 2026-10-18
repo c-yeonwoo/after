@@ -511,11 +511,11 @@ function ReadinessPanel({
       <div className="overflow-hidden rounded-[1.25rem] border border-border bg-card">
         {!paused ? (
           <img
-            src="/brand/after-hours.jpg"
+            src="/brand/after-first-conversation.jpg"
             alt=""
-            width="768"
-            height="960"
-            className="h-40 w-full object-cover object-[center_65%]"
+            width="1536"
+            height="1024"
+            className="block h-auto w-full"
           />
         ) : null}
         <div className="flex min-h-20 items-center gap-3.5 px-5 py-4">
