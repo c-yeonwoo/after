@@ -330,7 +330,7 @@ export function ProfileInterviewV3({
     <StepShell
       step={progressStep}
       total={progressTotal}
-      progressLabel="소개장 작성"
+      progressLabel="프로필 작성"
       transitionKey={data.stage}
       eyebrow={eyebrow}
       eyebrowAction={indicator}
@@ -363,7 +363,7 @@ export function ProfileInterviewV3({
 
   if (!loaded)
     return shell(
-      "소개장을 불러오고 있어요",
+      "프로필을 불러오고 있어요",
       "",
       loadError ? (
         <Button onClick={() => void load()}>다시 시도</Button>
@@ -379,7 +379,7 @@ export function ProfileInterviewV3({
       <>
         {data.story ? (
           <p className="mb-5 text-sm text-muted-foreground">
-            이전에 쓴 소개장은 마지막에 다시 확인할 수 있어요.
+            이전에 쓴 프로필은 마지막에 다시 확인할 수 있어요.
           </p>
         ) : null}
         <Button
@@ -472,7 +472,7 @@ export function ProfileInterviewV3({
               />
               {["contact", "planning"].includes(question.id) ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  이 답은 기본적으로 소개장에 공개되지 않아요.
+                  이 답은 기본적으로 프로필에 공개되지 않아요.
                 </p>
               ) : null}
             </fieldset>
@@ -716,7 +716,7 @@ export function ProfileInterviewV3({
 
   if (data.stage === "review")
     return shell(
-      "소개장에 담을 이야기",
+      "프로필에 담을 이야기",
       "공개하지 않을 내용은 빼주세요.",
       <>
         <div className="space-y-4">
@@ -771,7 +771,7 @@ export function ProfileInterviewV3({
           disabled={busy || !data.publicIds.some((id) => picked.includes(id))}
           onClick={() => void generate()}
         >
-          {busy ? "소개장을 다듬는 중…" : "이 내용으로 소개장 만들기"}
+          {busy ? "프로필을 다듬는 중…" : "이 내용으로 프로필 만들기"}
         </Button>
         <Button size="lg" variant="outline" className="mt-3 w-full" onClick={manual}>
           직접 정리하기
@@ -868,7 +868,7 @@ export function ProfileInterviewV3({
         </div>
       ) : (
         <Button variant="outline" className="mt-7 w-full" onClick={() => setEditingCopy(true)}>
-          소개장 수정
+          프로필 수정
         </Button>
       )}
       {data.generatedStory && story !== data.generatedStory ? (
@@ -905,7 +905,7 @@ export function ProfileInterviewV3({
           }
         }}
       >
-        {busy ? "저장 중…" : "이 소개장으로 완료"}
+        {busy ? "저장 중…" : "프로필 저장하기"}
       </Button>
       {!complete ? (
         <p role="status" className="mt-2 text-sm text-muted-foreground">

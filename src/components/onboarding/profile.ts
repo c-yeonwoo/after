@@ -26,7 +26,7 @@ export const INTERVIEW: InterviewQuestion[] = [
   {
     key: "eveningNote",
     title: "퇴근하고 요즘 가장 기다려지는 시간은요?",
-    description: "한두 문장이면 충분해요. 소개장의 첫 문단이 돼요.",
+    description: "한두 문장이면 충분해요. 프로필의 첫 문단이 돼요.",
     placeholder: "예) 수요일 저녁엔 한강까지 뛰어요. 돌아오는 길에 듣는 음악이 좋아요.",
     examples: [
       "금요일 퇴근길에 동네 서점에 들러 한 권 고르는 시간이요.",
@@ -48,7 +48,7 @@ export const INTERVIEW: InterviewQuestion[] = [
   {
     key: "topicNote",
     title: "처음 만나는 자리에서 나누고 싶은 이야기는요?",
-    description: "상대가 소개장을 읽고 먼저 꺼낼 수 있는 이야기면 좋아요.",
+    description: "상대가 프로필을 읽고 먼저 꺼낼 수 있는 이야기면 좋아요.",
     placeholder: "예) 최근에 다녀온 여행이나, 요즘 읽는 책 이야기요.",
     examples: [
       "서로 자주 가는 동네 맛집을 하나씩 알려 주면 좋겠어요.",
