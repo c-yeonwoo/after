@@ -1,13 +1,31 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import { createClient } from "@supabase/supabase-js";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { estimateUsageUsd } from "./lib/ai-cost.mjs";
+
+// Detect fixture drift before local account creation or paid provider work.
+// Keep this expectation explicit so prompt changes require a QA fixture review.
+const expectedPromptVersion = "profile-story-v3-8";
+const serverSource = await readFile(
+  new URL("../supabase/functions/compose-profile-v3/index.ts", import.meta.url),
+  "utf8",
+);
+const actualPromptVersion = serverSource.match(/^const VERSION = "([^"]+)";/m)?.[1];
+assert.equal(
+  actualPromptVersion,
+  expectedPromptVersion,
+  "Review live QA fixtures for prompt version drift",
+);
+if (process.argv.includes("--check-version")) {
+  console.log(`Prompt version verified: ${expectedPromptVersion} (no provider call)`);
+  process.exit(0);
+}
 
 // Three opt-in generations, local synthetic data only. No profile is published.
 if (process.env.AFTER_LOCAL_AI_CONFIRM !== "synthetic-only")
   throw Error("Explicit synthetic-only provider QA confirmation required");
+const { createClient } = await import("@supabase/supabase-js");
 const env = execFileSync("npx", ["supabase", "status", "-o", "env"], {
   encoding: "utf8",
   stdio: ["ignore", "pipe", "pipe"],
@@ -27,7 +45,11 @@ const run = randomUUID(),
   email = `headline-qa-${run}@verify.local`,
   password = `${randomUUID()}Aa1!`;
 const output = `/tmp/after-headline-${run}`;
-const report = { environment: "local-synthetic-real-provider", cases: [] };
+const report = {
+  environment: "local-synthetic-real-provider",
+  promptVersion: expectedPromptVersion,
+  cases: [],
+};
 let id;
 const cases = [
   {
@@ -102,7 +124,7 @@ try {
   }
   assert.equal(
     sql(
-      `select count(*) from profile_generation_versions where user_id='${id}' and prompt_version='profile-story-v3-6'`,
+      `select count(*) from profile_generation_versions where user_id='${id}' and prompt_version='${expectedPromptVersion}'`,
     ),
     "3",
   );
