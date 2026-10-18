@@ -245,10 +245,28 @@ try {
   ).newPage();
   await publicPage.goto(baseUrl);
   await publicPage.getByRole("link", { name: "로그인" }).waitFor();
+  const landingPhoto = publicPage.locator(
+    '.landing-photo img[src="/brand/after-first-conversation.jpg"]',
+  );
+  await landingPhoto.evaluate((image) => image.decode());
   await checkPage(publicPage, "landing mobile");
   for (const width of [320, 360, 768, 1440]) {
     await publicPage.setViewportSize({ width, height: 900 });
     await checkPage(publicPage, `landing ${width}`, false);
+    const photoRatio = await landingPhoto.evaluate((image) => ({
+      actual: image.getBoundingClientRect().width / image.getBoundingClientRect().height,
+      source: image.naturalWidth / image.naturalHeight,
+      reserved: Number(image.getAttribute("width")) / Number(image.getAttribute("height")),
+    }));
+    assert.equal(photoRatio.reserved, photoRatio.source, "landing reserves its image ratio");
+    assert.ok(
+      Math.abs(photoRatio.actual - photoRatio.source) < 0.01,
+      `landing photo is uncropped at ${width}px`,
+    );
+    if (screenshotDir && [320, 1440].includes(width)) {
+      await mkdir(screenshotDir, { recursive: true });
+      await publicPage.screenshot({ path: join(screenshotDir, `landing-warm-${width}px.png`) });
+    }
   }
   await publicPage.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(

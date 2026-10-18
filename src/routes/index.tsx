@@ -87,14 +87,14 @@ function Landing() {
             <br />
             소개부터 만날 약속까지 함께해요.
           </p>
-          <div className="landing-photo mt-6 overflow-hidden rounded-surface bg-ink">
+          <div className="landing-photo mt-6 overflow-hidden rounded-surface bg-surface-subtle">
             <img
-              src="/brand/after-hours.jpg"
+              src="/brand/after-first-conversation.jpg"
               alt=""
-              width="768"
-              height="960"
+              width="1536"
+              height="1024"
               fetchPriority="high"
-              className="h-[clamp(10rem,27svh,14rem)] w-full object-cover object-bottom"
+              className="block h-auto w-full"
             />
           </div>
           <Button type="button" onClick={start} className="mt-6 min-h-[52px] w-full text-base">
