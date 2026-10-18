@@ -92,6 +92,10 @@ function SupportPage() {
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
+      const signedInUserId = event === "SIGNED_IN" ? session?.user.id : undefined;
+      // Supabase can emit SIGNED_IN again for the same account when a tab regains focus.
+      // Keep the in-flight submission locked so its eventual result is still shown.
+      if (signedInUserId && signedInUserId === activeUser.current) return;
       loadSequence.current += 1;
       submitSequence.current += 1;
       activeUser.current = null;
@@ -99,7 +103,6 @@ function SupportPage() {
       setSubmitNotice(null);
       submitLock.current = false;
       setSubmitting(false);
-      const signedInUserId = event === "SIGNED_IN" ? session?.user.id : undefined;
       if (signedInUserId && signedInUserId === latestUserId.current) {
         activeUser.current = signedInUserId;
         void load(signedInUserId);

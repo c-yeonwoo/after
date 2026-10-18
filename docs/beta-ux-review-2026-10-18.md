@@ -12,6 +12,7 @@
 | 이전 목록 갱신 실패 | 이전 목록만 표시 | 이전 목록을 유지하며 갱신 실패를 지속 표시 |
 | 답변 후 복귀 | 재진입 시에만 재조회 가능 | 화면 재진입, 탭 복귀·포커스 시 재조회. 수동 새로고침도 제공 |
 | 연속 제출 | React 상태 갱신 전 재클릭 가능 | 동기 잠금과 버튼 비활성으로 같은 요청 중 중복 제출 방지 |
+| 제출 중 같은 계정 `SIGNED_IN` | 진행 중 요청을 무효화하고 버튼을 다시 활성화 | 잠금과 응답 처리를 유지. 계정 변경·로그아웃에서만 이전 응답 폐기 |
 
 ### 320px·390px 모바일 상태별 확인 기준
 
@@ -39,6 +40,8 @@
 | `npm run test:browser-e2e` | 미실행. 선행 `npx supabase status --output json`이 샌드박스 밖 `~/.supabase/telemetry.json` 쓰기 EPERM으로 실패 |
 | 아래 Playwright 요청 대역 | 미실행. Chromium 시작 시 MachPortRendezvousServer 권한 거부로 종료 |
 
+AFT-24 보완 후 `npm run check`, 아래 Playwright 코드의 `node --check --input-type=module`, `git diff --check`는 통과했다. Playwright 본 실행은 Chromium 시작 시 동일한 MachPort 권한 오류로 중단됐다. 아래 추가된 인증 이벤트 회귀는 독립 QA가 브라우저 실행 가능한 환경에서 확인해야 한다.
+
 ### 재실행 가능한 합성 Playwright 요청 대역
 
 로컬 환경에서 다음 두 명령을 별도 터미널에서 실행한다. 운영 API·실회원 데이터는 사용하지 않는다. 첫 명령은 이 worktree의 Vite만 실행한다. Playwright 검증은 코드 파일을 만들지 않고 stdin으로 실행한다.
@@ -58,6 +61,7 @@ import { chromium } from "playwright";
 const base = "http://127.0.0.1:4179";
 const api = "http://127.0.0.1:54399";
 const uid = "11111111-1111-4111-8111-111111111111";
+const secondUid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: "ko-KR" });
 let listMode = "error";
@@ -66,6 +70,7 @@ let createCount = 0;
 let listCount = 0;
 let rows = [];
 let releaseCreate;
+let profileId = uid;
 const session = {
   access_token: "synthetic-access",
   refresh_token: "synthetic-refresh",
@@ -84,7 +89,7 @@ await page.addInitScript((value) => localStorage.setItem("sb-127-auth-token", JS
 await page.route(`${api}/**`, async (route) => {
   const url = new URL(route.request().url());
   if (route.request().method() === "OPTIONS") return reply(route, 200, {});
-  if (url.pathname.includes("/profiles")) return reply(route, 200, { id: uid, account_state: "active", role: "member", name: "합성 사용자" });
+  if (url.pathname.includes("/profiles")) return reply(route, 200, { id: profileId, account_state: "active", role: "member", name: "합성 사용자" });
   if (url.pathname.endsWith("/rpc/my_support_requests")) {
     listCount += 1;
     return listMode === "error" ? reply(route, 503, { code: "PGRST503", message: "synthetic list failure" }) : reply(route, 200, rows);
@@ -135,12 +140,39 @@ try {
   await page.getByLabel("문의 내용").fill("느린 요청 중복 제출 방지 확인입니다.");
   await page.getByRole("button", { name: "문의 보내기" }).click({ noWaitAfter: true });
   await page.getByRole("button", { name: "접수 중…" }).waitFor();
-  const deadline = Date.now() + 2000;
-  while (createCount < 4 && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 10));
+  const waitForCreateCount = async (count) => {
+    const deadline = Date.now() + 2000;
+    while (createCount < count && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(createCount, count, `생성 요청 ${count}건 도달`);
+  };
+  await waitForCreateCount(4);
+  assert.equal(createCount, 4, "느린 생성 요청이 시작됨");
+  // 실제 Supabase 이벤트 경로를 통해 탭 복귀 시의 같은 계정 SIGNED_IN을 합성한다.
+  await page.evaluate(async (testSession) => {
+    const { supabase } = await import("/src/lib/supabase.ts");
+    await supabase.auth._notifyAllSubscribers("SIGNED_IN", testSession, false);
+  }, session);
+  assert.equal(await page.getByRole("button", { name: "접수 중…" }).isDisabled(), true);
   await page.locator("form").evaluate((form) => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
-  assert.equal(createCount, 4, "느린 제출 중 추가 생성 없음");
+  assert.equal(createCount, 4, "같은 계정 재로그인 후에도 추가 생성 없음");
   releaseCreate();
+  await page.getByText("문의가 접수되었습니다. 답변은 아래 내 문의에서 확인할 수 있어요.").waitFor();
   await page.getByRole("button", { name: "문의 보내기" }).waitFor();
+  assert.equal(createCount, 4, "지연 성공 뒤 재전송 없음");
+
+  createMode = "slow";
+  await page.getByLabel("문의 내용").fill("결과 불명확한 합성 요청입니다.");
+  await page.getByRole("button", { name: "문의 보내기" }).click({ noWaitAfter: true });
+  await page.getByRole("button", { name: "접수 중…" }).waitFor();
+  await waitForCreateCount(5);
+  await page.evaluate(async (testSession) => {
+    const { supabase } = await import("/src/lib/supabase.ts");
+    await supabase.auth._notifyAllSubscribers("SIGNED_IN", testSession, false);
+  }, session);
+  createMode = "unknown";
+  releaseCreate();
+  await page.getByText("접수 여부를 확인할 수 없어요.", { exact: false }).waitFor();
+  assert.equal(await page.getByLabel("문의 내용").inputValue(), "결과 불명확한 합성 요청입니다.");
 
   rows[0].status = "answered";
   rows[0].response = "합성 답변입니다.";
@@ -159,13 +191,35 @@ try {
     await page.getByRole("button", { name: "내역 새로고침" }).focus();
     assert.equal(await page.getByRole("button", { name: "내역 새로고침" }).evaluate((element) => document.activeElement === element), true);
   }
+
+  createMode = "slow";
+  await page.goto(`${base}/support`);
+  await page.getByLabel("문의 내용").fill("계정 A의 지연 요청입니다.");
+  await page.getByRole("button", { name: "문의 보내기" }).click({ noWaitAfter: true });
+  await page.getByRole("button", { name: "접수 중…" }).waitFor();
+  await waitForCreateCount(7);
+  const secondSession = { ...session, user: { ...session.user, id: secondUid, email: "synthetic-b@example.test" } };
+  profileId = secondUid;
+  rows = [];
+  await page.evaluate(async (testSession) => {
+    const { supabase } = await import("/src/lib/supabase.ts");
+    await supabase.auth._saveSession(testSession);
+    await supabase.auth._notifyAllSubscribers("SIGNED_IN", testSession, false);
+  }, secondSession);
+  await page.waitForFunction(() => document.querySelector("#support-body")?.value === "");
+  const oldResponse = page.waitForResponse((response) => response.url().endsWith("/rpc/create_support_request"));
+  releaseCreate();
+  await (await oldResponse).finished();
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.getByText("문의가 접수되었습니다. 답변은 아래 내 문의에서 확인할 수 있어요.").count(), 0, "이전 계정 성공 응답 폐기");
+  assert.equal(createCount, 7);
   console.log("support synthetic request routing PASS");
 } finally {
   await browser.close();
 }
 ```
 
-이 시나리오는 일반 문의·최초 실패 복구·빈 결과·성공 후 조회 실패·생성 실패·느린 중복 제출·답변 후 재진입·두 화면 폭의 기본 동작을 다룬다. 약속 문의는 `/support?meetingId=<합성 UUID>`에서 같은 생성 성공/실패/23505 경로와 1000자 제한을 반복한다. 통신 결과 불명확 시 본문 유지와 재전송 전 조회 안내, 두 합성 계정 전환 중 늦은 응답 폐기, iOS/Android 실기기 키보드·화면 리더 상태 읽기·200% 확대는 독립 QA가 확인한다. 해당 항목은 이번 실행에서 PASS로 간주하지 않는다.
+이 시나리오는 일반 문의·최초 실패 복구·빈 결과·성공 후 조회 실패·생성 실패·느린 중복 제출·같은 계정 `SIGNED_IN` 중 지연 성공/불명확한 결과·A→B 전환 중 늦은 응답 폐기·답변 후 재진입·두 화면 폭의 기본 동작을 다룬다. 약속 문의는 `/support?meetingId=<합성 UUID>`에서 같은 생성 성공/실패/23505 경로와 1000자 제한을 반복한다. iOS/Android 실기기 키보드·화면 리더 상태 읽기·200% 확대는 독립 QA가 확인한다. 이 스크립트를 실제로 실행하기 전에는 PASS로 간주하지 않는다.
 
 ## 영향과 다음 담당
 
