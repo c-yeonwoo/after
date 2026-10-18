@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { mkdir } from "node:fs/promises";
 import { createServer } from "node:net";
+import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import AxeBuilder from "@axe-core/playwright";
@@ -30,6 +32,7 @@ if (
 }
 
 const testPort = Number(process.env.AFTER_TEST_PORT ?? 4174);
+const screenshotDir = process.env.AFTER_E2E_SCREENSHOT_DIR;
 assert.ok(Number.isInteger(testPort) && testPort >= 1024 && testPort <= 65535);
 const baseUrl = `http://127.0.0.1:${testPort}`;
 await new Promise((resolve, reject) => {
@@ -740,6 +743,16 @@ try {
   assert.equal(await femalePage.getByText("동네 돌아보기", { exact: true }).count(), 0);
   assert.equal(await femalePage.getByText("고른 답:", { exact: false }).count(), 0);
   await checkPage(femalePage, "interview question mobile");
+  if (screenshotDir) {
+    await mkdir(screenshotDir, { recursive: true });
+    await femalePage.screenshot({ path: join(screenshotDir, "interview-390px.png") });
+  }
+  await femalePage.setViewportSize({ width: 1440, height: 900 });
+  await checkPage(femalePage, "interview question desktop");
+  if (screenshotDir) {
+    await femalePage.screenshot({ path: join(screenshotDir, "interview-desktop.png") });
+  }
+  await femalePage.setViewportSize({ width: 390, height: 844 });
   await femalePage.getByLabel("내 답변").fill("퇴근하면 동네를 천천히 걸어요");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
   await femalePage

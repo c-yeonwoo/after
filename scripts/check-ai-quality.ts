@@ -339,7 +339,9 @@ const composeSource = readFileSync(
   "utf8",
 );
 const analysisPrompt =
-  composeSource.match(/if \(input\.mode === "analyze"\) \{\s*const analysis = await call\(\s*ANALYSIS_MODEL,\s*`([^`]+)`/)?.[1] ?? "";
+  composeSource.match(
+    /if \(input\.mode === "analyze"\) \{\s*const analysis = await call\(\s*ANALYSIS_MODEL,\s*`([^`]+)`/,
+  )?.[1] ?? "";
 const promptRules: { name: string; prompt: string; rules: RegExp[] }[] = [
   {
     name: "editor",
@@ -389,7 +391,8 @@ const expectedStoryQuestions = [
   },
 ];
 assert.deepEqual(STORY_QUESTIONS, expectedStoryQuestions);
-const questionBlock = composeSource.match(/const QUESTIONS: Record<string, string> = \{([^}]+)\};/)?.[1] ?? "";
+const questionBlock =
+  composeSource.match(/const QUESTIONS: Record<string, string> = \{([^}]+)\};/)?.[1] ?? "";
 const composeQuestions = Object.fromEntries(
   [...questionBlock.matchAll(/^\s*(\w+): "([^"]+)",?$/gm)].map((match) => [match[1], match[2]]),
 );
@@ -397,7 +400,8 @@ assert.deepEqual(
   composeQuestions,
   Object.fromEntries(expectedStoryQuestions.map(({ id, question }) => [id, question])),
 );
-const publicStoryBody = composeSource.match(/function publicStory\([^]*?\n\}\n\nDeno\.serve/)?.[0] ?? "";
+const publicStoryBody =
+  composeSource.match(/function publicStory\([^]*?\n\}\n\nDeno\.serve/)?.[0] ?? "";
 for (const field of [
   /version: 3/,
   /id: s\.id/,
