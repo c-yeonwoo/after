@@ -792,6 +792,8 @@ try {
     "browser opened exactly one introduction",
   );
   await checkPage(malePage, "male opened introduction");
+  if (screenshotDir)
+    await malePage.screenshot({ path: join(screenshotDir, "intro-native-390px.png") });
   await malePage.setViewportSize({ width: 320, height: 568 });
   await malePage.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
   await malePage.getByRole("button", { name: "더보기", exact: true }).click();
@@ -832,6 +834,17 @@ try {
   const placeChoices = malePage.getByRole("radiogroup", { name: "장소" });
   if (await placeChoices.count()) await placeChoices.getByRole("radio").first().click();
   else await malePage.getByLabel("만날 곳").fill("역삼역 3번 출구 근처 카페");
+  const removeSlot = malePage.getByRole("button", { name: /빼기$/ });
+  const removeSlotBox = await removeSlot.boundingBox();
+  assert.ok(
+    removeSlotBox.width >= 44 && removeSlotBox.height >= 44,
+    "slot removal is a 44px target",
+  );
+  await checkPage(malePage, "meeting request selected slot");
+  if (screenshotDir) {
+    await malePage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
+    await malePage.screenshot({ path: join(screenshotDir, "meeting-request-native.png") });
+  }
   await malePage.getByRole("button", { name: /후보 1개로 요청하기/ }).click();
   await malePage.getByText("답변을 기다리는 중입니다").waitFor();
   assert.equal(
@@ -848,6 +861,9 @@ try {
   await login(femalePage, female);
   await checkPage(femalePage, "female home");
   await femalePage.getByRole("link", { name: "요청 확인하기" }).click();
+  await checkPage(femalePage, "meeting request received");
+  if (screenshotDir)
+    await femalePage.screenshot({ path: join(screenshotDir, "meeting-received-native.png") });
   await femalePage
     .getByRole("button", { name: /이 날로 정하기/ })
     .first()
@@ -872,9 +888,116 @@ try {
     "home and conversation show the same complete date and time",
   );
   await checkPage(femalePage, "conversation with meeting summary");
+  await femalePage
+    .getByLabel("메시지", { exact: true })
+    .fill("안녕하세요! 약속한 카페에서 만나요.");
+  await femalePage.getByRole("button", { name: "보내기", exact: true }).click();
+  const sentBubble = femalePage.locator('.chat-message[data-sent="true"]');
+  await sentBubble.waitFor();
+  assert.equal(
+    await sentBubble.evaluate((el) => getComputedStyle(el).animationName),
+    "after-message-send",
+  );
+  assert.equal(await femalePage.getByLabel("메시지", { exact: true }).inputValue(), "");
+  const conversationMeetingId =
+    sql(`select m.id from public.meetings m join public.intros i on i.id=m.intro_id
+    where i.male_id='${male.id}' and i.female_id='${female.id}'`);
+  sql(`insert into public.messages(meeting_id,sender_id,channel,body)
+    values('${conversationMeetingId}','${male.id}','coord','네, 좋아요. 퇴근하고 여유 있게 갈게요!');`);
+  await femalePage
+    .getByRole("log")
+    .getByText("네, 좋아요. 퇴근하고 여유 있게 갈게요!", { exact: true })
+    .waitFor();
+  await checkPage(femalePage, "conversation sent and received bubbles");
   if (screenshotDir)
     await femalePage.screenshot({ path: join(screenshotDir, "meeting-summary.png") });
+  sql(
+    `update public.meetings set private_opens_at=now()-interval '1 minute' where id='${conversationMeetingId}'`,
+  );
+  await femalePage.reload();
+  await femalePage.getByRole("tab", { name: "사적인 대화", exact: true }).waitFor();
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 390, height: 480 },
+    { width: 844, height: 390 },
+  ]) {
+    await femalePage.setViewportSize(viewport);
+    await femalePage.emulateMedia({ reducedMotion: "reduce" });
+    await checkPage(femalePage, `compact conversation ${viewport.width}x${viewport.height}`);
+    const composerBox = await femalePage.locator(".chat-composer").boundingBox();
+    const logBox = await femalePage.getByRole("log").boundingBox();
+    const tabBox = await femalePage
+      .getByRole("navigation", { name: "주요 메뉴", exact: true })
+      .boundingBox();
+    assert.ok(
+      logBox.height >= 60,
+      `meeting context must leave room to read messages at ${viewport.width}x${viewport.height}`,
+    );
+    assert.ok(
+      composerBox.y >= logBox.y + logBox.height - 1 &&
+        composerBox.y + composerBox.height <= tabBox.y,
+      `composer remains between conversation and navigation at ${viewport.width}x${viewport.height}: ${JSON.stringify({ composerBox, logBox, tabBox })}`,
+    );
+    const context = femalePage.getByRole("region", { name: "약속 정보와 참석 확인", exact: true });
+    await context.focus();
+    await context.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    await femalePage.getByRole("button", { name: "약속 시간 바꾸기", exact: true }).click();
+    await femalePage
+      .getByRole("dialog")
+      .getByRole("heading", { name: "약속 시간 바꾸기", exact: true })
+      .waitFor();
+    await femalePage.keyboard.press("Escape");
+  }
+  await femalePage.setViewportSize({ width: 390, height: 844 });
+  await femalePage
+    .getByLabel("메시지", { exact: true })
+    .fill("https://example.test/" + "longpath".repeat(40));
+  await femalePage.getByRole("button", { name: "보내기", exact: true }).click();
+  await femalePage.getByRole("log").getByText("https://example.test/", { exact: false }).waitFor();
+  assert.equal(
+    await sentBubble.evaluate((el) => getComputedStyle(el).animationName),
+    "none",
+    "reduced motion suppresses send feedback",
+  );
+  await checkPage(femalePage, "long message wrapping");
+  await femalePage.locator("html").evaluate((el) => el.classList.add("dark"));
+  await checkPage(femalePage, "dark conversation contrast");
+  await femalePage.locator("html").evaluate((el) => el.classList.remove("dark"));
+  await femalePage.emulateMedia({ reducedMotion: "no-preference" });
   const scheduleRequest = "**/rest/v1/meetings?*";
+  // Read-only UI fixture for the older preference-first planner; actual
+  // confirmation, ticket and cancellation semantics are covered by DB/full-cycle suites.
+  await femalePage.route(scheduleRequest, async (route) => {
+    const response = await route.fetch();
+    const original = await response.json();
+    const asPending = (meeting) => ({
+      ...meeting,
+      confirmed_at: null,
+      scheduled_at: null,
+      prefs_submitted_at: new Date().toISOString(),
+      prefs: { dates: [meeting.scheduled_at], stations: ["강남"], anywhere: false },
+    });
+    await route.fulfill({
+      response,
+      json: Array.isArray(original) ? original.map(asPending) : asPending(original),
+    });
+  });
+  await femalePage.goto(`${baseUrl}/schedule?meetingId=${conversationMeetingId}`);
+  const confirmPlan = femalePage.getByRole("button", {
+    name: "이 날짜와 장소로 확정하기",
+    exact: true,
+  });
+  await confirmPlan.waitFor();
+  assert.equal(await confirmPlan.isDisabled(), true);
+  await femalePage.getByRole("button", { name: homeTime.trim(), exact: true }).click();
+  await femalePage.getByLabel("만날 장소").fill("강남역 근처의 조용한 카페");
+  assert.equal(await confirmPlan.isEnabled(), true);
+  await checkPage(femalePage, "preference-first date planner");
+  if (screenshotDir) {
+    await femalePage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
+    await femalePage.screenshot({ path: join(screenshotDir, "schedule-native.png") });
+  }
+  await femalePage.unroute(scheduleRequest);
   await femalePage.route(scheduleRequest, (route) =>
     route.fulfill({
       status: 503,
@@ -1091,6 +1214,14 @@ try {
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   await femalePage.unroute(publishRoute);
   await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
+  assert.equal(
+    await femalePage
+      .getByRole("navigation", { name: "주요 메뉴", exact: true })
+      .getByRole("link", { name: "나", exact: true })
+      .getAttribute("aria-current"),
+    "page",
+    "profile keeps the account tab selected",
+  );
   const profileArticle = femalePage.locator("article");
   assert.equal(
     await profileArticle.evaluate((article) => {
@@ -1119,6 +1250,9 @@ try {
     if (screenshotDir)
       await femalePage.screenshot({ path: join(screenshotDir, `profile-reading-${width}px.png`) });
   }
+  await femalePage.locator("html").evaluate((el) => el.classList.add("dark"));
+  await checkPage(femalePage, "dark profile contrast");
+  await femalePage.locator("html").evaluate((el) => el.classList.remove("dark"));
   await photoOpener.click();
   const photoDialog = femalePage.getByRole("dialog");
   await photoDialog.getByRole("img", { name: /사진 1 확대/ }).waitFor();

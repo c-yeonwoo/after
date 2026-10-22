@@ -27,7 +27,7 @@ export type ProfileView = {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-t border-border pt-4">
+    <section className="border-t border-border pt-4 first:border-t-0 first:pt-0">
       <h3 className="text-base leading-snug font-semibold text-foreground">{title}</h3>
       <div className="mt-3">{children}</div>
     </section>
@@ -56,8 +56,8 @@ function InterviewAnswer({
   section: NonNullable<ProfileView["story"]>["sections"][number];
 }) {
   return (
-    <section className="border-t border-border pt-5">
-      <h3 className="break-keep break-words text-pretty text-sm leading-[1.5] font-medium text-muted-foreground">
+    <section className="py-5">
+      <h3 className="break-keep break-words text-pretty text-sm leading-[1.5] font-semibold text-primary-strong">
         {section.question}
       </h3>
       <p
@@ -136,55 +136,67 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </dl>
       ) : null}
 
-      {p.story?.sections.map((section) => (
-        <InterviewAnswer key={section.id} section={section} />
-      ))}
+      {p.story?.sections.length ? (
+        <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
+          {p.story.sections.map((section) => (
+            <InterviewAnswer key={section.id} section={section} />
+          ))}
+        </div>
+      ) : null}
 
       {!p.story &&
-        paragraphs.map((para) => (
-          <p
-            key={para}
-            data-selectable
-            className="break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
-          >
-            {para}
-          </p>
-        ))}
+      (paragraphs.length ||
+        p.interests.length ||
+        p.answers.length ||
+        p.matchTags.length ||
+        p.topics.length) ? (
+        <div className="app-elevated space-y-5 rounded-surface bg-card p-5">
+          {paragraphs.map((para) => (
+            <p
+              key={para}
+              data-selectable
+              className="break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
+            >
+              {para}
+            </p>
+          ))}
 
-      {!p.story && p.interests.length ? (
-        <Section title="요즘 시간 쓰는 것">
-          <Lines items={p.interests} />
-        </Section>
-      ) : null}
+          {p.interests.length ? (
+            <Section title="요즘 시간 쓰는 것">
+              <Lines items={p.interests} />
+            </Section>
+          ) : null}
 
-      {!p.story && p.answers.length ? (
-        <Section title="조금 더">
-          <div className="space-y-5">
-            {p.answers.map((a) => (
-              <div key={a.q}>
-                <p className="text-sm font-semibold text-foreground">{a.q}</p>
-                <p
-                  data-selectable
-                  className="mt-1.5 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
-                >
-                  {a.a}
-                </p>
+          {p.answers.length ? (
+            <Section title="조금 더">
+              <div className="space-y-5">
+                {p.answers.map((a) => (
+                  <div key={a.q}>
+                    <p className="text-sm font-semibold text-foreground">{a.q}</p>
+                    <p
+                      data-selectable
+                      className="mt-1.5 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
+                    >
+                      {a.a}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Section>
-      ) : null}
+            </Section>
+          ) : null}
 
-      {!p.story && p.matchTags.length ? (
-        <Section title="잘 맞았던 사람">
-          <Lines items={p.matchTags} />
-        </Section>
-      ) : null}
+          {p.matchTags.length ? (
+            <Section title="잘 맞았던 사람">
+              <Lines items={p.matchTags} />
+            </Section>
+          ) : null}
 
-      {!p.story && p.topics.length ? (
-        <Section title="나누고 싶은 이야기">
-          <Lines items={p.topics} />
-        </Section>
+          {p.topics.length ? (
+            <Section title="나누고 싶은 이야기">
+              <Lines items={p.topics} />
+            </Section>
+          ) : null}
+        </div>
       ) : null}
     </article>
   );

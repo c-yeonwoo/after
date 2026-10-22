@@ -105,7 +105,7 @@ function ChatsPage() {
             <Link
               to="/chat/$id"
               params={{ id: meeting.id }}
-              className="block rounded-surface border border-border bg-card px-5 py-4 transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="app-elevated pressable block rounded-surface bg-card px-5 py-4 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">

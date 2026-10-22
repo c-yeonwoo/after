@@ -97,6 +97,7 @@ export function Conversation({
   const bottom = useRef(true);
   const mutation = useRef(0);
   const sendingRef = useRef(false);
+  const sentMessageId = useRef<string | null>(null);
   const context = useRef("");
   const [sending, setSending] = useState(false);
   const [chatError, setChatError] = useState(false);
@@ -120,6 +121,7 @@ export function Conversation({
     const key = `${meeting.id}:${channel}`;
     if (context.current !== key) {
       context.current = key;
+      sentMessageId.current = null;
       setMessages([]);
       setChatLoading(true);
       setNewBelow(false);
@@ -176,6 +178,7 @@ export function Conversation({
       mutation.current++;
       if (target === context.current) {
         bottom.current = true;
+        sentMessageId.current = created.id;
         setMessages((prev) => (prev.some((m) => m.id === created.id) ? prev : [...prev, created]));
         setText((current) => (current.trim() === t ? "" : current));
       }
@@ -190,20 +193,29 @@ export function Conversation({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* 약속 요약 — 대화 중 계속 보여야 하는 맥락이라 위에 고정한다 */}
-      {meeting.confirmed_at && meeting.scheduled_at ? (
-        <div className="shrink-0 rounded-surface bg-surface-subtle px-4 py-3">
-          <MeetingSummary scheduledAt={meeting.scheduled_at} placeName={meeting.place_name} />
-        </div>
-      ) : null}
-
       {meeting.confirmed_at ? (
-        <div className="shrink-0">
-          <MeetingCheckin key={meeting.scheduled_at} meetingId={meeting.id} />
-          <MeetingChange meeting={meeting} onChange={onMeetingChange} />
-        </div>
+        <section
+          aria-label="약속 정보와 참석 확인"
+          tabIndex={0}
+          className="app-elevated max-h-[50%] min-h-0 overflow-y-auto overscroll-contain rounded-surface bg-card focus-visible:outline-2 focus-visible:outline-ring"
+        >
+          {meeting.scheduled_at ? (
+            <div className="bg-primary px-4 py-4 text-primary-foreground">
+              <MeetingSummary scheduledAt={meeting.scheduled_at} placeName={meeting.place_name} />
+            </div>
+          ) : null}
+          <div className="px-4 py-3">
+            <MeetingCheckin key={meeting.scheduled_at} meetingId={meeting.id} embedded />
+            <MeetingChange meeting={meeting} onChange={onMeetingChange} />
+          </div>
+        </section>
       ) : null}
       {privateOpen ? (
-        <div className="mt-3 flex shrink-0 gap-1.5" role="tablist" aria-label="대화 채널">
+        <div
+          className="mt-3 flex shrink-0 gap-1 rounded-control bg-muted p-1"
+          role="tablist"
+          aria-label="대화 채널"
+        >
           {(
             [
               { id: "coord", label: "약속 이야기" },
@@ -217,11 +229,9 @@ export function Conversation({
               aria-selected={channel === c.id}
               onClick={() => setChannel(c.id)}
               className={cn(
-                "min-h-11 rounded-control border px-3.5 text-xs font-medium",
+                "pressable min-h-11 flex-1 rounded-control px-3.5 text-sm font-medium",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                channel === c.id
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border",
+                channel === c.id ? "bg-primary text-primary-foreground" : "text-muted-foreground",
               )}
             >
               {c.label}
@@ -257,7 +267,7 @@ export function Conversation({
             if (bottom.current) setNewBelow(false);
           }
         }}
-        className="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pt-4 focus-visible:outline-2 focus-visible:outline-ring"
+        className="-mx-1 min-h-20 flex-1 overflow-y-auto overscroll-contain px-1 pt-4 focus-visible:outline-2 focus-visible:outline-ring"
       >
         <div className="flex min-h-full flex-col justify-end gap-1">
           {rows.length === 0 ? (
@@ -276,7 +286,7 @@ export function Conversation({
             row.kind === "day" ? (
               <p
                 key={row.key}
-                className="my-3 text-center text-3xs font-semibold tracking-[0.1em] text-muted-foreground"
+                className="my-3 self-center rounded-control bg-muted px-3 py-1 text-2xs font-medium text-muted-foreground"
               >
                 {formatDay(row.iso)}
               </p>
@@ -300,10 +310,11 @@ export function Conversation({
                 <span
                   // 대화 내용은 베껴 쓸 수 있어야 한다 — 장소·시간이 여기서 오간다.
                   data-selectable
+                  data-sent={row.msg.id === sentMessageId.current ? "true" : undefined}
                   className={cn(
-                    "max-w-[76%] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
+                    "chat-message min-w-0 max-w-[76%] px-4 py-3 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]",
                     row.mine
-                      ? "rounded-2xl bg-bubble-mine text-bubble-mine-foreground"
+                      ? "rounded-2xl bg-primary text-primary-foreground"
                       : "rounded-2xl bg-card text-foreground shadow-sm",
                     // 덩어리의 마지막만 꼬리를 뾰족하게 — 이어진 말은 둥글게 둔다
                     row.lastOfGroup && (row.mine ? "rounded-br-sm" : "rounded-bl-sm"),
@@ -355,7 +366,7 @@ export function Conversation({
       ) : null}
       {/* 입력 — fixed 가 아니라 플렉스 흐름의 마지막. 탭바 계산이 필요 없다. */}
       <form
-        className="flex shrink-0 items-center gap-2 pt-3 pb-2"
+        className="chat-composer mt-3 mb-2 flex shrink-0 items-center gap-2 rounded-surface bg-card p-2"
         onSubmit={(e) => {
           e.preventDefault();
           send(text);
@@ -376,7 +387,7 @@ export function Conversation({
           autoComplete="off"
           maxLength={2000}
           enterKeyHint="send"
-          className="rounded-control"
+          className="min-w-0 rounded-control border-0 bg-transparent shadow-none focus-visible:ring-inset"
         />
         <Button
           type="submit"

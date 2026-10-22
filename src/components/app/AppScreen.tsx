@@ -95,7 +95,10 @@ export function AppScreen({
 
   return (
     <div
-      className="flex h-full flex-col overflow-hidden bg-background"
+      className={cn(
+        "flex h-full flex-col overflow-hidden bg-background",
+        fill && "app-conversation-screen",
+      )}
       /*
         탭바도 footer 도 없는 화면은 마지막 자식이 화면 밑변에 그대로 닿는다
         — 홈 인디케이터 자리를 여기서 비워 준다. 탭바·footer 가 있으면 그쪽이
@@ -175,7 +178,11 @@ export function AppScreen({
         >
           <ul className="flex items-stretch px-2">
             {TABS.map((t) => {
-              const active = pathname === t.to || pathname.startsWith(`${t.to}/`);
+              const active =
+                pathname === t.to ||
+                pathname.startsWith(`${t.to}/`) ||
+                (t.to === "/me" && pathname === "/profile") ||
+                (t.to === "/chats" && pathname.startsWith("/chat/"));
               const Icon = t.icon;
               return (
                 <li key={t.to} className="flex-1">

@@ -84,7 +84,7 @@ function RequestsPage() {
   if (loadError) {
     return (
       <AppScreen title="만남 요청" back="/home">
-        <div role="alert" className="mt-10 rounded-surface border border-border bg-card p-6">
+        <div role="alert" className="app-elevated mt-10 rounded-surface bg-card p-6">
           <p className="text-sm">요청 목록을 확인할 수 없습니다.</p>
           <Button className="mt-4" variant="outline" onClick={() => void live.refetch()}>
             다시 확인
@@ -125,7 +125,7 @@ function RequestsPage() {
             now === null || !deadline_at ? null : remainingLabel(Date.parse(deadline_at), now);
           return (
             <li key={meeting.id}>
-              <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
+              <div className="app-elevated overflow-hidden rounded-surface bg-card">
                 <div className="px-5 pt-5 pb-4">
                   <p className="headline text-xl">
                     {candidate.name}
@@ -143,7 +143,7 @@ function RequestsPage() {
                   ) : null}
                   {reason ? (
                     <div className="mt-4">
-                      <IntroductionReason reason={reason} />
+                      <IntroductionReason reason={reason} embedded />
                     </div>
                   ) : null}
                   <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -181,7 +181,7 @@ function RequestsPage() {
                   <Link
                     to="/prefs"
                     search={{ meetingId: meeting.id }}
-                    className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     가능한 날짜 보내기
                     <ArrowRight className="size-4" aria-hidden="true" />
@@ -255,10 +255,10 @@ function SlotChoices({
                 release();
               }
             }}
-            className="flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 py-3 text-left text-sm font-semibold text-foreground hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
           >
             <span>{formatMeetTime(iso)}</span>
-            <span className="text-xs font-medium text-primary-strong">
+            <span className="shrink-0 text-xs font-medium text-primary-strong">
               {busy === i ? "정하는 중…" : "이 날로 정하기"}
             </span>
           </button>
