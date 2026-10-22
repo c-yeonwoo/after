@@ -50,7 +50,7 @@ jobs:
         with:
           version: 2.117.0
       - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=moderate
       - run: supabase start
       - run: npm run release:check
 

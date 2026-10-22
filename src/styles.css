@@ -493,6 +493,64 @@
   }
 }
 
+.app-elevated {
+  box-shadow: 0 8px 24px -12px oklch(0.2955 0.0198 169.4 / 24%);
+}
+
+.app-primary-button:not(:disabled):not([aria-disabled="true"]) {
+  box-shadow: 0 5px 12px -6px oklch(0.2955 0.0198 169.4 / 48%);
+}
+
+.app-primary-button:active:not(:disabled) {
+  box-shadow: none;
+}
+
+.app-tab-bar {
+  box-shadow: 0 -6px 24px -14px oklch(0.2955 0.0198 169.4 / 28%);
+  border-radius: 1rem 1rem 0 0;
+}
+
+.app-tab[aria-current="page"] .app-tab-icon {
+  animation: after-tab-select 260ms var(--ease-out);
+}
+
+.readiness-status {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.app-switch::before {
+  content: "";
+  position: absolute;
+  inset: 8px 0;
+  border-radius: 9999px;
+  background: var(--input);
+  transition: background-color var(--motion-feedback) ease-out;
+}
+
+.app-switch[data-state="checked"]::before {
+  background: var(--primary);
+}
+
+.readiness-status .app-switch[data-state="checked"]::before {
+  background: var(--brand-signature);
+}
+
+.readiness-status .app-switch:focus-visible {
+  outline: 2px solid var(--primary-foreground);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+@keyframes after-tab-select {
+  from {
+    transform: scale(0.86);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 .landing-photo {
   animation: after-photo-arrive 420ms var(--ease-out);
 }
@@ -509,6 +567,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .app-tab[aria-current="page"] .app-tab-icon {
+    animation: none;
+  }
+
+  .app-switch::before {
+    transition: none;
+  }
   .landing-photo {
     animation: none;
   }

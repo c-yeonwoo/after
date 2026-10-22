@@ -130,6 +130,8 @@ function audit(themeName, block) {
 
   console.log("\n── 채움 역할: primary (그 위의 글자, 4.5) ──");
   chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
+  chk("스위치 손잡이 / 켜진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("brand-signature")))), 3);
+  chk("스위치 손잡이 / 꺼진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("input")))), 3);
 
   console.log("\n── 틴트 표면 (GuideNote bg-primary/8, 칩 /10) ──");
   chk("primary-strong / bg-primary\\8 (배경)", cr(strong, over(primary, bg, 0.08)), 4.5);

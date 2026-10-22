@@ -119,7 +119,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       <ProfilePhotos key={p.photos.join("|")} paths={p.photos} name={p.name} />
 
       {hasAnyFact ? (
-        <dl className="grid grid-cols-3 gap-x-3 gap-y-4 border-t border-border pt-4">
+        <dl className="app-elevated grid grid-cols-3 gap-x-3 gap-y-4 rounded-surface bg-card p-4">
           {facts.map((f) => (
             <div key={f.k}>
               <dt className="text-xs text-muted-foreground">{f.k}</dt>
