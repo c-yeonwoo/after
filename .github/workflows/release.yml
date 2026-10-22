@@ -60,7 +60,9 @@ jobs:
     needs: scope
     if: needs.scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Browser/system dependency downloads can take 10+ minutes on hosted runners.
+    # Leave room for both complete suites instead of timing out after setup.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
