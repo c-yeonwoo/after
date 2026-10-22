@@ -377,13 +377,8 @@ try {
   await signupPage.unroute(authRoute);
   await signupPage.getByLabel("회사 이메일").fill(existing.email);
   await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
-  await signupPage
-    .getByRole("button", { name: "계속하기" })
-    .click({ timeout: 2_000 })
-    .catch(() => {
-      // Signing in through local dev Auth can update the shared profile before
-      // this click; the account gate then takes over immediately.
-    });
+  // Local sign-in loads this existing profile through the auth listener. Do not
+  // race it with OTP continuation, which independently redirects to home.
   await signupPage.getByRole("heading", { name: "이미 가입된 계정이 있어요" }).waitFor();
   assert.equal(await signupPage.getByText(existing.name).count(), 0);
   await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
