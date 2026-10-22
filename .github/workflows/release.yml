@@ -80,7 +80,16 @@ jobs:
           version: 2.117.0
       - run: npm ci
       - run: supabase start
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      # The Azure mirror downloaded OS packages for 26 minutes in run 39805018907.
+      # Change only the hosted runner's mirror URL; Ubuntu signature checks stay intact.
+      - name: Prefer the Ubuntu archive for browser dependencies
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i -E 's#https?://azure\.archive\.ubuntu\.com/ubuntu/?([[:space:]]|$)#https://archive.ubuntu.com/ubuntu/\1#g' /etc/apt/apt-mirrors.txt
+          fi
+      - name: Install browser and OS dependencies
+        timeout-minutes: 10
+        run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run test:browser-e2e
       - run: npm run test:full-cycle
 
