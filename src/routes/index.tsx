@@ -120,10 +120,7 @@ function Landing() {
             {[
               ["나를 소개해요", "회사 이메일을 확인하고, 사진과 짧은 답변으로 나를 알려요."],
               ["한 사람씩 소개받아요", "운영팀이 확인한 소개를 읽고, 더 알아갈지 결정해요."],
-              [
-                "만날 시간을 정해요",
-                "가까운 장소와 평일 저녁 시간을 제안하면 상대가 고를 수 있어요.",
-              ],
+              ["만날 시간을 정해요", "서로 가능한 날짜를 확인하고, 만날 시간과 장소를 정해요."],
             ].map(([title, body], i) => (
               <li key={title} className="grid grid-cols-[2rem_1fr] gap-x-3">
                 <span className="flex size-8 items-center justify-center rounded-full bg-surface-subtle text-xs font-semibold text-foreground tabular-nums">

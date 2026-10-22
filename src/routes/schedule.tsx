@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
-import { GuideNote } from "@/components/app/GuideNote";
 import { MeetPlanner } from "@/components/app/MeetPlanner";
+import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
 import { haptics } from "@/lib/native";
@@ -34,27 +34,35 @@ function SchedulePage() {
   const [loading, setLoading] = useState(true);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [counterpart, setCounterpart] = useState<PublicProfile | null>(null);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(false);
+    setMeeting(null);
+    setCounterpart(null);
     (async () => {
-      if (!meetingId) {
-        setLoading(false);
-        return;
+      try {
+        if (!meetingId) return;
+        const m = await getMeeting(meetingId);
+        if (cancelled) return;
+        if (m) {
+          const c = await getMeetingCounterpart(m);
+          if (!cancelled) setCounterpart(c);
+        }
+        if (!cancelled) setMeeting(m);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      const m = await getMeeting(meetingId);
-      if (cancelled) return;
-      setMeeting(m);
-      if (m) {
-        const c = await getMeetingCounterpart(m);
-        if (!cancelled) setCounterpart(c);
-      }
-      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [meetingId]);
+  }, [meetingId, retry]);
 
   if (loading) {
     return (
@@ -64,13 +72,32 @@ function SchedulePage() {
     );
   }
 
-  if (!meeting || !meeting.prefs_submitted_at) {
+  if (error) {
+    return (
+      <AppScreen title="날짜 정하기" hideTabs back="/home">
+        <div role="alert" className="mt-8 space-y-4">
+          <p className="text-sm">약속 정보를 불러오지 못했어요. 다시 확인해 주세요.</p>
+          <Button variant="outline" onClick={() => setRetry((v) => v + 1)}>
+            다시 확인
+          </Button>
+        </div>
+      </AppScreen>
+    );
+  }
+
+  if (!meeting || !meeting.prefs_submitted_at || meeting.cancelled_at || meeting.completed_at) {
     return (
       <AppScreen title="날짜 정하기" hideTabs back="/home">
         <div className="mt-16 px-6 py-12 text-center">
-          <p className="headline text-base">아직 정할 날짜가 없습니다</p>
+          <p className="headline text-base">
+            {meeting?.cancelled_at || meeting?.completed_at
+              ? "종료된 약속이에요"
+              : "아직 정할 날짜가 없습니다"}
+          </p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            상대가 가능한 날짜를 보내오면 여기서 고르실 수 있습니다.
+            {meeting?.cancelled_at || meeting?.completed_at
+              ? "홈에서 현재 진행 상황을 확인해 주세요."
+              : "상대가 가능한 날짜를 보내오면 여기서 고르실 수 있습니다."}
           </p>
         </div>
       </AppScreen>
@@ -79,29 +106,11 @@ function SchedulePage() {
 
   return (
     <AppScreen title="날짜 정하기" hideTabs back="/home">
-      <div className="mt-3">
-        <GuideNote>
-          {counterpart?.name
-            ? `${counterpart.name}님이 가능한 날짜를 보내주셨어요. 하나를 고르시면 대화가 열립니다.`
-            : "가능한 날짜가 도착했어요. 하나를 고르시면 대화가 열립니다."}
-        </GuideNote>
-      </div>
-
-      {counterpart ? (
-        <div className="mt-5 rounded-surface border border-border bg-card px-5 py-4">
-          <p className="headline text-xl">
-            {counterpart.name}
-            {counterpart.age !== null ? (
-              <span className="ml-1.5 text-base text-muted-foreground">{counterpart.age}</span>
-            ) : null}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{counterpart.job}</p>
-        </div>
-      ) : null}
-
       <div className="mt-5">
         <MeetPlanner
+          key={meeting.id}
           meeting={meeting}
+          counterpartName={counterpart?.name}
           onConfirmed={(m) => {
             setMeeting(m);
             haptics.success();

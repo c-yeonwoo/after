@@ -56,13 +56,13 @@ function InterviewAnswer({
   section: NonNullable<ProfileView["story"]>["sections"][number];
 }) {
   return (
-    <section className="border-t border-border pt-4">
-      <h3 className="break-keep text-sm leading-[1.45] font-semibold text-muted-foreground">
+    <section className="border-t border-border pt-5">
+      <h3 className="break-keep break-words text-pretty text-sm leading-[1.5] font-medium text-muted-foreground">
         {section.question}
       </h3>
       <p
         data-selectable
-        className="mt-2 break-keep break-words text-pretty text-base leading-[1.6] whitespace-pre-line text-foreground"
+        className="mt-2.5 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
       >
         {section.answer}
       </p>
@@ -125,7 +125,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
               <dt className="text-xs text-muted-foreground">{f.k}</dt>
               <dd
                 className={cn(
-                  "mt-1 text-sm leading-snug font-semibold",
+                  "mt-1 break-keep break-words text-sm leading-snug font-medium",
                   f.v ? "text-foreground" : "text-muted-foreground",
                 )}
               >

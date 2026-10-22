@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarCheck, Clock } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationBell } from "@/components/app/NotificationBell";
 import { MeetingCheckin } from "@/components/app/MeetingCheckin";
+import { MeetingSummary } from "@/components/app/MeetingSummary";
 import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
@@ -273,13 +274,7 @@ function HomePage() {
             }
           />
         ) : meeting?.confirmed_at ? (
-          <>
-            <ConfirmedCard meeting={meeting} counterpart={candidate} />
-            <MeetingCheckin
-              key={`${meeting.id}:${meeting.schedule_revision}`}
-              meetingId={meeting.id}
-            />
-          </>
+          <ConfirmedCard meeting={meeting} counterpart={candidate} />
         ) : meeting?.prefs_submitted_at ? (
           // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
           isMale ? (
@@ -508,16 +503,7 @@ function ReadinessPanel({
 
   return (
     <section className="mt-4" aria-label="소개 설정">
-      <div className="overflow-hidden rounded-[1.25rem] border border-border bg-card">
-        {!paused ? (
-          <img
-            src="/brand/after-first-conversation.jpg"
-            alt=""
-            width="1536"
-            height="1024"
-            className="block h-auto w-full"
-          />
-        ) : null}
+      <div className="overflow-hidden rounded-surface border border-border bg-card">
         <div className="flex min-h-20 items-center gap-3.5 px-5 py-4">
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">
@@ -526,7 +512,7 @@ function ReadinessPanel({
             <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
               {paused
                 ? "새 소개가 오지 않습니다. 진행 중인 약속은 그대로입니다."
-                : "소개가 준비되면 알려드릴게요."}
+                : "새 소개는 이곳에서 확인할 수 있어요."}
             </span>
           </span>
           {/*
@@ -595,6 +581,15 @@ function ReadinessPanel({
           </Link>
         ) : null}
       </div>
+      {!paused ? (
+        <img
+          src="/brand/after-first-conversation.jpg"
+          alt=""
+          width="1536"
+          height="1024"
+          className="mt-5 block h-auto w-full rounded-surface"
+        />
+      ) : null}
     </section>
   );
 }
@@ -752,6 +747,7 @@ function ConfirmedCard({
   /* 운영팀 장소로 정한 약속이면 지도 링크를 붙인다(s51). 직접 적은 장소엔 없다. */
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   useEffect(() => {
+    setMapUrl(null);
     if (!meeting.place_id) return;
     let alive = true;
     meetPlacesForMe()
@@ -767,20 +763,11 @@ function ConfirmedCard({
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
       <div className="bg-primary px-5 py-5 text-primary-foreground">
-        <p className="flex items-center gap-1.5 text-3xs font-semibold text-primary-foreground/85">
-          <CalendarCheck className="size-3.5" aria-hidden="true" />
-          만남 확정
-        </p>
-        {meeting.scheduled_at ? (
-          <p className="mt-2 text-2xl font-semibold text-primary-foreground">
-            {formatWhen(meeting.scheduled_at)}
-          </p>
-        ) : null}
-        {/* 약속 장소는 지도 앱에 옮겨 넣게 된다 — 선택을 열어 둔다. */}
-        <p data-selectable className="mt-1 text-sm text-primary-foreground/90">
-          {meeting.place_name}
-          {counterpart?.name ? ` · ${counterpart.name}님과` : ""}
-        </p>
+        <MeetingSummary
+          scheduledAt={meeting.scheduled_at}
+          placeName={meeting.place_name}
+          counterpartName={counterpart?.name}
+        />
         {mapUrl ? (
           <a
             href={mapUrl}
@@ -793,6 +780,11 @@ function ConfirmedCard({
         ) : null}
       </div>
       <div className="px-5 py-4">
+        <MeetingCheckin
+          key={`${meeting.id}:${meeting.schedule_revision}`}
+          meetingId={meeting.id}
+          embedded
+        />
         {meeting.private_opens_at ? (
           <p className="text-xs leading-relaxed text-muted-foreground">
             사적인 대화는{" "}
@@ -809,6 +801,9 @@ function ConfirmedCard({
           대화방 열기
           <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          일정 변경·취소도 대화방에서 확인할 수 있어요.
+        </p>
       </div>
     </div>
   );

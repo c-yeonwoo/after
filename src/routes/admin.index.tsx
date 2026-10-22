@@ -127,8 +127,14 @@ function OperationsHome() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Summary label="미처리 작업" value={overview?.total} to="/admin/tasks" />
-        <Summary label="기한 초과" value={overview?.overdue} tone="alert" to="/admin/tasks" />
-        <Summary label="오늘 기한" value={overview?.due_today} to="/admin/tasks" />
+        <Summary
+          label="기한 초과"
+          value={overview?.overdue}
+          tone="alert"
+          to="/admin/tasks"
+          focus="overdue"
+        />
+        <Summary label="오늘 기한" value={overview?.due_today} to="/admin/tasks" focus="today" />
         <Summary
           label="높은 우선순위"
           value={overview ? overview.critical + overview.high : null}
@@ -238,15 +244,18 @@ function Summary({
   value,
   tone,
   to,
+  focus,
 }: {
   label: string;
   value: number | null | undefined;
   tone?: "alert";
   to: "/admin/tasks";
+  focus?: "overdue" | "today";
 }) {
   return (
     <Link
       to={to}
+      search={{ focus }}
       className="rounded-surface border border-border bg-card px-5 py-4 transition-colors hover:border-foreground/25"
     >
       <p className="text-xs text-muted-foreground">{label}</p>

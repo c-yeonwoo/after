@@ -3335,6 +3335,17 @@ export type Database = {
         Returns: Json
       }
       admin_ops_overview: { Args: { p_hub?: string }; Returns: Json }
+      admin_ops_worklist: {
+        Args: {
+          p_cursor?: Json
+          p_focus?: string
+          p_limit?: number
+          p_priority?: string
+          p_status?: string
+          p_type?: string
+        }
+        Returns: Json
+      }
       admin_pause_policy_reconsent: {
         Args: {
           p_expected_version: number

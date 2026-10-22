@@ -917,6 +917,7 @@ export async function fetchOpsOverview(): Promise<OpsOverview> {
 
 export async function fetchOpsCases(
   p: {
+    focus?: "overdue" | "today" | "followup";
     status?: string;
     type?: string;
     priority?: string;
@@ -924,7 +925,8 @@ export async function fetchOpsCases(
     limit?: number;
   } = {},
 ): Promise<OpsPage> {
-  const { data, error } = await supabase.rpc("admin_ops_cases", {
+  const { data, error } = await supabase.rpc("admin_ops_worklist", {
+    p_focus: p.focus,
     p_status: p.status,
     p_type: p.type,
     p_priority: p.priority,

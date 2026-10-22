@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { CalendarCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
+import { MeetingSummary } from "@/components/app/MeetingSummary";
 import { Input } from "@/components/ui/input";
 import { describePrefs, formatMeetTime } from "@/lib/meet";
 import { confirmMeeting, type Meeting } from "@/lib/api";
@@ -15,9 +15,11 @@ const PLACE_HINTS = ["카페", "저녁", "가벼운 술", "기타"];
 /** 대화방 상단의 약속 조율 카드 — 장소·음식은 제한하지 않는다(D5 폐기). */
 export function MeetPlanner({
   meeting,
+  counterpartName,
   onConfirmed,
 }: {
   meeting: Meeting;
+  counterpartName?: string | null;
   onConfirmed: (m: Meeting) => void;
 }) {
   const [date, setDate] = useState<string | null>(null);
@@ -38,12 +40,12 @@ export function MeetPlanner({
   if (confirmed) {
     return (
       <div className="rounded-surface border border-border bg-card p-5 shadow-card">
-        <div className="flex items-center gap-2">
-          <CalendarCheck className="size-4 text-primary" aria-hidden="true" />
-          <p className="text-sm font-semibold">만남 확정</p>
-        </div>
-        <p className="mt-2 text-sm text-foreground">{formatMeetTime(confirmed.toISOString())}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">{meeting.place_name}</p>
+        <p className="mb-3 text-sm font-semibold">만남 확정</p>
+        <MeetingSummary
+          scheduledAt={meeting.scheduled_at}
+          placeName={meeting.place_name}
+          counterpartName={counterpartName}
+        />
         <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
           만나기 전날 저녁 6시에 사적인 이야기까지 나눌 수 있는 대화가 열립니다.
         </p>
@@ -53,10 +55,10 @@ export function MeetPlanner({
 
   return (
     <div className="rounded-surface border border-border bg-card p-5 shadow-card">
-      <div className="flex items-center gap-2">
-        <CalendarCheck className="size-4 text-primary" aria-hidden="true" />
-        <p className="text-sm font-semibold">약속 정하기</p>
-      </div>
+      <MeetingSummary scheduledAt={date} placeName={placeName} counterpartName={counterpartName} />
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        상대가 보내온 날짜 중 하나를 고르면 대화가 열려요.
+      </p>
 
       {prefs ? (
         <div className="mt-3 rounded-xl bg-muted/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
@@ -91,6 +93,7 @@ export function MeetPlanner({
         카페든 저녁이든 무엇이든 괜찮습니다. 장소를 직접 적어 주세요.
       </p>
       <Input
+        aria-label="만날 장소"
         className="mt-2"
         value={placeName}
         onChange={(e) => setPlaceName(e.target.value)}
@@ -116,7 +119,17 @@ export function MeetPlanner({
       </div>
 
       <MeetingPolicyNote />
+      {!date || !placeName.trim() ? (
+        <p id="meeting-required" className="mt-4 text-xs text-muted-foreground">
+          {!date && !placeName.trim()
+            ? "날짜와 장소를 정하면 확정할 수 있어요."
+            : !date
+              ? "만날 날짜를 선택해 주세요."
+              : "만날 장소를 입력해 주세요."}
+        </p>
+      ) : null}
       <Button
+        aria-describedby={!date || !placeName.trim() ? "meeting-required" : undefined}
         className="mt-5 w-full"
         disabled={!date || !placeName.trim() || busy}
         onClick={async () => {

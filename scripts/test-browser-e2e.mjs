@@ -383,6 +383,10 @@ try {
   const readinessPhoto = readiness.locator('img[src="/brand/after-first-conversation.jpg"]');
   await readinessPhoto.waitFor();
   await readinessPhoto.evaluate((image) => image.decode());
+  await signupPage
+    .locator("[data-sonner-toast]")
+    .last()
+    .waitFor({ state: "hidden", timeout: 10000 });
   for (const width of [320, 390, 430, 768, 1440]) {
     await signupPage.setViewportSize({ width, height: 900 });
     const imageSize = await readinessPhoto.evaluate((image) => ({
@@ -394,6 +398,14 @@ try {
       declaredHeight: Number(image.getAttribute("height")),
     }));
     assert.ok(imageSize.width > 0 && imageSize.naturalWidth > 0, "waiting photo loaded");
+    const availabilityBox = await readiness
+      .getByRole("link", { name: /만남 가능 시간/ })
+      .boundingBox();
+    const photoBox = await readinessPhoto.boundingBox();
+    assert.ok(
+      availabilityBox.y + availabilityBox.height <= photoBox.y,
+      "settings and next action precede the brand photo",
+    );
     assert.equal(
       imageSize.declaredWidth / imageSize.declaredHeight,
       imageSize.naturalWidth / imageSize.naturalHeight,
@@ -407,6 +419,10 @@ try {
     );
     await checkPage(signupPage, `waiting home ${width}px`, width === 390);
     if (screenshotDir && [320, 390, 1440].includes(width)) {
+      await signupPage.evaluate(() => {
+        window.scrollTo(0, 0);
+        document.querySelector("main")?.scrollTo(0, 0);
+      });
       await signupPage.screenshot({ path: join(screenshotDir, `waiting-home-${width}px.png`) });
     }
   }
@@ -818,6 +834,36 @@ try {
     "1",
     "female accepted a proposed meeting slot",
   );
+  const homeSummary = femalePage.getByRole("region", { name: "약속 요약", exact: true });
+  await homeSummary.waitFor();
+  const homeTime = await homeSummary.locator("dd").first().textContent();
+  await femalePage.goto(`${baseUrl}/chats`);
+  const chatSummary = femalePage.getByRole("region", { name: "약속 요약", exact: true });
+  await chatSummary.waitFor();
+  assert.equal(
+    await chatSummary.locator("dd").first().textContent(),
+    homeTime,
+    "home and conversation show the same complete date and time",
+  );
+  await checkPage(femalePage, "conversation with meeting summary");
+  if (screenshotDir)
+    await femalePage.screenshot({ path: join(screenshotDir, "meeting-summary.png") });
+  const scheduleRequest = "**/rest/v1/meetings?*";
+  await femalePage.route(scheduleRequest, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Synthetic unavailable" }),
+    }),
+  );
+  await femalePage.goto(`${baseUrl}/schedule?meetingId=${randomUUID()}`);
+  await femalePage
+    .getByRole("alert")
+    .getByText("약속 정보를 불러오지 못했어요. 다시 확인해 주세요.")
+    .waitFor();
+  await femalePage.unroute(scheduleRequest);
+  await femalePage.getByRole("button", { name: "다시 확인", exact: true }).click();
+  await femalePage.getByText("아직 정할 날짜가 없습니다", { exact: true }).waitFor();
   await femalePage.goto(`${baseUrl}/support`);
   await femalePage
     .getByLabel("문의 내용")
@@ -1037,6 +1083,16 @@ try {
     "profile reads headline, photos, facts, then interview",
   );
   const photoOpener = femalePage.getByRole("button", { name: /프로필 사진 1 크게 보기/ });
+  await femalePage
+    .locator("[data-sonner-toast]")
+    .last()
+    .waitFor({ state: "hidden", timeout: 10000 });
+  for (const width of [320, 390]) {
+    await femalePage.setViewportSize({ width, height: 844 });
+    await checkPage(femalePage, `profile reading ${width}px`);
+    if (screenshotDir)
+      await femalePage.screenshot({ path: join(screenshotDir, `profile-reading-${width}px.png`) });
+  }
   await photoOpener.click();
   const photoDialog = femalePage.getByRole("dialog");
   await photoDialog.getByRole("img", { name: /사진 1 확대/ }).waitFor();
@@ -1207,6 +1263,82 @@ try {
   await adminPage.goto(`${baseUrl}/admin`);
   await adminPage.getByText("운영 홈").first().waitFor();
   await checkPage(adminPage, "admin operations");
+  const supportCaseId = sql(
+    `select c.id from ops_cases c join support_requests s on s.id::text=c.source_id where c.case_type='support' and s.user_id='${female.id}' order by c.opened_at desc limit 1`,
+  );
+  assert.ok(supportCaseId, "synthetic inquiry has an operational case");
+  await adminPage.goto(`${baseUrl}/admin/tasks`);
+  const worklist = adminPage.getByRole("region", { name: "작업 목록", exact: true });
+  const workdetail = adminPage.getByRole("region", { name: "작업 상세", exact: true });
+  await worklist.locator(`[data-case-id="${supportCaseId}"]`).waitFor();
+  await adminPage
+    .getByRole("group", { name: "기한 필터" })
+    .getByRole("button", { name: "기한 초과", exact: true })
+    .click();
+  await adminPage.waitForURL("**/admin/tasks?focus=overdue");
+  await adminPage
+    .getByRole("group", { name: "기한 필터" })
+    .getByRole("button", { name: "모든 기한", exact: true })
+    .click();
+  await worklist.locator(`[data-case-id="${supportCaseId}"]`).click();
+  await workdetail.getByRole("heading", { name: "고객 문의", exact: true }).waitFor();
+  assert.equal(await worklist.isVisible(), true, "desktop keeps the queue beside the detail");
+  await checkPage(adminPage, "admin workbench desktop");
+  if (screenshotDir)
+    await adminPage.screenshot({ path: join(screenshotDir, "admin-workbench-desktop.png") });
+  await adminPage.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await worklist.isVisible(), false, "mobile focuses on the selected task");
+  await checkPage(adminPage, "admin workbench mobile");
+  if (screenshotDir)
+    await adminPage.screenshot({ path: join(screenshotDir, "admin-workbench-mobile.png") });
+  await workdetail.getByRole("button", { name: "목록으로 돌아가기", exact: true }).click();
+  assert.equal(await worklist.isVisible(), true, "return restores the mobile worklist");
+  assert.equal(
+    await worklist
+      .locator(`[data-case-id="${supportCaseId}"]`)
+      .evaluate((node) => document.activeElement === node),
+    true,
+    "return restores keyboard focus to the selected row",
+  );
+  await adminPage.setViewportSize({ width: 1440, height: 900 });
+  // Refreshing after an action must retain already loaded pages, not silently
+  // collapse the operator's working set back to the first 30 rows.
+  sql(`insert into ops_cases(case_type,source_id,subject_id,occurrence,priority,status,due_at,source_revision)
+    select 'support','e2e-worklist-${admin.id}-'||n,'${admin.id}',1,'normal','open',now()+interval '3 days','qa'
+    from generate_series(1,35) n`);
+  await adminPage.getByRole("button", { name: "새로고침", exact: true }).click();
+  await worklist.getByRole("button", { name: "더 보기", exact: true }).click();
+  await worklist.locator("[data-case-id]").nth(34).waitFor();
+  const loadedRows = await worklist.locator("[data-case-id]").count();
+  await worklist.locator(`[data-case-id="${supportCaseId}"]`).click();
+  await workdetail.getByLabel("처리 사유", { exact: true }).fill("합성 검증: 목록 위치 유지 확인");
+  await workdetail.getByRole("button", { name: "처리 시작", exact: true }).click();
+  await workdetail.getByText("처리 중", { exact: true }).first().waitFor();
+  await worklist
+    .locator("[data-case-id]")
+    .nth(loadedRows - 1)
+    .waitFor();
+  assert.equal(
+    await worklist.locator("[data-case-id]").count(),
+    loadedRows,
+    "action refresh retains all loaded pages",
+  );
+  await adminPage.setViewportSize({ width: 390, height: 844 });
+  await workdetail.getByRole("button", { name: "목록으로 돌아가기", exact: true }).click();
+  const lastRow = worklist.locator("[data-case-id]").last();
+  await lastRow.scrollIntoViewIfNeeded();
+  const listScroll = await worklist.evaluate((node) => node.closest("main").scrollTop);
+  assert.ok(listScroll > 500, "long mobile queue is scrolled before selection");
+  await lastRow.click();
+  await adminPage.waitForFunction(() => document.querySelector("main").scrollTop === 0);
+  await workdetail.getByRole("button", { name: "목록으로 돌아가기", exact: true }).click();
+  await adminPage.waitForFunction(
+    (top) => Math.abs(document.querySelector("main").scrollTop - top) < 2,
+    listScroll,
+  );
+  sql(
+    `delete from ops_cases where subject_id='${admin.id}' and source_id like 'e2e-worklist-${admin.id}-%'`,
+  );
   await adminPage.goto(`${baseUrl}/admin/support`);
   const inquiry = adminPage
     .getByRole("article")
@@ -1349,6 +1481,7 @@ try {
       and email like 'after-e2e-%@verify.local'`);
     if (owned !== String(ids.length)) throw new Error("Refusing to clean up non-E2E users");
     sql(`begin;
+      delete from public.ops_cases where subject_id in (${listed}) and source_id like 'e2e-worklist-%';
       delete from public.support_requests where user_id in (${listed})
         or responded_by in (${listed});
       delete from public.admin_actions where actor_id in (${listed})
