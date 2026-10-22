@@ -434,6 +434,25 @@ try {
     }
   }
   await signupPage.setViewportSize({ width: 390, height: 844 });
+  const waitingSwitch = readiness.getByRole("switch");
+  const switchBox = await waitingSwitch.boundingBox();
+  assert.ok(switchBox.width >= 44 && switchBox.height >= 44, "switch has a 44px touch target");
+  await signupPage.emulateMedia({ reducedMotion: "reduce" });
+  assert.equal(
+    await signupPage
+      .locator(".app-tab[aria-current='page'] .app-tab-icon")
+      .evaluate((element) => getComputedStyle(element).animationName),
+    "none",
+    "selected tab respects reduced motion",
+  );
+  assert.equal(
+    await waitingSwitch.evaluate(
+      (element) => getComputedStyle(element, "::before").transitionProperty,
+    ),
+    "none",
+    "switch rail respects reduced motion",
+  );
+  await signupPage.emulateMedia({ reducedMotion: "no-preference" });
   await readiness.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).click();
   await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).waitFor();
   assert.equal(await readinessPhoto.count(), 0, "paused introductions do not show a waiting photo");

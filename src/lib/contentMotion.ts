@@ -12,10 +12,10 @@ export function useContentArrival(
     if (preference.matches) return;
     const animation = element.animate(
       [
-        { opacity: 0.92, transform: "translateY(4px)" },
+        { opacity: 0.82, transform: "translateY(12px)" },
         { opacity: 1, transform: "translateY(0)" },
       ],
-      { duration: 180, easing: "cubic-bezier(0.23, 1, 0.32, 1)" },
+      { duration: 260, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
     );
     const stop = () => animation.cancel();
     preference.addEventListener("change", stop);

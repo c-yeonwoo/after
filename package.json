@@ -3,6 +3,11 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "overrides": {
+    "@capacitor/cli": {
+      "xcode": "4.0.0"
+    }
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -14,7 +19,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run check:contrast && npm run check:ai && npm run check:identity && npm run check:age && npm run check:phone && npm run check:auth && npm run check:meet && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run check:tooling && npm run check:contrast && npm run check:ai && npm run check:identity && npm run check:age && npm run check:phone && npm run check:auth && npm run check:meet && npm run build",
+    "check:tooling": "node --test scripts/check-native-tooling.mjs",
     "check:meet": "bun scripts/check-meet-time.ts",
     "release:check": "npm run check && npx supabase test db && npm run test:meeting-concurrency && npm run test:notification-concurrency && npm run test:ai-concurrency",
     "test:ai-concurrency": "node scripts/test-ai-concurrency.mjs",

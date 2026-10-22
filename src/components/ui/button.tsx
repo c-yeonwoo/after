@@ -16,7 +16,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "app-primary-button bg-primary text-primary-foreground hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         // 부 행동. 진한 입력칸 테두리(input) 대신 옅은 선을 써서 주 버튼과 위계를 가른다.
         outline: "border border-border bg-transparent text-foreground hover:bg-muted",

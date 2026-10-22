@@ -503,13 +503,13 @@ function ReadinessPanel({
 
   return (
     <section className="mt-4" aria-label="소개 설정">
-      <div className="overflow-hidden rounded-surface border border-border bg-card">
-        <div className="flex min-h-20 items-center gap-3.5 px-5 py-4">
+      <div className="app-elevated overflow-hidden rounded-surface bg-card">
+        <div className="readiness-status flex min-h-24 items-center gap-3.5 px-5 py-4">
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">
               {paused ? "소개 쉬어가기" : "새 소개 받기"}
             </span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+            <span className="mt-1 block text-xs leading-relaxed">
               {paused
                 ? "새 소개가 오지 않습니다. 진행 중인 약속은 그대로입니다."
                 : "새 소개는 이곳에서 확인할 수 있어요."}
@@ -571,7 +571,7 @@ function ReadinessPanel({
         {!paused ? (
           <Link
             to="/availability"
-            className="flex min-h-14 items-center justify-between gap-3 border-t border-border px-5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="pressable flex min-h-14 items-center justify-between gap-3 border-t border-border px-5 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <span className="font-medium">만남 가능 시간</span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -587,7 +587,7 @@ function ReadinessPanel({
           alt=""
           width="1536"
           height="1024"
-          className="mt-5 block h-auto w-full rounded-surface"
+          className="app-elevated mt-6 block h-auto w-full rounded-surface"
         />
       ) : null}
     </section>

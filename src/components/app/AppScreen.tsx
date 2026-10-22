@@ -116,7 +116,7 @@ export function AppScreen({
             <Link
               to={back}
               aria-label="뒤로"
-              className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="pressable -ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <ArrowLeft className="size-5" aria-hidden="true" />
             </Link>
@@ -169,11 +169,11 @@ export function AppScreen({
 
       {hideTabs ? null : (
         <nav
-          className="z-30 shrink-0 border-t border-border bg-background"
+          className="app-tab-bar z-30 shrink-0 bg-card"
           style={{ paddingBottom: "var(--safe-bottom)" }}
           aria-label="주요 메뉴"
         >
-          <ul className="flex items-stretch">
+          <ul className="flex items-stretch px-2">
             {TABS.map((t) => {
               const active = pathname === t.to || pathname.startsWith(`${t.to}/`);
               const Icon = t.icon;
@@ -183,15 +183,15 @@ export function AppScreen({
                     to={t.to}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "pressable flex min-h-16 flex-col items-center justify-center gap-1 pt-2 text-2xs font-medium",
+                      "app-tab pressable flex min-h-16 flex-col items-center justify-center gap-1 pt-2 text-2xs font-medium",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       active ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     <span
                       className={cn(
-                        "flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none",
-                        active && "bg-surface-subtle",
+                        "app-tab-icon flex h-8 w-12 items-center justify-center rounded-control transition-colors duration-150 motion-reduce:transition-none",
+                        active && "bg-primary text-primary-foreground",
                       )}
                     >
                       <Icon
