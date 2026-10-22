@@ -70,7 +70,12 @@ export function CuratorTable() {
         <p className="mt-3 text-sm text-muted-foreground">이 기간에 큐레이션한 기록이 없습니다.</p>
       ) : (
         <>
-          <div className="mt-3 overflow-x-auto">
+          <div
+            role="region"
+            aria-label="큐레이터 지표 표"
+            tabIndex={0}
+            className="mt-3 overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
