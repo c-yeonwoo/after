@@ -497,6 +497,32 @@
   box-shadow: 0 8px 24px -12px oklch(0.2955 0.0198 169.4 / 24%);
 }
 
+.chat-composer {
+  box-shadow: 0 5px 18px -10px oklch(0.2955 0.0198 169.4 / 30%);
+}
+
+@media (max-height: 540px) {
+  .app-conversation-screen {
+    --safe-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+.chat-message[data-sent="true"] {
+  animation: after-message-send 200ms var(--ease-out);
+}
+
+@keyframes after-message-send {
+  from {
+    opacity: 0.7;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .app-primary-button:not(:disabled):not([aria-disabled="true"]) {
   box-shadow: 0 5px 12px -6px oklch(0.2955 0.0198 169.4 / 48%);
 }
@@ -567,6 +593,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .chat-message[data-sent="true"] {
+    animation: none;
+  }
+
   .app-tab[aria-current="page"] .app-tab-icon {
     animation: none;
   }

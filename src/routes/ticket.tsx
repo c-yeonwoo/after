@@ -92,7 +92,7 @@ function TicketPage() {
         </GuideNote>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-surface border border-border bg-card shadow-card">
+      <div className="app-elevated mt-6 overflow-hidden rounded-surface bg-card">
         <div className="bg-primary px-6 py-6 text-primary-foreground">
           <Ticket className="size-5 text-primary-foreground" aria-hidden="true" />
           <div className="mt-3 flex items-baseline justify-between gap-3">

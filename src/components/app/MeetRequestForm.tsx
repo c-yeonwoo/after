@@ -123,7 +123,7 @@ export function MeetRequestForm({
         </p>
 
         {recommended.length ? (
-          <div className="mt-4 rounded-surface border border-border bg-surface-subtle p-4">
+          <div className="mt-4 rounded-surface bg-surface-subtle p-4">
             <p className="text-sm font-semibold">서로 편한 요일이 겹쳐요</p>
             <p className="mt-1 text-xs text-muted-foreground">
               평소 가능한 시간으로 고른 후보예요. 실제 날짜는 두 분이 다시 확인합니다.
@@ -137,7 +137,7 @@ export function MeetRequestForm({
                   disabled={!slots.includes(iso) && slots.length >= MAX_SLOTS}
                   onClick={() => toggleSlot(iso)}
                   className={cn(
-                    "min-h-11 rounded-control border px-3 text-xs font-medium active:scale-[0.97] disabled:opacity-40",
+                    "pressable min-h-11 rounded-control border px-3 text-xs font-medium disabled:opacity-40",
                     slots.includes(iso)
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-card text-foreground",
@@ -165,7 +165,7 @@ export function MeetRequestForm({
               aria-pressed={day === k}
               onClick={() => setDay(k)}
               className={cn(
-                "min-h-11 shrink-0 rounded-control border px-3.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                "pressable min-h-12 shrink-0 rounded-control border px-3.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 day === k
                   ? "border-primary bg-primary font-semibold text-primary-foreground"
                   : "border-border bg-card text-foreground",
@@ -190,7 +190,7 @@ export function MeetRequestForm({
                   disabled={full}
                   onClick={() => toggleSlot(iso)}
                   className={cn(
-                    "min-h-11 rounded-control border text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40",
+                    "pressable min-h-11 rounded-control border text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40",
                     on
                       ? "border-primary bg-primary font-semibold text-primary-foreground"
                       : "border-border bg-card text-foreground",
@@ -208,14 +208,14 @@ export function MeetRequestForm({
             {sortedSlots.map((iso) => (
               <li
                 key={iso}
-                className="flex min-h-11 items-center justify-between gap-3 rounded-field border border-border bg-card px-4 text-sm"
+                className="flex min-h-11 items-center justify-between gap-3 rounded-field bg-muted pl-4 pr-1 text-sm"
               >
                 <span className="font-medium text-foreground">{formatMeetTime(iso)}</span>
                 <button
                   type="button"
                   aria-label={`${formatMeetTime(iso)} 빼기`}
                   onClick={() => toggleSlot(iso)}
-                  className="grid size-9 place-items-center rounded-control text-muted-foreground hover:bg-muted"
+                  className="pressable grid size-11 shrink-0 place-items-center rounded-control text-muted-foreground hover:bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <X className="size-4" aria-hidden="true" />
                 </button>
@@ -243,7 +243,7 @@ export function MeetRequestForm({
                     aria-checked={placeId === p.id}
                     onClick={() => setPlaceId(p.id)}
                     className={cn(
-                      "flex w-full items-start gap-3 rounded-surface border px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                      "pressable flex min-h-12 w-full items-start gap-3 rounded-surface border px-4 py-3 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       placeId === p.id ? "border-primary bg-brand-tint" : "border-border bg-card",
                     )}
                   >

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export function MeetPlanner({
 
   if (confirmed) {
     return (
-      <div className="rounded-surface border border-border bg-card p-5 shadow-card">
+      <div className="app-elevated rounded-surface bg-card p-5">
         <p className="mb-3 text-sm font-semibold">만남 확정</p>
         <MeetingSummary
           scheduledAt={meeting.scheduled_at}
@@ -54,8 +55,14 @@ export function MeetPlanner({
   }
 
   return (
-    <div className="rounded-surface border border-border bg-card p-5 shadow-card">
-      <MeetingSummary scheduledAt={date} placeName={placeName} counterpartName={counterpartName} />
+    <div className="app-elevated overflow-hidden rounded-surface bg-card p-5">
+      <div className="-mx-5 -mt-5 mb-5 bg-primary px-5 py-5 text-primary-foreground">
+        <MeetingSummary
+          scheduledAt={date}
+          placeName={placeName}
+          counterpartName={counterpartName}
+        />
+      </div>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
         상대가 보내온 날짜 중 하나를 고르면 대화가 열려요.
       </p>
@@ -76,7 +83,7 @@ export function MeetPlanner({
             aria-pressed={date === iso}
             onClick={() => setDate(iso)}
             className={cn(
-              "min-h-12 w-full rounded-control border px-4 text-left text-sm transition-colors",
+              "pressable flex min-h-12 w-full items-center justify-between gap-3 rounded-control border px-4 py-3 text-left text-sm",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               date === iso
                 ? "border-primary bg-primary font-semibold text-primary-foreground"
@@ -84,6 +91,7 @@ export function MeetPlanner({
             )}
           >
             {formatMeetTime(iso)}
+            {date === iso ? <Check className="size-4 shrink-0" aria-hidden="true" /> : null}
           </button>
         ))}
       </div>
@@ -107,7 +115,7 @@ export function MeetPlanner({
             aria-pressed={placeKind === h}
             onClick={() => setPlaceKind((prev) => (prev === h ? null : h))}
             className={cn(
-              "min-h-11 rounded-control border px-3 text-xs transition-colors",
+              "pressable min-h-11 rounded-control border px-3 text-sm",
               placeKind === h
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background",

@@ -197,7 +197,7 @@ function IntroPage() {
   if (loadError) {
     return (
       <AppScreen title="이번 소개">
-        <div role="alert" className="mt-10 rounded-surface border border-border bg-card p-6">
+        <div role="alert" className="app-elevated mt-10 rounded-surface bg-card p-6">
           <p className="text-sm">소개 상태를 불러오지 못했습니다.</p>
           <Button className="mt-4" variant="outline" onClick={() => void load()}>
             다시 확인
@@ -210,7 +210,7 @@ function IntroPage() {
   if (preparationMessage) {
     return (
       <AppScreen title="이번 소개">
-        <div className="mt-10 rounded-surface border border-border bg-card p-6">
+        <div className="app-elevated mt-10 rounded-surface bg-card p-6">
           <p className="text-sm">{preparationMessage}</p>
           <Button className="mt-4" onClick={() => navigate({ to: "/home" })}>
             내 상태 확인하기
@@ -235,14 +235,14 @@ function IntroPage() {
         */}
         {isMale && gate ? (
           gate.queued === 0 ? (
-            <div className="mt-16 rounded-surface bg-surface-subtle px-6 py-12 text-center">
+            <div className="app-elevated mt-10 rounded-surface bg-card px-6 py-10 text-center">
               <p className="text-sm font-medium">아직 도착한 소개가 없습니다</p>
               <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                 소개가 준비되면 알려드릴게요.
               </p>
             </div>
           ) : (
-            <div className="mt-6 rounded-surface border border-border bg-card px-5 py-6">
+            <div className="app-elevated mt-6 rounded-surface bg-card px-5 py-6">
               {/*
                 열기 전 공개(D2 ①). 예전에는 상대 정보가 0개인 채로 "소개 티켓 1장 쓰고 열기"
                 만 있었다 — 5,000원짜리 뽑기였다. 이제 무엇을 여는지 알고 연다. 이름·사진·
@@ -307,7 +307,7 @@ function IntroPage() {
             </div>
           )
         ) : (
-          <div className="mt-16 rounded-surface bg-surface-subtle px-6 py-12 text-center">
+          <div className="app-elevated mt-10 rounded-surface bg-card px-6 py-10 text-center">
             <p className="text-sm font-medium">
               {hasLikes ? "마음을 남겼어요" : "지금 살펴볼 소개를 모두 확인했어요"}
             </p>
@@ -461,7 +461,7 @@ function IntroPage() {
       <ProfileDetail key={candidate.id} p={view} />
 
       {maleAnswered ? (
-        <div className="mt-8 rounded-control border border-border bg-card px-4 py-4 text-sm">
+        <div className="app-elevated mt-8 rounded-surface bg-card px-5 py-5 text-sm">
           <p className="font-semibold text-foreground">
             {meeting?.confirmed_at
               ? "대화가 열렸습니다"

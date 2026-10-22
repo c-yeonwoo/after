@@ -44,7 +44,7 @@ function PhotoTile({
       onClick={(event) => onOpen(event.currentTarget)}
       disabled={!src || failed}
       aria-label={`${name} 프로필 사진 ${index + 1} 크게 보기`}
-      className="relative aspect-[3/4] w-[56%] shrink-0 snap-start overflow-hidden rounded-surface bg-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none active:opacity-80 disabled:cursor-default"
+      className="relative aspect-[3/4] w-[56%] shrink-0 snap-start overflow-hidden rounded-surface bg-muted transition-opacity duration-150 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none active:opacity-80 disabled:cursor-default motion-reduce:transition-none"
     >
       {src && !failed ? (
         <>
