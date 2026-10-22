@@ -246,7 +246,12 @@ function SystemTab() {
           <Empty>최종 실패한 알림이 없습니다.</Empty>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-surface border border-border">
+            <div
+              role="region"
+              aria-label="실패한 알림 표"
+              tabIndex={0}
+              className="overflow-x-auto rounded-surface border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <table className="w-full min-w-[48rem] text-sm">
                 <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                   <tr>
@@ -306,7 +311,12 @@ function SystemTab() {
       </Section>
 
       <Section title="자동화" hint="핵심 예약 작업의 활성 상태와 마지막 실행 결과입니다.">
-        <div className="overflow-x-auto rounded-surface border border-border">
+        <div
+          role="region"
+          aria-label="자동화 실행 표"
+          tabIndex={0}
+          className="overflow-x-auto rounded-surface border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <table className="w-full min-w-[42rem] text-sm">
             <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
               <tr>
@@ -370,7 +380,12 @@ function SystemTab() {
         {data.ai.length === 0 ? (
           <Empty>아직 기록된 AI 실행이 없습니다.</Empty>
         ) : (
-          <div className="overflow-x-auto rounded-surface border border-border">
+          <div
+            role="region"
+            aria-label="AI 실행 표"
+            tabIndex={0}
+            className="overflow-x-auto rounded-surface border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <table className="w-full min-w-[46rem] text-sm">
               <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                 <tr>
