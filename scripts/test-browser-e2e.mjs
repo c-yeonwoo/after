@@ -169,6 +169,18 @@ async function waitForHome(page) {
 }
 
 async function checkPage(page, name, accessibility = true) {
+  await page.waitForFunction(
+    () =>
+      !document
+        .getAnimations()
+        .some(
+          (animation) =>
+            animation.playState === "running" &&
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        ),
+    undefined,
+    { timeout: 5000 },
+  );
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth + 1,
   );

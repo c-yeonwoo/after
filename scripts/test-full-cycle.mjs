@@ -70,6 +70,20 @@ async function pageFor(width = 390) {
 async function screen(page, name) {
   const toast = page.locator("[data-sonner-toast]").last();
   if (await toast.count()) await toast.waitFor({ state: "hidden", timeout: 10000 });
+  // Measure settled UI, not the intermediate alpha of a dialog/content fade.
+  // Keep animations enabled; a stuck finite animation must still fail the test.
+  await page.waitForFunction(
+    () =>
+      !document
+        .getAnimations()
+        .some(
+          (animation) =>
+            animation.playState === "running" &&
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        ),
+    undefined,
+    { timeout: 5000 },
+  );
   await page.screenshot({ path: `${output}/${name}.png`, fullPage: true });
   assert.equal(
     await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
