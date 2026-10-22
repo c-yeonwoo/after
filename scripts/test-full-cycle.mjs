@@ -70,6 +70,20 @@ async function pageFor(width = 390) {
 async function screen(page, name) {
   const toast = page.locator("[data-sonner-toast]").last();
   if (await toast.count()) await toast.waitFor({ state: "hidden", timeout: 10000 });
+  // Measure settled UI, not the intermediate alpha of a dialog/content fade.
+  // Keep animations enabled; a stuck finite animation must still fail the test.
+  await page.waitForFunction(
+    () =>
+      !document
+        .getAnimations()
+        .some(
+          (animation) =>
+            animation.playState === "running" &&
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        ),
+    undefined,
+    { timeout: 5000 },
+  );
   await page.screenshot({ path: `${output}/${name}.png`, fullPage: true });
   assert.equal(
     await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
@@ -1042,7 +1056,8 @@ try {
     sql("select meeting_lifecycle_tick();select meeting_lifecycle_tick();");
     assert.equal(
       sql(
-        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_reminder'`,
+        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_reminder'
+          and schedule_revision=(select schedule_revision from meetings where id='${success.id}')`,
       ),
       "2",
     );
@@ -1056,13 +1071,15 @@ try {
     sql("select meeting_lifecycle_tick();select meeting_lifecycle_tick();");
     assert.equal(
       sql(
-        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${success.female.id}'`,
+        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${success.female.id}'
+          and schedule_revision=(select schedule_revision from meetings where id='${success.id}')`,
       ),
       "1",
     );
     assert.equal(
       sql(
-        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${m1.id}'`,
+        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${m1.id}'
+          and schedule_revision=(select schedule_revision from meetings where id='${success.id}')`,
       ),
       "0",
     );

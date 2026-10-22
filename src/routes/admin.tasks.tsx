@@ -15,7 +15,12 @@ import {
   type OpsCursor,
 } from "@/lib/admin";
 
-type TaskSearch = { caseId?: string; status?: string; type?: string };
+type TaskSearch = {
+  caseId?: string;
+  status?: string;
+  type?: string;
+  focus?: "overdue" | "today" | "followup";
+};
 const STATES = ["open", "in_progress", "waiting", "snoozed", "resolved"];
 const TYPES = [
   "support",
@@ -68,12 +73,16 @@ export const Route = createFileRoute("/admin/tasks")({
     caseId: typeof search.caseId === "string" ? search.caseId : undefined,
     status: STATES.includes(search.status as string) ? (search.status as string) : undefined,
     type: TYPES.includes(search.type as string) ? (search.type as string) : undefined,
+    focus: ["overdue", "today", "followup"].includes(search.focus as string)
+      ? (search.focus as TaskSearch["focus"])
+      : undefined,
   }),
   component: TasksTab,
 });
 
 function dateTime(iso: string) {
   return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "numeric",
     day: "numeric",
     hour: "numeric",
@@ -100,6 +109,12 @@ function TasksTab() {
     { userId: string; name: string; allowed: boolean; phone: string | null }[] | null
   >(null);
   const epoch = useRef(0);
+  const loadedCount = useRef(0);
+  loadedCount.current = rows?.length ?? 0;
+  const listRef = useRef<HTMLElement>(null);
+  const detailRef = useRef<HTMLElement>(null);
+  const lastSelected = useRef<string | undefined>(undefined);
+  const listScrollTop = useRef(0);
   const invalidate = useCallback(() => {
     epoch.current++;
   }, []);
@@ -110,14 +125,23 @@ function TasksTab() {
       setLoading(true);
       setError(null);
       try {
-        const page = await fetchOpsCases({
+        const params = {
           status: search.status,
           type: search.type,
+          focus: search.focus,
           cursor: append ? cursor : null,
           limit: 30,
-        });
+        };
+        const keepCount = append ? 30 : Math.max(30, loadedCount.current);
+        let page = await fetchOpsCases(params);
+        const items = [...page.items];
+        while (!append && page.next_cursor && items.length < keepCount) {
+          if (request !== epoch.current) return;
+          page = await fetchOpsCases({ ...params, cursor: page.next_cursor });
+          items.push(...page.items);
+        }
         if (request !== epoch.current) return;
-        setRows((current) => (append && current ? [...current, ...page.items] : page.items));
+        setRows((current) => (append && current ? [...current, ...items] : items));
         setTotal(page.total);
         setCursor(page.next_cursor);
       } catch {
@@ -127,7 +151,7 @@ function TasksTab() {
         if (request === epoch.current) setLoading(false);
       }
     },
-    [search.status, search.type, cursor],
+    [search.status, search.type, search.focus, cursor],
   );
 
   useEffect(() => {
@@ -137,7 +161,24 @@ function TasksTab() {
     };
     // A changed filter starts a new list; cursor is intentionally ignored.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search.status, search.type, invalidate]);
+  }, [search.status, search.type, search.focus, invalidate]);
+
+  useEffect(() => {
+    // The mobile workbench swaps panes inside the admin shell's scroll area.
+    // Preserve the list position, but always enter a detail at its heading.
+    const scroller = listRef.current?.closest("main");
+    if (scroller && !window.matchMedia("(min-width: 1024px)").matches)
+      scroller.scrollTop = search.caseId ? 0 : listScrollTop.current;
+    if (search.caseId) {
+      lastSelected.current = search.caseId;
+      detailRef.current?.focus({ preventScroll: true });
+    } else if (lastSelected.current) {
+      const previous = listRef.current?.querySelector<HTMLButtonElement>(
+        `[data-case-id="${CSS.escape(lastSelected.current)}"]`,
+      );
+      (previous ?? listRef.current)?.focus({ preventScroll: true });
+    }
+  }, [search.caseId]);
 
   const live = useRef({ load, count: rows?.length ?? 0, loading, acting });
   live.current = { load, count: rows?.length ?? 0, loading, acting };
@@ -184,24 +225,30 @@ function TasksTab() {
   }, []);
 
   const choose = (id?: string) => {
+    if (acting) return;
+    if (id && !search.caseId)
+      listScrollTop.current = listRef.current?.closest("main")?.scrollTop ?? 0;
     setReason("");
     setNextCheck("");
-    void navigate({ search: { ...search, caseId: id }, replace: true });
+    void navigate({ search: { ...search, caseId: id }, replace: true, resetScroll: false });
   };
 
   const changeFilter = (part: Partial<TaskSearch>) => {
+    if (acting) return;
     const next = { ...search, ...part, caseId: undefined };
-    if (next.status === search.status && next.type === search.type) {
+    if (next.status === search.status && next.type === search.type && next.focus === search.focus) {
       void load(false);
       return;
     }
     setRows(null);
+    listScrollTop.current = 0;
+    loadedCount.current = 0;
     setCursor(null);
     setDetail(null);
     setDetailError(false);
     setReason("");
     setNextCheck("");
-    void navigate({ search: next, replace: true });
+    void navigate({ search: next, replace: true, resetScroll: false });
   };
 
   const applyBackfill = async () => {
@@ -327,7 +374,37 @@ function TasksTab() {
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-2" aria-label="작업 필터">
+      <div
+        className={`${search.caseId ? "hidden lg:flex" : "flex"} flex-wrap gap-2`}
+        role="group"
+        aria-label="기한 필터"
+      >
+        <Filter
+          label="모든 기한"
+          active={!search.focus}
+          onClick={() => changeFilter({ focus: undefined })}
+        />
+        <Filter
+          label="기한 초과"
+          active={search.focus === "overdue"}
+          onClick={() => changeFilter({ focus: "overdue", status: undefined })}
+        />
+        <Filter
+          label="오늘 기한"
+          active={search.focus === "today"}
+          onClick={() => changeFilter({ focus: "today", status: undefined })}
+        />
+        <Filter
+          label="지금 재확인"
+          active={search.focus === "followup"}
+          onClick={() => changeFilter({ focus: "followup", status: undefined })}
+        />
+      </div>
+      <div
+        className={`${search.caseId ? "hidden lg:flex" : "flex"} flex-wrap gap-2`}
+        role="group"
+        aria-label="작업 필터"
+      >
         <Filter
           label="진행 중 전체"
           active={!search.status}
@@ -356,7 +433,7 @@ function TasksTab() {
         <Filter
           label="완료"
           active={search.status === "resolved"}
-          onClick={() => changeFilter({ status: "resolved" })}
+          onClick={() => changeFilter({ status: "resolved", focus: undefined })}
         />
         <span className="mx-1 h-7 w-px bg-border" aria-hidden="true" />
         <select
@@ -375,7 +452,12 @@ function TasksTab() {
       </div>
 
       <div className="grid min-h-[430px] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.95fr)]">
-        <section className="min-w-0 rounded-surface border border-border bg-card">
+        <section
+          ref={listRef}
+          tabIndex={-1}
+          aria-label="작업 목록"
+          className={`${search.caseId ? "hidden lg:block" : ""} min-w-0 self-start overflow-y-auto overscroll-contain rounded-surface border border-border bg-card lg:sticky lg:top-4 lg:max-h-[calc(100dvh-8rem)]`}
+        >
           <div className="border-b border-border px-4 py-3 text-xs text-muted-foreground">
             {total === null ? "작업 확인 중" : `해당 작업 ${total}건`}
           </div>
@@ -393,11 +475,14 @@ function TasksTab() {
                 <li key={item.id}>
                   <button
                     type="button"
+                    data-case-id={item.id}
+                    aria-pressed={search.caseId === item.id}
+                    disabled={acting}
                     onClick={() => choose(item.id)}
                     className={`w-full px-4 py-3.5 text-left transition-colors hover:bg-muted/40 ${search.caseId === item.id ? "bg-muted/60" : ""}`}
                   >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="truncate text-sm font-medium">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <p className="min-w-0 break-words text-sm font-medium">
                         {TYPE_LABEL[item.case_type] ?? item.case_type}
                         <span className="ml-2 font-normal text-muted-foreground">
                           {item.subject_name ?? "회원 확인 필요"}
@@ -412,6 +497,11 @@ function TasksTab() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       {STATUS_LABEL[item.status] ?? item.status} · {item.hub_id ?? "권역 없음"}
                     </p>
+                    {item.next_check_at ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        다음 확인 {dateTime(item.next_check_at)}
+                      </p>
+                    ) : null}
                   </button>
                 </li>
               ))}
@@ -429,7 +519,22 @@ function TasksTab() {
           ) : null}
         </section>
 
-        <section className="min-w-0 rounded-surface border border-border bg-card p-4 sm:p-5">
+        <section
+          ref={detailRef}
+          tabIndex={-1}
+          aria-label="작업 상세"
+          className={`${!search.caseId ? "hidden lg:block" : ""} min-w-0 self-start rounded-surface border border-border bg-card p-4 sm:p-5`}
+        >
+          {search.caseId ? (
+            <button
+              type="button"
+              disabled={acting}
+              onClick={() => choose()}
+              className="mb-3 inline-flex min-h-11 items-center text-sm font-medium text-primary-strong"
+            >
+              목록으로 돌아가기
+            </button>
+          ) : null}
           {!search.caseId ? (
             <p className="text-sm text-muted-foreground">
               작업을 선택하면 근거와 처리 내역을 볼 수 있습니다.
@@ -437,13 +542,6 @@ function TasksTab() {
           ) : detailError ? (
             <div className="space-y-2 text-sm">
               <p role="alert">작업 상세를 확인할 수 없습니다.</p>
-              <button
-                type="button"
-                onClick={() => choose()}
-                className="text-primary-strong underline"
-              >
-                목록으로 돌아가기
-              </button>
             </div>
           ) : !detail || detail.case.id !== search.caseId ? (
             <p className="text-sm text-muted-foreground">작업을 확인하는 중입니다.</p>
@@ -460,6 +558,11 @@ function TasksTab() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     발생 {dateTime(detail.case.opened_at)} · 기한 {dateTime(detail.case.due_at)}
                   </p>
+                  {detail.case.next_check_at ? (
+                    <p className="mt-2 text-sm font-medium">
+                      다음 확인 {dateTime(detail.case.next_check_at)}
+                    </p>
+                  ) : null}
                 </div>
                 {detail.context?.meetingId ? (
                   <Link
@@ -673,6 +776,7 @@ function Filter({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={`min-h-11 rounded-full px-3 py-1.5 text-xs ${active ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`}
     >

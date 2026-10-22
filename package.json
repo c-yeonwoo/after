@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run check:contrast && npm run check:ai && npm run check:identity && npm run check:age && npm run check:phone && npm run check:auth && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run check:contrast && npm run check:ai && npm run check:identity && npm run check:age && npm run check:phone && npm run check:auth && npm run check:meet && npm run build",
+    "check:meet": "bun scripts/check-meet-time.ts",
     "release:check": "npm run check && npx supabase test db && npm run test:meeting-concurrency && npm run test:notification-concurrency && npm run test:ai-concurrency",
     "test:ai-concurrency": "node scripts/test-ai-concurrency.mjs",
     "test:notification-concurrency": "node scripts/test-notification-concurrency.mjs",
@@ -123,6 +124,6 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.1.5"
+    "vite": "~8.1.6"
   }
 }

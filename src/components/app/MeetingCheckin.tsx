@@ -17,7 +17,13 @@ type Checkin = {
   operatorConfirmed: boolean;
 };
 
-export function MeetingCheckin({ meetingId }: { meetingId: string }) {
+export function MeetingCheckin({
+  meetingId,
+  embedded = false,
+}: {
+  meetingId: string;
+  embedded?: boolean;
+}) {
   const navigate = useNavigate();
   const [state, setState] = useState<Checkin | null>(null);
   const [error, setError] = useState(false);
@@ -96,7 +102,11 @@ export function MeetingCheckin({ meetingId }: { meetingId: string }) {
   return (
     <section
       aria-label="약속 참석 확인"
-      className="mt-4 rounded-control border border-border bg-background p-4"
+      className={
+        embedded
+          ? "mb-4 border-b border-border pb-4"
+          : "mt-4 rounded-control border border-border bg-background p-4"
+      }
     >
       <p className="text-sm font-semibold">
         {state.operatorConfirmed

@@ -161,12 +161,20 @@ export function meetingIso(key: string, time: string) {
 export function formatMeetTime(iso: string) {
   const d = new Date(iso);
   const date = d.toLocaleDateString("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "long",
     day: "numeric",
     weekday: "short",
   });
-  const h = d.getHours();
-  const half = d.getMinutes() === 30 ? " 반" : "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const h = Number(parts.find((part) => part.type === "hour")?.value);
+  const minutes = Number(parts.find((part) => part.type === "minute")?.value);
+  const half = minutes === 30 ? " 반" : minutes ? ` ${minutes}분` : "";
   const period = h >= 18 ? "저녁" : h >= 13 ? "오후" : h >= 11 ? "낮" : "오전";
   const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
   return `${date} ${period} ${hour}시${half}`;
