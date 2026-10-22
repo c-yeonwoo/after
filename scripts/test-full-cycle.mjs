@@ -1056,7 +1056,8 @@ try {
     sql("select meeting_lifecycle_tick();select meeting_lifecycle_tick();");
     assert.equal(
       sql(
-        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_reminder'`,
+        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_reminder'
+          and schedule_revision=(select schedule_revision from meetings where id='${success.id}')`,
       ),
       "2",
     );
@@ -1070,13 +1071,15 @@ try {
     sql("select meeting_lifecycle_tick();select meeting_lifecycle_tick();");
     assert.equal(
       sql(
-        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${success.female.id}'`,
+        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${success.female.id}'
+          and schedule_revision=(select schedule_revision from meetings where id='${success.id}')`,
       ),
       "1",
     );
     assert.equal(
       sql(
-        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${m1.id}'`,
+        `select count(*) from notifications where meeting_id='${success.id}' and kind='meeting_checkin_final' and user_id='${m1.id}'
+          and schedule_revision=(select schedule_revision from meetings where id='${success.id}')`,
       ),
       "0",
     );
