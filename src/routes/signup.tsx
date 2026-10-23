@@ -145,6 +145,7 @@ function Onboarding() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [photosUploading, setPhotosUploading] = useState(false);
   /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
   const [resumed, setResumed] = useState(false);
   /** 기존 세션의 사진·이름은 사용자가 명시적으로 '이어하기'를 고르기 전에는 불러오지 않는다. */
@@ -480,7 +481,7 @@ function Onboarding() {
           </p>
         }
       >
-        <div className="divide-y divide-border rounded-surface border border-border bg-card px-4">
+        <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
           <label className="flex min-h-16 cursor-pointer items-center gap-3 py-4">
             <input
               type="checkbox"
@@ -662,13 +663,17 @@ function Onboarding() {
         title="기본적인 것부터"
         description="이름과 나이는 소개가 열린 상대에게만 보입니다."
       >
-        <div className="space-y-5">
+        <div className="app-elevated space-y-5 rounded-surface bg-card p-5">
           <div>
             <p className="text-sm font-semibold text-foreground">프로필 사진</p>
             <p className="mt-1 mb-3 text-sm text-muted-foreground">
               얼굴이 잘 보이는 사진과 평소 모습이 담긴 사진을 섞어 주세요.
             </p>
-            <PhotoSetEditor photos={basics.photos} onChange={(photos) => setB({ photos })} />
+            <PhotoSetEditor
+              photos={basics.photos}
+              onChange={(photos) => setB({ photos })}
+              onUploadingChange={setPhotosUploading}
+            />
             {me?.photo_url && me.photo_state !== "approved" ? (
               <p
                 className={`mt-3 text-xs leading-relaxed ${
@@ -758,6 +763,7 @@ function Onboarding() {
         <div className={cn("flex gap-2", issues.length ? "mt-5" : "mt-8")}>
           <Button
             variant="ghost"
+            disabled={photosUploading || saving}
             onClick={() => (editing ? navigate({ to: "/me" }) : setStep(PHONE))}
           >
             {editing ? "취소" : "이전"}
@@ -765,7 +771,7 @@ function Onboarding() {
           <Button
             className="flex-1"
             size="lg"
-            disabled={!basicsValid(basics) || saving}
+            disabled={!basicsValid(basics) || saving || photosUploading}
             onClick={async () => {
               // 신규 가입은 재개를 위해 기본 정보를 프로필에 저장한다.
               // 기존 회원의 수정은 확정 전까지 비공개 인터뷰 초안에만 둔다.
@@ -818,7 +824,7 @@ function Onboarding() {
               }
             }}
           >
-            {saving ? "저장 중…" : "다음"}
+            {photosUploading ? "사진을 올리는 중…" : saving ? "저장 중…" : "다음"}
           </Button>
         </div>
       </StepShell>
@@ -1156,7 +1162,7 @@ function Onboarding() {
         title="만나기 전에 알아 두면 좋은 것"
         description="흡연·음주는 소개 전에 알려드려요. MBTI·종교는 선택입니다."
       >
-        <div className="space-y-5">
+        <div className="app-elevated space-y-6 rounded-surface bg-card p-5">
           <div>
             <p className="text-sm font-semibold text-foreground">MBTI (선택)</p>
             <div className="mt-3 grid grid-cols-4 gap-2">
@@ -1304,23 +1310,32 @@ function ChoiceCard({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        "min-h-11 rounded-control border border-border bg-card p-5 text-left transition-colors",
+        "app-elevated pressable min-h-14 rounded-surface bg-card p-5 text-left",
         "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-        selected && "border-primary-strong bg-primary/10 ring-1 ring-primary-strong",
-        disabled ? "cursor-not-allowed opacity-60" : "hover:border-primary-strong/60",
+        selected && "bg-primary text-primary-foreground",
+        disabled ? "cursor-not-allowed opacity-60" : "",
       )}
     >
       <div className="flex items-center gap-2">
         {icon ? <span className="text-primary-strong">{icon}</span> : null}
         <p className="font-bold">{title}</p>
         {selected ? (
-          <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-primary-strong">
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-xs font-semibold text-primary-foreground">
             <Check className="size-4" aria-hidden="true" />
             선택됨
           </span>
         ) : null}
       </div>
-      {body ? <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p> : null}
+      {body ? (
+        <p
+          className={cn(
+            "mt-1.5 text-sm leading-relaxed",
+            selected ? "text-primary-foreground" : "text-muted-foreground",
+          )}
+        >
+          {body}
+        </p>
+      ) : null}
     </button>
   );
 }

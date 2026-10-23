@@ -1030,7 +1030,7 @@ export async function generateProfileStory(input: {
   try {
     const { data, error } = await supabase.functions.invoke<StoryGenerationResult>(
       "compose-profile-v3",
-      { body: input },
+      { body: input, timeout: input.mode === "analyze" ? 30_000 : 100_000 },
     );
     if (error) {
       const context = (error as { context?: Response }).context;

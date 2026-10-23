@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,17 +18,38 @@ import { cn } from "@/lib/utils";
 export function PhotoSetEditor({
   photos,
   onChange,
+  onUploadingChange,
 }: {
   photos: string[];
   onChange: (next: string[]) => void;
+  onUploadingChange?: (uploading: boolean) => void;
 }) {
   /* 경로 → 방금 고른 파일의 blob URL. 서명 URL 을 받기 전에도 바로 보이게. */
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(0);
+  const uploadingRef = useRef(false);
+  const previewUrls = useRef<Record<string, string>>({});
   const room = MAX_PHOTOS - photos.length;
 
+  useEffect(() => {
+    for (const [path, url] of Object.entries(previewUrls.current)) {
+      if (!photos.includes(path)) {
+        URL.revokeObjectURL(url);
+        delete previewUrls.current[path];
+      }
+    }
+  }, [photos]);
+  useEffect(
+    () => () => {
+      for (const url of Object.values(previewUrls.current)) URL.revokeObjectURL(url);
+    },
+    [],
+  );
+
   async function add(files: FileList | null) {
-    if (!files?.length) return;
+    if (!files?.length || uploadingRef.current) return;
+    uploadingRef.current = true;
+    onUploadingChange?.(true);
     const picked = Array.from(files).slice(0, room);
     if (files.length > room) toast(`사진은 ${MAX_PHOTOS}장까지 올릴 수 있어요.`);
     let next = [...photos];
@@ -36,7 +57,9 @@ export function PhotoSetEditor({
     for (const file of picked) {
       try {
         const path = await uploadProfilePhoto(file);
-        setPreviews((m) => ({ ...m, [path]: URL.createObjectURL(file) }));
+        const preview = URL.createObjectURL(file);
+        previewUrls.current[path] = preview;
+        setPreviews((m) => ({ ...m, [path]: preview }));
         next = [...next, path];
         onChange(next);
       } catch (err) {
@@ -45,6 +68,8 @@ export function PhotoSetEditor({
         setBusy((n) => n - 1);
       }
     }
+    uploadingRef.current = false;
+    onUploadingChange?.(false);
   }
 
   return (
@@ -56,6 +81,7 @@ export function PhotoSetEditor({
             path={path}
             preview={previews[path]}
             index={i}
+            disabled={busy > 0}
             onMakeCover={() => onChange([path, ...photos.filter((p) => p !== path)])}
             onRemove={() => onChange(photos.filter((p) => p !== path))}
           />
@@ -71,7 +97,8 @@ export function PhotoSetEditor({
         {room - busy > 0 ? (
           <label
             className={cn(
-              "flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-control border border-dashed border-input text-xs text-muted-foreground transition-colors hover:bg-muted",
+              "flex cursor-pointer items-center justify-center gap-1.5 rounded-control border border-dashed border-input text-xs text-muted-foreground transition-colors hover:bg-muted",
+              photos.length >= MIN_PHOTOS ? "col-span-3 min-h-11" : "aspect-[3/4] flex-col",
               "focus-within:ring-2 focus-within:ring-ring",
             )}
           >
@@ -81,6 +108,7 @@ export function PhotoSetEditor({
               type="file"
               accept="image/*"
               multiple
+              disabled={busy > 0}
               className="sr-only"
               aria-label="프로필 사진 추가"
               onChange={(e) => {
@@ -106,12 +134,14 @@ function Tile({
   index,
   onMakeCover,
   onRemove,
+  disabled,
 }: {
   path: string;
   preview?: string;
   index: number;
   onMakeCover: () => void;
   onRemove: () => void;
+  disabled: boolean;
 }) {
   const signed = usePhotoUrl(preview ? null : path);
   const src = preview ?? signed;
@@ -119,9 +149,10 @@ function Tile({
     <div className="relative aspect-[3/4] overflow-hidden rounded-control bg-muted">
       <button
         type="button"
+        disabled={disabled}
         onClick={onMakeCover}
         aria-label={index === 0 ? "대표 사진" : `${index + 1}번째 사진을 대표로`}
-        className="size-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="size-full transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:opacity-80 disabled:opacity-60 motion-reduce:transition-none"
       >
         {src ? <img src={src} alt="" className="size-full object-cover" /> : null}
       </button>
@@ -132,11 +163,14 @@ function Tile({
       ) : null}
       <button
         type="button"
+        disabled={disabled}
         onClick={onRemove}
         aria-label={`${index + 1}번째 사진 빼기`}
-        className="absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-foreground/70 text-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="pressable absolute top-0 right-0 grid size-11 place-items-center rounded-control text-background focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
       >
-        <X className="size-4" aria-hidden="true" />
+        <span className="grid size-8 place-items-center rounded-full bg-foreground/80">
+          <X className="size-4" aria-hidden="true" />
+        </span>
       </button>
     </div>
   );

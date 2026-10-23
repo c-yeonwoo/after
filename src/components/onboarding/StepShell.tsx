@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { Logo } from "@/components/Logo";
-import { useKeepActionsVisible, useKeyboardOpen } from "@/lib/keyboard";
+import { useKeepFieldVisible, useKeyboardOpen } from "@/lib/keyboard";
 import { useContentArrival } from "@/lib/contentMotion";
 
 export function StepShell({
@@ -15,6 +15,7 @@ export function StepShell({
   footer,
   progressLabel,
   transitionKey,
+  progress,
 }: {
   step: number;
   total: number;
@@ -26,26 +27,24 @@ export function StepShell({
   footer?: ReactNode;
   progressLabel?: string;
   transitionKey?: string;
+  progress?: number;
 }) {
-  /*
-    가입은 모든 단계가 "입력하고 → 아래 버튼을 누른다" 구조다. 키보드가 뜨면
-    본문 스크롤러가 그만큼 짧아져 그 버튼이 접힌 자리 밖으로 밀린다. 단계마다
-    따로 처리하지 않고 껍데기에서 한 번에 맞춘다 — 새 단계가 생겨도 따라온다.
-  */
-  const endRef = useRef<HTMLDivElement>(null);
-  useKeepActionsVisible(endRef, [step]);
   // 키보드가 떠 있으면 하단 고정 영역을 접는다 — 그만큼 본문이 넓어진다.
   const keyboardOpen = useKeyboardOpen();
   const mainRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const contentKey = transitionKey ?? `${step}:${eyebrow}`;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const contentKey = transitionKey ?? `${step}:${eyebrow}:${title}`;
+  const fraction = Math.max(0, Math.min(1, progress ?? step / total));
+  useKeepFieldVisible(mainRef, contentKey);
   useContentArrival(contentRef, contentKey);
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
+    headingRef.current?.focus({ preventScroll: true });
   }, [contentKey]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
+    <div className="onboarding-screen flex h-full flex-col overflow-hidden bg-background">
       <header
         className="z-20 shrink-0 bg-background pb-2"
         style={{
@@ -56,21 +55,26 @@ export function StepShell({
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <Logo size="sm" className="min-w-0 shrink" />
-          <span className="shrink-0 text-2xs font-medium text-muted-foreground tabular-nums">
-            {progressLabel ?? `${step} / ${total}`}
-          </span>
+          <div className="min-w-0 text-right">
+            <p className="text-xs font-medium text-foreground">{eyebrow}</p>
+            <div className="mt-1 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-2xs text-muted-foreground tabular-nums">
+              <span>{progressLabel ?? `${step} / ${total}`}</span>
+              {eyebrowAction}
+            </div>
+          </div>
         </div>
         <div
-          className="mt-3 h-0.5 w-full overflow-hidden rounded-full bg-muted"
+          className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted"
           role="progressbar"
-          aria-valuenow={step}
-          aria-valuemin={1}
-          aria-valuemax={total}
-          aria-label={progressLabel ? "소개글 작성 진행률" : "가입 진행률"}
+          aria-valuenow={Math.round(fraction * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuetext={`${eyebrow} · ${progressLabel ?? `${step} / ${total}`}`}
+          aria-label={progressLabel ? "프로필 작성 진행률" : "가입 진행률"}
         >
           <div
             className="h-full origin-left rounded-full bg-foreground transition-transform duration-200 ease-out motion-reduce:transition-none"
-            style={{ transform: `scaleX(${step / total})` }}
+            style={{ transform: `scaleX(${fraction})` }}
           />
         </div>
       </header>
@@ -80,11 +84,11 @@ export function StepShell({
         className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-6 pb-8"
       >
         <div ref={contentRef}>
-          <div className="flex min-h-5 items-center justify-between gap-3">
-            <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
-            {eyebrowAction}
-          </div>
-          <h1 className="mt-2 break-keep text-balance text-[clamp(1.5rem,7vw,1.75rem)] leading-[1.3] font-semibold tracking-[-0.03em]">
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="break-keep text-balance text-[clamp(1.5rem,7vw,1.75rem)] leading-[1.35] font-semibold tracking-[-0.03em] outline-none"
+          >
             {title}
           </h1>
           {description ? (
@@ -93,12 +97,11 @@ export function StepShell({
             </p>
           ) : null}
           <div className="mt-6">{children}</div>
-          <div ref={endRef} aria-hidden="true" />
         </div>
       </main>
 
       {footer && !keyboardOpen ? (
-        <footer className="shrink-0 border-t border-border bg-background">
+        <footer className="shrink-0 bg-background">
           <div
             className="mx-auto px-5 pt-4"
             style={{ paddingBottom: "calc(var(--safe-bottom) + 0.5rem)" }}

@@ -313,6 +313,12 @@ try {
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await signupPage.goto(`${baseUrl}/signup`);
+  await signupPage.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
+  await checkPage(signupPage, "signup consent mobile");
+  if (screenshotDir) {
+    await mkdir(screenshotDir, { recursive: true });
+    await signupPage.screenshot({ path: join(screenshotDir, "signup-consent.png") });
+  }
   await acceptSignupConsent(signupPage);
   const signupNext = signupPage.getByRole("button", { name: "다음", exact: true });
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -638,6 +644,70 @@ try {
     "true:true",
     "SMS proves phone access only, never verified identity or adulthood",
   );
+  await freshPage.setViewportSize({ width: 320, height: 480 });
+  await freshPage.getByLabel("이름", { exact: true }).fill("신규 테스트");
+  await delay(400);
+  assert.equal(
+    await freshPage.getByLabel("이름", { exact: true }).evaluate((field) => {
+      const rect = field.getBoundingClientRect();
+      const main = field.closest("main").getBoundingClientRect();
+      return rect.top >= main.top && rect.bottom <= main.bottom;
+    }),
+    true,
+    "focusing a field keeps it visible rather than jumping to the end",
+  );
+  await freshPage.getByLabel("생년월일", { exact: true }).fill("1994-03-12");
+  await freshPage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
+  assert.equal(
+    await freshPage.getByRole("button", { name: "다음", exact: true }).isDisabled(),
+    true,
+  );
+  await freshPage
+    .getByRole("status")
+    .filter({ hasText: "다음으로 가려면" })
+    .getByText(/사진 3장/)
+    .waitFor();
+  const uploadRoute = "**/storage/v1/object/profile-photos/**";
+  await freshPage.route(uploadRoute, async (route) => {
+    if (route.request().method() === "POST") {
+      objectPaths.push(
+        decodeURIComponent(new URL(route.request().url()).pathname.split("/profile-photos/")[1]),
+      );
+      await delay(700);
+    }
+    await route.continue();
+  });
+  const uploadFile = (n) => ({
+    name: `onboarding-${n}.png`,
+    mimeType: "image/png",
+    buffer: tinyPng,
+  });
+  await freshPage.getByLabel("프로필 사진 추가").setInputFiles([0, 1, 2].map(uploadFile));
+  await freshPage.getByText("3/6장 · 사진을 누르면 대표 사진이 돼요", { exact: true }).waitFor();
+  await freshPage.getByLabel("프로필 사진 추가").setInputFiles(uploadFile(3));
+  assert.equal(
+    await freshPage.getByRole("button", { name: "사진을 올리는 중…", exact: true }).isDisabled(),
+    true,
+  );
+  assert.equal(
+    await freshPage.getByRole("button", { name: "대표 사진", exact: true }).isDisabled(),
+    true,
+  );
+  await freshPage.getByText("4/6장 · 사진을 누르면 대표 사진이 돼요", { exact: true }).waitFor();
+  await freshPage.unroute(uploadRoute);
+  const removePhoto = freshPage.getByRole("button", { name: "4번째 사진 빼기", exact: true });
+  const removePhotoBox = await removePhoto.boundingBox();
+  assert.ok(removePhotoBox.width >= 44 && removePhotoBox.height >= 44);
+  await removePhoto.click();
+  await freshPage.getByRole("button", { name: "2번째 사진을 대표로", exact: true }).click();
+  await freshPage.setViewportSize({ width: 390, height: 844 });
+  await freshPage.getByRole("heading", { name: "기본적인 것부터" }).focus();
+  await freshPage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
+  await checkPage(freshPage, "signup basics and photos");
+  if (screenshotDir) await freshPage.screenshot({ path: join(screenshotDir, "signup-basics.png") });
+  await freshPage.getByRole("button", { name: "다음", exact: true }).click();
+  await freshPage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
+  await checkPage(freshPage, "signup lifestyle choices");
   await freshPage.close();
 
   // Exercise the identity-first UI with a trusted-provider fixture. The HTTP
@@ -1038,6 +1108,12 @@ try {
   await femalePage.getByRole("button", { name: "시작하기", exact: true }).click();
   await femalePage.getByRole("button", { name: "동네 돌아보기" }).click();
   await femalePage.getByRole("button", { name: "짧게 커피" }).click();
+  await checkPage(femalePage, "interview choices mobile");
+  if (screenshotDir) {
+    await femalePage.getByRole("heading", { name: "나에게 편한 방식", exact: true }).focus();
+    await femalePage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
+    await femalePage.screenshot({ path: join(screenshotDir, "interview-choices.png") });
+  }
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "틈틈이 짧게", exact: true }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
@@ -1061,10 +1137,36 @@ try {
   }
   await femalePage.setViewportSize({ width: 390, height: 844 });
   await femalePage.getByLabel("내 답변").fill("퇴근하면 동네를 천천히 걸어요");
+  const saveDraftRoute = "**/rest/v1/rpc/save_profile_interview_draft";
+  await femalePage.route(saveDraftRoute, (route) =>
+    route.fulfill({ status: 503, json: { message: "Synthetic draft save unavailable" } }),
+  );
+  await femalePage.getByRole("button", { name: "다시 저장하기", exact: true }).waitFor();
+  assert.equal(
+    await femalePage.getByLabel("내 답변").inputValue(),
+    "퇴근하면 동네를 천천히 걸어요",
+  );
+  await femalePage.unroute(saveDraftRoute);
+  await femalePage.getByRole("button", { name: "다시 저장하기", exact: true }).click();
+  await femalePage.getByText("저장됨", { exact: true }).waitFor();
+  let transitionSaves = 0;
+  await femalePage.route(saveDraftRoute, async (route) => {
+    transitionSaves++;
+    await delay(1200);
+    await route.continue();
+  });
+  await femalePage.getByLabel("내 답변").fill("퇴근하면 동네를 천천히 걸어요. 익숙한 길이 편해요.");
   await femalePage.getByRole("button", { name: "다음 이야기" }).click();
   await femalePage
     .getByRole("heading", { name: "누군가와 어색함이 풀렸던 순간이 있나요?" })
     .waitFor();
+  await delay(900);
+  assert.equal(transitionSaves, 1, "slow next-step saving must not queue the previous step again");
+  assert.equal(
+    sql(`select data->>'stage' from public.profile_interview_drafts where user_id='${female.id}'`),
+    "story1",
+  );
+  await femalePage.unroute(saveDraftRoute);
   await femalePage.getByText("함께 있던 때나 오간 말을 한두 문장으로 적어도 좋아요.").waitFor();
   assert.equal(await femalePage.getByText("짧게 커피", { exact: true }).count(), 0);
   await femalePage.getByLabel("내 답변").fill("처음에는 서로 이야기를 듣는 편이에요");
@@ -1171,21 +1273,118 @@ try {
     "draft answer survives reload",
   );
   await femalePage.getByRole("button", { name: "답변 확인하기" }).click();
-  await femalePage.route("**/functions/v1/compose-profile-v3", (route) =>
-    route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({
-        status: "error",
-        code: "config_error",
-        retryable: false,
-      }),
-    }),
-  );
+  let analysisCalls = 0;
+  let composeCalls = 0;
+  const composeRoute = "**/functions/v1/compose-profile-v3";
+  await femalePage.route(composeRoute, async (route) => {
+    const request = route.request().postDataJSON();
+    await delay(800);
+    if (request.mode === "analyze" && ++analysisCalls > 1) {
+      await route.fulfill({
+        json: {
+          status: "success",
+          analysis: {
+            facts: [],
+            summary: [
+              {
+                text: "퇴근 후 동네를 걸으며 여유를 찾는 시간을 좋아해요.",
+                sourceIds: ["answer:daily_life"],
+              },
+            ],
+            contradictions: [],
+            followupIds: ["walk"],
+          },
+        },
+      });
+    } else if (request.mode === "compose" && ++composeCalls > 1) {
+      await route.fulfill({
+        json: {
+          status: "success",
+          story: {
+            version: 3,
+            headline: "산책 끝에 나누는 다정한 이야기",
+            summary:
+              "동네를 천천히 걸으며 하루를 정리해요. 주말에 본 영화 이야기를 함께 나누고 싶어요.",
+            sections: [
+              {
+                id: "daily_life",
+                questionId: "daily_life_v1",
+                questionVersion: 1,
+                question: "퇴근 후에는 어떻게 보내세요?",
+                answer:
+                  "퇴근하면 동네를 천천히 걸어요. 익숙한 길을 걷다 보면 하루 동안 분주했던 마음도 한결 편안해져요.",
+              },
+              {
+                id: "getting_closer",
+                questionId: "getting_closer_v1",
+                questionVersion: 1,
+                question: "어떤 만남에서 편해지나요?",
+                answer:
+                  "처음에는 서로의 이야기를 듣는 편이에요. 천천히 이야기를 나누며 알아가는 시간이 좋아요.",
+              },
+              {
+                id: "conversation",
+                questionId: "conversation_v1",
+                questionVersion: 1,
+                question: "만나면 어떤 이야기를 나누고 싶나요?",
+                answer:
+                  "주말에 본 영화를 이야기하고 싶어요. 함께 본 장면에 대해 서로 다른 생각을 듣는 것도 좋아해요.",
+              },
+            ],
+            conversationHooks: [],
+            publishedRevision: 0,
+          },
+        },
+      });
+    } else
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "error",
+          code: "config_error",
+          retryable: false,
+        }),
+      });
+  });
   await femalePage.getByRole("button", { name: "내용 정리하기" }).click();
+  assert.equal(
+    await femalePage.getByRole("button", { name: "답변 수정", exact: true }).isDisabled(),
+    true,
+    "analysis keeps the submitted answers locked",
+  );
   await femalePage.getByRole("heading", { name: "답변은 그대로 있어요" }).waitFor();
-  await femalePage.getByRole("button", { name: "내가 직접 정리하기" }).click();
+  await femalePage.getByRole("button", { name: "다시 시도", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "조금만 더 들려주세요" }).waitFor();
+  await femalePage
+    .getByLabel("걷는 시간은 어떤 점이 좋아요?", { exact: true })
+    .fill("익숙한 길을 걸으면 마음이 편안해져요.");
+  await femalePage.getByRole("button", { name: "계속하기", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "이렇게 이해했어요" }).waitFor();
+  await checkPage(femalePage, "interview understanding");
+  if (screenshotDir)
+    await femalePage.screenshot({ path: join(screenshotDir, "interview-understanding.png") });
+  await femalePage.getByRole("button", { name: "맞아요", exact: true }).click();
+  await femalePage.getByRole("heading", { name: "프로필에 담을 이야기" }).waitFor();
+  await femalePage.getByRole("button", { name: "이 내용으로 프로필 만들기", exact: true }).click();
+  assert.equal(
+    await femalePage.getByRole("button", { name: "직접 정리하기", exact: true }).isDisabled(),
+    true,
+    "generation cannot be overwritten by changing modes mid-request",
+  );
+  await femalePage
+    .getByRole("alert")
+    .filter({ hasText: "소개글 생성 설정을 확인하고 있어요" })
+    .waitFor();
+  await femalePage.getByRole("button", { name: "이 내용으로 프로필 만들기", exact: true }).click();
   await femalePage.getByRole("heading", { name: "이렇게 소개할까요?" }).waitFor();
+  assert.equal(analysisCalls, 2);
+  assert.equal(composeCalls, 2);
+  await femalePage.getByText("산책 끝에 나누는 다정한 이야기", { exact: true }).waitFor();
+  await checkPage(femalePage, "generated interview preview");
+  if (screenshotDir)
+    await femalePage.screenshot({ path: join(screenshotDir, "interview-generated.png") });
+  await femalePage.getByRole("button", { name: "프로필 수정", exact: true }).click();
   await femalePage.getByLabel("한 줄 소개").fill("퇴근 후 동네를 걷는 시간");
   await femalePage
     .getByLabel("카드에서 보일 짧은 소개")

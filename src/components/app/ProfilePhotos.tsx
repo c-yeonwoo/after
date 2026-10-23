@@ -43,7 +43,12 @@ function PhotoTile({
       type="button"
       onClick={(event) => onOpen(event.currentTarget)}
       disabled={!src || failed}
-      aria-label={`${name} 프로필 사진 ${index + 1} 크게 보기`}
+      aria-label={
+        src && !failed
+          ? `${name} 프로필 사진 ${index + 1} 크게 보기`
+          : `${name} 프로필 사진 ${index + 1} · ${failed ? "사진을 불러오지 못했어요" : "사진 불러오는 중"}`
+      }
+      aria-busy={!src && !failed}
       className="relative aspect-[3/4] w-[56%] shrink-0 snap-start overflow-hidden rounded-surface bg-muted transition-opacity duration-150 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none active:opacity-80 disabled:cursor-default motion-reduce:transition-none"
     >
       {src && !failed ? (
@@ -132,8 +137,9 @@ export function ProfilePhotos({ paths, name }: { paths: string[]; name: string }
   return (
     <>
       <div
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none]"
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
         role="region"
+        tabIndex={0}
         aria-label={`${name} 사진 ${paths.length}장`}
       >
         {paths.map((path, i) => (

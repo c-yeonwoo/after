@@ -90,3 +90,49 @@ export function useKeyboardOpen(): boolean {
 
   return open;
 }
+
+export function useKeepFieldVisible(ref: RefObject<HTMLElement | null>, contentKey: string) {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const adjust = () => {
+      const container = ref.current;
+      const field = document.activeElement;
+      if (!container || !(field instanceof HTMLElement) || !container.contains(field)) return;
+      if (
+        !field.matches(
+          'textarea, select, input:not([type="checkbox"]):not([type="radio"]):not([type="file"])',
+        )
+      )
+        return;
+      const bounds = container.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const top = Math.max(bounds.top, viewport?.offsetTop ?? 0) + 16;
+      const bottom =
+        Math.min(
+          bounds.bottom,
+          (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight),
+        ) - 16;
+      const rect = field.getBoundingClientRect();
+      if (rect.height > bottom - top || rect.top < top) {
+        container.scrollTop += rect.top - top;
+      } else if (rect.bottom > bottom) {
+        container.scrollTop += rect.bottom - bottom;
+      }
+    };
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(adjust, 320);
+    };
+    document.addEventListener("focusin", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
+    const shown = Capacitor.isNativePlatform()
+      ? Keyboard.addListener("keyboardDidShow", schedule)
+      : null;
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("focusin", schedule);
+      window.visualViewport?.removeEventListener("resize", schedule);
+      void shown?.then((handle) => handle.remove());
+    };
+  }, [ref, contentKey]);
+}
