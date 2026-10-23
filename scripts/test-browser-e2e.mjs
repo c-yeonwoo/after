@@ -291,10 +291,12 @@ try {
     "none",
     "reduced motion removes the landing photo reveal",
   );
-  await publicPage.goto(`${baseUrl}/support`);
-  await publicPage.getByText("1:1 문의").waitFor();
-  await checkPage(publicPage, "public support");
+  const publicSupportPage = await publicPage.context().newPage();
   await publicPage.close();
+  await publicSupportPage.goto(`${baseUrl}/support`, { waitUntil: "domcontentloaded" });
+  await publicSupportPage.getByText("1:1 문의").waitFor();
+  await checkPage(publicSupportPage, "public support direct entry");
+  await publicSupportPage.close();
 
   const password = `AfterE2E-${randomUUID()}`;
   const male = await createPerson("male", "male", "member", password);
