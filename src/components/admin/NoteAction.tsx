@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -41,12 +41,18 @@ export function NoteAction({
   const [note, setNote] = useState("");
   const [on, setOn] = useState(toggle?.defaultOn ?? false);
   const [busy, setBusy] = useState(false);
+  const lock = useRef(false);
+  const [error, setError] = useState(false);
 
   async function act(item: NoteActionItem) {
+    if (lock.current) return;
     if (note.trim().length === 0) {
+      setError(true);
       toast.error("사유를 적어 주세요.");
       return;
     }
+    lock.current = true;
+    setError(false);
     setBusy(true);
     try {
       await item.run(note.trim(), on);
@@ -62,24 +68,36 @@ export function NoteAction({
         toast.error("처리하지 못했습니다.");
       }
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   }
 
   return (
-    <div className="mt-3">
+    <div className="mt-3" aria-busy={busy}>
       <Textarea
         rows={2}
         value={note}
-        onChange={(e) => setNote(e.target.value)}
+        disabled={busy}
+        aria-invalid={error || undefined}
+        onChange={(e) => {
+          setNote(e.target.value);
+          setError(false);
+        }}
         placeholder={placeholder}
         aria-label="사유"
       />
+      {error ? (
+        <p role="alert" className="mt-2 text-xs text-destructive">
+          처리 사유를 입력해 주세요.
+        </p>
+      ) : null}
       {toggle ? (
-        <label className="mt-2 flex items-center gap-2 text-sm">
+        <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={on}
+            disabled={busy}
             onChange={(e) => setOn(e.target.checked)}
             className="size-4"
           />
@@ -100,6 +118,11 @@ export function NoteAction({
           </Button>
         ))}
       </div>
+      {busy ? (
+        <p role="status" className="mt-2 text-xs text-muted-foreground">
+          처리 중입니다…
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   CalendarCheck,
   Camera,
@@ -15,10 +15,18 @@ import {
   ChartColumn,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/Logo";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useKeepFieldVisible } from "@/lib/keyboard";
 import { useMe } from "@/lib/me";
 import { amIAdmin } from "@/lib/admin";
 
@@ -89,39 +97,62 @@ const NAV: { label: string; items: AdminNavItem[] }[] = [
 
 const FLAT_NAV = NAV.flatMap((g) => g.items);
 const MOBILE_NAV = FLAT_NAV.filter((item) =>
-  ["/admin", "/admin/tasks", "/admin/members"].includes(item.to),
+  ["/admin", "/admin/tasks", "/admin/curation", "/admin/members"].includes(item.to),
 );
 const MOBILE_MORE = FLAT_NAV.filter((item) => !MOBILE_NAV.includes(item));
 
 function AdminLayout() {
   const { me, ready } = useMe();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [permission, setPermission] = useState<{ actor: string; allowed: boolean } | null>(null);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const actor = me?.id;
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/login" });
   }, [ready, me, navigate]);
 
-  const check = useCallback(async () => {
-    setIsAdmin(await amIAdmin());
-  }, []);
-
   useEffect(() => {
-    if (ready && me) void check();
-  }, [ready, me, check]);
+    if (!ready || !actor) return;
+    let active = true;
+    setError(false);
+    void amIAdmin()
+      .then((allowed) => {
+        if (active) setPermission({ actor, allowed });
+      })
+      .catch(() => {
+        if (active) setError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ready, actor, retry]);
 
   /*
     여기서 하는 권한 확인은 화면을 감추는 것이지 보안이 아니다. 실제 방어는
     서버의 is_admin() 이고, 그걸 통과 못 하면 자식 화면의 모든 호출이 42501 로
     튕긴다. 클라이언트가 PostgREST 를 직접 부르는 구조라 프론트 가드는 우회된다.
   */
-  const allowed = isAdmin === true && me?.role === "admin";
+  const allowed =
+    permission?.actor === actor && permission?.allowed === true && me?.role === "admin";
   return (
     <Shell showTabs={allowed}>
-      {!ready || !me || isAdmin === null ? (
-        <p className="text-sm text-muted-foreground">불러오는 중…</p>
+      {error ? (
+        <div role="alert" className="app-elevated rounded-surface bg-card p-5">
+          <p className="text-sm text-muted-foreground">운영 권한을 확인하지 못했어요.</p>
+          <Button variant="outline" className="mt-3" onClick={() => setRetry((n) => n + 1)}>
+            다시 확인하기
+          </Button>
+        </div>
+      ) : !ready || !me || permission?.actor !== actor ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          불러오는 중…
+        </p>
       ) : allowed ? (
-        <Outlet />
+        <div key={actor}>
+          <Outlet />
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">운영자만 볼 수 있는 화면입니다.</p>
       )}
@@ -133,6 +164,14 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [searchError, setSearchError] = useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const main = useRef<HTMLElement>(null);
+  useKeepFieldVisible(main, pathname, true);
+  useEffect(() => {
+    main.current?.scrollTo(0, 0);
+    const frame = requestAnimationFrame(() => main.current?.scrollTo(0, 0));
+    return () => cancelAnimationFrame(frame);
+  }, [pathname]);
 
   function searchMember(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -158,7 +197,7 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
     표를 보기에 나쁘고, 운영자는 데스크톱에서 본다.
   */
   return (
-    <div className="flex h-dvh bg-background">
+    <div className="app-form-screen flex h-dvh bg-background">
       {showTabs ? (
         <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card px-4 pb-5 pt-6 lg:flex">
           <div className="flex items-center gap-3 px-2">
@@ -176,7 +215,7 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
                 setQuery(e.target.value);
                 setSearchError(false);
               }}
-              className="h-9 pl-9"
+              className="min-h-11 pl-9"
               placeholder="이름 검색"
               aria-label="회원 이름 검색"
             />
@@ -186,7 +225,10 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
               이메일은 회원 화면에서 검색해 주세요.
             </p>
           ) : null}
-          <nav className="mt-5 min-h-0 flex-1 space-y-5 overflow-y-auto">
+          <nav
+            aria-label="운영 메뉴"
+            className="mt-5 min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain"
+          >
             {NAV.map((group) => (
               <div key={group.label}>
                 <p className="px-2 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -200,7 +242,7 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
                         key={item.to}
                         to={item.to}
                         activeOptions={{ exact: item.exact ?? false }}
-                        className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[status=active]:bg-muted data-[status=active]:font-semibold data-[status=active]:text-foreground"
+                        className="pressable flex min-h-11 items-center gap-2.5 rounded-control px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-primary data-[status=active]:font-semibold data-[status=active]:text-primary-foreground"
                       >
                         <Icon className="size-4" aria-hidden="true" />
                         {item.label}
@@ -224,38 +266,49 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
             <span className="text-sm font-semibold text-muted-foreground">운영</span>
           </div>
           {showTabs ? (
-            <nav className="-mb-px flex gap-1">
+            <nav aria-label="운영 메뉴" className="flex items-center gap-1 pb-3">
               {MOBILE_NAV.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
                   activeOptions={{ exact: item.exact ?? false }}
-                  className="shrink-0 border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[status=active]:border-primary data-[status=active]:font-semibold data-[status=active]:text-foreground"
+                  className="pressable flex min-h-11 flex-1 items-center justify-center rounded-control px-1 text-xs font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-primary data-[status=active]:font-semibold data-[status=active]:text-primary-foreground"
                 >
                   {item.label}
                 </Link>
               ))}
-              <details className="group ml-auto">
-                <summary className="cursor-pointer list-none border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground marker:content-none">
-                  더보기
-                </summary>
-                <div className="absolute left-0 right-0 top-full grid grid-cols-2 gap-1 border-b border-border bg-card p-3 shadow-lg">
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={
+                      MOBILE_MORE.some((item) => pathname.startsWith(item.to)) ? "default" : "ghost"
+                    }
+                    size="sm"
+                    className="flex-1 px-2"
+                  >
+                    더보기
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-surface border-0 p-2">
                   {MOBILE_MORE.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}
-                      className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      {item.label}
-                    </Link>
+                    <DropdownMenuItem key={item.to} asChild className="min-h-11 rounded-control">
+                      <Link to={item.to}>
+                        <item.icon className="size-4" aria-hidden="true" />
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
                   ))}
-                </div>
-              </details>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           ) : null}
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main
+          ref={main}
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
+          style={{ paddingBottom: "var(--safe-bottom)" }}
+        >
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
         </main>
       </div>

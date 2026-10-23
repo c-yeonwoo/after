@@ -2,6 +2,8 @@ import { createFileRoute, Link, Outlet, useMatches, useNavigate } from "@tanstac
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ChevronRight } from "lucide-react";
 import { Tag } from "@/components/admin/ui";
 import { hubLabel } from "@/components/admin/labels";
 import { HUBS } from "@/lib/brand";
@@ -40,6 +42,12 @@ export const Route = createFileRoute("/admin/members")({
 });
 
 function MembersTab() {
+  const search = Route.useSearch();
+  // Keep private email searches in memory while the detail route is open, never in the URL.
+  const [q, setQ] = useState(search.q ?? "");
+  useEffect(() => {
+    setQ(search.q ?? "");
+  }, [search.q]);
   /*
     상세는 자식 라우트다. 목록이 있는 자리에 상세를 겹쳐 놓으면 "목록으로
     돌아가기" 가 브라우저 뒤로가기에만 의존하게 되는데, 운영자는 목록 ↔ 상세를
@@ -47,16 +55,16 @@ function MembersTab() {
   */
   const showingDetail = useMatches().some((m) => m.routeId === "/admin/members/$id");
   if (showingDetail) return <Outlet />;
-  return <MemberList />;
+  return <MemberList q={q} setQ={setQ} />;
 }
 
-function MemberList() {
+function MemberList({ q, setQ }: { q: string; setQ: (value: string) => void }) {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [rows, setRows] = useState<AdminMember[] | null>(null);
   // 검색어만 로컬에 둔다 — 타이핑마다 URL 을 갈면 뒤로가기 이력이 글자 수만큼 쌓인다.
-  const [q, setQ] = useState(search.q ?? "");
   const loadSequence = useRef(0);
+  const [loading, setLoading] = useState(true);
 
   const set = (patch: Partial<MemberSearch>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
@@ -64,6 +72,7 @@ function MemberList() {
   const [loadError, setLoadError] = useState(false);
   const load = useCallback(async (s: MemberSearch, query: string) => {
     const sequence = ++loadSequence.current;
+    setLoading(true);
     setLoadError(false);
     try {
       const result = await fetchMembers({
@@ -76,20 +85,39 @@ function MemberList() {
       if (sequence === loadSequence.current) setRows(result);
     } catch {
       if (sequence === loadSequence.current) setLoadError(true);
+    } finally {
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    loadSequence.current += 1;
+    setRows(null);
+    setLoading(true);
+    setLoadError(false);
     const t = setTimeout(() => void load(search, q), 250);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      loadSequence.current += 1;
+    };
   }, [search, q, load]);
 
   const active = search.gender || search.state || search.hub || search.paused !== undefined || q;
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <header className="mb-5 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">회원 관리</h1>
+        <Button size="sm" variant="outline" disabled={loading} onClick={() => void load(search, q)}>
+          새로고침
+        </Button>
+      </header>
+      <div
+        aria-label="회원 검색과 필터"
+        className="app-elevated grid grid-cols-2 items-center gap-3 rounded-surface bg-card p-4 sm:flex sm:flex-wrap"
+      >
         <Select
+          label="성별"
           value={search.gender ?? ""}
           onChange={(v) => set({ gender: (v || undefined) as Gender | undefined })}
           options={[
@@ -99,6 +127,7 @@ function MemberList() {
           ]}
         />
         <Select
+          label="회원 상태"
           value={search.state ?? ""}
           onChange={(v) => set({ state: (v || undefined) as AccountState | undefined })}
           options={[
@@ -110,6 +139,7 @@ function MemberList() {
         />
         {/* 아직 열지 않은 권역도 남긴다 — 잘못 들어간 데이터를 찾아야 한다. */}
         <Select
+          label="권역"
           value={search.hub ?? ""}
           onChange={(v) => set({ hub: v || undefined })}
           options={[
@@ -118,6 +148,7 @@ function MemberList() {
           ]}
         />
         <Select
+          label="소개 활동"
           value={search.paused === undefined ? "" : search.paused ? "y" : "n"}
           onChange={(v) => set({ paused: v === "" ? undefined : v === "y" })}
           options={[
@@ -127,34 +158,48 @@ function MemberList() {
           ]}
         />
         <Input
-          className="h-9 w-56"
+          className="col-span-2 min-h-11 w-full sm:w-64"
           placeholder="이름 · 회사 이메일"
           aria-label="회원 검색 — 이메일은 주소에 남기지 않습니다"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         {active ? (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setQ("");
               void navigate({ search: {}, replace: true });
             }}
-            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="col-span-2"
           >
             초기화
-          </button>
+          </Button>
         ) : null}
       </div>
 
       {loadError ? (
-        <p className="mt-5 text-sm text-destructive" role="alert">
-          회원 목록을 확인할 수 없습니다. 검색어를 다시 입력하거나 필터를 바꿔 재시도해 주세요.
-        </p>
+        <div className="mt-5 rounded-surface bg-surface-subtle p-4" role="alert">
+          <p className="text-sm text-destructive">
+            회원 목록을 확인할 수 없습니다.{rows ? " 이전 조회 결과를 표시하고 있어요." : ""}
+          </p>
+          <Button
+            variant="outline"
+            className="mt-3"
+            disabled={loading}
+            onClick={() => void load(search, q)}
+          >
+            다시 불러오기
+          </Button>
+        </div>
       ) : null}
 
       {rows === null ? (
         !loadError ? (
-          <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
+          <p role="status" className="mt-6 text-sm text-muted-foreground">
+            불러오는 중…
+          </p>
         ) : null
       ) : rows.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">조건에 맞는 회원이 없습니다.</p>
@@ -166,7 +211,44 @@ function MemberList() {
             밀려 있나" 를 훑을 수 없다. 열을 고정하면 같은 정보가 같은 자리에
             와서 눈이 세로로 훑는다.
           */}
-          <div className="mt-2 overflow-x-auto">
+          <ul aria-label="회원 목록" className="mt-3 space-y-3 md:hidden">
+            {rows.map((m) => (
+              <li key={m.id} className="app-elevated rounded-surface bg-card">
+                <Link
+                  to="/admin/members/$id"
+                  params={{ id: m.id }}
+                  search={search}
+                  className="pressable block rounded-surface p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold">{m.name ?? "(이름 없음)"}</span>
+                    <ChevronRight
+                      className="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {m.gender === "female" ? "여성" : "남성"} · {hubLabel(m.hub_id)}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    <MemberStatus m={m} />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground tabular-nums">
+                    티켓 {m.unused_tickets}장 · 미처리 신고 {m.pending_reports_against}건
+                  </p>
+                  <p className="mt-1 break-all text-xs text-muted-foreground">
+                    {maskEmail(m.company_email)}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div
+            role="region"
+            aria-label="회원 목록 표"
+            tabIndex={0}
+            className="app-elevated mt-3 hidden overflow-x-auto rounded-surface bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:block"
+          >
             <table className="w-full min-w-[52rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
@@ -186,7 +268,8 @@ function MemberList() {
                       <Link
                         to="/admin/members/$id"
                         params={{ id: m.id }}
-                        className="font-semibold underline-offset-2 group-hover:underline"
+                        search={search}
+                        className="pressable inline-flex min-h-11 items-center rounded-control font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none group-hover:underline"
                       >
                         {m.name ?? "(이름 없음)"}
                       </Link>
@@ -196,14 +279,7 @@ function MemberList() {
                     <Td className="text-muted-foreground">{hubLabel(m.hub_id)}</Td>
                     <Td>
                       <span className="flex flex-wrap gap-1">
-                        {m.role === "admin" ? <Tag tone="muted">운영자</Tag> : null}
-                        {m.account_state === "banned" ? <Tag tone="alert">정지</Tag> : null}
-                        {m.account_state === "withdrawn" ? <Tag tone="muted">탈퇴</Tag> : null}
-                        {m.paused_at ? <Tag tone="muted">쉬는 중</Tag> : null}
-                        {m.onboarding_step < 7 ? (
-                          <Tag tone="muted">가입 {m.onboarding_step}/7</Tag>
-                        ) : null}
-                        {m.has_active_meeting ? <Tag tone="muted">만남 진행</Tag> : null}
+                        <MemberStatus m={m} />
                       </span>
                     </Td>
                     <Td className="text-right tabular-nums text-muted-foreground">
@@ -253,19 +329,22 @@ function Td({ children, className = "" }: { children: React.ReactNode; className
 
 /** 셀렉트는 운영 화면에서만 쓰므로 네이티브로 둔다 — 키보드 조작도 낫다. */
 function Select({
+  label,
   value,
   onChange,
   options,
 }: {
+  label: string;
   value: string;
   onChange: (v: string) => void;
   options: { v: string; label: string }[];
 }) {
   return (
     <select
+      aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-9 rounded-surface border border-border bg-background px-2 text-sm"
+      className="min-h-11 min-w-0 rounded-control border border-input bg-background px-3 text-base focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {options.map((o) => (
         <option key={o.v} value={o.v}>
@@ -273,5 +352,25 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+function MemberStatus({ m }: { m: AdminMember }) {
+  return (
+    <>
+      {m.role === "admin" ? <Tag tone="muted">운영자</Tag> : null}
+      {m.account_state === "banned" ? <Tag tone="alert">정지</Tag> : null}
+      {m.account_state === "withdrawn" ? <Tag tone="muted">탈퇴</Tag> : null}
+      {m.paused_at ? <Tag tone="muted">쉬는 중</Tag> : null}
+      {m.onboarding_step < 7 ? <Tag tone="muted">가입 {m.onboarding_step}/7</Tag> : null}
+      {m.has_active_meeting ? <Tag tone="muted">만남 진행</Tag> : null}
+      {m.role !== "admin" &&
+      m.account_state === "active" &&
+      !m.paused_at &&
+      m.onboarding_step >= 7 &&
+      !m.has_active_meeting ? (
+        <Tag tone="muted">활동 중</Tag>
+      ) : null}
+    </>
   );
 }

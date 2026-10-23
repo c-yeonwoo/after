@@ -301,7 +301,7 @@ export type AdminSystemOverview = {
 /** 내가 운영자인가. 화면 분기용 — 최종 판정은 항상 서버다. */
 export async function amIAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc("is_admin");
-  if (error) return false;
+  if (error) throw error;
   return Boolean(data);
 }
 

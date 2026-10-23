@@ -1,5 +1,7 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { NoteAction } from "@/components/admin/NoteAction";
 import { Tag } from "@/components/admin/ui";
@@ -15,7 +17,12 @@ import {
   type MemberTimelinePage,
 } from "@/lib/admin";
 
-export const Route = createFileRoute("/admin/members/$id")({ component: MemberDetail });
+export const Route = createFileRoute("/admin/members/$id")({ component: MemberPage });
+
+function MemberPage() {
+  const { id } = useParams({ from: "/admin/members/$id" });
+  return <MemberDetail key={id} id={id} />;
+}
 
 const DATE = new Intl.DateTimeFormat("ko-KR", { dateStyle: "short", timeStyle: "short" });
 const when = (s: string | null | undefined) => (s ? DATE.format(new Date(s)) : "—");
@@ -28,25 +35,44 @@ const when = (s: string | null | undefined) => (s ? DATE.format(new Date(s)) : "
  * 사용자 화면과 같은 <ProfileDetail> 을 쓴다 — 별도 레이아웃을 만들면 실제로
  * 어떻게 보이는지 확인할 수 없게 된다(profile.tsx 가 같은 이유로 그렇게 한다).
  */
-function MemberDetail() {
-  const { id } = useParams({ from: "/admin/members/$id" });
+function MemberDetail({ id }: { id: string }) {
   const [d, setD] = useState<AdminMemberDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const active = useRef(false);
+  const epoch = useRef(0);
 
   const load = useCallback(async () => {
+    const request = ++epoch.current;
     setError(null);
     try {
-      setD(await fetchMemberDetail(id));
+      const detail = await fetchMemberDetail(id);
+      if (active.current && request === epoch.current) setD(detail);
     } catch {
-      setError("회원을 찾을 수 없습니다.");
+      if (active.current && request === epoch.current) setError("회원 정보를 불러오지 못했어요.");
     }
   }, [id]);
 
   useEffect(() => {
+    active.current = true;
     void load();
+    return () => {
+      active.current = false;
+      epoch.current += 1;
+    };
   }, [load]);
 
-  if (error) return <Back>{error}</Back>;
+  if (error)
+    return (
+      <>
+        <Back />
+        <div role="alert" className="app-elevated mt-4 rounded-surface bg-card p-5">
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button className="mt-3" variant="outline" onClick={() => void load()}>
+            다시 불러오기
+          </Button>
+        </div>
+      </>
+    );
   if (!d) return <Back>불러오는 중…</Back>;
 
   const p = d.profile;
@@ -64,13 +90,13 @@ function MemberDetail() {
       <Back />
 
       <header className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 className="text-xl font-semibold">{p.name ?? "(이름 없음)"}</h2>
+        <h1 className="text-2xl font-semibold tracking-tight">{p.name ?? "(이름 없음)"}</h1>
         {p.role === "admin" ? <Tag tone="muted">운영자</Tag> : null}
         {banned ? <Tag tone="alert">정지</Tag> : null}
         {p.account_state === "withdrawn" ? <Tag tone="muted">탈퇴</Tag> : null}
         {p.paused_at ? <Tag tone="muted">쉬는 중</Tag> : null}
         {p.onboarding_step < 7 ? <Tag tone="muted">가입 {p.onboarding_step}/7</Tag> : null}
-        <span className="text-sm text-muted-foreground">
+        <span className="break-all text-sm text-muted-foreground">
           {p.gender === "female" ? "여성" : "남성"} · {hubLabel(p.hub_id)} · {p.company_email}
         </span>
       </header>
@@ -106,7 +132,7 @@ function MemberDetail() {
         */}
         <div className="min-w-0">
           <p className="mb-2 text-xs text-muted-foreground">상대에게 보이는 프로필</p>
-          <div className="rounded-surface border border-border p-4">
+          <div>
             <ProfileDetail p={toProfileView(p)} />
           </div>
         </div>
@@ -234,7 +260,7 @@ function MemberDetail() {
             )}
           </Section>
 
-          <MemberTimeline id={id} />
+          <MemberTimeline key={id} id={id} />
 
           <AccountState
             id={id}
@@ -400,7 +426,7 @@ function AccountState({
     <div className="mt-8 border-t border-border pt-4">
       <button
         onClick={() => setOpen(!open)}
-        className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        className="pressable inline-flex min-h-11 items-center rounded-control px-3 text-sm text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {open ? "닫기" : banned ? "정지 해제…" : "계정 정지…"}
       </button>
@@ -463,11 +489,15 @@ function Summary({ label, v, alert }: { label: string; v: number; alert?: boolea
 }
 
 function Back({ children }: { children?: React.ReactNode }) {
+  const search = useSearch({ from: "/admin/members" });
   return (
     <>
-      <Link to="/admin/members" className="text-sm text-muted-foreground hover:text-foreground">
-        ← 회원 목록
-      </Link>
+      <Button asChild variant="ghost" className="-ml-3">
+        <Link to="/admin/members" search={search}>
+          <ArrowLeft aria-hidden="true" />
+          회원 목록
+        </Link>
+      </Button>
       {children ? <p className="mt-4 text-sm text-muted-foreground">{children}</p> : null}
     </>
   );
@@ -475,7 +505,7 @@ function Back({ children }: { children?: React.ReactNode }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-6 first:mt-0">
+    <section className="app-elevated mt-4 rounded-surface bg-card p-5 first:mt-0">
       <h3 className="text-sm font-semibold">{title}</h3>
       <div className="mt-2">{children}</div>
     </section>
