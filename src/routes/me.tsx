@@ -265,6 +265,7 @@ function MePage() {
               <li key={to}>
                 <Link
                   to={to}
+                  search={to === "/availability" ? { from: "me" } : {}}
                   className="pressable flex min-h-20 items-center gap-3.5 px-4 py-3 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-surface-subtle text-primary">

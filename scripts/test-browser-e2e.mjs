@@ -10,6 +10,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
 import { chromium, webkit } from "playwright";
 import { checkAccountScreens } from "./lib/account-screen-checks.mjs";
+import { checkTicketScreens } from "./lib/ticket-screen-checks.mjs";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -244,6 +245,7 @@ try {
         VITE_SUPABASE_URL: apiUrl,
         VITE_SUPABASE_ANON_KEY: anonKey,
         VITE_CARRIER_IDENTITY_ENABLED: "false",
+        VITE_TOSS_CLIENT_KEY: "test_gck_browser_fixture",
       },
       stdio: "ignore",
     },
@@ -868,6 +870,7 @@ try {
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
   await login(malePage, male);
+  await checkTicketScreens({ page: malePage, baseUrl, checkPage, screenshotDir });
   await malePage.getByRole("link", { name: "소개 열어보기" }).click();
   await malePage.getByRole("button", { name: "소개 티켓 1장 쓰고 열기" }).click();
   await malePage.getByText(female.name).first().waitFor({ timeout: 15_000 });
@@ -1778,6 +1781,8 @@ try {
     await betaMalePage.goto(`${baseUrl}/store?kind=intro`);
     await betaMalePage.getByText("지금은 티켓 신청 없이 이용해요").waitFor();
     await checkPage(betaMalePage, "beta store fallback");
+    if (screenshotDir)
+      await betaMalePage.screenshot({ path: join(screenshotDir, "ticket-store-beta.png") });
     await betaMalePage.goto(`${baseUrl}/availability`);
     await betaMalePage.getByRole("heading", { name: "퇴근 후, 언제 편하세요?" }).waitFor();
     for (const day of ["월", "화", "수", "목", "금"]) {
