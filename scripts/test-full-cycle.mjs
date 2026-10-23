@@ -68,6 +68,12 @@ async function pageFor(width = 390) {
   return page;
 }
 async function screen(page, name) {
+  // Sonner pauses auto-dismiss while the document is hidden or its stack is hovered.
+  await page.bringToFront();
+  await page.waitForFunction(() => document.visibilityState === "visible", undefined, {
+    timeout: 5000,
+  });
+  await page.mouse.move(0, 0);
   const toast = page.locator("[data-sonner-toast]").last();
   if (await toast.count()) await toast.waitFor({ state: "hidden", timeout: 10000 });
   // Measure settled UI, not the intermediate alpha of a dialog/content fade.
