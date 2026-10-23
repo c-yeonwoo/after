@@ -36,6 +36,20 @@ import {
 
 type SaveStatus = "saved" | "saving" | "error" | "conflict";
 const CORE_KEYS: StorySectionId[] = ["daily_life", "getting_closer", "conversation"];
+const INTERVIEW_STAGES: string[] = [
+  "start",
+  "choices0",
+  "choices1",
+  "choices2",
+  "story0",
+  "story1",
+  "story2",
+  "analyzing",
+  "followups",
+  "understanding",
+  "review",
+  "preview",
+];
 
 function resultError(result: StoryGenerationResult): string {
   if (result.status === "needs_input") return "내 이야기를 조금만 더 알려주세요.";
@@ -87,6 +101,8 @@ export function ProfileInterviewV3({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  const advancingRef = useRef(false);
   const [editingCopy, setEditingCopy] = useState(false);
   const revisionRef = useRef(0);
   const lastSavedRef = useRef<string | null>(null);
@@ -94,6 +110,7 @@ export function ProfileInterviewV3({
   currentDataRef.current = data;
   const queueRef = useRef<Promise<number>>(Promise.resolve(0));
   const publishingRef = useRef(false);
+  const requestingRef = useRef(false);
   const conflictRef = useRef(false);
   const initialInputsRef = useRef({ member, basics });
   const loadStartedRef = useRef(false);
@@ -168,12 +185,21 @@ export function ProfileInterviewV3({
     const timer = window.setTimeout(() => {
       // Publication uses the final saved revision. A previously scheduled
       // autosave must not increment it while onDone is still in flight.
-      if (!publishingRef.current) void persist(data).catch(() => undefined);
+      if (
+        !publishingRef.current &&
+        !advancingRef.current &&
+        !requestingRef.current &&
+        JSON.stringify(data) === JSON.stringify(currentDataRef.current)
+      )
+        void persist(data).catch(() => undefined);
     }, 800);
     return () => window.clearTimeout(timer);
   }, [data, loaded, persist]);
 
   const advance = async (next: ProfileInterviewV3Data) => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    setAdvancing(true);
     setActionError("");
     try {
       await persist(next);
@@ -182,6 +208,9 @@ export function ProfileInterviewV3({
       setSaveStatus("saved");
     } catch {
       setActionError("저장하지 못했어요. 다시 시도해 주세요.");
+    } finally {
+      advancingRef.current = false;
+      setAdvancing(false);
     }
   };
 
@@ -210,11 +239,14 @@ export function ProfileInterviewV3({
     });
 
   const analyze = async () => {
+    if (requestingRef.current || advancingRef.current) return;
     if (!hasStoryMaterial(data)) {
       setActionError("선택이나 짧은 이야기 중 하나만 더 알려주세요.");
       return;
     }
+    requestingRef.current = true;
     setBusy(true);
+    setActionError("");
     const snapshot = { ...data, stage: "analyzing" as const };
     try {
       await persist(snapshot);
@@ -238,15 +270,18 @@ export function ProfileInterviewV3({
     } catch {
       setActionError("저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
+      requestingRef.current = false;
       setBusy(false);
     }
   };
 
   const generate = async () => {
+    if (requestingRef.current || advancingRef.current) return;
     if (!hasStoryMaterial(data)) {
       setActionError("소개할 이야기를 하나만 더 알려주세요.");
       return;
     }
+    requestingRef.current = true;
     setBusy(true);
     setActionError("");
     const snapshot = data;
@@ -269,6 +304,7 @@ export function ProfileInterviewV3({
     } catch {
       setActionError("답변을 저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
+      requestingRef.current = false;
       setBusy(false);
     }
   };
@@ -322,7 +358,7 @@ export function ProfileInterviewV3({
     loaded && data.stage !== "start" ? (
       <p
         aria-live="polite"
-        className={`text-xs font-medium ${saveStatus === "saved" ? "text-muted-foreground" : "text-destructive"}`}
+        className={`text-xs font-medium ${saveStatus === "error" || saveStatus === "conflict" ? "text-destructive" : "text-muted-foreground"}`}
       >
         {saveStatus === "saving"
           ? "저장 중…"
@@ -341,13 +377,26 @@ export function ProfileInterviewV3({
       step={progressStep}
       total={progressTotal}
       progressLabel="프로필 작성"
+      progress={
+        (progressStep -
+          1 +
+          (INTERVIEW_STAGES.indexOf(data.stage === "error" ? "analyzing" : data.stage) + 1) /
+            (INTERVIEW_STAGES.length + 1)) /
+        progressTotal
+      }
       transitionKey={data.stage}
       eyebrow={eyebrow}
       eyebrowAction={indicator}
       title={title}
       description={description}
     >
-      {children}
+      <fieldset
+        disabled={busy || advancing || saveStatus === "conflict"}
+        aria-busy={busy || advancing}
+        className="min-w-0"
+      >
+        {children}
+      </fieldset>
       {actionError ? (
         <p role="alert" className="mt-5 text-sm text-destructive">
           {actionError}
@@ -364,9 +413,20 @@ export function ProfileInterviewV3({
           </Button>
         </div>
       ) : saveStatus === "error" ? (
-        <p role="alert" className="mt-5 text-sm text-destructive">
-          저장되지 않았어요. 다시 시도해 주세요.
-        </p>
+        <div role="alert" className="mt-5 text-sm text-destructive">
+          <p>저장되지 않았어요. 입력한 내용은 이 화면에 남아 있어요.</p>
+          <Button
+            variant="outline"
+            className="mt-3"
+            disabled={busy || advancing}
+            onClick={() => {
+              setActionError("");
+              void persist(data).catch(() => undefined);
+            }}
+          >
+            다시 저장하기
+          </Button>
+        </div>
       ) : null}
     </StepShell>
   );
@@ -415,77 +475,79 @@ export function ProfileInterviewV3({
       "나에게 편한 방식",
       "끌리는 답만 골라주세요. 정답은 없어요.",
       <>
-        <div className="space-y-8">
+        <div className="space-y-4">
           {questions.map((question) => (
-            <fieldset key={question.id}>
-              <legend className="break-keep text-base font-semibold leading-snug text-foreground">
-                {question.title}
-              </legend>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {question.max === 1 ? "한 가지" : `최대 ${question.max}가지`} · 선택
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {question.options.map((option) => (
-                  <Chip
-                    key={option}
-                    selected={(data.choices[question.id] ?? []).includes(option)}
-                    onClick={() => {
-                      const current = data.choices[question.id] ?? [];
-                      const next = current.includes(option)
-                        ? current.filter((item) => item !== option)
-                        : [...current, option].slice(-question.max);
-                      editInput({
-                        choices: { ...data.choices, [question.id]: next },
-                        publicIds: [
-                          ...new Set([
-                            ...data.publicIds,
-                            ...(["contact", "planning"].includes(question.id)
-                              ? []
-                              : next.map(
-                                  (item) =>
-                                    `choice:${question.id}:${(question.options as readonly string[]).indexOf(item)}`,
-                                )),
-                          ]),
-                        ],
-                      });
-                    }}
-                  >
-                    {option}
-                  </Chip>
-                ))}
-              </div>
-              <label
-                htmlFor={`custom-${question.id}`}
-                className="mt-4 block text-xs text-muted-foreground"
-              >
-                직접 적기 · 선택
-              </label>
-              <Input
-                id={`custom-${question.id}`}
-                className="mt-2 text-base"
-                maxLength={100}
-                value={data.choiceCustom[question.id] ?? ""}
-                placeholder="내 말로 적어도 좋아요"
-                onChange={(event) =>
-                  editInput({
-                    choiceCustom: { ...data.choiceCustom, [question.id]: event.target.value },
-                    publicIds: [
-                      ...new Set([
-                        ...data.publicIds,
-                        ...(["contact", "planning"].includes(question.id)
-                          ? []
-                          : [`choice:${question.id}:custom`]),
-                      ]),
-                    ],
-                  })
-                }
-              />
-              {["contact", "planning"].includes(question.id) ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  이 답은 기본적으로 프로필에 공개되지 않아요.
+            <div key={question.id} className="app-elevated rounded-surface bg-card p-5">
+              <fieldset className="min-w-0">
+                <legend className="break-keep text-base font-semibold leading-snug text-foreground">
+                  {question.title}
+                </legend>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {question.max === 1 ? "한 가지" : `최대 ${question.max}가지`} · 선택
                 </p>
-              ) : null}
-            </fieldset>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {question.options.map((option) => (
+                    <Chip
+                      key={option}
+                      selected={(data.choices[question.id] ?? []).includes(option)}
+                      onClick={() => {
+                        const current = data.choices[question.id] ?? [];
+                        const next = current.includes(option)
+                          ? current.filter((item) => item !== option)
+                          : [...current, option].slice(-question.max);
+                        editInput({
+                          choices: { ...data.choices, [question.id]: next },
+                          publicIds: [
+                            ...new Set([
+                              ...data.publicIds,
+                              ...(["contact", "planning"].includes(question.id)
+                                ? []
+                                : next.map(
+                                    (item) =>
+                                      `choice:${question.id}:${(question.options as readonly string[]).indexOf(item)}`,
+                                  )),
+                            ]),
+                          ],
+                        });
+                      }}
+                    >
+                      {option}
+                    </Chip>
+                  ))}
+                </div>
+                <label
+                  htmlFor={`custom-${question.id}`}
+                  className="mt-4 block text-xs text-muted-foreground"
+                >
+                  직접 적기 · 선택
+                </label>
+                <Input
+                  id={`custom-${question.id}`}
+                  className="mt-2 text-base"
+                  maxLength={100}
+                  value={data.choiceCustom[question.id] ?? ""}
+                  placeholder="내 말로 적어도 좋아요"
+                  onChange={(event) =>
+                    editInput({
+                      choiceCustom: { ...data.choiceCustom, [question.id]: event.target.value },
+                      publicIds: [
+                        ...new Set([
+                          ...data.publicIds,
+                          ...(["contact", "planning"].includes(question.id)
+                            ? []
+                            : [`choice:${question.id}:custom`]),
+                        ]),
+                      ],
+                    })
+                  }
+                />
+                {["contact", "planning"].includes(question.id) ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    이 답은 기본적으로 프로필에 공개되지 않아요.
+                  </p>
+                ) : null}
+              </fieldset>
+            </div>
           ))}
         </div>
         <div className="mt-8 flex gap-2">
@@ -529,26 +591,36 @@ export function ProfileInterviewV3({
       prompt.question,
       prompt.guide,
       <>
-        <label htmlFor="story-answer" className="sr-only">
-          내 답변
-        </label>
-        <Textarea
-          id="story-answer"
-          rows={5}
-          maxLength={300}
-          className="text-base"
-          placeholder="평소 쓰는 말로 편하게 적어주세요."
-          value={value}
-          onChange={(event) =>
-            editInput({
-              answers: { ...data.answers, [question.id]: event.target.value },
-              publicIds: [...new Set([...data.publicIds, `answer:${question.id}`])],
-            })
-          }
-        />
-        <p className="mt-3 text-xs text-muted-foreground">
-          쓴 내용은 마지막에 고치거나 빼실 수 있어요.
-        </p>
+        <div className="app-elevated rounded-surface bg-card p-4">
+          <label htmlFor="story-answer" className="sr-only">
+            내 답변
+          </label>
+          <Textarea
+            id="story-answer"
+            rows={5}
+            maxLength={300}
+            className="text-base"
+            placeholder="평소 쓰는 말로 편하게 적어주세요."
+            value={value}
+            onChange={(event) =>
+              editInput({
+                answers: { ...data.answers, [question.id]: event.target.value },
+                publicIds: [...new Set([...data.publicIds, `answer:${question.id}`])],
+              })
+            }
+          />
+          <div className="mt-3 flex items-start justify-between gap-3">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              쓴 내용은 마지막에 고치거나 빼실 수 있어요.
+            </p>
+            <output
+              className="shrink-0 text-xs text-muted-foreground tabular-nums"
+              aria-label="답변 글자 수"
+            >
+              {value.length}/300
+            </output>
+          </div>
+        </div>
         <div className="mt-8 flex gap-2">
           <Button
             variant="ghost"
@@ -636,7 +708,7 @@ export function ProfileInterviewV3({
       <>
         <div className="space-y-5">
           {data.followupIds.map((id) => (
-            <div key={id}>
+            <div key={id} className="app-elevated rounded-surface bg-card p-5">
               <label htmlFor={`followup-${id}`} className="break-keep text-base font-semibold">
                 {FOLLOWUP_LABELS[id]}
               </label>
@@ -679,9 +751,9 @@ export function ProfileInterviewV3({
       "맞는 내용인지 확인해 주세요.",
       <>
         {data.understanding.length ? (
-          <ul className="space-y-3">
+          <ul className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
             {data.understanding.map((fact, index) => (
-              <li key={index} className="border-b border-border pb-3 text-base leading-relaxed">
+              <li key={index} className="py-4 text-base leading-relaxed">
                 {fact.text}
               </li>
             ))}
@@ -690,7 +762,7 @@ export function ProfileInterviewV3({
           <p className="text-sm text-muted-foreground">답변을 한 번 더 확인해 주세요.</p>
         )}
         {data.contradictions.length ? (
-          <div className="mt-5 rounded-control border border-border p-4">
+          <div className="mt-5 rounded-control bg-muted p-4">
             <p className="text-sm font-semibold">한 번만 확인해 주세요</p>
             {data.contradictions.map((item) => (
               <p key={item} className="mt-2 text-sm">
@@ -721,7 +793,7 @@ export function ProfileInterviewV3({
       "프로필에 담을 이야기",
       "공개하지 않을 내용은 빼주세요.",
       <>
-        <div className="space-y-4">
+        <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
           {picked
             .filter((id) => !id.startsWith("choice:contact") && !id.startsWith("choice:planning"))
             .map((id) => {
@@ -743,7 +815,7 @@ export function ProfileInterviewV3({
               return (
                 <label
                   key={id}
-                  className="flex min-h-11 items-start gap-3 border-b border-border pb-4 text-sm leading-relaxed"
+                  className="flex min-h-14 cursor-pointer items-start gap-3 py-4 text-sm leading-relaxed"
                 >
                   <input
                     type="checkbox"

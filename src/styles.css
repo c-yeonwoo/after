@@ -502,7 +502,8 @@
 }
 
 @media (max-height: 540px) {
-  .app-conversation-screen {
+  .app-conversation-screen,
+  .onboarding-screen {
     --safe-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
