@@ -1,9 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, CalendarDays, FileText, Receipt, Ticket, User } from "lucide-react";
+import {
+  ChevronRight,
+  CalendarDays,
+  CircleHelp,
+  Receipt,
+  Settings,
+  Ticket,
+  User,
+} from "lucide-react";
+import { toast } from "sonner";
 
 import { NotificationBell } from "@/components/app/NotificationBell";
 import { AppScreen } from "@/components/app/AppScreen";
+import { Button } from "@/components/ui/button";
 import { BRAND, HUBS } from "@/lib/brand";
 import { myStats, paymentsEnabled, remainingCandidates, signOut, type MyStats } from "@/lib/api";
 import { useMe } from "@/lib/me";
@@ -40,10 +50,10 @@ const MENU = [
   // 티켓 보유량과 신청 상태를 확인하는 화면이라 중립적인 이름이 더 오래 간다.
   { to: "/store", icon: Ticket, label: "티켓 받기", hint: "소개 · 만남 티켓", male: true },
   { to: "/orders", icon: Receipt, label: "티켓 이용 내역", hint: "발급 · 사용 · 결제", male: true },
-  { to: "/settings", icon: Bell, label: "환경설정", hint: "화면 · 알림", male: false },
+  { to: "/settings", icon: Settings, label: "환경설정", hint: "화면 · 알림", male: false },
   {
     to: "/support",
-    icon: FileText,
+    icon: CircleHelp,
     label: "도움 · 문의",
     hint: "고객 지원 · 계정 삭제",
     male: false,
@@ -68,6 +78,9 @@ function MePage() {
   const [stats, setStats] = useState<MyStats | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [paid, setPaid] = useState<boolean | null>(null);
+  const [statsError, setStatsError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [signingOut, setSigningOut] = useState(false);
   const photo = usePhotoUrl(me?.photo_url);
   const isMale = me?.gender === "male";
 
@@ -82,9 +95,14 @@ function MePage() {
   useEffect(() => {
     if (!ready || !me) return;
     let cancelled = false;
-    myStats().then((s) => {
-      if (!cancelled) setStats(s);
-    });
+    setStatsError(false);
+    myStats()
+      .then((s) => {
+        if (!cancelled) setStats(s);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      });
     if (me.gender === "male") {
       paymentsEnabled()
         .then((enabled) => {
@@ -96,18 +114,22 @@ function MePage() {
     }
     // 여성 화면의 티켓 자리를 대신 채우는 값. 남성에게는 부르지 않는다.
     if (me.gender === "female") {
-      remainingCandidates().then((n) => {
-        if (!cancelled) setRemaining(n);
-      });
+      remainingCandidates()
+        .then((n) => {
+          if (!cancelled) setRemaining(n);
+        })
+        .catch(() => {
+          if (!cancelled) setStatsError(true);
+        });
     }
     return () => {
       cancelled = true;
     };
-  }, [ready, me]);
+  }, [ready, me, retry]);
 
   if (!me) {
     return (
-      <AppScreen title="나" action={<NotificationBell />}>
+      <AppScreen title="나" action={<NotificationBell from="me" />}>
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       </AppScreen>
     );
@@ -116,40 +138,50 @@ function MePage() {
   const hub = HUBS.find((h) => h.id === me.hub_id);
 
   return (
-    <AppScreen title="나" action={<NotificationBell />}>
+    <AppScreen title="나" action={<NotificationBell from="me" />}>
       {/* ── 대시보드 ────────────────────────────────
         진행 상황(소개 도착·확정 등)은 넣지 않는다 — 홈이 소유하는 정보이고,
         같은 상태를 두 화면이 서로 다른 문장으로 말하는 게 홈 재설계로 걷어낸
         문제였다. 받은 좋아요 수·넘긴 수도 넣지 않는다: 앞의 것은 "이미 나를
         고른 사람"이라는 전제를 카운터로 바꾸고, 뒤의 것은 사람에게 해롭다.
       */}
-      <div className="mt-3 rounded-surface border border-border bg-card p-5 shadow-card">
-        <div className="flex items-center gap-4">
-          <div className="size-16 shrink-0 overflow-hidden rounded-surface border border-border bg-muted">
-            {photo ? (
-              <img src={photo} alt="" className="size-full object-cover" />
-            ) : (
-              <span
-                aria-hidden="true"
-                className="headline flex size-full items-center justify-center text-xl text-muted-foreground"
-              >
-                {me.name?.[0] ?? "·"}
-              </span>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="headline truncate text-xl">{me.name ?? "이름 없음"}</p>
-            {/*
+      <div className="app-elevated mt-3 rounded-surface bg-card p-5">
+        <Link
+          to="/profile"
+          className="pressable -m-2 flex min-h-20 items-center gap-4 rounded-control p-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="size-16 shrink-0 overflow-hidden rounded-surface bg-muted">
+              {photo ? (
+                <img src={photo} alt="" className="size-full object-cover" />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="headline flex size-full items-center justify-center text-xl text-muted-foreground"
+                >
+                  {me.name?.[0] ?? "·"}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="headline truncate text-xl">{me.name ?? "이름 없음"}</p>
+              {/*
               가입 시점("2026년 9월부터")을 적었었다. 소속감을 준다고 생각했지만,
               읽는 사람이 그 숫자로 할 수 있는 일이 없다. 자기 프로필에서 자기
               가입월을 확인할 이유가 없고, 오래된 계정에는 "아직도 못 만났구나"
               로 읽힌다. 쓸모가 없으면 지우는 편이 낫다.
             */}
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {hub ? `직장 지역 · ${hub.label}` : "직장 지역 확인 필요"}
-            </p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                {hub ? `직장 지역 · ${hub.label}` : "직장 지역 확인 필요"}
+              </p>
+            </div>
           </div>
-        </div>
+          <ChevronRight
+            className="ml-auto size-5 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <span className="sr-only">내 프로필 보기</span>
+        </Link>
 
         <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
           {/*
@@ -212,24 +244,37 @@ function MePage() {
             소개도, 만남도 무료예요.
           </p>
         )}
+        {statsError ? (
+          <div
+            role="alert"
+            className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+          >
+            이용 현황을 불러오지 못했어요.
+            <Button variant="ghost" size="sm" onClick={() => setRetry((v) => v + 1)}>
+              다시 확인
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {/* ── 메뉴 ──────────────────────────────── */}
       <nav className="mt-6" aria-label="설정 메뉴">
-        <ul className="overflow-hidden rounded-surface border border-border bg-card">
+        <ul className="app-elevated divide-y divide-border/60 overflow-hidden rounded-surface bg-card">
           {MENU.filter((m) => (!m.male || isMale) && toVisibleInMenu(m.to, paid)).map(
             ({ to, icon: Icon, label, hint }) => (
               <li key={to}>
                 <Link
                   to={to}
-                  className="flex min-h-16 items-center gap-3.5 border-b border-border/70 px-5 last:border-0 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="pressable flex min-h-20 items-center gap-3.5 px-4 py-3 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-surface-subtle text-primary">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">{label}</span>
                     <span className="block text-xs text-muted-foreground">{hint}</span>
                   </span>
-                  <ArrowRight
+                  <ChevronRight
                     className="size-4 shrink-0 text-muted-foreground"
                     aria-hidden="true"
                   />
@@ -242,13 +287,20 @@ function MePage() {
 
       <button
         type="button"
+        disabled={signingOut}
         onClick={async () => {
-          await signOut();
-          navigate({ to: "/" });
+          setSigningOut(true);
+          try {
+            await signOut();
+            navigate({ to: "/" });
+          } catch {
+            toast.error("로그아웃하지 못했어요. 다시 시도해 주세요.");
+            setSigningOut(false);
+          }
         }}
-        className="mt-6 min-h-12 w-full rounded-control border border-border text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="pressable mt-6 min-h-12 w-full rounded-control text-sm text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
       >
-        로그아웃
+        {signingOut ? "로그아웃 중…" : "로그아웃"}
       </button>
     </AppScreen>
   );

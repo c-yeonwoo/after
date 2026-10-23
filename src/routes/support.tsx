@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ExternalLink, Mail } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
-import { InfoSection, PublicInfoPage } from "@/components/app/PublicInfoPage";
+import { PublicInfoPage } from "@/components/app/PublicInfoPage";
+import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND } from "@/lib/brand";
@@ -79,6 +80,7 @@ function SupportPage() {
     setList(null);
     setSubmitNotice(null);
     setBody("");
+    setCategory(meetingId ? "introduction" : "account");
     submitLock.current = false;
     setSubmitting(false);
     if (userId) void load(userId);
@@ -87,7 +89,7 @@ function SupportPage() {
       submitSequence.current += 1;
       activeUser.current = null;
     };
-  }, [userId, load]);
+  }, [userId, meetingId, load]);
 
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
@@ -175,8 +177,8 @@ function SupportPage() {
   }
 
   return (
-    <PublicInfoPage title="어떻게 도와드릴까요?">
-      <InfoSection title="1:1 문의">
+    <SupportFrame signedIn={Boolean(me)} meetingHelp={Boolean(meetingId)}>
+      <SupportSection title="1:1 문의">
         <p>
           {meetingId
             ? "이 약속의 일정이나 장소가 막혔다면 알려주세요. 운영팀이 확인하고 이 화면에서 답합니다."
@@ -185,7 +187,7 @@ function SupportPage() {
         {ready && me ? (
           <form onSubmit={(event) => void submit(event)} className="space-y-3">
             {!meetingId ? (
-              <>
+              <div className="space-y-2">
                 <label htmlFor="support-category" className="block font-medium text-foreground">
                   문의 종류
                 </label>
@@ -201,7 +203,7 @@ function SupportPage() {
                     </option>
                   ))}
                 </select>
-              </>
+              </div>
             ) : null}
             <label htmlFor="support-body" className="block font-medium text-foreground">
               문의 내용
@@ -212,6 +214,8 @@ function SupportPage() {
               maxLength={meetingId ? 1000 : 2000}
               minLength={10}
               required
+              aria-describedby="support-body-help support-body-count"
+              className="min-h-36 bg-background text-base leading-relaxed"
               placeholder={
                 meetingId
                   ? "예: 제안받은 날은 어렵고, 다음 주 수요일 저녁은 괜찮아요."
@@ -219,12 +223,18 @@ function SupportPage() {
               }
               onChange={(event) => setBody(event.target.value)}
             />
-            <p className="text-xs">
-              10자 이상 적어 주세요. 상대방의 연락처나 민감한 개인정보는 적지 말아 주세요.
+            <div className="flex items-baseline justify-between gap-3 text-xs">
+              <p id="support-body-help">10자 이상 적어 주세요.</p>
+              <p id="support-body-count" className="shrink-0 tabular-nums">
+                {body.trim().length}/{meetingId ? 1000 : 2000}
+              </p>
+            </div>
+            <p className="text-xs leading-relaxed">
+              상대방의 연락처나 민감한 개인정보는 적지 말아 주세요.
             </p>
             <Button
               type="submit"
-              className="w-full"
+              className="min-h-12 w-full"
               disabled={submitting || body.trim().length < 10}
             >
               {submitting ? "접수 중…" : "문의 보내기"}
@@ -238,79 +248,84 @@ function SupportPage() {
         ) : ready ? (
           <Link
             to="/login"
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary px-4 font-semibold text-primary-foreground"
+            className="app-primary-button pressable inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary px-4 font-semibold text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             로그인하고 문의하기
           </Link>
         ) : null}
-        {userId ? (
-          <div className="space-y-3 pt-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-semibold text-foreground">내 문의</h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void load(userId)}
-                disabled={list?.ownerId === userId && list.phase === "loading"}
-              >
-                내역 새로고침
-              </Button>
-            </div>
-            <p className="text-xs">
-              답변은 이 화면의 내 문의에 표시됩니다. 다시 방문하거나 새로고침해 확인해 주세요.
-            </p>
-            <p role="status" aria-live="polite" className="text-foreground">
-              {!list || list.ownerId !== userId || (list.phase === "loading" && !list.items)
-                ? "문의 내역을 불러오는 중이에요."
-                : list.phase === "error"
-                  ? list.items
-                    ? "내역을 새로고침하지 못했어요. 이전 목록을 표시하고 있어요. 내역 새로고침을 눌러 다시 확인해 주세요."
-                    : "문의 내역을 불러오지 못했어요. 내역 새로고침을 눌러 다시 확인해 주세요."
-                  : list.phase === "loading"
-                    ? "문의 내역을 새로고침하는 중이에요. 이전 목록을 표시하고 있어요."
-                    : list.items?.length === 0
-                      ? "아직 접수된 문의가 없어요."
-                      : ""}
-            </p>
-            {list?.ownerId === userId &&
-              list.items?.map((request) => (
-                <div key={request.id} className="rounded-surface border border-border bg-card p-4">
-                  <div className="flex justify-between gap-3 text-xs">
-                    <span>
-                      {categoryLabel(request.category)} ·{" "}
-                      {new Date(request.created_at).toLocaleDateString("ko-KR")}
-                    </span>
-                    <span>{request.status === "answered" ? "답변 완료" : "접수됨"}</span>
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-foreground">
-                    {request.body}
-                  </p>
-                  {request.response ? (
-                    <div className="mt-3 border-t border-border pt-3">
-                      <p className="font-semibold text-foreground">애프터 답변</p>
-                      <p className="mt-1 whitespace-pre-wrap break-words">{request.response}</p>
-                    </div>
-                  ) : null}
-                </div>
-              ))}
+        <p className="text-xs">
+          영업일 기준 3일 안에 답변드리며, 신고는 접수 후 24시간 안에 먼저 확인합니다.
+        </p>
+      </SupportSection>
+      {userId ? (
+        <SupportSection title="내 문의">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void load(userId)}
+              disabled={list?.ownerId === userId && list.phase === "loading"}
+            >
+              내역 새로고침
+            </Button>
           </div>
-        ) : null}
-        <p>영업일 기준 3일 안에 답변드리며, 신고는 접수 후 24시간 안에 먼저 확인합니다.</p>
-      </InfoSection>
+          <p className="text-xs">
+            답변은 이 화면의 내 문의에 표시됩니다. 다시 방문하거나 새로고침해 확인해 주세요.
+          </p>
+          <p role="status" aria-live="polite" className="text-foreground">
+            {!list || list.ownerId !== userId || (list.phase === "loading" && !list.items)
+              ? "문의 내역을 불러오는 중이에요."
+              : list.phase === "error"
+                ? list.items
+                  ? "내역을 새로고침하지 못했어요. 이전 목록을 표시하고 있어요. 내역 새로고침을 눌러 다시 확인해 주세요."
+                  : "문의 내역을 불러오지 못했어요. 내역 새로고침을 눌러 다시 확인해 주세요."
+                : list.phase === "loading"
+                  ? "문의 내역을 새로고침하는 중이에요. 이전 목록을 표시하고 있어요."
+                  : list.items?.length === 0
+                    ? "아직 접수된 문의가 없어요."
+                    : ""}
+          </p>
+          {list?.ownerId === userId &&
+            list.items?.map((request) => (
+              <div key={request.id} className="border-t border-border/60 pt-4 first:border-0">
+                <div className="flex justify-between gap-3 text-xs">
+                  <span>
+                    {categoryLabel(request.category)} ·{" "}
+                    {new Date(request.created_at).toLocaleDateString("ko-KR")}
+                  </span>
+                  <span className="shrink-0 rounded-control bg-surface-subtle px-2 py-0.5 font-medium text-foreground">
+                    {request.status === "answered" ? "답변 완료" : "접수됨"}
+                  </span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">
+                  {request.body}
+                </p>
+                {request.response ? (
+                  <div className="mt-3 border-t border-border pt-3">
+                    <p className="font-semibold text-foreground">애프터 답변</p>
+                    <p className="mt-1 whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {request.response}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+        </SupportSection>
+      ) : null}
 
-      <InfoSection title="이메일로 연락하기">
+      <SupportSection title="이메일로 연락하기">
         <p>로그인할 수 없거나 별도 답변이 필요하다면 이메일로 보내주세요.</p>
         <a
           href={`mailto:${BUSINESS.contactEmail}?subject=${subject}`}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-4 font-semibold text-foreground"
+          className="pressable inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-border px-4 font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Mail className="size-4" aria-hidden="true" />
           {BUSINESS.contactEmail}
         </a>
-      </InfoSection>
+      </SupportSection>
 
-      <InfoSection title="신고와 차단">
+      <SupportSection title="신고와 차단">
         <p>
           소개 또는 대화 화면 오른쪽 위 ⋯ 메뉴에서 바로 신고하거나 차단할 수 있습니다. 차단한 상대는
           다시 소개되지 않습니다.
@@ -319,34 +334,61 @@ function SupportPage() {
           신체 위협이나 스토킹처럼 즉시 도움이 필요한 상황은 앱의 답변을 기다리지 말고 112에 신고해
           주세요.
         </p>
-      </InfoSection>
+      </SupportSection>
 
-      <InfoSection title="계정과 개인정보">
-        <div className="grid gap-2">
+      <SupportSection title="계정과 개인정보">
+        <div className="divide-y divide-border/60">
           <Link
             to="/delete-account"
-            className="flex min-h-12 items-center justify-between rounded-control border border-border px-4 font-medium text-foreground"
+            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             계정 삭제 방법
             <ExternalLink className="size-4" aria-hidden="true" />
           </Link>
           <Link
             to="/privacy"
-            className="flex min-h-12 items-center justify-between rounded-control border border-border px-4 font-medium text-foreground"
+            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             개인정보 처리방침
             <ExternalLink className="size-4" aria-hidden="true" />
           </Link>
           <Link
             to="/terms"
-            className="flex min-h-12 items-center justify-between rounded-control border border-border px-4 font-medium text-foreground"
+            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             이용약관
             <ExternalLink className="size-4" aria-hidden="true" />
           </Link>
         </div>
-      </InfoSection>
-    </PublicInfoPage>
+      </SupportSection>
+    </SupportFrame>
+  );
+}
+
+function SupportFrame({
+  signedIn,
+  meetingHelp,
+  children,
+}: {
+  signedIn: boolean;
+  meetingHelp: boolean;
+  children: ReactNode;
+}) {
+  if (signedIn)
+    return (
+      <AppScreen title="고객센터" back={meetingHelp ? "/requests" : "/me"} keyboardAware>
+        <div className="mt-3 space-y-6">{children}</div>
+      </AppScreen>
+    );
+  return <PublicInfoPage title="어떻게 도와드릴까요?">{children}</PublicInfoPage>;
+}
+
+function SupportSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="app-elevated rounded-surface bg-card p-5">
+      <h2 className="text-base font-semibold">{title}</h2>
+      <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">{children}</div>
+    </section>
   );
 }
 

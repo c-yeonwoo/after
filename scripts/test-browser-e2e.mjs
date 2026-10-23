@@ -9,6 +9,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
 import { chromium, webkit } from "playwright";
+import { checkAccountScreens } from "./lib/account-screen-checks.mjs";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -195,7 +196,7 @@ async function checkPage(page, name, accessibility = true) {
     assert.deepEqual(
       blocking.map(
         (item) =>
-          `${item.id}: ${item.nodes.map((node) => `${node.target.join(",")} ${node.html}`).join(" | ")}`,
+          `${item.id}: ${item.nodes.map((node) => `${node.target.join(",")} ${node.html} ${node.failureSummary ?? ""}`).join(" | ")}`,
       ),
       [],
       `${name}: serious accessibility issues`,
@@ -1104,6 +1105,7 @@ try {
     .fill("합성 브라우저 검증을 위한 문의입니다. 답변은 필요하지 않습니다.");
   await femalePage.getByRole("button", { name: /문의.*보내기|문의.*남기기|문의 접수/ }).click();
   await femalePage.getByText("합성 브라우저 검증을 위한 문의입니다.", { exact: false }).waitFor();
+  await checkAccountScreens({ page: femalePage, baseUrl, checkPage, screenshotDir });
 
   // An existing member can revise her introduction without changing the
   // public copy until the final confirmation. A reload resumes the draft.
