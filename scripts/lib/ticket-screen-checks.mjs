@@ -6,6 +6,11 @@ export async function checkTicketScreens({ page, baseUrl, checkPage, screenshotD
   const fail = (route) =>
     route.fulfill({ status: 503, json: { message: "Synthetic unavailable" } });
   const capture = async (name) => {
+    await page.bringToFront();
+    await page.waitForFunction(() => document.visibilityState === "visible", undefined, {
+      timeout: 5000,
+    });
+    await page.mouse.move(0, 0);
     await page.locator("[data-sonner-toast]").last().waitFor({ state: "hidden" });
     await page.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
     await checkPage(page, name);
