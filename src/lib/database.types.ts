@@ -3370,6 +3370,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_review_photo_set: {
+        Args: {
+          p_user: string
+          p_expected_paths: string[]
+          p_expected_state: Database["public"]["Enums"]["photo_state"]
+          p_expected_updated_at?: string
+          p_approve: boolean
+          p_note: string
+        }
+        Returns: undefined
+      }
       admin_policy_preview: { Args: never; Returns: Json }
       admin_preview_ops_backfill: { Args: never; Returns: Json }
       admin_curation_recommendations: { Args: { p_male: string }; Returns: Json }

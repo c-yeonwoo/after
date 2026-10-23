@@ -490,6 +490,10 @@ try {
         .locator("li")
         .filter({ has: ap.getByRole("link", { name: p.name, exact: true }) });
       await card.getByRole("button", { name: "승인", exact: true }).click();
+      await ap
+        .getByRole("alertdialog")
+        .getByRole("button", { name: "확인하고 처리", exact: true })
+        .click();
       await card.waitFor({ state: "detached" });
     }
     assert.equal(
@@ -1343,6 +1347,10 @@ try {
       .locator("li")
       .filter({ has: ap.getByRole("link", { name: extra.name, exact: true }) });
     await card.getByRole("button", { name: "승인", exact: true }).click();
+    await ap
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "확인하고 처리", exact: true })
+      .click();
     await card.waitFor({ state: "detached" });
     await extra.page.goto(`${base}/intro`);
     for (let n = 0; n < 2; n++) {

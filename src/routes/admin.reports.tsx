@@ -1,8 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { NoteAction } from "@/components/admin/NoteAction";
+import { ReviewError, ReviewHeader } from "@/components/admin/ReviewWorkspace";
+import { useReviewGuard, useReviewQueue } from "@/components/admin/useReviewWorkspace";
 import { Tag } from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
 import {
   fetchNoShowReports,
   fetchReports,
@@ -13,527 +17,389 @@ import {
   type ReportState,
 } from "@/lib/admin";
 
-const STATES: ReportState[] = ["pending", "confirmed", "dismissed"];
+const STATES = ["pending", "confirmed", "dismissed", "all"] as const;
 const KINDS = ["content", "no_show"] as const;
 type ReportTab = (typeof KINDS)[number];
-
-export const Route = createFileRoute("/admin/reports")({
-  /*
-    노쇼 신고를 별도 탭으로 빼지 않고 여기 둔다. 성격이 같은 판정 업무이고
-    (사유를 읽고 인정/기각), 운영자가 "지금 판정할 게 몇 건인가" 를 한 자리에서
-    보는 편이 낫다 — 탭이 늘수록 어디를 봐야 하는지가 흐려진다.
-  */
-  validateSearch: (s: Record<string, unknown>): { state?: ReportState; kind?: ReportTab } => ({
-    state: STATES.includes(s.state as ReportState) ? (s.state as ReportState) : undefined,
-    kind: KINDS.includes(s.kind as ReportTab) ? (s.kind as ReportTab) : undefined,
-  }),
-  component: ReportsTab,
-});
-
-const DATE = new Intl.DateTimeFormat("ko-KR", { dateStyle: "short", timeStyle: "short" });
-const when = (s: string | null) => (s ? DATE.format(new Date(s)) : "—");
-
-const FILTERS: { v: ReportState | ""; label: string }[] = [
+type Filter = (typeof STATES)[number];
+const FILTERS: { v: Filter; label: string }[] = [
   { v: "pending", label: "미처리" },
   { v: "confirmed", label: "인정" },
   { v: "dismissed", label: "기각" },
-  { v: "", label: "전체" },
+  { v: "all", label: "전체" },
 ];
-
-/**
- * 카드로 쌓지 않는다.
- *
- * 처음에는 신고 하나가 카드 하나였고 카드마다 사유 입력·체크박스·버튼 두 개가
- * 늘 펼쳐져 있었다. 한 화면에 두세 건밖에 안 들어와서 "지금 뭐가 밀려 있나" 를
- * 훑을 수 없고, 정작 판단에 필요한 정보(누가 누구를, 언제, 무슨 내용)는 폼에
- * 밀려 아래로 내려갔다.
- *
- * 훑기와 처리를 나눈다 — 목록은 표로 눕혀 한눈에 보고, 처리할 한 건만 펼친다.
- */
+const DATE = new Intl.DateTimeFormat("ko-KR", { dateStyle: "short", timeStyle: "short" });
+const when = (date: string | null) => (date ? DATE.format(new Date(date)) : "—");
+export const Route = createFileRoute("/admin/reports")({
+  validateSearch: (search: Record<string, unknown>): { state?: Filter; kind?: ReportTab } => ({
+    state: STATES.includes(search.state as Filter) ? (search.state as Filter) : undefined,
+    kind: KINDS.includes(search.kind as ReportTab) ? (search.kind as ReportTab) : undefined,
+  }),
+  component: ReportsTab,
+});
 function ReportsTab() {
-  const { state, kind } = Route.useSearch();
-  const tab: ReportTab = kind ?? "content";
+  const { state = "pending", kind = "content" } = Route.useSearch();
+  return <ReportWorkspace key={`${kind}:${state}`} state={state} kind={kind} />;
+}
+function ReportWorkspace({ state, kind }: { state: Filter; kind: ReportTab }) {
   const navigate = useNavigate({ from: Route.fullPath });
-
-  // 기본은 미처리다 — 운영자가 손댈 수 있는 건 그것뿐이다.
-  useEffect(() => {
-    if (state === undefined) {
-      void navigate({ search: { kind: tab, state: "pending" }, replace: true });
-    }
-  }, [state, tab, navigate]);
-
+  const fetchRows = useCallback(
+    async (): Promise<(AdminReport | NoShowReport)[]> =>
+      kind === "content"
+        ? fetchReports(state === "all" ? undefined : state)
+        : fetchNoShowReports(state === "all" ? undefined : state),
+    [kind, state],
+  );
+  const { data: rows, loading, error, load } = useReviewQueue(fetchRows);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [editing, setEditing] = useState({ dirty: false, busy: false });
+  const { ask, dialog } = useReviewGuard(editing.dirty, editing.busy);
+  const resolved = async () => {
+    setOpenId(null);
+    setEditing({ dirty: false, busy: true });
+    await load();
+    setEditing({ dirty: false, busy: false });
+  };
   return (
-    <>
-      <div className="flex gap-2">
-        {(
-          [
-            { v: "content" as const, label: "콘텐츠 신고" },
-            { v: "no_show" as const, label: "노쇼 신고" },
-          ] satisfies { v: ReportTab; label: string }[]
-        ).map((k) => (
-          <button
-            key={k.v}
-            onClick={() =>
-              void navigate({ search: { kind: k.v, state: "pending" }, replace: true })
-            }
-            className={`rounded-control border-2 px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === k.v ? "border-primary bg-primary/8" : "border-border bg-card"
-            }`}
+    <section>
+      <ReviewHeader
+        title="신고 관리"
+        description="양쪽 기록과 처리 이력을 확인한 뒤 한 건씩 판정합니다."
+        loading={loading}
+        disabled={editing.busy || editing.dirty}
+        onRefresh={() => void load()}
+      />
+      <div className="flex flex-wrap gap-2" aria-label="신고 종류">
+        {KINDS.map((value) => (
+          <Button
+            key={value}
+            size="sm"
+            disabled={editing.busy}
+            aria-pressed={kind === value}
+            variant={kind === value ? "default" : "outline"}
+            onClick={() => {
+              if (value !== kind)
+                void navigate({ search: { kind: value, state: "pending" }, replace: true });
+            }}
           >
-            {k.label}
-          </button>
+            {value === "content" ? "콘텐츠 신고" : "노쇼 신고"}
+          </Button>
         ))}
       </div>
-
-      {tab === "no_show" ? <NoShowList state={state} /> : <ContentList state={state} />}
-    </>
+      <div className="mt-4 flex flex-wrap gap-2" aria-label="신고 상태">
+        {FILTERS.map((filter) => (
+          <Button
+            key={filter.v}
+            size="sm"
+            variant={state === filter.v ? "secondary" : "ghost"}
+            aria-pressed={state === filter.v}
+            disabled={editing.busy}
+            onClick={() => {
+              if (state !== filter.v)
+                void navigate({ search: { kind, state: filter.v }, replace: true });
+            }}
+          >
+            {filter.label}
+          </Button>
+        ))}
+      </div>
+      {dialog}
+      {kind === "no_show" && (
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          무응답은 자동 제재 사유가 아닙니다. 양쪽 후기와 확인 기한을 함께 검토해 주세요.
+        </p>
+      )}
+      {error && <ReviewError retry={() => void load()} loading={loading} />}
+      {rows === null && loading ? (
+        <p role="status" className="mt-6 text-sm text-muted-foreground">
+          신고를 불러오는 중…
+        </p>
+      ) : rows?.length === 0 ? (
+        <p className="mt-6 rounded-surface bg-card p-6 text-sm text-muted-foreground">
+          해당하는 신고가 없습니다.
+        </p>
+      ) : (
+        rows && (
+          <>
+            <p className="mt-5 text-sm tabular-nums text-muted-foreground">{rows.length}건 표시</p>
+            <ul className="mt-3 space-y-3" aria-label="신고 목록">
+              {rows.map((row) => (
+                <li key={row.id} className="app-elevated min-w-0 rounded-surface bg-card">
+                  <div className="grid items-center gap-3 p-4 lg:grid-cols-[minmax(12rem,1fr)_minmax(0,2fr)_auto] lg:gap-5 lg:px-5">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <ReportStatus state={row.state} />
+                        <span className="text-xs text-muted-foreground">
+                          접수 {when(row.created_at)}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm">
+                        <span className="text-xs text-muted-foreground">신고자</span>
+                        <Person id={row.reporter_id} name={row.reporter_name} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 text-sm">
+                        <span className="text-xs text-muted-foreground">피신고자</span>
+                        <Person id={row.accused_id} name={row.accused_name} />
+                        {row.accused_state === "banned" && <Tag tone="alert">정지됨</Tag>}
+                      </div>
+                    </div>
+                    <div className="min-w-0 text-sm">
+                      {"detail" in row ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {row.kind === "message" ? "메시지 신고" : "프로필 신고"}
+                          </p>
+                          <p className="mt-1 line-clamp-2 break-words leading-relaxed">
+                            {row.detail}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="break-words">
+                            약속 {when(row.scheduled_at)}
+                            {row.place_name ? ` · ${row.place_name}` : ""}
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            {row.state === "pending" &&
+                            row.confirm_by &&
+                            new Date(row.confirm_by).getTime() < Date.now() ? (
+                              <Tag tone="alert">기한 지남 · 우선 검토</Tag>
+                            ) : (
+                              `확인 기한 ${when(row.confirm_by)}`
+                            )}{" "}
+                            ·{" "}
+                            {row.responded_at
+                              ? row.accused_admitted
+                                ? "피신고자 인정"
+                                : "피신고자 부인"
+                              : "피신고자 미응답"}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full lg:w-auto"
+                      aria-expanded={openId === row.id}
+                      aria-controls={`report-${row.id}`}
+                      disabled={editing.busy}
+                      onClick={(event) =>
+                        ask(() => {
+                          setOpenId((id) => (id === row.id ? null : row.id));
+                          setEditing({ dirty: false, busy: false });
+                        }, event.currentTarget)
+                      }
+                    >
+                      {openId === row.id
+                        ? "닫기"
+                        : row.state === "pending"
+                          ? "검토하기"
+                          : "처리 내역"}
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={`ml-2 size-4 ${openId === row.id ? "rotate-180" : ""}`}
+                      />
+                    </Button>
+                  </div>
+                  {openId === row.id && (
+                    <div
+                      id={`report-${row.id}`}
+                      className="border-t border-border px-4 pb-5 pt-4 sm:px-5"
+                    >
+                      <h2 className="text-base font-semibold">
+                        {row.accused_name || "회원"}님에 대한 신고
+                      </h2>
+                      <p className="mt-1 break-all text-xs text-muted-foreground">
+                        신고 번호 {row.id}
+                      </p>
+                      {row.meeting_id && (
+                        <Link
+                          to="/admin/meetings"
+                          search={{ meeting: row.meeting_id }}
+                          className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
+                        >
+                          관련 만남 확인
+                        </Link>
+                      )}
+                      {"detail" in row ? (
+                        <ContentDetail
+                          key={row.id}
+                          row={row}
+                          disabled={error || loading}
+                          onDone={resolved}
+                          onEditingChange={setEditing}
+                        />
+                      ) : (
+                        <NoShowDetail
+                          key={row.id}
+                          row={row}
+                          disabled={error || loading}
+                          onDone={resolved}
+                          onEditingChange={setEditing}
+                        />
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        )
+      )}
+    </section>
   );
 }
 
-/** 콘텐츠 신고 — 기존 목록. */
-function ContentList({ state }: { state?: ReportState }) {
-  const navigate = useNavigate({ from: Route.fullPath });
-  const [rows, setRows] = useState<AdminReport[] | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setRows(await fetchReports(state));
-    setOpenId(null);
-  }, [state]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+type DetailProps<T> = {
+  row: T;
+  disabled: boolean;
+  onDone: () => Promise<void>;
+  onEditingChange: (state: { dirty: boolean; busy: boolean }) => void;
+};
+function ContentDetail({ row, disabled, onDone, onEditingChange }: DetailProps<AdminReport>) {
   return (
     <>
-      <div className="mt-4 flex flex-wrap gap-1">
-        {FILTERS.map((f) => (
-          <button
-            key={f.v}
-            onClick={() =>
-              void navigate({
-                search: { kind: "content", state: f.v || undefined },
-                replace: true,
-              })
-            }
-            className={`rounded-full px-3 py-1 text-sm transition-colors ${
-              (state ?? "") === f.v
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {rows === null ? (
-        <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
-      ) : rows.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">해당하는 신고가 없습니다.</p>
+      <h3 className="mt-3 text-sm font-medium">신고 내용</h3>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">{row.detail}</p>
+      {row.message_body && (
+        <div className="mt-4 rounded-control bg-muted/50 p-4">
+          <p className="text-xs font-medium text-muted-foreground">신고된 메시지</p>
+          <blockquote className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {row.message_body}
+          </blockquote>
+        </div>
+      )}
+      {row.state === "pending" ? (
+        <fieldset disabled={disabled} className="mt-4 border-t border-border pt-1">
+          <legend className="sr-only">신고 판정</legend>
+          <NoteAction
+            onEditingChange={onEditingChange}
+            toggle={{ label: "인정과 함께 피신고자 계정 정지" }}
+            onDone={onDone}
+            actions={[
+              {
+                label: row.refundable ? "인정 · 티켓 환불" : "인정",
+                done: "인정 처리했습니다.",
+                confirmation: (ban) =>
+                  `${row.accused_name}님에 대한 신고를 인정합니다.${row.refundable ? " 신고자의 관련 티켓이 환불됩니다." : ""}${ban ? " 피신고자 계정도 정지됩니다." : " 계정은 정지하지 않습니다."}`,
+                run: (note, ban) => resolveReport(row.id, true, note, ban),
+              },
+              {
+                label: "기각",
+                done: "기각했습니다.",
+                variant: "outline",
+                confirmation: () =>
+                  `${row.accused_name}님에 대한 신고를 기각합니다. 계정 정지나 티켓 환불은 실행하지 않습니다.`,
+                run: (note) => resolveReport(row.id, false, note, false),
+              },
+            ]}
+          />
+        </fieldset>
       ) : (
-        <>
-          <p className="mt-5 text-sm text-muted-foreground tabular-nums">{rows.length}건</p>
-          <div className="mt-2 overflow-x-auto">
-            <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground">
-                  <Th>접수</Th>
-                  <Th>신고자</Th>
-                  <Th>피신고자</Th>
-                  <Th>종류</Th>
-                  <Th>내용</Th>
-                  <Th>상태</Th>
-                  <Th />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <ReportRow
-                    key={r.id}
-                    r={r}
-                    open={openId === r.id}
-                    onToggle={() => setOpenId(openId === r.id ? null : r.id)}
-                    onResolved={load}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <Resolution date={row.resolved_at} note={row.resolve_note} />
       )}
     </>
   );
 }
-
-function ReportRow({
-  r,
-  open,
-  onToggle,
-  onResolved,
-}: {
-  r: AdminReport;
-  open: boolean;
-  onToggle: () => void;
-  onResolved: () => void;
-}) {
-  const pending = r.state === "pending";
-
+function NoShowDetail({ row, disabled, onDone, onEditingChange }: DetailProps<NoShowReport>) {
   return (
     <>
-      <tr className="group">
-        <Td className="text-muted-foreground tabular-nums whitespace-nowrap">
-          {when(r.created_at)}
-        </Td>
-        <Td>
-          <Person id={r.reporter_id} name={r.reporter_name} />
-        </Td>
-        <Td>
-          <span className="flex items-center gap-1.5">
-            <Person id={r.accused_id} name={r.accused_name} />
-            {r.accused_state === "banned" ? <Tag tone="alert">정지됨</Tag> : null}
-          </span>
-        </Td>
-        <Td className="text-muted-foreground whitespace-nowrap">
-          {r.kind === "message" ? "메시지" : "프로필"}
-        </Td>
-        {/* 내용은 한 줄로 자른다 — 훑을 때 필요한 건 길이가 아니라 성격이다. */}
-        <Td className="max-w-[22rem] truncate text-muted-foreground" title={r.detail}>
-          {r.detail}
-        </Td>
-        <Td>
-          {pending ? (
-            <Tag tone="alert">미처리</Tag>
-          ) : r.state === "confirmed" ? (
-            <Tag tone="muted">인정</Tag>
-          ) : (
-            <Tag tone="muted">기각</Tag>
-          )}
-        </Td>
-        <Td className="text-right whitespace-nowrap">
-          <button
-            onClick={onToggle}
-            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            {open ? "닫기" : pending ? "처리하기" : "보기"}
-          </button>
-        </Td>
-      </tr>
-
-      {open ? (
-        <tr>
-          <td colSpan={7} className="border-b border-border bg-muted/30 px-3 py-3">
-            <p className="text-sm leading-relaxed whitespace-pre-line">{r.detail}</p>
-
-            {r.message_body ? (
-              <blockquote className="mt-2 border-l-2 border-border pl-3 text-sm text-muted-foreground">
-                {r.message_body}
-              </blockquote>
-            ) : null}
-
-            {pending ? (
-              /*
-                인정하면 신고자 티켓이 환불된다(서버에서) — 단 **만남이 딸린
-                신고만** 이다. resolve_content_report 는 meeting_id 가 없으면
-                돌려줄 티켓을 찾지 않는다. 실제로 일어나는 일만 문구에 적는다.
-              */
-              <NoteAction
-                placeholder="처리 사유 (필수 — 기록에 남습니다)"
-                toggle={{ label: "인정과 함께 계정 정지" }}
-                onDone={onResolved}
-                actions={[
-                  {
-                    label: r.refundable ? "인정 · 티켓 환불" : "인정",
-                    done: "인정 처리했습니다.",
-                    run: (note, ban) => resolveReport(r.id, true, note, ban),
-                  },
-                  {
-                    label: "기각",
-                    done: "기각했습니다.",
-                    variant: "outline",
-                    run: (note) => resolveReport(r.id, false, note, false),
-                  },
-                ]}
-              />
-            ) : (
-              /*
-                처리 사유를 반드시 보여준다. 서버가 note 를 not null 로 강제하는
-                이유가 "왜 그렇게 처리했는지" 를 남기는 것인데, 화면에 돌려주지
-                않으면 DB 를 열어야만 알 수 있다(s16c).
-              */
-              <p className="mt-3 text-sm text-muted-foreground">
-                {when(r.resolved_at)} 처리 · {r.resolve_note || "사유 기록 없음"}
-              </p>
-            )}
-          </td>
-        </tr>
-      ) : null}
+      <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <Statement label="신고자 후기" name={row.reporter_name} body={row.reporter_note} />
+        <Statement label="피신고자 후기" name={row.accused_name} body={row.accused_note} />
+      </div>
+      {row.compensated && (
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          신고자에게 보상 티켓이 발급됐습니다. 기각으로 번복해도 회수하지 않습니다.
+        </p>
+      )}
+      {row.state !== "pending" && <Resolution date={row.resolved_at} note={row.resolution_note} />}
+      {row.state === "pending" || row.state === "confirmed" ? (
+        <fieldset disabled={disabled} className="mt-4 border-t border-border pt-1">
+          <legend className="sr-only">노쇼 판정</legend>
+          <NoteAction
+            onEditingChange={onEditingChange}
+            placeholder={
+              row.state === "confirmed"
+                ? "번복 사유 (필수 — 기록에 남습니다)"
+                : "판정 사유 (필수 — 기록에 남습니다)"
+            }
+            onDone={onDone}
+            actions={
+              row.state === "pending"
+                ? [
+                    {
+                      label: "인정 · 제명 + 보상 티켓",
+                      done: "확정했습니다.",
+                      variant: "destructive",
+                      confirmation: () =>
+                        `${row.accused_name}님의 노쇼를 확정해 계정을 제명하고, 신고자에게 보상 티켓을 발급합니다. 양쪽 기록을 확인했는지 다시 검토해 주세요.`,
+                      run: (note) => resolveNoShow(row.id, true, note),
+                    },
+                    {
+                      label: "기각",
+                      done: "기각했습니다.",
+                      variant: "outline",
+                      confirmation: () =>
+                        `${row.accused_name}님에 대한 노쇼 신고를 기각합니다. 제명이나 보상 티켓 발급은 실행하지 않습니다.`,
+                      run: (note) => resolveNoShow(row.id, false, note),
+                    },
+                  ]
+                : [
+                    {
+                      label: "기각으로 번복 · 제명 해제",
+                      done: "번복했습니다.",
+                      variant: "destructive",
+                      confirmation: () =>
+                        `${row.accused_name}님의 제명을 해제합니다. 이미 지급한 보상 티켓은 회수하지 않습니다.`,
+                      run: (note) => resolveNoShow(row.id, false, note),
+                    },
+                  ]
+            }
+          />
+        </fieldset>
+      ) : (
+        <p className="mt-3 text-xs text-muted-foreground">기각된 신고는 다시 확정할 수 없습니다.</p>
+      )}
     </>
   );
 }
-
 function Person({ id, name }: { id: string; name: string | null }) {
   return (
     <Link
       to="/admin/members/$id"
       params={{ id }}
-      className="font-semibold underline-offset-2 hover:underline"
+      className="inline-flex min-h-11 items-center break-all font-medium underline-offset-4 hover:underline"
     >
-      {name ?? "(이름 없음)"}
+      {name || "이름 없음"}
     </Link>
   );
 }
-
-function Th({ children }: { children?: React.ReactNode }) {
-  return <th className="border-b border-border px-3 py-2 font-medium">{children}</th>;
-}
-
-function Td({
-  children,
-  className = "",
-  title,
-}: {
-  children?: React.ReactNode;
-  className?: string;
-  title?: string;
-}) {
+function ReportStatus({ state }: { state: ReportState }) {
   return (
-    <td
-      title={title}
-      className={`border-b border-border px-3 py-2 group-hover:bg-muted/40 ${className}`}
-    >
-      {children}
-    </td>
+    <Tag tone={state === "pending" ? "alert" : "muted"}>
+      {state === "pending" ? "미처리" : state === "confirmed" ? "인정" : "기각"}
+    </Tag>
   );
 }
-
-/**
- * 노쇼 신고 — 콘텐츠 신고와 판정 방식이 다르다.
- *
- * s36 의 원칙: **단일 미검증 신고나 무응답으로 제명하지 않는다.** 인정·부인·
- * 무응답은 모두 판정 자료일 뿐이고, 운영자가 양쪽 기록을 확인한 뒤 확정한다.
- *
- * 그래서 화면이 반드시 보여줘야 하는 것이 둘 있다.
- *   · **양쪽 후기** — 신고 사유는 feedbacks.body 에만 있고, 한쪽 말만 보이면
- *     운영자가 한쪽 말로 판정한다.
- *   · **응답과 확인 기한** — 기한이 지나면 자동 제재가 아니라 검토 SLA가 지난다.
- */
-function NoShowList({ state }: { state?: ReportState }) {
-  const navigate = useNavigate({ from: Route.fullPath });
-  const [rows, setRows] = useState<NoShowReport[] | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setRows(await fetchNoShowReports(state));
-    setOpenId(null);
-  }, [state]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+function Statement({ label, name, body }: { label: string; name: string; body: string | null }) {
   return (
-    <>
-      <div className="mt-4 flex flex-wrap gap-1">
-        {FILTERS.map((f) => (
-          <button
-            key={f.v}
-            onClick={() =>
-              void navigate({
-                search: { kind: "no_show", state: f.v || undefined },
-                replace: true,
-              })
-            }
-            className={`rounded-full px-3 py-1 text-sm transition-colors ${
-              (state ?? "") === f.v
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {rows === null ? (
-        <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>
-      ) : rows.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">해당하는 노쇼 신고가 없습니다.</p>
-      ) : (
-        <>
-          <p className="mt-5 text-sm text-muted-foreground tabular-nums">{rows.length}건</p>
-          <div className="mt-2 overflow-x-auto">
-            <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground">
-                  <Th>약속</Th>
-                  <Th>신고자</Th>
-                  <Th>피신고자</Th>
-                  <Th>확인 기한</Th>
-                  <Th>응답</Th>
-                  <Th>상태</Th>
-                  <Th />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <NoShowRow
-                    key={r.id}
-                    r={r}
-                    open={openId === r.id}
-                    onToggle={() => setOpenId(openId === r.id ? null : r.id)}
-                    onResolved={load}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-    </>
-  );
-}
-
-function NoShowRow({
-  r,
-  open,
-  onToggle,
-  onResolved,
-}: {
-  r: NoShowReport;
-  open: boolean;
-  onToggle: () => void;
-  onResolved: () => void;
-}) {
-  const pending = r.state === "pending";
-  const overdue = pending && r.confirm_by !== null && new Date(r.confirm_by) < new Date();
-
-  return (
-    <>
-      <tr className="group">
-        <Td className="text-muted-foreground tabular-nums whitespace-nowrap">
-          {when(r.scheduled_at)}
-          {r.place_name ? ` · ${r.place_name}` : ""}
-        </Td>
-        <Td>
-          <Person id={r.reporter_id} name={r.reporter_name} />
-        </Td>
-        <Td>
-          <span className="flex items-center gap-1.5">
-            <Person id={r.accused_id} name={r.accused_name} />
-            {r.accused_state === "banned" ? <Tag tone="alert">제명됨</Tag> : null}
-          </span>
-        </Td>
-        <Td className="text-muted-foreground tabular-nums whitespace-nowrap">
-          {/* 기한은 자동 처벌이 아니라 운영 검토 SLA다. */}
-          {overdue ? (
-            <span className="text-primary-strong">기한 지남 · 우선 검토</span>
-          ) : (
-            when(r.confirm_by)
-          )}
-        </Td>
-        <Td>
-          {r.responded_at === null ? (
-            <Tag tone={overdue ? "alert" : "muted"}>미응답</Tag>
-          ) : r.accused_admitted ? (
-            <Tag tone="alert">인정</Tag>
-          ) : (
-            <Tag tone="muted">부인</Tag>
-          )}
-        </Td>
-        <Td>
-          {pending ? (
-            <Tag tone="alert">미처리</Tag>
-          ) : r.state === "confirmed" ? (
-            <Tag tone="alert">확정</Tag>
-          ) : (
-            <Tag tone="muted">기각</Tag>
-          )}
-        </Td>
-        <Td className="text-right whitespace-nowrap">
-          <button
-            onClick={onToggle}
-            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            {open ? "닫기" : pending || r.state === "confirmed" ? "판정하기" : "보기"}
-          </button>
-        </Td>
-      </tr>
-
-      {open ? (
-        <tr>
-          <td colSpan={7} className="border-b border-border bg-muted/30 px-3 py-3">
-            {/* 양쪽 후기를 나란히. 한쪽만 보이면 한쪽 말로 판정하게 된다. */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Note who={r.reporter_name} label="신고자" body={r.reporter_note} />
-              <Note who={r.accused_name} label="피신고자" body={r.accused_note} />
-            </div>
-
-            {r.compensated ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                확정으로 신고자에게 보상 티켓이 이미 발급됐습니다.{" "}
-                <strong>기각으로 되돌려도 회수하지 않습니다.</strong>
-              </p>
-            ) : null}
-
-            {pending ? (
-              <NoteAction
-                placeholder="판정 사유 (필수 — 기록에 남습니다)"
-                onDone={onResolved}
-                actions={[
-                  {
-                    label: "인정 · 제명 + 보상 티켓",
-                    done: "확정했습니다.",
-                    run: (note) => resolveNoShow(r.id, true, note),
-                  },
-                  {
-                    label: "기각",
-                    done: "기각했습니다.",
-                    variant: "outline",
-                    run: (note) => resolveNoShow(r.id, false, note),
-                  },
-                ]}
-              />
-            ) : r.state === "confirmed" ? (
-              <>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  확정된 건입니다. 기각으로 되돌리면 제명이 풀립니다.
-                </p>
-                <NoteAction
-                  placeholder="번복 사유 (필수 — 기록에 남습니다)"
-                  onDone={onResolved}
-                  actions={[
-                    {
-                      label: "기각으로 번복 · 제명 해제",
-                      done: "번복했습니다.",
-                      variant: "destructive",
-                      run: (note) => resolveNoShow(r.id, false, note),
-                    },
-                  ]}
-                />
-              </>
-            ) : (
-              /* 기각된 건은 다시 확정할 수 없다 — 새 신고가 접수되는 편이 옳다. */
-              <p className="mt-3 text-sm text-muted-foreground">
-                {when(r.resolved_at)} 기각 처리됨. 다시 확정할 수는 없습니다.
-              </p>
-            )}
-          </td>
-        </tr>
-      ) : null}
-    </>
-  );
-}
-
-function Note({ who, label, body }: { who: string | null; label: string; body: string | null }) {
-  return (
-    <div className="rounded-surface border border-border bg-card p-3">
-      <p className="text-xs text-muted-foreground">
-        {label} · {who ?? "(이름 없음)"}
+    <div className="min-w-0 rounded-control bg-muted/50 p-4">
+      <h3 className="text-sm font-medium">
+        {label} · {name || "회원"}
+      </h3>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
+        {body || "남긴 후기가 없습니다."}
       </p>
-      <p className="mt-1 text-sm leading-relaxed whitespace-pre-line">
-        {body || <span className="text-muted-foreground">후기를 남기지 않았습니다.</span>}
+    </div>
+  );
+}
+function Resolution({ date, note }: { date: string | null; note: string | null }) {
+  return (
+    <div className="mt-4 border-t border-border pt-4">
+      <h3 className="text-xs font-medium text-muted-foreground">처리 기록 · {when(date)}</h3>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
+        {note || "사유 기록 없음"}
       </p>
     </div>
   );
