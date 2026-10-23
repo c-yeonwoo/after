@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 import {
   fetchMarketplaceHealth,
@@ -44,8 +45,14 @@ function OperationsHome() {
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const active = useRef(false);
+  const request = useRef(0);
+  const loading = useRef<number | null>(null);
 
   const load = useCallback(async () => {
+    if (loading.current !== null) return;
+    const id = ++request.current;
+    loading.current = id;
     setRefreshing(true);
     try {
       const result = await Promise.allSettled([
@@ -54,6 +61,7 @@ function OperationsHome() {
         fetchOperationalHealth(),
         fetchMarketplaceHealth(),
       ]);
+      if (!active.current || id !== request.current) return;
       const failed: string[] = [];
       if (result[0].status === "fulfilled") setOverview(result[0].value);
       else failed.push("작업 현황");
@@ -65,12 +73,15 @@ function OperationsHome() {
       else failed.push("수급");
       setErrors(failed);
       if (failed.length < result.length) setCheckedAt(new Date());
+      setNow(Date.now());
     } finally {
-      setRefreshing(false);
+      if (loading.current === id) loading.current = null;
+      if (active.current && id === request.current) setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
+    active.current = true;
     void load();
     const timer = window.setInterval(() => {
       setNow(Date.now());
@@ -81,6 +92,9 @@ function OperationsHome() {
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      active.current = false;
+      request.current += 1;
+      loading.current = null;
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
@@ -93,21 +107,26 @@ function OperationsHome() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">운영 홈</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">오늘, 먼저 볼 것</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">오늘, 먼저 볼 것</h1>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {checkedAt
+              ? `${timeLabel(checkedAt.toISOString())} 확인 · 1분마다 갱신`
+              : "운영 현황을 확인하고 있어요"}
+          </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={() => void load()}
           disabled={refreshing}
-          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          variant="outline"
+          size="sm"
         >
           <RefreshCw
-            className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}
+            className={`size-3.5 motion-reduce:animate-none ${refreshing ? "animate-spin" : ""}`}
             aria-hidden="true"
           />
-          {checkedAt ? `${timeLabel(checkedAt.toISOString())} 확인` : "새로고침"}
-        </button>
+          새로고침
+        </Button>
       </div>
 
       {errors.length === 4 ? (
@@ -125,7 +144,7 @@ function OperationsHome() {
         </p>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div aria-label="운영 작업 요약" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Summary label="미처리 작업" value={overview?.total} to="/admin/tasks" />
         <Summary
           label="기한 초과"
@@ -142,11 +161,14 @@ function OperationsHome() {
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]">
-        <section className="min-w-0 rounded-surface border border-border bg-card">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]">
+        <section className="app-elevated min-w-0 overflow-hidden rounded-surface bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <h2 className="text-sm font-semibold">지금 처리할 일</h2>
-            <Link to="/admin/tasks" className="text-xs text-primary-strong hover:underline">
+            <Link
+              to="/admin/tasks"
+              className="pressable inline-flex min-h-11 items-center rounded-control px-2 text-xs text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
               전체 작업함
             </Link>
           </div>
@@ -165,7 +187,7 @@ function OperationsHome() {
                   <Link
                     to="/admin/tasks"
                     search={{ caseId: item.id }}
-                    className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted/40"
+                    className="pressable flex min-h-16 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
                   >
                     <span
                       className={`size-2 shrink-0 rounded-full ${item.priority === "critical" ? "bg-destructive" : item.priority === "high" ? "bg-primary-strong" : "bg-border"}`}
@@ -198,7 +220,7 @@ function OperationsHome() {
         </section>
 
         <aside className="space-y-5">
-          <section className="rounded-surface border border-border bg-card p-5">
+          <section className="app-elevated rounded-surface bg-card p-5">
             <h2 className="text-sm font-semibold">운영 상태</h2>
             {health ? (
               <dl className="mt-4 space-y-3 text-sm">
@@ -207,16 +229,20 @@ function OperationsHome() {
                 <Metric label="일정 확정 지연" value={health.scheduling.stale_confirmation} />
               </dl>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">상태를 확인할 수 없습니다.</p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {errors.includes("운영 상태")
+                  ? "상태를 확인할 수 없습니다."
+                  : "상태를 불러오는 중입니다."}
+              </p>
             )}
             <Link
               to="/admin/system"
-              className="mt-4 inline-block text-xs text-primary-strong hover:underline"
+              className="pressable mt-3 inline-flex min-h-11 items-center rounded-control px-1 text-xs text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               시스템 상태 보기
             </Link>
           </section>
-          <section className="rounded-surface border border-border bg-card p-5">
+          <section className="app-elevated rounded-surface bg-card p-5">
             <h2 className="text-sm font-semibold">소개 가능한 회원</h2>
             {market ? (
               <dl className="mt-4 space-y-3 text-sm">
@@ -224,11 +250,15 @@ function OperationsHome() {
                 <Metric label="남성" value={market.pool.eligible_male} />
               </dl>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">수급을 확인할 수 없습니다.</p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {errors.includes("수급")
+                  ? "수급을 확인할 수 없습니다."
+                  : "수급을 불러오는 중입니다."}
+              </p>
             )}
             <Link
               to="/admin/insights"
-              className="mt-4 inline-block text-xs text-primary-strong hover:underline"
+              className="pressable mt-3 inline-flex min-h-11 items-center rounded-control px-1 text-xs text-primary-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               수급·성과 자세히
             </Link>
@@ -256,7 +286,7 @@ function Summary({
     <Link
       to={to}
       search={{ focus }}
-      className="rounded-surface border border-border bg-card px-5 py-4 transition-colors hover:border-foreground/25"
+      className="app-elevated pressable rounded-surface bg-card px-4 py-4 transition-colors hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p

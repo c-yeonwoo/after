@@ -5,6 +5,14 @@ import { NoteAction } from "@/components/admin/NoteAction";
 import { MeetingLifecyclePanel } from "@/components/admin/MeetingLifecyclePanel";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/admin/ui";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { cancelMeeting, fetchMeetings, type AdminMeeting, type MeetingFilter } from "@/lib/admin";
 
 const STATES: (MeetingFilter | "all")[] = ["active", "confirmed", "completed", "cancelled", "all"];
@@ -72,6 +80,10 @@ function MeetingsTab() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const cancelLock = useRef(false);
+  const cancelTrigger = useRef<HTMLElement | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
   const epoch = useRef(0);
   const invalidate = useCallback(() => {
@@ -103,6 +115,10 @@ function MeetingsTab() {
   }, [state, meeting]);
 
   useEffect(() => {
+    setRows(null);
+    setError(false);
+    setCheckedAt(null);
+    setOpenId(null);
     void load();
     const tick = () => {
       if (document.visibilityState === "visible") void load();
@@ -123,8 +139,72 @@ function MeetingsTab() {
     }
   }, [state, meeting, navigate]);
 
+  const selected = rows?.find((item) => item.id === openId);
   return (
     <>
+      <header className="mb-5">
+        <h1
+          ref={heading}
+          tabIndex={-1}
+          className="text-2xl font-semibold tracking-tight outline-none"
+        >
+          만남 관리
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">응답 기한과 다음 조치부터 확인하세요.</p>
+      </header>
+      <AlertDialog
+        open={Boolean(selected)}
+        onOpenChange={(open) => {
+          if (!open && !cancelLock.current) setOpenId(null);
+        }}
+      >
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (cancelTrigger.current?.isConnected && cancelTrigger.current.getClientRects().length)
+              cancelTrigger.current.focus();
+            else heading.current?.focus();
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>만남 취소</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selected?.male_name ?? "남성 회원"} · {selected?.female_name ?? "여성 회원"}의
+              만남입니다. 대상과 티켓 반환 여부를 확인해 주세요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {selected ? (
+            <NoteAction
+              key={selected.id}
+              placeholder="취소 사유 (필수 — 기록에 남습니다)"
+              toggle={{ label: "티켓 반환", defaultOn: true }}
+              onDone={() => {
+                setOpenId(null);
+                void load();
+              }}
+              actions={[
+                {
+                  label: "만남 강제 취소",
+                  done: "취소했습니다.",
+                  variant: "destructive",
+                  run: async (note, refund) => {
+                    if (cancelLock.current) return;
+                    cancelLock.current = true;
+                    setCanceling(true);
+                    try {
+                      await cancelMeeting(selected.id, note, refund);
+                    } finally {
+                      cancelLock.current = false;
+                      setCanceling(false);
+                    }
+                  },
+                },
+              ]}
+            />
+          ) : null}
+          <AlertDialogCancel disabled={canceling}>돌아가기</AlertDialogCancel>
+        </AlertDialogContent>
+      </AlertDialog>
       {!meeting ? <MeetingLifecyclePanel /> : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>
@@ -172,11 +252,11 @@ function MeetingsTab() {
 
       {state === "active" && rows ? (
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <div className="rounded-surface border border-border bg-card px-4 py-3 text-sm">
+          <div className="app-elevated rounded-surface bg-card px-4 py-3 text-sm">
             <span className="font-semibold tabular-nums">{urgentCount}건</span>
             <span className="ml-2 text-muted-foreground">응답 기한 임박·경과</span>
           </div>
-          <div className="rounded-surface border border-border bg-card px-4 py-3 text-sm">
+          <div className="app-elevated rounded-surface bg-card px-4 py-3 text-sm">
             <span className="font-semibold tabular-nums">{outcomeCount}건</span>
             <span className="ml-2 text-muted-foreground">지난 만남 결과 확인</span>
           </div>
@@ -194,7 +274,72 @@ function MeetingsTab() {
           <p className="mt-5 text-sm text-muted-foreground tabular-nums">
             {rows.length}건 · 처리할 일부터
           </p>
-          <div className="mt-2 overflow-x-auto">
+          <ul aria-label="만남 목록" className="mt-3 space-y-3 md:hidden">
+            {sortedRows?.map((m) => (
+              <li key={m.id} className="app-elevated rounded-surface bg-card p-4">
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <Person id={m.male_id} name={m.male_name} />
+                  <span aria-hidden="true" className="text-muted-foreground">
+                    ·
+                  </span>
+                  <Person id={m.female_id} name={m.female_name} />
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <MeetingStatus m={m} />
+                  <span
+                    className={`text-sm ${urgency(m, now) <= 1 ? "font-semibold text-primary-strong" : "text-muted-foreground"}`}
+                  >
+                    {nextStep(m, now)}
+                  </span>
+                </div>
+                <dl className="mt-4 space-y-2 text-xs leading-relaxed">
+                  <div>
+                    <dt className="text-muted-foreground">일정 · 장소</dt>
+                    <dd className="mt-1 break-words">
+                      {m.scheduled_at
+                        ? `${when(m.scheduled_at)} · ${m.place_name ?? "장소 미정"}`
+                        : "미확정"}
+                    </dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <dt className="text-muted-foreground">티켓</dt>
+                    <dd>
+                      {m.ticket_state === "used"
+                        ? "사용"
+                        : m.ticket_state === "refunded"
+                          ? "반환"
+                          : "미사용"}
+                    </dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <dt className="text-muted-foreground">시작</dt>
+                    <dd>{when(m.created_at)}</dd>
+                  </div>
+                </dl>
+                {!m.cancelled_at && !m.completed_at ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 w-full"
+                    onClick={(event) => {
+                      cancelTrigger.current = event.currentTarget;
+                      setOpenId(m.id);
+                    }}
+                  >
+                    취소하기
+                  </Button>
+                ) : m.cancel_reason ? (
+                  <p className="mt-3 text-xs text-muted-foreground">{m.cancel_reason}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <div
+            role="region"
+            aria-label="만남 목록 표"
+            tabIndex={0}
+            className="app-elevated mt-3 hidden overflow-x-auto rounded-surface bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:block"
+          >
             <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
@@ -213,9 +358,10 @@ function MeetingsTab() {
                   <MeetingRow
                     key={m.id}
                     m={m}
-                    open={openId === m.id}
-                    onToggle={() => setOpenId(openId === m.id ? null : m.id)}
-                    onDone={load}
+                    onToggle={(trigger) => {
+                      cancelTrigger.current = trigger;
+                      setOpenId(m.id);
+                    }}
                     now={now}
                   />
                 ))}
@@ -230,96 +376,71 @@ function MeetingsTab() {
 
 function MeetingRow({
   m,
-  open,
   onToggle,
-  onDone,
   now,
 }: {
   m: AdminMeeting;
-  open: boolean;
-  onToggle: () => void;
-  onDone: () => void;
+  onToggle: (trigger: HTMLElement) => void;
   now: number;
 }) {
   const live = !m.cancelled_at && !m.completed_at;
-
   return (
-    <>
-      <tr className="group">
-        <Td>
-          <Person id={m.male_id} name={m.male_name} />
-        </Td>
-        <Td>
-          <Person id={m.female_id} name={m.female_name} />
-        </Td>
-        <Td>
-          {m.cancelled_at ? (
-            <Tag tone="alert">취소</Tag>
-          ) : m.completed_at ? (
-            <Tag tone="muted">완료</Tag>
-          ) : m.confirmed_at ? (
-            <Tag tone="muted">확정</Tag>
-          ) : m.prefs_submitted_at ? (
-            <Tag tone="muted">조율 중</Tag>
-          ) : (
-            // 티켓을 쓴 뒤 상대 응답이 없는 상태. 24시간 지나면 크론이 자동 환불한다.
-            <Tag tone="alert">응답 대기</Tag>
-          )}
-        </Td>
-        <Td
-          className={
-            urgency(m, now) <= 1 ? "font-semibold text-primary-strong" : "text-muted-foreground"
-          }
-        >
-          {nextStep(m, now)}
-        </Td>
-        <Td className="text-muted-foreground">
-          {m.ticket_state === "used" ? "사용" : m.ticket_state === "refunded" ? "반환" : "미사용"}
-        </Td>
-        <Td className="text-muted-foreground">
-          {m.scheduled_at ? `${when(m.scheduled_at)} · ${m.place_name ?? "장소 미정"}` : "미확정"}
-        </Td>
-        <Td className="text-muted-foreground tabular-nums">{when(m.created_at)}</Td>
-        <Td className="text-right">
-          {live ? (
-            <button
-              onClick={onToggle}
-              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            >
-              {open ? "닫기" : "취소하기"}
-            </button>
-          ) : m.cancel_reason ? (
-            <span className="text-2xs text-muted-foreground">{m.cancel_reason}</span>
-          ) : null}
-        </Td>
-      </tr>
-      {open ? (
-        <tr>
-          <td colSpan={8} className="border-b border-border bg-muted/30 px-3 py-3">
-            {/*
-              환불 여부를 운영자가 고른다. 취소 사유가 "장소 착오" 인지 "한쪽
-              잘못" 인지는 사람만 아는 정보라 서버가 정할 수 없다. 기본은 환불 —
-              운영자가 끼어들어 끊는 상황에서 돈을 쥐고 있는 편이 기본값이면 안 된다.
+    <tr className="group">
+      <Td>
+        <Person id={m.male_id} name={m.male_name} />
+      </Td>
+      <Td>
+        <Person id={m.female_id} name={m.female_name} />
+      </Td>
+      <Td>
+        <MeetingStatus m={m} />
+      </Td>
+      <Td
+        className={
+          urgency(m, now) <= 1 ? "font-semibold text-primary-strong" : "text-muted-foreground"
+        }
+      >
+        {nextStep(m, now)}
+      </Td>
+      <Td className="text-muted-foreground">
+        {m.ticket_state === "used" ? "사용" : m.ticket_state === "refunded" ? "반환" : "미사용"}
+      </Td>
+      <Td className="text-muted-foreground">
+        {m.scheduled_at ? `${when(m.scheduled_at)} · ${m.place_name ?? "장소 미정"}` : "미확정"}
+      </Td>
+      <Td className="text-muted-foreground tabular-nums">{when(m.created_at)}</Td>
+      <Td className="text-right">
+        {live ? (
+          <Button size="sm" variant="ghost" onClick={(event) => onToggle(event.currentTarget)}>
+            취소하기
+          </Button>
+        ) : m.cancel_reason ? (
+          <span className="text-2xs text-muted-foreground">{m.cancel_reason}</span>
+        ) : null}
+      </Td>
+    </tr>
+  );
+}
 
-              이미 환불된 티켓이면 서버가 환불 단계를 건너뛴다(중복 환불 없음).
-            */}
-            <NoteAction
-              placeholder="취소 사유 (필수 — 기록에 남습니다)"
-              toggle={{ label: "티켓 반환", defaultOn: true }}
-              onDone={onDone}
-              actions={[
-                {
-                  label: "만남 강제 취소",
-                  done: "취소했습니다.",
-                  variant: "destructive",
-                  run: (note, refund) => cancelMeeting(m.id, note, refund),
-                },
-              ]}
-            />
-          </td>
-        </tr>
-      ) : null}
-    </>
+function MeetingStatus({ m }: { m: AdminMeeting }) {
+  return (
+    <Tag
+      tone={
+        m.cancelled_at || (!m.prefs_submitted_at && !m.confirmed_at && !m.completed_at)
+          ? "alert"
+          : "muted"
+      }
+    >
+      {m.cancelled_at
+        ? "취소"
+        : m.completed_at
+          ? "완료"
+          : m.confirmed_at
+            ? "확정"
+            : m.prefs_submitted_at
+              ? "조율 중"
+              : "응답 대기"}
+    </Tag>
   );
 }
 
@@ -328,7 +449,7 @@ function Person({ id, name }: { id: string; name: string | null }) {
     <Link
       to="/admin/members/$id"
       params={{ id }}
-      className="font-semibold underline-offset-2 hover:underline"
+      className="pressable inline-flex min-h-11 items-center rounded-control font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover:underline"
     >
       {name ?? "(이름 없음)"}
     </Link>

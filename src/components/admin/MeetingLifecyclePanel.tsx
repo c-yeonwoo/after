@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 type Item = {
@@ -97,7 +98,7 @@ export function MeetingLifecyclePanel() {
   return (
     <section
       aria-label="참석과 후기 모니터링"
-      className="mb-6 rounded-surface border border-border bg-card p-5"
+      className="app-elevated mb-6 rounded-surface bg-card p-5"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -180,11 +181,17 @@ export function MeetingLifecyclePanel() {
           {expanded ? "접기" : `${rows.length}건 보기`}
         </Button>
       ) : null}
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        한 분만 참석을 확인한 약속은 자동취소하지 않습니다. 상대 확인이 늦으면 운영팀이 직접 조율해
-        주세요. 알림 횟수는 인앱 생성 건수이며 기기 수신을 의미하지 않습니다. 양측의 안내 열람이
-        확인되지 않은 약속도 자동취소·경고 대신 운영팀 연락이 필요합니다.
-      </p>
+      <details className="group mt-3">
+        <summary className="pressable flex min-h-11 cursor-pointer items-center rounded-control text-xs text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+          참석 확인 운영 기준 보기
+          <ChevronDown className="ml-2 size-4 shrink-0 group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          한 분만 참석을 확인한 약속은 자동취소하지 않습니다. 상대 확인이 늦으면 운영팀이 직접
+          조율해 주세요. 알림 횟수는 인앱 생성 건수이며 기기 수신을 의미하지 않습니다. 양측의 안내
+          열람이 확인되지 않은 약속도 자동취소·경고 대신 운영팀 연락이 필요합니다.
+        </p>
+      </details>
     </section>
   );
 }

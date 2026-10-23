@@ -12,6 +12,7 @@ import { chromium, webkit } from "playwright";
 import { checkAccountScreens } from "./lib/account-screen-checks.mjs";
 import { checkTicketScreens } from "./lib/ticket-screen-checks.mjs";
 import { checkPaymentScreens } from "./lib/payment-screen-checks.mjs";
+import { checkAdminScreens } from "./lib/admin-screen-checks.mjs";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -1646,6 +1647,7 @@ try {
   await adminPage.goto(`${baseUrl}/admin`);
   await adminPage.getByText("운영 홈").first().waitFor();
   await checkPage(adminPage, "admin operations");
+  await checkAdminScreens({ page: adminPage, baseUrl, checkPage, screenshotDir, male, female });
   const supportCaseId = sql(
     `select c.id from ops_cases c join support_requests s on s.id::text=c.source_id where c.case_type='support' and s.user_id='${female.id}' order by c.opened_at desc limit 1`,
   );
