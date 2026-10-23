@@ -630,6 +630,26 @@ export async function reviewPhoto(userId: string, approve: boolean, note: string
   if (error) throw error;
 }
 
+/** Compare and lock the exact set the reviewer saw before changing its state. */
+export async function reviewPhotoSet(
+  photo: PhotoReviewItem,
+  approve: boolean,
+  note: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("admin_review_photo_set", {
+    p_user: photo.id,
+    p_expected_paths: photo.photo_paths?.length
+      ? photo.photo_paths
+      : photo.photo_url
+        ? [photo.photo_url]
+        : [],
+    p_expected_state: photo.photo_state,
+    p_approve: approve,
+    p_note: note,
+  });
+  if (error) throw error;
+}
+
 /**
  * 이미 승인한 사진을 다시 내린다. 노출을 멈추고 반려 사유를 사용자에게 보여 주므로,
  * 운영자도 사유를 반드시 남긴다.
