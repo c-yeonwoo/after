@@ -21,7 +21,10 @@ export function MeetingContactPreference() {
     };
   }, [retry]);
   return (
-    <section className="mt-6 border-t border-border pt-5" aria-label="운영팀 약속 확인 연락">
+    <section
+      className="app-elevated mt-6 rounded-surface bg-card p-5"
+      aria-label="운영팀 약속 확인 연락"
+    >
       <h2 className="text-sm font-semibold">운영팀의 약속 확인 연락</h2>
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground" id={`${id}-help`}>
         동의하시면 운영팀이 이름·휴대폰 번호를 약속 확인과 일정 조율에만 사용해요. 상대에게 번호를

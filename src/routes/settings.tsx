@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -17,6 +17,7 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { MeetingContactPreference } from "@/components/app/MeetingContactPreference";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { enablePush, pushPermission, type PushPermission } from "@/lib/push";
 import { BRAND } from "@/lib/brand";
 import {
@@ -66,6 +67,8 @@ function SettingsPage() {
   const [pw, setPw] = useState("");
   const [requestReminder, setRequestReminder] = useState<boolean | null>(null);
   const [requestReminderError, setRequestReminderError] = useState(false);
+  const [reminderRetry, setReminderRetry] = useState(0);
+  const [providerError, setProviderError] = useState(false);
   /** 이 계정에 붙어 있는 로그인 수단. null 이면 아직 못 읽었다. */
   const [providers, setProviders] = useState<string[] | null>(null);
 
@@ -76,6 +79,7 @@ function SettingsPage() {
   useEffect(() => {
     if (!me) return;
     let alive = true;
+    setRequestReminderError(false);
     void getRequestReminderPreference()
       .then((enabled) => {
         if (alive) {
@@ -89,14 +93,16 @@ function SettingsPage() {
     return () => {
       alive = false;
     };
-  }, [me]);
+  }, [me, reminderRetry]);
 
   const refreshProviders = useCallback(async () => {
+    setProviderError(false);
     try {
       setProviders(await linkedProviders());
     } catch {
       // 못 읽으면 연결 여부를 모른다고 두는 편이 낫다 — 틀린 상태를 보여주는 것보다.
       setProviders(null);
+      setProviderError(true);
     }
   }, []);
 
@@ -150,12 +156,10 @@ function SettingsPage() {
   const isMale = me.gender === "male";
 
   return (
-    <AppScreen title="환경설정" back="/me">
-      <section className="mt-5">
+    <AppScreen title="환경설정" back="/me" keyboardAware>
+      <section className="app-elevated mt-3 rounded-surface bg-card p-5">
         <h2 className="text-sm font-semibold">화면</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          기본은 기기 설정을 따릅니다. 이 앱은 주로 퇴근 후에 열립니다.
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">기본은 기기 설정을 따릅니다.</p>
         <div className="mt-3 grid grid-cols-3 gap-1.5" role="group" aria-label="화면 테마">
           {THEMES.map((o) => (
             <button
@@ -164,11 +168,11 @@ function SettingsPage() {
               aria-pressed={choice === o.id}
               onClick={() => setChoice(o.id)}
               className={cn(
-                "min-h-11 rounded-control border text-sm transition-colors",
+                "pressable min-h-12 rounded-control text-sm",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 choice === o.id
-                  ? "border-primary bg-primary font-semibold text-primary-foreground"
-                  : "border-border bg-card text-foreground",
+                  ? "bg-primary font-semibold text-primary-foreground"
+                  : "bg-surface-subtle text-foreground",
               )}
             >
               {o.label}
@@ -177,57 +181,30 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="mt-9">
+      <section className="app-elevated mt-6 rounded-surface bg-card p-5">
         <h2 className="text-sm font-semibold">알림</h2>
         <div className="mt-3">
           <PushStatus />
         </div>
 
         {requestReminderError ? (
-          <p role="alert" className="mt-3 text-xs text-destructive">
-            요청 리마인드 설정을 확인할 수 없습니다. 잠시 후 다시 열어 주세요.
-          </p>
+          <div role="alert" className="mt-3 text-xs text-destructive">
+            요청 리마인드 설정을 확인할 수 없습니다.
+            <Button variant="ghost" size="sm" onClick={() => setReminderRetry((v) => v + 1)}>
+              다시 확인
+            </Button>
+          </div>
         ) : (
-          <label className="mt-4 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
-            <input
-              type="checkbox"
-              className="size-5 shrink-0 accent-primary"
-              checked={requestReminder ?? false}
-              disabled={busy || requestReminder === null}
-              onChange={async (e) => {
-                const next = e.target.checked;
-                setBusy(true);
-                try {
-                  await setRequestReminderPreference(next);
-                  setRequestReminder(next);
-                } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium">답변 대기 리마인드</span>
-              <span className="block text-xs text-muted-foreground">
-                만남 요청에 아직 답하지 않았을 때 한 번 더 알려드려요.
-              </span>
-            </span>
-          </label>
-        )}
-
-        <label className="mt-4 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
-          <input
-            type="checkbox"
-            className="size-5 shrink-0 accent-primary"
-            checked={me.feedback_emails}
-            disabled={busy}
-            onChange={async (e) => {
-              const next = e.target.checked;
+          <PreferenceToggle
+            label="답변 대기 리마인드"
+            description="만남 요청에 아직 답하지 않았을 때 한 번 더 알려드려요."
+            checked={requestReminder ?? false}
+            disabled={busy || requestReminder === null}
+            onCheckedChange={async (next) => {
               setBusy(true);
               try {
-                await setFeedbackEmails(next);
-                await refresh();
+                await setRequestReminderPreference(next);
+                setRequestReminder(next);
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
               } finally {
@@ -235,20 +212,32 @@ function SettingsPage() {
               }
             }}
           />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">만남 후 후기 요청 알림</span>
-            <span className="block text-xs text-muted-foreground">
-              만남 다음 날 안내하고, 미작성 시 한 번 더 알려드려요.
-            </span>
-          </span>
-        </label>
+        )}
+
+        <PreferenceToggle
+          label="만남 후 후기 요청 알림"
+          description="만남 다음 날 안내하고, 미작성 시 한 번 더 알려드려요."
+          checked={me.feedback_emails}
+          disabled={busy}
+          onCheckedChange={async (next) => {
+            setBusy(true);
+            try {
+              await setFeedbackEmails(next);
+              await refresh();
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
 
         {/*
           최초 진행 알림은 끌 수 없다. 요청이 온 걸 모르면 24시간 뒤 상대의 티켓이
           조용히 환불되므로 편의가 아니라 상대에 대한 의무다. 대신 아래
           "잠시 쉬기"로 새 소개 자체를 멈출 수 있다 — 그게 진짜 필요한 것이었다.
         */}
-        <div className="mt-3 rounded-surface bg-surface-subtle px-5 py-4">
+        <div className="mt-2 border-t border-border/60 pt-4">
           <p className="text-sm font-medium">만남 진행 알림</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             소개 도착 · 최초 요청 · 답변 · 만남 확정 알림은 끌 수 없습니다. 추가 리마인드는 위에서
@@ -263,44 +252,35 @@ function SettingsPage() {
         깰 수는 없다. 그 사실을 화면에서도 분명히 말한다.
       */}
       <MeetingContactPreference />
-      <section className="mt-9">
+      <section className="app-elevated mt-6 rounded-surface bg-card p-5">
         {/*
           남성 쪽에는 효과가 하나 더 붙는다(v2). paused_at 은 여성 평가 큐에서
           빠지는 것 외에 **운영자가 세운 소개 카드도 오지 않게** 한다. 컬럼을
           늘리지 않고 같은 값을 쓰되, 라벨과 설명을 갈라 그 사실을 말한다.
         */}
         <h2 className="text-sm font-semibold">{isMale ? "소개 받기" : "잠시 쉬기"}</h2>
-        <label className="mt-3 flex min-h-14 cursor-pointer items-center gap-3.5 rounded-surface border border-border bg-card px-5">
-          <input
-            type="checkbox"
-            className="size-5 shrink-0 accent-primary"
-            checked={me.paused_at !== null}
-            disabled={busy}
-            onChange={async (e) => {
-              const next = e.target.checked;
-              setBusy(true);
-              try {
-                await setPaused(next);
-                await refresh();
-                toast.success(next ? "새 소개를 멈췄습니다." : "다시 소개를 받습니다.");
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">
-              {isMale ? "소개 받지 않기" : "새 소개 받지 않기"}
-            </span>
-            <span className="block text-xs leading-relaxed text-muted-foreground">
-              {isMale
-                ? "도착한 소개 카드도 더 이상 오지 않습니다. 진행 중인 요청과 약속은 그대로 남습니다."
-                : "진행 중인 요청과 약속은 그대로 남습니다. 언제든 다시 켜실 수 있습니다."}
-            </span>
-          </span>
-        </label>
+        <PreferenceToggle
+          label={isMale ? "소개 받지 않기" : "새 소개 받지 않기"}
+          description={
+            isMale
+              ? "도착한 소개 카드도 더 이상 오지 않습니다. 진행 중인 요청과 약속은 그대로 남습니다."
+              : "진행 중인 요청과 약속은 그대로 남습니다. 언제든 다시 켜실 수 있습니다."
+          }
+          checked={me.paused_at !== null}
+          disabled={busy}
+          onCheckedChange={async (next) => {
+            setBusy(true);
+            try {
+              await setPaused(next);
+              await refresh();
+              toast.success(next ? "새 소개를 멈췄습니다." : "다시 소개를 받습니다.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
       </section>
 
       {/* ── 비밀번호 ─────────────────────────── */}
@@ -310,7 +290,7 @@ function SettingsPage() {
         지금 값을 묻지 않는다(GoTrue updateUser 는 현재 비밀번호를 요구하지 않고,
         요구하면 애초에 없는 사람이 막힌다). 세션을 가진 사람만 닿는 화면이다.
       */}
-      <section className="mt-9">
+      <section className="app-elevated mt-6 rounded-surface bg-card p-5">
         <h2 className="text-sm font-semibold">
           <label htmlFor="settings-password">비밀번호</label>
         </h2>
@@ -353,7 +333,7 @@ function SettingsPage() {
         만들 수 있게 하면 회사 메일 인증이라는 이 서비스의 전제가 무너진다.
       */}
       {!APP_BUILD ? (
-        <section className="mt-9">
+        <section className="app-elevated mt-6 rounded-surface bg-card p-5">
           <h2 className="text-sm font-semibold">카카오</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {kakaoLinked
@@ -367,6 +347,14 @@ function SettingsPage() {
             >
               개인정보 처리방침 보기
             </Link>
+          ) : null}
+          {providerError ? (
+            <div role="alert" className="mt-2 text-xs text-muted-foreground">
+              연결 상태를 불러오지 못했어요.
+              <Button variant="ghost" size="sm" onClick={() => void refreshProviders()}>
+                연결 상태 다시 확인
+              </Button>
+            </div>
           ) : null}
           <Button
             variant="outline"
@@ -397,7 +385,13 @@ function SettingsPage() {
               }
             }}
           >
-            {providers === null ? "불러오는 중…" : kakaoLinked ? "연결 끊기" : "카카오 연결하기"}
+            {providerError
+              ? "연결 상태 확인 필요"
+              : providers === null
+                ? "불러오는 중…"
+                : kakaoLinked
+                  ? "연결 끊기"
+                  : "카카오 연결하기"}
           </Button>
         </section>
       ) : null}
@@ -413,7 +407,7 @@ function SettingsPage() {
           type="button"
           disabled={busy}
           onClick={() => setConfirmWithdraw(true)}
-          className="mt-4 min-h-12 w-full rounded-control border border-destructive/40 text-sm font-medium text-destructive transition-colors hover:bg-destructive/8 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+          className="pressable mt-4 min-h-12 w-full rounded-control border border-destructive/40 text-sm font-medium text-destructive hover:bg-destructive/8 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
         >
           탈퇴하기
         </button>
@@ -456,26 +450,88 @@ function SettingsPage() {
   );
 }
 
+function PreferenceToggle({
+  label,
+  description,
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex min-h-20 items-center gap-4 py-4">
+      <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
+        <span id={`${id}-label`} className="block text-sm font-medium">
+          {label}
+        </span>
+        <span
+          id={`${id}-help`}
+          className="mt-1 block text-xs leading-relaxed text-muted-foreground"
+        >
+          {description}
+        </span>
+      </label>
+      <Switch
+        id={id}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={`${id}-help`}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+      />
+    </div>
+  );
+}
+
 /**
  * 앱 알림 상태(s55). 메일 알림은 없어졌다 — 앱은 푸시, 웹은 종 아이콘 목록이다.
  * 한 번 거절한 권한은 앱이 다시 물을 수 없어서 기기 설정으로 안내한다.
  */
 function PushStatus() {
   const [state, setState] = useState<PushPermission | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
-    void pushPermission().then(setState);
-  }, []);
+    let active = true;
+    setError(false);
+    void pushPermission()
+      .then((permission) => {
+        if (active) setState(permission);
+      })
+      .catch(() => {
+        if (active) setError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [retry]);
 
+  if (error)
+    return (
+      <div role="alert" className="text-xs text-muted-foreground">
+        알림 권한을 확인하지 못했어요.
+        <Button size="sm" variant="ghost" onClick={() => setRetry((v) => v + 1)}>
+          권한 다시 확인
+        </Button>
+      </div>
+    );
   if (state === null) return null;
   if (state === "unsupported") {
     return (
-      <p className="rounded-surface bg-surface-subtle px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+      <p className="border-b border-border/60 pb-4 text-xs leading-relaxed text-muted-foreground">
         웹을 닫으면 별도 알림이 오지 않아요. 상단 종 아이콘에서 요청과 약속을 확인해 주세요.
       </p>
     );
   }
   return (
-    <div className="flex min-h-14 items-center justify-between gap-3 rounded-surface border border-border bg-card px-5 py-3">
+    <div className="flex min-h-14 items-center justify-between gap-3 border-b border-border/60 pb-4">
       <span className="min-w-0">
         <span className="block text-sm font-medium">앱 알림</span>
         <span className="block text-xs text-muted-foreground">
@@ -487,8 +543,21 @@ function PushStatus() {
         </span>
       </span>
       {state === "prompt" ? (
-        <Button size="sm" onClick={async () => setState(await enablePush())}>
-          켜기
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              setState(await enablePush());
+            } catch {
+              toast.error("알림을 켜지 못했어요. 다시 시도해 주세요.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "확인 중…" : "켜기"}
         </Button>
       ) : null}
     </div>

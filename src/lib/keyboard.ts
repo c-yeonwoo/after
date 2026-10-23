@@ -91,8 +91,13 @@ export function useKeyboardOpen(): boolean {
   return open;
 }
 
-export function useKeepFieldVisible(ref: RefObject<HTMLElement | null>, contentKey: string) {
+export function useKeepFieldVisible(
+  ref: RefObject<HTMLElement | null>,
+  contentKey: string,
+  enabled = true,
+) {
   useEffect(() => {
+    if (!enabled) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const adjust = () => {
       const container = ref.current;
@@ -134,5 +139,5 @@ export function useKeepFieldVisible(ref: RefObject<HTMLElement | null>, contentK
       window.visualViewport?.removeEventListener("resize", schedule);
       void shown?.then((handle) => handle.remove());
     };
-  }, [ref, contentKey]);
+  }, [ref, contentKey, enabled]);
 }

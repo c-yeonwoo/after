@@ -10,7 +10,7 @@ import { unreadNotificationCount } from "@/lib/api";
  * 1분마다, 그리고 탭으로 돌아올 때 센다. 실시간 구독은 두지 않는다 — 소개와 약속은
  * 분 단위로 다투는 일이 아니고, 구독은 화면마다 연결을 하나씩 더 연다.
  */
-export function NotificationBell() {
+export function NotificationBell({ from = "home" }: { from?: "home" | "me" }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -33,8 +33,9 @@ export function NotificationBell() {
   return (
     <Link
       to="/notifications"
+      search={{ from }}
       aria-label={count > 0 ? `읽지 않은 알림 ${count > 9 ? "9+" : count}` : "알림"}
-      className="relative -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="pressable relative -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <Bell className="size-5" aria-hidden="true" />
       {count > 0 ? (

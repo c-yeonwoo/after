@@ -5,6 +5,7 @@ import { ArrowLeft, Heart, Home, MessageCircle, User } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useContentArrival } from "@/lib/contentMotion";
+import { useKeepFieldVisible } from "@/lib/keyboard";
 
 /**
  * 탭 라벨은 성별과 무관하게 "소개" 하나로 둔다.
@@ -54,6 +55,7 @@ export function AppScreen({
    * 좁아져 오탭이 났다. 흐름 안의 슬롯으로 두면 간격이 계산이 아니라 배치가 된다.
    */
   footer,
+  keyboardAware,
 }: {
   title?: string;
   action?: ReactNode;
@@ -62,6 +64,7 @@ export function AppScreen({
   fill?: boolean;
   back?: string;
   footer?: ReactNode;
+  keyboardAware?: boolean;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -78,6 +81,7 @@ export function AppScreen({
     요소다. 네이티브 화면 전환은 항상 맨 위에서 시작하므로 그 쪽에 맞춘다.
   */
   const mainRef = useRef<HTMLElement>(null);
+  useKeepFieldVisible(mainRef, pathname, keyboardAware === true);
   useContentArrival(mainRef, pathname, !fill);
   useEffect(() => {
     /*
@@ -98,6 +102,7 @@ export function AppScreen({
       className={cn(
         "flex h-full flex-col overflow-hidden bg-background",
         fill && "app-conversation-screen",
+        keyboardAware && "app-form-screen",
       )}
       /*
         탭바도 footer 도 없는 화면은 마지막 자식이 화면 밑변에 그대로 닿는다
@@ -181,7 +186,7 @@ export function AppScreen({
               const active =
                 pathname === t.to ||
                 pathname.startsWith(`${t.to}/`) ||
-                (t.to === "/me" && pathname === "/profile") ||
+                (t.to === "/me" && ["/profile", "/settings", "/support"].includes(pathname)) ||
                 (t.to === "/chats" && pathname.startsWith("/chat/"));
               const Icon = t.icon;
               return (
