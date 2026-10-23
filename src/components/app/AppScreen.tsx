@@ -186,7 +186,8 @@ export function AppScreen({
               const active =
                 pathname === t.to ||
                 pathname.startsWith(`${t.to}/`) ||
-                (t.to === "/me" && ["/profile", "/settings", "/support"].includes(pathname)) ||
+                (t.to === "/me" &&
+                  ["/profile", "/settings", "/support", "/store", "/orders"].includes(pathname)) ||
                 (t.to === "/chats" && pathname.startsWith("/chat/"));
               const Icon = t.icon;
               return (

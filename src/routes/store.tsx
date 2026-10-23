@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { Check, Ticket } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
-import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import {
@@ -12,16 +11,15 @@ import {
   requestTicketOrder,
   ticketBundles,
   unusedTicketCount,
+  paymentsEnabled,
   type TicketBundle,
   type TicketKind,
   type TicketOrder,
-  paymentsEnabled,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/store")({
-  // 소개 화면에서 "소개 티켓 사기" 로 넘어올 때 그 탭이 바로 열려야 한다.
   validateSearch: (q: Record<string, unknown>): { kind?: TicketKind } => ({
     kind: q.kind === "intro" || q.kind === "meeting" ? q.kind : undefined,
   }),
@@ -34,21 +32,10 @@ export const Route = createFileRoute("/store")({
   component: StorePage,
 });
 
-/**
- * 티켓이 두 종류다(v2). 화면마다 어느 티켓인지 분명해야 한다 — 값도 성격도
- * 다르다. 소개 티켓은 열람에 사용되고 만남 티켓은 불발 시 다시 지급된다.
- */
-const KINDS: {
-  v: TicketKind;
-  label: string;
-  unit: string;
-  guide: string;
-  terms: string[];
-}[] = [
+const KINDS = [
   {
     v: "intro",
     label: "소개 티켓",
-    unit: "소개 프로필 열람 1회",
     guide: "도착한 소개의 프로필을 열 때 1장이 사용됩니다.",
     terms: [
       "새로 받는 티켓은 발급일부터 12개월 동안 사용할 수 있습니다",
@@ -59,7 +46,6 @@ const KINDS: {
   {
     v: "meeting",
     label: "만남 티켓",
-    unit: "만남 주선 1회",
     guide: "티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 티켓을 돌려드립니다.",
     terms: [
       "새로 받는 티켓은 발급일부터 12개월 동안 사용할 수 있습니다",
@@ -67,253 +53,287 @@ const KINDS: {
       "상대 사유로 약속이 취소된 경우에도 반환",
     ],
   },
-];
-
+] as const;
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
+type StoreData = {
+  key: string;
+  paid: boolean;
+  owned: number;
+  bundles: TicketBundle[];
+  order: TicketOrder | null;
+};
 
-/**
- * 티켓 상점 — 구매 전용(S13).
- *
- * /ticket 과 역할이 다르다. /ticket 은 "지금 열린 이 소개에 티켓을 쓴다"이고
- * 소개에 묶여 있다. 둘을 한 화면에 두면 티켓 0장인 사람에게 "쓰기"와 "사기"가
- * 섞여 보인다.
- */
 function StorePage() {
   const { me, ready } = useMe();
   const navigate = useNavigate();
   const { kind: fromLink } = Route.useSearch();
-  const [kind, setKind] = useState<TicketKind>(fromLink ?? "meeting");
-  const [owned, setOwned] = useState<number | null>(null);
-  const [order, setOrder] = useState<TicketOrder | null>(null);
-  /* 가격을 클라이언트에 두면 서버와 어긋난다 — 실제로 3장 가격을 바꾸며 겪었다. */
-  const [bundles, setBundles] = useState<TicketBundle[]>([]);
-  const [picked, setPicked] = useState<number>(1);
+  const kind = fromLink ?? "meeting";
+  const key = `${me?.id}:${kind}`;
+  const allowed = ready && me?.gender === "male";
+  const [data, setData] = useState<StoreData | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [picked, setPicked] = useState(1);
   const [busy, setBusy] = useState(false);
-  /*
-    지금 무엇이 티켓을 발급하는가(s27).
+  const submitting = useRef(false);
+  const activeKey = useRef("");
+  const current = data?.key === key ? data : null;
+  const spec = KINDS.find((item) => item.v === kind)!;
+  const kindPicker = (
+    <div className="mt-3 flex gap-2" role="group" aria-label="티켓 종류">
+      {KINDS.map((item) => (
+        <button
+          key={item.v}
+          type="button"
+          aria-pressed={kind === item.v}
+          disabled={busy}
+          onClick={() => void navigate({ to: "/store", search: { kind: item.v }, replace: true })}
+          className={cn(
+            "pressable min-h-12 flex-1 rounded-control px-3 py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
+            kind === item.v
+              ? "bg-primary text-primary-foreground"
+              : "bg-surface-subtle text-foreground",
+          )}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
 
-    null 은 아직 모르는 상태다. 기본값을 false 로 두면 결제가 켜진 서비스에서
-    한순간 "신청만 받습니다" 가 보였다가 바뀐다 — 돈 이야기라 깜빡임이 곧
-    오해다. 확정될 때까지 그 문장을 아예 그리지 않는다.
-  */
-  const [paid, setPaid] = useState<boolean | null>(null);
-
-  const spec = KINDS.find((k) => k.v === kind)!;
-
-  /*
-    여성에게는 이 화면이 존재하지 않는다.
-
-    메뉴에서 지웠지만 주소는 남는다 — 옛 링크·뒤로가기·북마크로 들어올 수 있다.
-    화면을 지우는 것과 길을 막는 것은 다른 일이고, 서버(create_ticket_order)에
-    성별 게이트를 넣은 것과도 또 다른 일이다. 셋 다 해야 "여성에게 과금하지
-    않는다" 가 참이 된다.
-  */
   useEffect(() => {
-    if (ready && me && me.gender !== "male") navigate({ to: "/me", replace: true });
+    if (!ready) return;
+    if (!me) void navigate({ to: "/login", replace: true });
+    else if (me.gender !== "male") void navigate({ to: "/me", replace: true });
   }, [ready, me, navigate]);
 
-  async function load(k: TicketKind) {
-    const payments = await paymentsEnabled();
-    if (!payments) {
-      setPaid(false);
-      return;
-    }
-    const [count, list] = await Promise.all([unusedTicketCount(k), ticketBundles(k)]);
-    const pending = await myPendingTicketOrder(k, payments);
-    setOwned(count);
-    setOrder(pending);
-    setBundles(list);
-    setPaid(payments);
-    // 번들 구성이 종류마다 다르다(만남 1·3 / 소개 1·5) — 선택을 되돌려 놓는다.
-    setPicked(list[0]?.quantity ?? 1);
-  }
-
   useEffect(() => {
-    void load(kind);
-  }, [kind]);
+    if (!allowed) return;
+    let active = true;
+    activeKey.current = key;
+    setErrorKey(null);
+    void (async () => {
+      try {
+        const paid = await paymentsEnabled();
+        if (!active) return;
+        if (!paid) {
+          setData({ key, paid: false, owned: 0, bundles: [], order: null });
+          return;
+        }
+        const [owned, bundles, order] = await Promise.all([
+          unusedTicketCount(kind),
+          ticketBundles(kind),
+          myPendingTicketOrder(kind, true),
+        ]);
+        if (!active) return;
+        setPicked(bundles[0]?.quantity ?? 1);
+        setData({ key, paid, owned, bundles, order });
+      } catch {
+        if (active) setErrorKey(key);
+      }
+    })();
+    return () => {
+      active = false;
+      activeKey.current = "";
+    };
+  }, [allowed, key, kind, retry]);
 
-  const single = bundles.find((b) => b.quantity === 1)?.amount ?? 0;
-
-  // 판정 전(또는 리다이렉트 직전)에는 가격을 그리지 않는다.
-  if (!ready || paid === null || (me && me.gender !== "male")) {
+  if (allowed && errorKey === key)
     return (
       <AppScreen title="티켓 받기" back="/me">
-        <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+        <div
+          role="alert"
+          className="app-elevated mt-3 rounded-surface bg-card px-5 py-8 text-center"
+        >
+          <p className="text-sm text-muted-foreground">티켓 정보를 불러오지 못했어요.</p>
+          <Button variant="outline" className="mt-4" onClick={() => setRetry((v) => v + 1)}>
+            다시 불러오기
+          </Button>
+        </div>
       </AppScreen>
     );
-  }
-
-  if (!paid) {
+  if (!allowed || !current)
+    return (
+      <AppScreen title="티켓 받기" back="/me">
+        {allowed && data?.paid ? kindPicker : null}
+        <p role="status" className="mt-16 text-center text-sm text-muted-foreground">
+          불러오는 중입니다…
+        </p>
+      </AppScreen>
+    );
+  if (!current.paid)
     return (
       <AppScreen title="베타 이용 안내" back="/me">
-        <div className="mt-10 rounded-surface border border-border bg-card px-6 py-8">
+        <div className="app-elevated mt-3 rounded-surface bg-card px-6 py-8">
+          <Ticket className="mb-5 size-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
           <h2 className="text-xl font-semibold">지금은 티켓 신청 없이 이용해요</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             소개가 도착하면 무료로 열어보고, 마음이 가는 분에게 만남을 요청할 수 있습니다. 유료로
             자동 전환되거나 결제되지 않습니다.
           </p>
-          <Button className="mt-6 w-full" size="lg" onClick={() => navigate({ to: "/intro" })}>
+          <Button className="mt-6 w-full" size="lg" onClick={() => void navigate({ to: "/intro" })}>
             소개 확인하기
           </Button>
         </div>
       </AppScreen>
     );
+
+  const { bundles, order, owned } = current;
+  const selected = bundles.find((bundle) => bundle.quantity === picked);
+  const single = bundles.find((bundle) => bundle.quantity === 1)?.amount ?? 0;
+  const checkoutReady = Boolean(selected && import.meta.env.VITE_TOSS_CLIENT_KEY);
+  async function requestOrder() {
+    if (submitting.current || !checkoutReady) return;
+    submitting.current = true;
+    setBusy(true);
+    try {
+      const created = await requestTicketOrder(picked, kind);
+      if (activeKey.current !== key) return;
+      if (created.payment_required) {
+        void navigate({ to: "/checkout", search: { orderId: created.order_id } });
+      } else {
+        setData((previous) => (previous?.key === key ? { ...previous, order: created } : previous));
+        toast.success("신청을 받았습니다.");
+      }
+    } catch (err) {
+      if (activeKey.current !== key) return;
+      if (err instanceof Error && err.message.includes("policy_reconsent_required")) {
+        toast.message("새 티켓을 신청하려면 약관을 확인해 주세요.");
+        void navigate({ to: "/consent" });
+      } else {
+        toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
+      }
+    } finally {
+      submitting.current = false;
+      if (activeKey.current) setBusy(false);
+    }
   }
 
   return (
-    <AppScreen title="티켓 받기" back="/me">
-      <div className="mt-3 flex gap-2">
-        {KINDS.filter((item) => paid || item.v === "meeting").map((k) => (
-          <button
-            key={k.v}
-            type="button"
-            aria-pressed={kind === k.v}
-            onClick={() => setKind(k.v)}
-            className={cn(
-              "flex-1 rounded-control border-2 px-3 py-2 text-sm font-medium transition-colors",
-              kind === k.v ? "border-primary bg-primary/8" : "border-border bg-card",
-            )}
-          >
-            {k.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3">
-        <GuideNote>{spec.guide}</GuideNote>
-      </div>
-
+    <AppScreen
+      title="티켓 받기"
+      back="/me"
+      action={
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/orders">이용 내역</Link>
+        </Button>
+      }
+      footer={
+        !order && selected ? (
+          <div>
+            <div className="mb-3 flex items-baseline justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">
+                {spec.label} {picked}장
+              </span>
+              <span className="text-lg font-semibold tabular-nums">{won(selected.amount)}</span>
+            </div>
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={busy || !checkoutReady}
+              onClick={() => void requestOrder()}
+            >
+              {busy ? "처리하는 중…" : `${picked}장 결제하기`}
+            </Button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {checkoutReady
+                ? "결제를 마치면 티켓이 바로 들어옵니다."
+                : "결제창을 준비하고 있습니다."}
+            </p>
+          </div>
+        ) : undefined
+      }
+    >
+      {kindPicker}
+      <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{spec.guide}</p>
       <p className="mt-5 text-sm text-muted-foreground">
         보유 {spec.label}{" "}
-        <span className="font-semibold text-foreground tabular-nums">{owned ?? "—"}장</span>
+        <span className="font-semibold text-foreground tabular-nums">{owned}장</span>
       </p>
-
-      <ul className="mt-3 space-y-2.5">
-        {bundles.map(({ quantity, amount }) => {
-          const perUnit = Math.round(amount / quantity);
-          const saved = single * quantity - amount;
-          const on = picked === quantity;
-          return (
-            <li key={quantity}>
-              <button
-                type="button"
-                aria-pressed={on}
-                onClick={() => setPicked(quantity)}
-                className={cn(
-                  "flex w-full items-center gap-4 rounded-surface border-2 px-5 py-4 text-left transition-colors",
-                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  on ? "border-primary bg-primary/8" : "border-border bg-card hover:bg-muted/40",
-                )}
-              >
-                <Ticket
-                  className={cn("size-5 shrink-0", on ? "text-primary" : "text-muted-foreground")}
-                  aria-hidden="true"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="headline block text-lg">
-                    {spec.label} {quantity}장
+      {bundles.length === 0 ? (
+        <div
+          className="app-elevated mt-3 rounded-surface bg-card p-5 text-sm text-muted-foreground"
+          role="status"
+        >
+          지금은 신청할 수 있는 티켓 상품이 없어요. 잠시 후 다시 확인해 주세요.
+        </div>
+      ) : (
+        <ul className="mt-3 space-y-3" aria-label="티켓 상품">
+          {bundles.map(({ quantity, amount }) => {
+            const on = picked === quantity;
+            const saved = single * quantity - amount;
+            return (
+              <li key={quantity}>
+                <button
+                  type="button"
+                  aria-pressed={on}
+                  disabled={busy}
+                  onClick={() => setPicked(quantity)}
+                  className={cn(
+                    "app-elevated pressable flex min-h-24 w-full items-center gap-3 rounded-surface px-4 py-4 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
+                    on
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-foreground hover:bg-muted/40",
+                  )}
+                >
+                  <Ticket className="size-5 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-semibold">
+                      {spec.label} {quantity}장
+                    </span>
+                    <span
+                      className={cn(
+                        "mt-1 block text-xs",
+                        on ? "text-primary-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      장당 {won(Math.round(amount / quantity))}
+                      {saved > 0 ? ` · ${won(saved)} 아낌` : ""}
+                    </span>
                   </span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {paid
-                      ? `장당 ${won(perUnit)}${saved > 0 ? ` · ${won(saved)} 아낌` : ""}`
-                      : "베타 기간 무료"}
-                  </span>
-                </span>
-                <span className="shrink-0 text-right">
-                  <span className="block text-base font-semibold tabular-nums">
-                    {paid ? won(amount) : "무료"}
-                  </span>
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      {order && paid ? (
-        <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
-          <p className="text-sm font-semibold text-foreground">결제를 기다리는 주문이 있습니다</p>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums">{won(amount)}</span>
+                  {on ? <Check className="size-4 shrink-0" aria-hidden="true" /> : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {order ? (
+        <div className="app-elevated mt-6 rounded-surface bg-card px-5 py-6 text-center">
+          <p className="text-sm font-semibold">
+            {order.payment_required ? "결제를 기다리는 주문이 있습니다" : "신청을 받았습니다"}
+          </p>
           <p className="mt-2 text-xs text-muted-foreground">
             {spec.label} {order.quantity}장 · {won(order.amount)}
           </p>
-          <Button
-            className="mt-4 w-full"
-            onClick={() => navigate({ to: "/checkout", search: { orderId: order.order_id } })}
-          >
-            결제 이어하기
-          </Button>
-        </div>
-      ) : order ? (
-        <div className="mt-6 rounded-surface border border-primary/30 bg-primary/8 px-5 py-6 text-center">
-          <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            {spec.label} {order.quantity}장. 확인이 끝나면 보유 티켓에 들어옵니다.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/*
-            결제 수단이 붙기 전이라 신청만 받는다. 보낼 수 없는 알림을
-            약속하지 않고, 확인 가능한 사실만 적는다.
-
-            아래 문구는 **서버 설정에서 나온다**(s27). 하드코딩해 두면 결제를 켠
-            뒤에도 "신청만 받고 있습니다" 가 남는다 — 돈을 낸 사람에게 안 냈다고
-            말하는 화면이 된다.
-          */}
-          <Button
-            className="mt-6 w-full"
-            size="lg"
-            disabled={busy || (paid && !import.meta.env.VITE_TOSS_CLIENT_KEY)}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const created = await requestTicketOrder(picked, kind);
-                if (created.payment_required) {
-                  navigate({ to: "/checkout", search: { orderId: created.order_id } });
-                } else {
-                  setOrder(created);
-                  toast.success("신청을 받았습니다.");
-                }
-              } catch (err) {
-                if (err instanceof Error && err.message.includes("policy_reconsent_required")) {
-                  toast.message("새 티켓을 신청하려면 약관을 확인해 주세요.");
-                  void navigate({ to: "/consent" });
-                } else {
-                  toast.error(err instanceof Error ? err.message : "신청에 실패했습니다.");
-                }
-              } finally {
-                setBusy(false);
+          {order.payment_required ? (
+            <Button
+              className="mt-4 w-full"
+              onClick={() =>
+                void navigate({ to: "/checkout", search: { orderId: order.order_id } })
               }
-            }}
-          >
-            {busy ? "처리하는 중…" : paid ? `${picked}장 결제하기` : `${picked}장 신청하기`}
-          </Button>
-          {paid === null ? null : (
-            <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-              {paid
-                ? import.meta.env.VITE_TOSS_CLIENT_KEY
-                  ? "결제를 마치면 티켓이 바로 들어옵니다."
-                  : "결제창을 준비하고 있습니다."
-                : "베타 기간이라 결제를 받지 않습니다. 신청하시면 확인 후 넣어 드립니다."}
+            >
+              결제 이어하기
+            </Button>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">
+              확인이 끝나면 보유 티켓에 들어옵니다.
             </p>
           )}
-          {paid ? (
-            <p className="mt-2 text-center text-xs leading-relaxed text-muted-foreground">
-              미사용분은 법정 청약철회가 가능합니다. 묶음 상품의 일부 사용 후 남은 분량은 문의해
-              주세요.
-            </p>
-          ) : null}
-        </>
-      )}
-
-      <ul className="mt-8 space-y-2.5 border-t border-border pt-5 text-sm">
-        {spec.terms.map((t) => (
-          <li key={t} className="flex gap-2.5 text-muted-foreground">
+        </div>
+      ) : null}
+      <ul className="mt-7 space-y-3 border-t border-border pt-5 text-xs">
+        {spec.terms.map((term) => (
+          <li key={term} className="flex gap-2.5 text-muted-foreground">
             <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="leading-relaxed">{t}</span>
+            <span className="leading-relaxed">{term}</span>
           </li>
         ))}
       </ul>
+      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+        미사용분은 법정 청약철회가 가능합니다. 묶음 상품의 일부 사용 후 남은 분량은 문의해 주세요.
+      </p>
     </AppScreen>
   );
 }
