@@ -85,6 +85,7 @@ export async function checkAdminReviewScreens({
     assert.equal(args.p_user, male.id);
     assert.deepEqual(args.p_expected_paths, actual.photo_paths);
     assert.equal(args.p_expected_state, photoState);
+    assert.equal(args.p_expected_updated_at, actual.updated_at);
     await delay(180);
     if (photoCalls === 1) return outage(route);
     photoState = "rejected";

@@ -53,6 +53,10 @@ update profiles set photo_state = 'approved'
 insert into storage.objects (bucket_id, name, owner_id)
 values ('profile-photos', '30000000-0000-0000-0000-0000000000a1/portrait.png',
         '30000000-0000-0000-0000-0000000000a1');
+-- Approval follows the actual stored upload; inserting/replacing a referenced
+-- object now correctly returns the whole set to review (S94).
+update profiles set photo_state = 'approved'
+ where id = '30000000-0000-0000-0000-0000000000a1';
 
 -- ─────────────── 문이 닫혔는가 ───────────────
 

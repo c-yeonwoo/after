@@ -3375,6 +3375,7 @@ export type Database = {
           p_user: string
           p_expected_paths: string[]
           p_expected_state: Database["public"]["Enums"]["photo_state"]
+          p_expected_updated_at?: string
           p_approve: boolean
           p_note: string
         }

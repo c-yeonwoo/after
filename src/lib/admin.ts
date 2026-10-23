@@ -644,6 +644,7 @@ export async function reviewPhotoSet(
         ? [photo.photo_url]
         : [],
     p_expected_state: photo.photo_state,
+    p_expected_updated_at: photo.updated_at,
     p_approve: approve,
     p_note: note,
   });
