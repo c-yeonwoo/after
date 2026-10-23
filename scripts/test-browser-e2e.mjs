@@ -647,15 +647,30 @@ try {
   await freshPage.setViewportSize({ width: 320, height: 480 });
   await freshPage.getByLabel("이름", { exact: true }).fill("신규 테스트");
   await delay(400);
-  assert.equal(
-    await freshPage.getByLabel("이름", { exact: true }).evaluate((field) => {
-      const rect = field.getBoundingClientRect();
-      const main = field.closest("main").getBoundingClientRect();
-      return rect.top >= main.top && rect.bottom <= main.bottom;
-    }),
-    true,
-    "focusing a field keeps it visible rather than jumping to the end",
-  );
+  await freshPage
+    .waitForFunction(
+      () => {
+        const field = document.getElementById("name");
+        if (!field || document.activeElement !== field) return false;
+        const rect = field.getBoundingClientRect();
+        const main = field.closest("main").getBoundingClientRect();
+        return rect.top >= main.top && rect.bottom <= main.bottom;
+      },
+      undefined,
+      { timeout: 3000 },
+    )
+    .catch(async (error) => {
+      const geometry = await freshPage.getByLabel("이름", { exact: true }).evaluate((field) => ({
+        field: field.getBoundingClientRect().toJSON(),
+        main: field.closest("main").getBoundingClientRect().toJSON(),
+        active: document.activeElement?.tagName,
+        scrollTop: field.closest("main").scrollTop,
+        viewportHeight: window.visualViewport?.height,
+      }));
+      throw new Error(`Focused signup field was not visible: ${JSON.stringify(geometry)}`, {
+        cause: error,
+      });
+    });
   await freshPage.getByLabel("생년월일", { exact: true }).fill("1994-03-12");
   await freshPage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
   assert.equal(

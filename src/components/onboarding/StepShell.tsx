@@ -39,6 +39,13 @@ export function StepShell({
   useKeepFieldVisible(mainRef, contentKey);
   useContentArrival(contentRef, contentKey);
   useEffect(() => {
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLElement &&
+      mainRef.current?.contains(active) &&
+      active.matches("input, textarea, select")
+    )
+      return;
     mainRef.current?.scrollTo({ top: 0 });
     headingRef.current?.focus({ preventScroll: true });
   }, [contentKey]);
