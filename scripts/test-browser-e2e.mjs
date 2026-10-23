@@ -11,6 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 import { chromium, webkit } from "playwright";
 import { checkAccountScreens } from "./lib/account-screen-checks.mjs";
 import { checkTicketScreens } from "./lib/ticket-screen-checks.mjs";
+import { checkPaymentScreens } from "./lib/payment-screen-checks.mjs";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -873,6 +874,7 @@ try {
   ).newPage();
   await login(malePage, male);
   await checkTicketScreens({ page: malePage, baseUrl, checkPage, screenshotDir });
+  await checkPaymentScreens({ page: malePage, baseUrl, checkPage, screenshotDir, userId: male.id });
   await malePage.getByRole("link", { name: "소개 열어보기" }).click();
   await malePage.getByRole("button", { name: "소개 티켓 1장 쓰고 열기" }).click();
   await malePage.getByText(female.name).first().waitFor({ timeout: 15_000 });
