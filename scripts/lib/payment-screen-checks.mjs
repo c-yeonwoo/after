@@ -75,6 +75,7 @@ export async function checkPaymentScreens({ page, baseUrl, checkPage, screenshot
           requestPayment: async (options) => {
             record("fixturePaymentCalls");
             window.fixtureLastPayment = { ...options, amount };
+            if (window.fixturePaymentMode === "redirect-pending") return;
             if (window.fixturePaymentMode === "hold") {
               await new Promise((_, reject) => {
                 window.fixtureReject = reject;
@@ -147,6 +148,16 @@ export async function checkPaymentScreens({ page, baseUrl, checkPage, screenshot
   assert.equal(new URL(request.failUrl).searchParams.get("orderId"), pending.order_id);
   await page.evaluate(() => window.fixtureReject({ code: "USER_CANCEL" }));
   await pay.waitFor();
+  await page.evaluate(() => {
+    window.fixturePaymentMode = "redirect-pending";
+  });
+  await pay.click();
+  await page.getByRole("button", { name: "결제창을 여는 중…", exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "결제창을 여는 중…", exact: true }).isDisabled(),
+    true,
+    "a fulfilled redirect request stays locked until navigation",
+  );
 
   await page.goto(`${baseUrl}/payment/fail?code=USER_CANCEL&orderId=${pending.order_id}`);
   await page.getByRole("link", { name: "결제 이어하기", exact: true }).waitFor();

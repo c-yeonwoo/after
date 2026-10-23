@@ -192,7 +192,8 @@ function PaymentForm({ order, me }: { order: TicketOrder; me: Profile }) {
             ? "결제창을 닫았어요. 준비되면 다시 이어갈 수 있어요."
             : "결제창을 열지 못했습니다. 다시 시도해 주세요.",
       );
-    } finally {
+      // Redirect-mode requests remain locked until navigation, even if the SDK
+      // resolves before the browser commits the result URL. Only rejection is retryable here.
       lock.current = false;
       if (active.current) setBusy(false);
     }
