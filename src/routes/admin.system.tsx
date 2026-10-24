@@ -405,7 +405,9 @@ function SystemTab() {
                         ? "프로필 생성·검토"
                         : run.feature === "profile_followup"
                           ? "인터뷰 분석"
-                          : "페어 브리프"}
+                          : run.feature === "conversation_prep"
+                            ? "회원 대화 준비"
+                            : "페어 브리프"}
                     </Td>
                     <Td>
                       <Tag tone={run.status === "success" ? "muted" : "alert"}>{run.status}</Tag>

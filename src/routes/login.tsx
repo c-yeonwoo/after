@@ -23,6 +23,8 @@ import {
 import { useKeepActionsVisible, useKeyboardOpen } from "@/lib/keyboard";
 import { useMe } from "@/lib/me";
 import { supabase } from "@/lib/supabase";
+import { accountChecksComplete } from "@/lib/assistant";
+import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import {
   consumeAuthCode,
   isNative,
@@ -108,8 +110,9 @@ function LoginPage() {
         return;
       }
       if (result.kind === "incomplete") {
-        toast("남은 가입 절차를 마쳐주세요.");
-        await goTo("/signup");
+        const checked = accountChecksComplete(result.profile, carrierIdentityEnabled);
+        toast(checked ? "내 비서와 프로필 준비를 이어가세요." : "남은 계정 확인을 마쳐주세요.");
+        await goTo(checked ? "/home" : "/signup");
         return;
       }
       await goTo("/home");
@@ -121,9 +124,11 @@ function LoginPage() {
   // 카카오에 다녀오는 중에는 판정(land)이 끝나기 전이라 잠가 둔다.
   useEffect(() => {
     if (ready && me && !oauthBusy && !busy) {
-      void goTo(me.onboarding_step < 7 ? "/signup" : "/home").catch(() =>
-        setError("화면을 열지 못했어요. 다시 로그인해 주세요."),
-      );
+      void goTo(
+        me.onboarding_step >= 7 || accountChecksComplete(me, carrierIdentityEnabled)
+          ? "/home"
+          : "/signup",
+      ).catch(() => setError("화면을 열지 못했어요. 다시 로그인해 주세요."));
     }
   }, [ready, me, goTo, oauthBusy, busy]);
 

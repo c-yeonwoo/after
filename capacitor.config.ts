@@ -48,7 +48,7 @@ const config: CapacitorConfig = {
     */
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#FFF9F2",
+      backgroundColor: "#FDFAF7",
     },
     Keyboard: {
       /*

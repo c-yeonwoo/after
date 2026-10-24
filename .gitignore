@@ -44,3 +44,7 @@ src/routeTree.app.gen.ts
 # Private presentation render/validation intermediates
 .codex-build-toss/
 .codex-finalizer/
+
+# Local design review evidence; the design contract and tokens stay versioned.
+.impeccable/review/
+.impeccable/mocks/

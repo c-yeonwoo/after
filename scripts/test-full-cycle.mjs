@@ -123,9 +123,9 @@ async function waitForHome(page) {
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
   await page
     .getByRole("main")
-    .getByText(/님의 애프터|나의 애프터/)
+    .getByText(/님과 함께하는 애프터|함께하는 애프터/)
     .waitFor();
-  await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
+  await page.locator(".assistant-status h2").waitFor();
 }
 function localTotp(secret) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -252,7 +252,9 @@ async function signup(person, i) {
   await page.getByLabel("인증번호", { exact: true }).waitFor();
   await page.getByLabel("인증번호", { exact: true }).fill(code);
   await page.getByRole("button", { name: "인증하고 계속" }).click();
-  await page.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await page.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
+  await page.getByRole("button", { name: "프로필 준비 시작", exact: true }).click();
+  await page.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   const image = await page.evaluate((name) => {
     const c = document.createElement("canvas");
     c.width = 360;
@@ -584,7 +586,7 @@ try {
     assert.equal(sql(`select count(*) from tickets where user_id='${m1.id}'`), "0");
   });
   await check("home background failure preserves state and retry recovers", async () => {
-    const headline = await m1.page.getByRole("heading", { level: 1 }).innerText();
+    const headline = await m1.page.locator(".assistant-status h2").innerText();
     await m1.page.route("**/rest/v1/rpc/home_state_v2", (route) =>
       route.fulfill({
         status: 503,
@@ -597,7 +599,7 @@ try {
         exact: true,
       })
       .waitFor();
-    assert.equal(await m1.page.getByRole("heading", { level: 1 }).innerText(), headline);
+    assert.equal(await m1.page.locator(".assistant-status h2").innerText(), headline);
     await m1.page.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).waitFor();
     await m1.page.unroute("**/rest/v1/rpc/home_state_v2");
     await m1.page.getByRole("button", { name: "상태 다시 확인", exact: true }).click();

@@ -10,6 +10,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -38,21 +39,32 @@ const MeContext = createContext<MeState | null>(null);
 export function MeProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<Profile | null>(null);
   const [ready, setReady] = useState(false);
+  const loadGeneration = useRef(0);
+  const identity = useRef<string | null>(null);
 
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current;
     const {
       data: { session },
     } = await supabase.auth.getSession();
+    if (generation !== loadGeneration.current) return;
     if (!session) {
+      identity.current = null;
       setMe(null);
       setReady(true);
       return;
+    }
+    if (identity.current !== session.user.id) {
+      identity.current = session.user.id;
+      setMe(null);
+      setReady(false);
     }
     const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", session.user.id)
       .maybeSingle();
+    if (generation !== loadGeneration.current) return;
 
     /*
       탈퇴·제명 계정을 me 로 넘기면 안 된다.
@@ -80,8 +92,21 @@ export function MeProvider({ children }: { children: ReactNode }) {
     load();
     // 로그인·로그아웃만 반응한다. TOKEN_REFRESHED 는 프로필과 무관한데
     // 예전에는 그때마다 재조회가 돌았다.
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") load();
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        loadGeneration.current++;
+        identity.current = null;
+        setMe(null);
+        setReady(true);
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        loadGeneration.current++;
+        if (identity.current !== session?.user.id) {
+          identity.current = session?.user.id ?? null;
+          setReady(false);
+          setMe(null);
+        }
+        void load();
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [load]);
