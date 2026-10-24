@@ -204,7 +204,7 @@ export function AppScreen({
                     <span
                       className={cn(
                         "app-tab-icon flex h-8 w-12 items-center justify-center rounded-control transition-colors duration-150 motion-reduce:transition-none",
-                        active && "bg-primary text-primary-foreground",
+                        active && "bg-selection text-selection-foreground",
                       )}
                     >
                       <Icon

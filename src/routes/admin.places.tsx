@@ -236,7 +236,7 @@ function PlacesTab() {
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              className="size-4 accent-primary"
+              className="size-4 accent-selection"
               checked={form.active}
               onChange={(e) => set({ active: e.target.checked })}
             />

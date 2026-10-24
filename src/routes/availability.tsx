@@ -136,8 +136,7 @@ function AvailabilityPage() {
       <div className="mt-4">
         <h2 className="text-xl font-semibold tracking-tight">퇴근 후, 언제 편하세요?</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          평소 가능한 요일을 알려주시면 약속 후보를 고를 때 참고할게요. 실제 날짜는 요청이 오면 다시
-          고를 수 있습니다.
+          약속을 제안할 때 참고해요. 실제 날짜는 요청을 받은 뒤 정해요.
         </p>
       </div>
 
@@ -156,10 +155,7 @@ function AvailabilityPage() {
             </p>
           ) : null}
           <fieldset disabled={busy} className="min-w-0">
-            <section
-              className="app-elevated mt-6 rounded-surface bg-card p-5"
-              aria-labelledby="weekday-title"
-            >
+            <section className="mt-6 border-b border-border pb-6" aria-labelledby="weekday-title">
               <h3 id="weekday-title" className="text-sm font-semibold">
                 편한 요일
               </h3>
@@ -173,7 +169,7 @@ function AvailabilityPage() {
                     className={cn(
                       "pressable min-h-12 rounded-control text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
                       weekdays.includes(day)
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-selection text-selection-foreground"
                         : "bg-surface-subtle text-foreground",
                     )}
                   >
@@ -183,10 +179,7 @@ function AvailabilityPage() {
               </div>
             </section>
 
-            <section
-              className="app-elevated mt-6 rounded-surface bg-card p-5"
-              aria-labelledby="time-title"
-            >
+            <section className="mt-6 border-b border-border pb-6" aria-labelledby="time-title">
               <h3 id="time-title" className="text-sm font-semibold">
                 가장 이른 시간
               </h3>
@@ -200,7 +193,7 @@ function AvailabilityPage() {
                     className={cn(
                       "pressable min-h-12 rounded-control text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
                       earliest === time.value
-                        ? "bg-primary font-semibold text-primary-foreground"
+                        ? "bg-selection font-semibold text-selection-foreground"
                         : "bg-surface-subtle text-foreground",
                     )}
                   >

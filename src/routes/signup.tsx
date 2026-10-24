@@ -488,7 +488,7 @@ function Onboarding() {
               aria-label="이용약관 동의 (필수)"
               checked={termsAgreed}
               onChange={(event) => setTermsAgreed(event.target.checked)}
-              className="size-5 shrink-0 accent-primary"
+              className="size-5 shrink-0 accent-selection"
             />
             <span className="text-sm">
               <Link
@@ -507,7 +507,7 @@ function Onboarding() {
               aria-label="개인정보 수집·이용 동의 (필수)"
               checked={privacyAgreed}
               onChange={(event) => setPrivacyAgreed(event.target.checked)}
-              className="size-5 shrink-0 accent-primary"
+              className="size-5 shrink-0 accent-selection"
             />
             <span className="text-sm">
               <Link
@@ -1312,15 +1312,19 @@ function ChoiceCard({
       className={cn(
         "app-elevated pressable min-h-14 rounded-surface bg-card p-5 text-left",
         "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-        selected && "bg-primary text-primary-foreground",
+        selected && "bg-selection text-selection-foreground",
         disabled ? "cursor-not-allowed opacity-60" : "",
       )}
     >
       <div className="flex items-center gap-2">
-        {icon ? <span className="text-primary-strong">{icon}</span> : null}
+        {icon ? (
+          <span className={selected ? "text-selection-foreground" : "text-primary-strong"}>
+            {icon}
+          </span>
+        ) : null}
         <p className="font-bold">{title}</p>
         {selected ? (
-          <span className="ml-auto flex shrink-0 items-center gap-1 text-xs font-semibold text-primary-foreground">
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-xs font-semibold text-selection-foreground">
             <Check className="size-4" aria-hidden="true" />
             선택됨
           </span>
@@ -1330,7 +1334,7 @@ function ChoiceCard({
         <p
           className={cn(
             "mt-1.5 text-sm leading-relaxed",
-            selected ? "text-primary-foreground" : "text-muted-foreground",
+            selected ? "text-selection-foreground" : "text-muted-foreground",
           )}
         >
           {body}

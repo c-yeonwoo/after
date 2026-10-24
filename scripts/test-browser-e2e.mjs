@@ -216,6 +216,24 @@ async function chooseWorkZone(page) {
   await next.click();
 }
 
+async function checkBrandRole(page, selector, token) {
+  assert.equal(
+    await page
+      .locator(selector)
+      .first()
+      .evaluate((element, token) => {
+        const probe = document.createElement("span");
+        probe.style.backgroundColor = `var(--${token})`;
+        document.body.append(probe);
+        const expected = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return getComputedStyle(element).backgroundColor === expected;
+      }, token),
+    true,
+    `${selector} uses the ${token} role`,
+  );
+}
+
 async function acceptSignupConsent(page) {
   await page.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
   const start = page.getByRole("button", { name: "동의하고 시작하기" });
@@ -286,6 +304,27 @@ try {
       await publicPage.screenshot({ path: join(screenshotDir, `landing-warm-${width}px.png`) });
     }
   }
+  await checkBrandRole(publicPage, ".app-primary-button", "primary");
+  await publicPage.locator(".app-primary-button").first().hover();
+  await publicPage.waitForTimeout(180);
+  await checkBrandRole(publicPage, ".app-primary-button", "primary-hover");
+  await publicPage.mouse.move(0, 0);
+  await publicPage.emulateMedia({ colorScheme: "dark" });
+  await publicPage.waitForFunction(() => document.documentElement.classList.contains("dark"));
+  await publicPage.setViewportSize({ width: 390, height: 844 });
+  await checkPage(publicPage, "sunset vivid dark landing");
+  assert.equal(
+    await publicPage.locator('meta[name="theme-color"]').getAttribute("content"),
+    "#161F1B",
+  );
+  if (screenshotDir)
+    await publicPage.screenshot({ path: join(screenshotDir, "landing-vivid-dark.png") });
+  await publicPage.emulateMedia({ colorScheme: "light" });
+  await publicPage.waitForFunction(() => !document.documentElement.classList.contains("dark"));
+  assert.equal(
+    await publicPage.locator('meta[name="theme-color"]').getAttribute("content"),
+    "#FFF9F2",
+  );
   await publicPage.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
     await publicPage
@@ -1135,6 +1174,13 @@ try {
   await femalePage.getByRole("button", { name: "동네 돌아보기" }).click();
   await femalePage.getByRole("button", { name: "짧게 커피" }).click();
   await checkPage(femalePage, "interview choices mobile");
+  await checkBrandRole(femalePage, 'button[aria-pressed="true"]', "selection");
+  await femalePage.locator("html").evaluate((element) => element.classList.add("dark"));
+  await checkPage(femalePage, "sunset vivid dark interview choices");
+  if (screenshotDir)
+    await femalePage.screenshot({ path: join(screenshotDir, "interview-choices-dark.png") });
+  await femalePage.locator("html").evaluate((element) => element.classList.remove("dark"));
+  await checkPage(femalePage, "sunset vivid light interview choices restored");
   if (screenshotDir) {
     await femalePage.getByRole("heading", { name: "나에게 편한 방식", exact: true }).focus();
     await femalePage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));

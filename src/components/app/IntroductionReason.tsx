@@ -8,9 +8,7 @@ export function IntroductionReason({
 }) {
   return (
     <aside
-      className={
-        embedded ? "border-t border-border pt-4" : "app-elevated rounded-surface bg-card px-5 py-4"
-      }
+      className={embedded ? "border-t border-border pt-4" : "border-b border-border pb-5"}
       aria-label="소개 이유"
     >
       <h2 className="text-sm font-semibold text-primary-strong">애프터가 두 분을 소개하는 이유</h2>

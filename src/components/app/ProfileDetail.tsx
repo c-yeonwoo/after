@@ -106,10 +106,10 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       </header>
 
       {p.headline ? (
-        <blockquote className="border-l border-brand-blush pl-3.5">
+        <blockquote>
           <p
             data-selectable
-            className="serif break-keep break-words text-pretty text-[1.1875rem] leading-[1.5] text-foreground"
+            className="break-keep break-words text-pretty text-[1.1875rem] leading-[1.5] font-medium text-foreground"
           >
             {p.headline}
           </p>
@@ -119,7 +119,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       <ProfilePhotos key={p.photos.join("|")} paths={p.photos} name={p.name} />
 
       {hasAnyFact ? (
-        <dl className="app-elevated grid grid-cols-3 gap-x-3 gap-y-4 rounded-surface bg-card p-4">
+        <dl className="grid grid-cols-3 gap-x-3 gap-y-4 border-b border-border pb-5">
           {facts.map((f) => (
             <div key={f.k}>
               <dt className="text-xs text-muted-foreground">{f.k}</dt>
@@ -137,7 +137,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       ) : null}
 
       {p.story?.sections.length ? (
-        <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
+        <div className="divide-y divide-border">
           {p.story.sections.map((section) => (
             <InterviewAnswer key={section.id} section={section} />
           ))}
@@ -150,7 +150,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         p.answers.length ||
         p.matchTags.length ||
         p.topics.length) ? (
-        <div className="app-elevated space-y-5 rounded-surface bg-card p-5">
+        <div className="space-y-5">
           {paragraphs.map((para) => (
             <p
               key={para}

@@ -241,7 +241,7 @@ function MeetingsTab() {
             onClick={() => void navigate({ search: { state: f.v }, replace: true })}
             className={`min-h-11 rounded-full px-3 py-1 text-sm ${
               (state ?? (meeting ? "all" : "active")) === f.v
-                ? "bg-primary text-primary-foreground"
+                ? "bg-selection text-selection-foreground"
                 : "bg-muted text-muted-foreground hover:text-foreground"
             }`}
           >

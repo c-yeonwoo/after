@@ -157,7 +157,7 @@ function SettingsPage() {
 
   return (
     <AppScreen title="환경설정" back="/me" keyboardAware>
-      <section className="app-elevated mt-3 rounded-surface bg-card p-5">
+      <section className="mt-3 border-b border-border pb-6">
         <h2 className="text-sm font-semibold">화면</h2>
         <p className="mt-1 text-xs text-muted-foreground">기본은 기기 설정을 따릅니다.</p>
         <div className="mt-3 grid grid-cols-3 gap-1.5" role="group" aria-label="화면 테마">
@@ -171,7 +171,7 @@ function SettingsPage() {
                 "pressable min-h-12 rounded-control text-sm",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 choice === o.id
-                  ? "bg-primary font-semibold text-primary-foreground"
+                  ? "bg-selection font-semibold text-selection-foreground"
                   : "bg-surface-subtle text-foreground",
               )}
             >
@@ -181,7 +181,7 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="app-elevated mt-6 rounded-surface bg-card p-5">
+      <section className="mt-6 border-b border-border pb-6">
         <h2 className="text-sm font-semibold">알림</h2>
         <div className="mt-3">
           <PushStatus />
@@ -252,7 +252,7 @@ function SettingsPage() {
         깰 수는 없다. 그 사실을 화면에서도 분명히 말한다.
       */}
       <MeetingContactPreference />
-      <section className="app-elevated mt-6 rounded-surface bg-card p-5">
+      <section className="mt-6 border-b border-border pb-6">
         {/*
           남성 쪽에는 효과가 하나 더 붙는다(v2). paused_at 은 여성 평가 큐에서
           빠지는 것 외에 **운영자가 세운 소개 카드도 오지 않게** 한다. 컬럼을
@@ -263,8 +263,8 @@ function SettingsPage() {
           label={isMale ? "소개 받지 않기" : "새 소개 받지 않기"}
           description={
             isMale
-              ? "도착한 소개 카드도 더 이상 오지 않습니다. 진행 중인 요청과 약속은 그대로 남습니다."
-              : "진행 중인 요청과 약속은 그대로 남습니다. 언제든 다시 켜실 수 있습니다."
+              ? "새 소개만 멈춰요. 진행 중인 요청과 약속은 유지돼요."
+              : "진행 중인 요청과 약속은 유지돼요. 언제든 다시 받을 수 있어요."
           }
           checked={me.paused_at !== null}
           disabled={busy}
@@ -290,12 +290,12 @@ function SettingsPage() {
         지금 값을 묻지 않는다(GoTrue updateUser 는 현재 비밀번호를 요구하지 않고,
         요구하면 애초에 없는 사람이 막힌다). 세션을 가진 사람만 닿는 화면이다.
       */}
-      <section className="app-elevated mt-6 rounded-surface bg-card p-5">
+      <section className="mt-6 border-b border-border pb-6">
         <h2 className="text-sm font-semibold">
           <label htmlFor="settings-password">비밀번호</label>
         </h2>
         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-          다음 로그인부터 이메일과 이 비밀번호로 들어오실 수 있습니다. {PASSWORD_MIN_LENGTH}자 이상.
+          이메일 로그인에 사용할 비밀번호예요. {PASSWORD_MIN_LENGTH}자 이상 입력해 주세요.
         </p>
         <Input
           id="settings-password"
@@ -333,7 +333,7 @@ function SettingsPage() {
         만들 수 있게 하면 회사 메일 인증이라는 이 서비스의 전제가 무너진다.
       */}
       {!APP_BUILD ? (
-        <section className="app-elevated mt-6 rounded-surface bg-card p-5">
+        <section className="mt-6 border-b border-border pb-6">
           <h2 className="text-sm font-semibold">카카오</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {kakaoLinked

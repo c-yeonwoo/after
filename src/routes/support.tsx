@@ -385,7 +385,7 @@ function SupportFrame({
 
 function SupportSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="app-elevated rounded-surface bg-card p-5">
+    <section className="border-b border-border pb-6 last:border-b-0">
       <h2 className="text-base font-semibold">{title}</h2>
       <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">{children}</div>
     </section>

@@ -99,13 +99,13 @@ function ChatsPage() {
   return (
     <AppScreen title="대화">
       <p className="mt-2 text-sm text-muted-foreground">진행 중인 대화 {items.length}개</p>
-      <ul className="mt-4 space-y-3">
+      <ul className="mt-4 divide-y divide-border">
         {items.map(({ meeting, counterpart }) => (
           <li key={meeting.id}>
             <Link
               to="/chat/$id"
               params={{ id: meeting.id }}
-              className="app-elevated pressable block rounded-surface bg-card px-5 py-4 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="pressable block rounded-control px-1 py-5 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">

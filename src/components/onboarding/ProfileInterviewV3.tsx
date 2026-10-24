@@ -475,9 +475,9 @@ export function ProfileInterviewV3({
       "나에게 편한 방식",
       "끌리는 답만 골라주세요. 정답은 없어요.",
       <>
-        <div className="space-y-4">
+        <div className="divide-y divide-border">
           {questions.map((question) => (
-            <div key={question.id} className="app-elevated rounded-surface bg-card p-5">
+            <div key={question.id} className="py-5 first:pt-0">
               <fieldset className="min-w-0">
                 <legend className="break-keep text-base font-semibold leading-snug text-foreground">
                   {question.title}
@@ -591,7 +591,7 @@ export function ProfileInterviewV3({
       prompt.question,
       prompt.guide,
       <>
-        <div className="app-elevated rounded-surface bg-card p-4">
+        <div>
           <label htmlFor="story-answer" className="sr-only">
             내 답변
           </label>
@@ -708,7 +708,7 @@ export function ProfileInterviewV3({
       <>
         <div className="space-y-5">
           {data.followupIds.map((id) => (
-            <div key={id} className="app-elevated rounded-surface bg-card p-5">
+            <div key={id}>
               <label htmlFor={`followup-${id}`} className="break-keep text-base font-semibold">
                 {FOLLOWUP_LABELS[id]}
               </label>
@@ -751,7 +751,7 @@ export function ProfileInterviewV3({
       "맞는 내용인지 확인해 주세요.",
       <>
         {data.understanding.length ? (
-          <ul className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
+          <ul className="divide-y divide-border">
             {data.understanding.map((fact, index) => (
               <li key={index} className="py-4 text-base leading-relaxed">
                 {fact.text}
@@ -793,7 +793,7 @@ export function ProfileInterviewV3({
       "프로필에 담을 이야기",
       "공개하지 않을 내용은 빼주세요.",
       <>
-        <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
+        <div className="divide-y divide-border">
           {picked
             .filter((id) => !id.startsWith("choice:contact") && !id.startsWith("choice:planning"))
             .map((id) => {
@@ -819,7 +819,7 @@ export function ProfileInterviewV3({
                 >
                   <input
                     type="checkbox"
-                    className="mt-1 size-5 shrink-0 accent-primary"
+                    className="mt-1 size-5 shrink-0 accent-selection"
                     checked={data.publicIds.includes(id)}
                     onChange={(event) =>
                       setData((current) => ({

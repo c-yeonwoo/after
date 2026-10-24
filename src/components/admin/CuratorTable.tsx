@@ -54,7 +54,7 @@ export function CuratorTable() {
               onClick={() => setDays(w.days)}
               className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
                 days === w.days
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-selection text-selection-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >

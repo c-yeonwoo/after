@@ -139,7 +139,7 @@ export function MeetRequestForm({
                   className={cn(
                     "pressable min-h-11 rounded-control border px-3 text-xs font-medium disabled:opacity-40",
                     slots.includes(iso)
-                      ? "border-primary bg-primary text-primary-foreground"
+                      ? "border-selection bg-selection text-selection-foreground"
                       : "border-border bg-card text-foreground",
                   )}
                 >
@@ -167,7 +167,7 @@ export function MeetRequestForm({
               className={cn(
                 "pressable min-h-12 shrink-0 rounded-control border px-3.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 day === k
-                  ? "border-primary bg-primary font-semibold text-primary-foreground"
+                  ? "border-selection bg-selection font-semibold text-selection-foreground"
                   : "border-border bg-card text-foreground",
               )}
             >
@@ -192,7 +192,7 @@ export function MeetRequestForm({
                   className={cn(
                     "pressable min-h-11 rounded-control border text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40",
                     on
-                      ? "border-primary bg-primary font-semibold text-primary-foreground"
+                      ? "border-selection bg-selection font-semibold text-selection-foreground"
                       : "border-border bg-card text-foreground",
                   )}
                 >
@@ -244,16 +244,26 @@ export function MeetRequestForm({
                     onClick={() => setPlaceId(p.id)}
                     className={cn(
                       "pressable flex min-h-12 w-full items-start gap-3 rounded-surface border px-4 py-3 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      placeId === p.id ? "border-primary bg-brand-tint" : "border-border bg-card",
+                      placeId === p.id
+                        ? "border-selection bg-selection text-selection-foreground"
+                        : "border-border bg-card",
                     )}
                   >
                     <MapPin
-                      className="mt-0.5 size-4 shrink-0 text-primary-strong"
+                      className={cn(
+                        "mt-0.5 size-4 shrink-0",
+                        placeId === p.id ? "text-selection-foreground" : "text-primary-strong",
+                      )}
                       aria-hidden="true"
                     />
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-foreground">{p.name}</span>
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                      <span className="block text-sm font-semibold">{p.name}</span>
+                      <span
+                        className={cn(
+                          "mt-0.5 block text-xs",
+                          placeId === p.id ? "text-selection-foreground" : "text-muted-foreground",
+                        )}
+                      >
                         {p.station}역 · {KIND_LABEL[p.kind] ?? p.kind}
                         {p.note ? ` · ${p.note}` : ""}
                       </span>

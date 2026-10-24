@@ -572,7 +572,7 @@ export function ProfileInterview({
             >
               <input
                 type="checkbox"
-                className="mt-1 size-5 shrink-0 accent-primary"
+                className="mt-1 size-5 shrink-0 accent-selection"
                 checked={data.included.includes(id)}
                 onChange={(event) =>
                   setData((current) => ({
@@ -602,7 +602,7 @@ export function ProfileInterview({
               <label key={topic} className="mt-2 flex min-h-11 items-center gap-3 text-sm">
                 <input
                   type="checkbox"
-                  className="size-5 accent-primary"
+                  className="size-5 accent-selection"
                   checked={data.profile.topics.includes(topic)}
                   onChange={(event) =>
                     setData((current) => ({

@@ -103,6 +103,9 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-selection: var(--selection);
+  --color-selection-foreground: var(--selection-foreground);
   /* 작은 텍스트/아이콘용 고대비 브랜드 컬러 (WCAG AA) */
   --color-primary-strong: var(--primary-strong);
   /* 내가 보낸 말풍선 — 로그 전체를 덮으므로 채도 높은 로즈는 과했다 */
@@ -165,10 +168,11 @@
 }
 
 /*
- * 애프터 — Evening, Refined (2026-10-16).
+ * 애프터 — Sunset Vivid (2026-10-24).
  *
- * 웜 페이퍼 위의 잉크와 쿨 그린을 중심에 두고, 코럴은 제목 일부·선택 상태·로고 점에만 쓴다.
- * 다크는 같은 색 관계를 밤 종이 위로 뒤집는다. 브랜드 강조와 오류색은 색상도 분리한다.
+ * 선셋 코럴은 행동, 미드나이트 그린은 선택, 아이보리는 읽기에 쓴다.
+ * 다크는 같은 역할을 밝은 코럴·민트와 별도의 녹색 표면에 배치한다.
+ * primary(행동)와 selection(이미 고른 상태)을 섞지 않는다. 오류는 라즈베리다.
  *
  * 값은 hex 로 정하고 대비를 검증한 뒤 oklch 로 옮겼다 — 주석의 hex 가 원본이다.
  * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
@@ -190,42 +194,42 @@
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
 
-  /* 브랜드 원천 값: 뉴트럴 70 · 잉크/그린 25 · 코럴 5 */
-  --brand-50: oklch(0.9793 0.007 88.6); /* #FAF8F3 Warm Paper */
-  --brand-100: oklch(0.9377 0.0128 86.8); /* #EEEAE1 Soft Cream */
-  --brand-200: oklch(0.9081 0.0301 33.1); /* #F4DAD4 */
-  --brand-300: oklch(0.7826 0.0836 27.4); /* #E9A49B Soft Blush */
-  --brand-400: oklch(0.6729 0.1116 27.3); /* #D27A70 */
-  --brand-500: oklch(0.6048 0.1226 28.1); /* #C06257 */
-  --brand-600: oklch(0.5465 0.1214 28.1); /* #AC5147 After Coral */
-  --brand-700: oklch(0.4763 0.1167 27.7); /* #933E36 */
-  --brand-800: oklch(0.4176 0.1033 27.1); /* #7B322C */
-  --brand-pine: oklch(0.4352 0.0422 173.2); /* #38594F */
-  --brand-sage: oklch(0.6818 0.0303 161.7); /* #899F93 */
-  --brand-dusk: oklch(0.5116 0.0335 224.3); /* #526B75 */
-  --brand-taupe: oklch(0.7502 0.045 47.4); /* #C7A696 */
+  --brand-50: oklch(0.98482 0.01128 71.9); /* #FFF9F2 Evening Ivory */
+  --brand-100: oklch(0.94975 0.01272 86.83); /* #F2EEE5 */
+  --brand-200: oklch(0.93145 0.03647 41.23); /* #FFE1D6 */
+  --brand-300: oklch(0.81823 0.10615 40.04); /* #FFAC8F */
+  --brand-400: oklch(0.76707 0.14186 38.38); /* #FF916E */
+  --brand-500: oklch(0.68081 0.17356 37.28); /* #EF6A42 — 밝은 그래픽, 작은 흰 글자 금지 */
+  --brand-600: oklch(0.58015 0.19245 31.57); /* #D43C25 Sunset Coral */
+  --brand-700: oklch(0.51977 0.17762 31.17); /* #B92F1C */
+  --brand-800: oklch(0.43653 0.14918 31.09); /* #922314 */
+  --brand-pine: oklch(0.32903 0.0471 173.52); /* #173D33 Midnight Green */
+  --brand-sage: oklch(0.693 0.06414 160.45); /* #79A98F */
+  --brand-dusk: oklch(0.47564 0.03006 164.57); /* #4D6258 */
+  --brand-taupe: oklch(0.75853 0.05084 50.66); /* #CCA894 */
 
-  /* 코럴은 작은 강조에만 사용한다. 밝은 면에서는 진한 코럴, 밤 면에서는 블러시. */
+  /* 글자 강조는 버튼의 채움보다 진하게 두어 보조면에서도 읽힌다. */
   --brand-signature: var(--brand-600);
   --brand-blush: var(--brand-signature);
-  --brand-text: oklch(0.521 0.1201 28.4); /* #A34A40 — 8% 잉크 틴트 위에서도 AA */
-  --brand-tint: var(--brand-50); /* 선택 면·내 말풍선은 페이퍼로 조용히 */
+  --brand-text: var(--brand-700);
+  --brand-tint: var(--brand-200);
   --peach-300: var(--brand-tint);
   --peach-500: var(--brand-signature);
 
   /* 만년필 잉크 */
-  --ink: oklch(0.2955 0.0198 169.4); /* #23302B Evening Ink */
-  --ink-muted: var(--brand-dusk); /* 쿨한 정보색 — 페이퍼·크림에서도 AA */
+  --ink: oklch(0.30902 0.02966 167.48); /* #21352D */
+  --ink-muted: var(--brand-dusk);
 
-  --surface: oklch(1 0 0);
+  --surface: oklch(0.99668 0.00537 95.1); /* #FFFEFA */
   --surface-subtle: var(--brand-100);
   --scrim: oklch(0.18 0.015 169 / 48%);
-  --success: oklch(0.492 0.06 164); /* #3F6C58 */
+  --success: oklch(0.45766 0.08285 169.76); /* #166650 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
 
   --shadow-frame: 0 0 70px -24px oklch(0.295 0.02 169 / 16%);
   /* 카드는 평평하게 둔다. 테두리와 그림자를 함께 쓰면 상자가 두 번 그려진다. */
   --shadow-card: none;
+  --shadow-elevated: 0 8px 24px -12px oklch(0.30902 0.02966 167.48 / 24%);
   --shadow-brand: 0 14px 34px -18px oklch(0.5465 0.1214 28.1 / 16%);
 
   /* ── 시맨틱 (shadcn) ── */
@@ -237,15 +241,21 @@
   --popover-foreground: var(--ink);
   /*
     ── 두 토큰의 역할이 갈린다 ──
-    --primary        = **채움**. 버튼처럼 면으로 쓰는 자리 — 잉크.
-    --primary-strong = **글자·아이콘·선택 표시** — 코럴.
+    --primary        = 다음 행동을 실행하는 버튼 — 선셋 코럴.
+    --selection      = 선택한 옵션·탭·날짜 — 미드나이트 그린.
+    --primary-strong = 본문 안의 브랜드 강조 — 진한 코럴.
   */
-  --primary: var(--ink);
-  --primary-strong: var(--brand-text); /* #A34A40 — 페이퍼 5.48 */
-  --primary-foreground: var(--brand-50);
+  --primary: var(--brand-600);
+  --primary-hover: oklch(
+    0.52784 0.18076 31.3
+  ); /* #BD301C — 투명도 hover는 흰 글자 대비를 깨뜨린다 */
+  --primary-strong: var(--brand-text);
+  --primary-foreground: var(--surface);
+  --selection: var(--brand-pine);
+  --selection-foreground: var(--brand-50);
 
   /* 내 말풍선·선택 면은 엷은 종이 틴트, 글자는 잉크. */
-  --bubble-mine: var(--brand-tint);
+  --bubble-mine: oklch(0.93458 0.0175 153.56); /* #E1EDE4 */
   --bubble-mine-foreground: var(--ink);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -256,8 +266,8 @@
   /* 오류는 코럴(h≈28)과 구별되는 라즈베리(h≈359)를 쓴다. */
   --destructive: oklch(0.493 0.1674 359); /* #A6285F */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.8935 0.011 149.8); /* #D7DED8 Quiet Line */
-  --input: oklch(0.632 0.012 149.8); /* #858C86 — 크림 3.20 */
+  --border: oklch(0.8909 0.0145 128.64); /* #D8DDD3 */
+  --input: oklch(0.62127 0.02387 153.83); /* #7C8B80 */
   /* 포커스 링은 얇은 선이라 채움색으로는 안 보인다(2.14). 글자 역할과 같은 톤을 쓴다. */
   --ring: var(--brand-text);
 
@@ -268,8 +278,8 @@
   --chart-5: var(--warning);
   --sidebar: var(--background);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-primary: var(--selection);
+  --sidebar-primary-foreground: var(--selection-foreground);
   --sidebar-accent: var(--peach-300);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--border);
@@ -282,16 +292,17 @@
 
   /* 밤 종이 위의 같은 잉크 */
   --ink: var(--brand-50); /* 밤 종이 위의 Warm Paper */
-  --ink-muted: oklch(0.75 0.012 149.8); /* #A9B0AA — 배경 7.81 · 카드 6.90 · 보조면 5.97 */
+  --ink-muted: oklch(0.81739 0.02315 155.82); /* #B8C8BD */
 
-  --surface: oklch(0.263 0.014 163.7); /* #1F2723 */
-  --surface-subtle: oklch(0.307 0.015 161.1); /* #29322D */
+  --surface: oklch(0.28303 0.02086 164.98); /* #202D27 */
+  --surface-subtle: oklch(0.33012 0.02833 158.59); /* #293A30 */
 
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 60%);
   --shadow-card: none;
+  --shadow-elevated: 0 8px 24px -12px oklch(0.08 0.008 165 / 60%);
   --shadow-brand: 0 12px 34px -16px oklch(0.7826 0.0836 27.4 / 16%);
 
-  --background: oklch(0.219 0.011 163.8); /* #161C19 */
+  --background: oklch(0.22891 0.01514 166.13); /* #161F1B */
   --foreground: var(--ink);
 
   --card: var(--surface);
@@ -299,10 +310,12 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  /* 라이트와 같은 몸짓: 버튼은 잉크↔종이를 뒤집는다. */
-  --primary: var(--ink);
-  --primary-foreground: oklch(0.219 0.011 163.8); /* #161C19 */
-  --primary-strong: var(--brand-300); /* #E9A49B — 다크의 코럴 강조 */
+  --primary: var(--brand-400);
+  --primary-hover: oklch(0.80044 0.11845 39.92); /* #FFA383 */
+  --primary-foreground: var(--background);
+  --primary-strong: var(--brand-300);
+  --selection: oklch(0.86612 0.05094 162.27); /* #B6DEC9 */
+  --selection-foreground: var(--brand-pine);
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -311,21 +324,21 @@
   --accent: var(--surface-subtle);
   --accent-foreground: var(--ink);
 
-  --destructive: oklch(0.7565 0.1334 2.8); /* #F58AA8 */
-  --destructive-foreground: oklch(0.219 0.011 163.8);
+  --destructive: oklch(0.80379 0.12131 0.43); /* #FF9DBB */
+  --destructive-foreground: var(--background);
 
   --success: oklch(0.77 0.07 158); /* #95C5AC */
   --warning: oklch(0.82 0.08 82); /* #E4C285 */
 
   --border: oklch(0.349 0.016 163.9); /* #333D38 */
-  --input: oklch(0.614 0.014 156.8); /* #7E8781 — 배경 4.67 */
+  --input: oklch(0.65454 0.03235 160.62); /* #80978A */
   --ring: var(--primary-strong);
 
-  --bubble-mine: var(--surface-subtle);
+  --bubble-mine: oklch(0.38407 0.05689 163.65); /* #234D3B */
   --bubble-mine-foreground: var(--ink);
-  --brand-signature: var(--brand-300);
+  --brand-signature: var(--brand-400);
   --brand-blush: var(--brand-signature);
-  --brand-text: var(--brand-signature);
+  --brand-text: var(--brand-300);
   --brand-tint: var(--surface-subtle);
 
   --chart-1: var(--brand-300);
@@ -336,8 +349,8 @@
 
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-primary: var(--selection);
+  --sidebar-primary-foreground: var(--selection-foreground);
   --sidebar-accent: var(--surface-subtle);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--border);
@@ -494,7 +507,7 @@
 }
 
 .app-elevated {
-  box-shadow: 0 8px 24px -12px oklch(0.2955 0.0198 169.4 / 24%);
+  box-shadow: var(--shadow-elevated);
 }
 
 .chat-composer {
@@ -543,8 +556,8 @@
 }
 
 .readiness-status {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--selection);
+  color: var(--selection-foreground);
 }
 
 .app-switch::before {
@@ -557,7 +570,7 @@
 }
 
 .app-switch[data-state="checked"]::before {
-  background: var(--primary);
+  background: var(--selection);
 }
 
 .readiness-status .app-switch[data-state="checked"]::before {
@@ -565,7 +578,7 @@
 }
 
 .readiness-status .app-switch:focus-visible {
-  outline: 2px solid var(--primary-foreground);
+  outline: 2px solid var(--selection-foreground);
   outline-offset: 3px;
   box-shadow: none;
 }

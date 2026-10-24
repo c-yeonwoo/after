@@ -135,7 +135,7 @@ function OrdersTab() {
             onClick={() => void navigate({ search: { state: f.v }, replace: true })}
             className={`rounded-full px-3 py-1 text-sm transition-colors ${
               current === f.v
-                ? "bg-primary text-primary-foreground"
+                ? "bg-selection text-selection-foreground"
                 : "bg-muted text-muted-foreground hover:text-foreground"
             }`}
           >

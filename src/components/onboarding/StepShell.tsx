@@ -80,7 +80,7 @@ export function StepShell({
           aria-label={progressLabel ? "프로필 작성 진행률" : "가입 진행률"}
         >
           <div
-            className="h-full origin-left rounded-full bg-foreground transition-transform duration-200 ease-out motion-reduce:transition-none"
+            className="h-full origin-left rounded-full bg-primary transition-transform duration-200 ease-out motion-reduce:transition-none"
             style={{ transform: `scaleX(${fraction})` }}
           />
         </div>
