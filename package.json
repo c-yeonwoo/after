@@ -30,6 +30,8 @@
     "test:full-cycle": "node scripts/test-full-cycle.mjs",
     "test:assistant-private": "node scripts/test-assistant-private.mjs",
     "test:assistant-schedule": "node scripts/test-assistant-schedule.mjs",
+    "assistant:lab": "node scripts/assistant-local-lab.mjs",
+    "assistant:lab:dev": "node scripts/assistant-local-lab.mjs dev",
     "test:ai-live": "node scripts/test-ai-live.mjs",
     "test:pair-ai-live": "node scripts/test-pair-ai-live.mjs",
     "format": "prettier --write .",

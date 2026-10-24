@@ -137,6 +137,23 @@ try {
   await save.click();
   await page.getByText("첫 만남은 조용한 카페에서 짧게 하고 싶어요", { exact: true }).waitFor();
   assert.equal((await rpc("my_assistant_state")).memories.length, 1);
+  if (process.env.AFTER_LOCAL_AI_CONFIRM === "synthetic-only") {
+    await page.goto(`${base}/assistant`);
+    await page
+      .getByLabel("비서에게 상담할 내용")
+      .fill("기억해 둔 내 선호를 반영해서 첫 만남 장소와 분위기를 짧게 추천해 주세요.");
+    const reply = page.waitForResponse((r) => r.url().includes("/functions/v1/assistant-chat"));
+    await page.getByRole("button", { name: "상담 보내기" }).click();
+    assert.equal((await reply).status(), 200);
+    state = await rpc("my_assistant_state");
+    const answer = state.turns.at(-1).answer;
+    assert.match(answer, /카페|커피/);
+    assert.match(answer, /조용|차분|한적/);
+    await page.getByText(answer, { exact: true }).waitFor();
+    console.log("Synthetic live approved-memory advice:", answer);
+    await page.goto(`${base}/assistant?panel=memory`);
+    await page.getByText("첫 만남은 조용한 카페에서 짧게 하고 싶어요", { exact: true }).waitFor();
+  }
   const shots = process.env.AFTER_E2E_SCREENSHOT_DIR;
   if (shots) await mkdir(shots, { recursive: true });
   for (const scheme of ["light", "dark"]) {
@@ -190,6 +207,72 @@ try {
     "PT409",
     "late memory cannot reappear after deletion",
   );
+  // Long history and unbroken input: actual browser evidence, no provider calls.
+  const uiIssues = [];
+  const revisionForUi = (await rpc("my_assistant_state")).revision;
+  for (let index = 0; index < 4; index++) {
+    const turn = randomUUID();
+    await rpc("assistant_begin_turn", {
+      p_id: turn,
+      p_question: `QA 합성 질문 ${index + 1}: 첫 만남을 편하게 준비하고 싶어요.`,
+      p_expected_revision: revisionForUi,
+    });
+    assert.equal(
+      (
+        await service.rpc("assistant_finish_turn", {
+          p_owner: id,
+          p_id: turn,
+          p_revision: revisionForUi,
+          p_answer:
+            "QA 합성 답변입니다. 서로 편한 속도로 대화를 나누고 선택을 존중해 주세요. ".repeat(5),
+        })
+      ).data,
+      true,
+    );
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto(`${base}/assistant`);
+  const lastQuestion = page.getByText("QA 합성 질문 4: 첫 만남을 편하게 준비하고 싶어요.", {
+    exact: true,
+  });
+  await lastQuestion.waitFor();
+  const inScrollViewport = (locator) =>
+    locator.evaluate((el) => {
+      const r = el.getBoundingClientRect(),
+        main = el.closest("main").getBoundingClientRect();
+      return r.top >= main.top && r.bottom <= main.bottom;
+    });
+  await delay(200);
+  if (!(await inScrollViewport(lastQuestion)))
+    uiIssues.push("opening history does not reveal the latest conversation");
+  await page.getByRole("button", { name: "이 내용 기억하기", exact: true }).first().click();
+  const memoryField = page.getByLabel("기억할 선호", { exact: true });
+  await memoryField.waitFor();
+  await delay(200);
+  if (!(await inScrollViewport(memoryField)))
+    uiIssues.push("memory approval opens outside the scroll viewport");
+  if ((await page.getByRole("heading", { name: "나와 비서", exact: true }).boundingBox()).y < 0)
+    uiIssues.push("revealing approval scrolls the fixed app header offscreen");
+  assert.equal(
+    await page.getByRole("button", { name: "상담 보내기" }).count(),
+    0,
+    "focus on memory approval without a competing conversation composer",
+  );
+  if (shots) await page.screenshot({ path: `${shots}/assistant-memory-confirm-history.png` });
+  const longMemory = "A".repeat(240);
+  await memoryField.fill(longMemory);
+  await page.getByRole("region", { name: "기억 저장 확인" }).getByRole("checkbox").check();
+  await page.getByRole("button", { name: "승인하고 기억하기" }).click();
+  await page.getByRole("link", { name: "기억 관리", exact: true }).click();
+  const longText = page.getByText(longMemory, { exact: true });
+  await longText.waitFor();
+  if (await longText.evaluate((el) => el.scrollWidth > el.clientWidth + 1))
+    uiIssues.push("unbroken approved memory overflows its surface");
+  if (shots) await page.screenshot({ path: `${shots}/assistant-memory-long-input.png` });
+  assert.deepEqual(uiIssues, [], "native conversation and approval flow");
+  await rpc("assistant_forget", { p_scope: "all" });
+  await page.goto(`${base}/assistant`);
   await page.getByRole("link", { name: "나만의 상담", exact: true }).click();
   await page.getByLabel("비서에게 상담할 내용").fill("첫 만남이 긴장돼요");
   await page.evaluate(() =>
