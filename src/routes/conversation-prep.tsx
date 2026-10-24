@@ -17,7 +17,9 @@ export const Route = createFileRoute("/conversation-prep")({
         ? search.target
         : "",
   }),
-  head: () => ({ meta: [{ title: "대화 준비 — 애프터" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "만남 전 준비 — 애프터" }, { name: "robots", content: "noindex" }],
+  }),
   component: ConversationPrep,
 });
 
@@ -117,7 +119,7 @@ function ConversationPrep() {
   }
 
   return (
-    <AppScreen title="대화 준비" back="/intro" hideTabs>
+    <AppScreen title="만남 전 준비" back="/intro" hideTabs>
       {!ready || (live.isPending && !live.isPaused && target && me?.onboarding_step === 7) ? (
         <p className="py-12 text-center text-sm text-muted-foreground" role="status">
           공개 프로필을 확인하고 있어요…
@@ -203,8 +205,36 @@ function ConversationPrep() {
                   <p className="mt-1.5 text-sm leading-relaxed">{topic.followup}</p>
                 </section>
               ))}
+              {visibleResult.advice?.length ? (
+                <section className="assistant-reply" aria-label="만남 직전 짧은 팁">
+                  <div className="flex items-center gap-2">
+                    <AssistantMark />
+                    <h2 className="text-lg font-bold">만남 직전, 이것만.</h2>
+                  </div>
+                  <div className="mt-5 space-y-5">
+                    {visibleResult.advice.map((tip) => (
+                      <div key={tip.kind}>
+                        <h3 className="text-xs font-semibold text-primary-strong">
+                          {
+                            {
+                              start: "이 이야기부터",
+                              respect: "부담을 줄이는 표현",
+                              pace: "편안하게 이어가기",
+                            }[tip.kind]
+                          }
+                        </h3>
+                        <p className="mt-1.5 text-sm leading-relaxed break-keep">{tip.text}</p>
+                        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                          프로필의 “{tip.quote}”에서 생각한 팁이에요.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
               <p className="text-xs leading-relaxed text-muted-foreground break-keep text-pretty">
-                AI가 제안한 질문이에요. 상대를 단정하지 말고, 대답을 들으며 자연스럽게 이어가세요.
+                AI가 제안한 질문과 조언이에요. MBTI보다 직접 나누는 이야기를 믿고, 상대의 반응에
+                맞춰 편하게 이어가세요.
               </p>
             </div>
           )}

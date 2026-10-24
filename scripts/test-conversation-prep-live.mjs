@@ -69,6 +69,12 @@ try {
   report.cases.push({ name: "real generated questions", ...first });
   assert.equal(first.status, 200, JSON.stringify(first.body));
   assert.ok(first.body.topics.length >= 1 && first.body.topics.length <= 3);
+  assert.equal(first.body.advice.length, 3, "three personalized pre-date tips");
+  assert.deepEqual(
+    new Set(first.body.advice.map((t) => t.kind)),
+    new Set(["start", "respect", "pace"]),
+  );
+  assert.equal(/MBTI|ISFP|회피형|궁합|성공률/i.test(JSON.stringify(first.body)), false);
   assert.equal(JSON.stringify(first.body).includes("PRIVATE-NEVER-SEND"), false);
   const cached = await call(ids[1], token);
   report.cases.push({ name: "same source cached", ...cached });

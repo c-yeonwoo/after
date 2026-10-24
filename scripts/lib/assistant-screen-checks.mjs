@@ -11,6 +11,26 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     calls++;
     await route.fulfill({
       json: {
+        advice: [
+          {
+            kind: "start",
+            text: "산책할 때 좋아하는 풍경부터 가볍게 물어보세요. 나도 기억에 남는 길 하나를 보태면 대화가 자연스러워요.",
+            sourceField: "intro",
+            quote: "동네를 걸으며 하루를 정리합니다.",
+          },
+          {
+            kind: "respect",
+            text: "정확한 집 위치보다는 길의 분위기를 물어보세요. 답하기 편한 범위에서 이야기하도록 기다려 주세요.",
+            sourceField: "intro",
+            quote: "동네를 걸으며 하루를 정리합니다.",
+          },
+          {
+            kind: "pace",
+            text: "산책 이야기를 들은 뒤 바로 다음 질문으로 넘기지 않아도 괜찮아요. 내 하루를 쉬게 하는 순간도 짧게 보태 보세요.",
+            sourceField: "intro",
+            quote: "동네를 걸으며 하루를 정리합니다.",
+          },
+        ],
         topics: [
           {
             title: "하루를 마무리하는 산책",
@@ -34,6 +54,12 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     .getByRole("heading", { name: "동네를 걷다가 자주 들르게 되는 곳이 있나요?" })
     .waitFor();
   assert.equal(calls, 1, "one explicit action makes one request");
+  await page.getByRole("heading", { name: "만남 직전, 이것만." }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: /역할극|대화 연습/ }).count(),
+    0,
+    "advice, not roleplay",
+  );
   for (const scheme of ["light", "dark"]) {
     await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
     for (const width of [320, 390, 1440]) {

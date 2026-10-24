@@ -799,6 +799,15 @@ function ConfirmedCard({
         ) : null}
       </div>
       <div className="px-5 py-4">
+        {counterpart?.id && !meeting.completed_at ? (
+          <Link
+            to="/conversation-prep"
+            search={{ target: counterpart.id }}
+            className="mb-3 flex min-h-12 items-center justify-between gap-2 rounded-control bg-(--assistant-surface) px-4 text-sm font-semibold text-(--assistant-ink)"
+          >
+            만남 전, 내 비서의 맞춤 팁<ArrowRight className="size-4 shrink-0" />
+          </Link>
+        ) : null}
         <MeetingCheckin
           key={`${meeting.id}:${meeting.schedule_revision}`}
           meetingId={meeting.id}

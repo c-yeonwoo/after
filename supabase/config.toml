@@ -445,6 +445,9 @@ verify_jwt = false
 [functions.prepare-conversation]
 verify_jwt = false
 
+[functions.assistant-chat]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
