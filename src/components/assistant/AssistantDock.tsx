@@ -3,6 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Send } from "lucide-react";
 import { AssistantMark } from "./AssistantMark";
 import { assistantIntent, type AssistantIntent } from "@/lib/assistant";
+import { getAssistantFlags } from "@/lib/privateAssistant";
+import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
+import { useMe } from "@/lib/me";
 
 export function AssistantDock({
   status,
@@ -11,6 +14,8 @@ export function AssistantDock({
   status: string;
   counterpartId?: string | null;
 }) {
+  const { me } = useMe();
+  const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
   const [input, setInput] = useState("");
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
   const replies = {
@@ -21,9 +26,18 @@ export function AssistantDock({
       label: "내 프로필 보기",
     },
     schedule: {
-      text: "가능한 시간을 정해두세요. 약속의 변경·확정은 해당 화면에서 직접 확인해요. 아직 변경한 내용은 없어요.",
-      to: "/availability",
-      label: "가능한 시간 보기",
+      text:
+        flags.data?.schedule && !flags.isError && !flags.isPaused
+          ? "진행 중인 약속의 시간을 함께 정리해요. 초안을 보고 승인하기 전에는 상대에게 전달하지 않아요."
+          : "가능한 시간을 정해두세요. 약속의 변경·확정은 해당 화면에서 직접 확인해요. 아직 변경한 내용은 없어요.",
+      to:
+        flags.data?.schedule && !flags.isError && !flags.isPaused
+          ? "/assistant-schedule"
+          : "/availability",
+      label:
+        flags.data?.schedule && !flags.isError && !flags.isPaused
+          ? "비서와 약속 준비"
+          : "가능한 시간 보기",
     },
     prepare: {
       text: counterpartId
@@ -53,6 +67,16 @@ export function AssistantDock({
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
         진행 안내와 대화 준비를 도와요. 상대에게 전송되지 않아요.
       </p>
+      {flags.data?.chat && !flags.isError && !flags.isPaused ? (
+        <Link
+          to="/assistant"
+          search={{ panel: "chat" }}
+          className="mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-primary-strong"
+        >
+          나만의 상담 시작하기
+          <ArrowUpRight className="size-4" />
+        </Link>
+      ) : null}
       <div className="mt-4 flex flex-wrap gap-2">
         {(
           [

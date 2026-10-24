@@ -92,6 +92,14 @@ jobs:
         run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run test:browser-e2e
       - run: npm run test:full-cycle
+      - run: npm run test:assistant-schedule
+      - name: Private assistant consent and deletion (no provider API calls)
+        run: |
+          supabase functions serve assistant-chat --no-verify-jwt > /tmp/assistant-edge.log 2>&1 &
+          EDGE_PID=$!
+          trap 'kill "$EDGE_PID" 2>/dev/null || true' EXIT
+          sleep 8
+          npm run test:assistant-private
 
   # Keep the existing required check name. A failed/cancelled dependency must
   # FAIL this gate, not silently skip it. Documentation also reports a check,

@@ -157,6 +157,15 @@ function SettingsPage() {
 
   return (
     <AppScreen title="환경설정" back="/me" keyboardAware>
+      {me.onboarding_step >= 7 ? (
+        <Link
+          to="/assistant"
+          search={{ panel: "memory" }}
+          className="mb-4 flex min-h-12 items-center rounded-control bg-card px-4 text-sm font-semibold"
+        >
+          비서의 기억·상담 기록 관리
+        </Link>
+      ) : null}
       <section className="mt-3 border-b border-border pb-6">
         <h2 className="text-sm font-semibold">화면</h2>
         <p className="mt-1 text-xs text-muted-foreground">기본은 기기 설정을 따릅니다.</p>

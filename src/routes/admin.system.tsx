@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { NoteAction } from "@/components/admin/NoteAction";
 import { Tag } from "@/components/admin/ui";
+import { assistantRpc, type AssistantHealth } from "@/lib/privateAssistant";
 import {
   fetchDashboard,
   fetchAiQuality,
@@ -90,6 +91,7 @@ function SystemTab() {
   const [data, setData] = useState<AdminSystemOverview | null>(null);
   const [paymentsEnabled, setPaymentsEnabled] = useState<boolean | null>(null);
   const [aiQuality, setAiQuality] = useState<AdminAiQuality | null>(null);
+  const [assistant, setAssistant] = useState<AssistantHealth | null>(null);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
@@ -98,10 +100,11 @@ function SystemTab() {
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const [overview, dashboard, ai] = await Promise.allSettled([
+      const [overview, dashboard, ai, assistantStatus] = await Promise.allSettled([
         fetchSystemOverview(),
         fetchDashboard(),
         fetchAiQuality(),
+        assistantRpc<AssistantHealth>("admin_assistant_health"),
       ]);
       const failed: string[] = [];
       if (overview.status === "fulfilled") setData(overview.value);
@@ -110,6 +113,11 @@ function SystemTab() {
       else failed.push("결제 설정");
       if (ai.status === "fulfilled") setAiQuality(ai.value);
       else failed.push("AI 성과");
+      if (assistantStatus.status === "fulfilled") setAssistant(assistantStatus.value);
+      else {
+        setAssistant(null);
+        failed.push("비서 운영 현황");
+      }
       setErrors(failed);
       setCheckedAt(new Date());
     } finally {
@@ -165,6 +173,67 @@ function SystemTab() {
         >
           {errors.join("·")} 조회 실패 · 마지막 성공 데이터가 표시될 수 있습니다.
         </p>
+      ) : null}
+
+      {assistant ? (
+        <Section
+          title="개인 비서 · 최근 24시간"
+          hint="상담·기억 원문은 운영자에게 표시하지 않습니다. 초안 만료는 자동 실행 실패가 아닙니다."
+        >
+          <div className="mb-4 flex flex-wrap gap-2">
+            {(
+              [
+                ["chat", "상담"],
+                ["memory", "기억 저장"],
+                ["schedule", "일정 실행"],
+              ] as const
+            ).map(([key, label]) => (
+              <Tag key={key} tone={assistant.flags[key] ? "alert" : "muted"}>
+                {label} {assistant.flags[key] ? "켜짐" : "꺼짐"}
+              </Tag>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Summary label="답변 생성 중" value={assistant.turnsPending} />
+            <Summary
+              label="2분 이상 미완료"
+              value={assistant.turnsStalled}
+              alert={assistant.turnsStalled > 0}
+            />
+            <Summary label="승인 대기 초안" value={assistant.actionsAwaiting} />
+            <Summary label="승인 후 실행 완료" value={assistant.actionsSucceeded} />
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            만료된 미승인 초안 {assistant.actionsExpired}건 · 실행 없이 종료됩니다.
+          </p>
+          <ul className="mt-4 space-y-2 text-sm">
+            {assistant.runs24h.map((run) => (
+              <li key={run.feature + run.status}>
+                {run.feature === "assistant_chat" ? "비공개 상담" : "만남 전 준비"} · {run.status}{" "}
+                {run.count}건 · 입력/출력 {run.input_tokens ?? 0}/{run.output_tokens ?? 0} 토큰
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+            {assistant.cleanup.map((job) => (
+              <p key={job.name}>
+                {job.name === "expire-private-assistant"
+                  ? "개인 기록 보관기한 정리"
+                  : "일정 초안 보관기한 정리"}{" "}
+                ·{" "}
+                {!job.active
+                  ? "비활성"
+                  : job.lastStatus === "succeeded"
+                    ? "최근 정리 완료"
+                    : job.lastStatus === "failed"
+                      ? "실패 — 확인 필요"
+                      : job.lastStatus === "running"
+                        ? "실행 중"
+                        : "실행 기록 없음"}
+              </p>
+            ))}
+          </div>
+        </Section>
       ) : null}
 
       <section className="mt-7">
@@ -407,7 +476,9 @@ function SystemTab() {
                           ? "인터뷰 분석"
                           : run.feature === "conversation_prep"
                             ? "회원 대화 준비"
-                            : "페어 브리프"}
+                            : run.feature === "assistant_chat"
+                              ? "비공개 상담"
+                              : "페어 브리프"}
                     </Td>
                     <Td>
                       <Tag tone={run.status === "success" ? "muted" : "alert"}>{run.status}</Tag>

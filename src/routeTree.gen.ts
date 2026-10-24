@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AssistantRouteImport } from './routes/assistant'
+import { Route as AssistantScheduleRouteImport } from './routes/assistant-schedule'
 import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -62,6 +64,16 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistantRoute = AssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistantScheduleRoute = AssistantScheduleRouteImport.update({
+  id: '/assistant-schedule',
+  path: '/assistant-schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AvailabilityRoute = AvailabilityRouteImport.update({
@@ -278,6 +290,8 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/assistant': typeof AssistantRoute
+  '/assistant-schedule': typeof AssistantScheduleRoute
   '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
@@ -323,6 +337,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assistant': typeof AssistantRoute
+  '/assistant-schedule': typeof AssistantScheduleRoute
   '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
@@ -370,6 +386,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/assistant': typeof AssistantRoute
+  '/assistant-schedule': typeof AssistantScheduleRoute
   '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
@@ -418,6 +436,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/assistant'
+    | '/assistant-schedule'
     | '/availability'
     | '/chats'
     | '/checkout'
@@ -463,6 +483,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assistant'
+    | '/assistant-schedule'
     | '/availability'
     | '/chats'
     | '/checkout'
@@ -509,6 +531,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/assistant'
+    | '/assistant-schedule'
     | '/availability'
     | '/chats'
     | '/checkout'
@@ -556,6 +580,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AssistantRoute: typeof AssistantRoute
+  AssistantScheduleRoute: typeof AssistantScheduleRoute
   AvailabilityRoute: typeof AvailabilityRoute
   ChatsRoute: typeof ChatsRoute
   CheckoutRoute: typeof CheckoutRoute
@@ -600,6 +626,20 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistant': {
+      id: '/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistant-schedule': {
+      id: '/assistant-schedule'
+      path: '/assistant-schedule'
+      fullPath: '/assistant-schedule'
+      preLoaderRoute: typeof AssistantScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/availability': {
@@ -948,6 +988,8 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AssistantRoute: AssistantRoute,
+  AssistantScheduleRoute: AssistantScheduleRoute,
   AvailabilityRoute: AvailabilityRoute,
   ChatsRoute: ChatsRoute,
   CheckoutRoute: CheckoutRoute,

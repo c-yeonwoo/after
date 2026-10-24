@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { BRAND } from "@/lib/brand";
 import { submitFeedback } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { useMe } from "@/lib/me";
+import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
+import { getAssistantFlags } from "@/lib/privateAssistant";
 
 export const Route = createFileRoute("/feedback")({
   validateSearch: (search: Record<string, unknown>): { meetingId?: string } => ({
@@ -45,6 +48,8 @@ const NOTES = [
 ];
 
 function FeedbackPage() {
+  const { me } = useMe();
+  const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
   const navigate = useNavigate();
   const { meetingId } = Route.useSearch();
   const [result, setResult] = useState("");
@@ -124,6 +129,22 @@ function FeedbackPage() {
             >
               홈으로
             </Button>
+          ) : null}
+          {gate === "submitted" && flags.data?.memory && !flags.isError && !flags.isPaused ? (
+            <div className="assistant-reply mt-6 text-left">
+              <h2 className="font-semibold">다음 만남에 기억하고 싶은 점은?</h2>
+              <p className="mt-2 text-sm leading-relaxed">
+                편했던 대화 속도나 장소처럼, 내 선호만 따로 남길 수 있어요. 방금 쓴 후기는 비서에게
+                자동으로 보내지 않아요.
+              </p>
+              <Link
+                to="/assistant"
+                search={{ panel: "memory" }}
+                className="mt-3 flex min-h-11 items-center font-semibold text-sm"
+              >
+                내 선호 직접 남기기
+              </Link>
+            </div>
           ) : null}
         </div>
       </AppScreen>
@@ -208,7 +229,9 @@ function FeedbackPage() {
                 // 상대 확인(24시간)을 거친다 — P4.
                 toast.success("신고가 접수되었습니다. 상대 확인을 요청했습니다.");
               }
-              navigate({ to: "/home" });
+              if (met && flags.data?.memory && !flags.isError && !flags.isPaused)
+                setGate("submitted");
+              else navigate({ to: "/home" });
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
             } finally {

@@ -1,0 +1,15 @@
+begin;
+select plan(6);
+select ok(not has_function_privilege('anon','admin_assistant_health()','execute'),'anonymous cannot observe operation counts');
+select throws_ok($$select admin_assistant_health()$$,'42501','admin authentication required','member role cannot observe aggregate');
+insert into auth.users(id,email,email_confirmed_at,aud,role) values('98000000-0000-0000-0000-000000000001','ops98@verify.local',now(),'authenticated','authenticated');
+insert into profiles(id,gender,hub_id,company_email,name,onboarding_step,role) values('98000000-0000-0000-0000-000000000001','male','gangnam','ops98@verify.local','가상운영',7,'admin');
+select set_config('request.jwt.claim.sub','98000000-0000-0000-0000-000000000001',true);
+update app_settings set admin_mfa_required=true;
+select throws_ok($$select admin_assistant_health()$$,'42501','admin authentication required','admin MFA enforced when required');
+select set_config('request.jwt.claims','{"sub":"98000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select ok(admin_assistant_health() ? 'flags','flags and aggregates visible to verified admin');
+select ok(not (admin_assistant_health() ?| array['question','answer','memories','actions','owner_id','content']),'no private content keys');
+select is(jsonb_array_length(admin_assistant_health()->'cleanup'),2,'both retention jobs observed');
+select * from finish();
+rollback;
