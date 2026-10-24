@@ -17,7 +17,7 @@ export function StepShell({
   progressLabel,
   transitionKey,
   progress,
-  assistant = false,
+  assistant = true,
 }: {
   step: number;
   total: number;

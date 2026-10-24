@@ -112,7 +112,7 @@ function RequestsPage() {
     <AppScreen title="만남 요청" back="/home">
       {refreshNotice}
       <div className="mt-3">
-        <GuideNote>
+        <GuideNote assistant>
           {requests.length > 1
             ? `만남 요청이 ${requests.length}건 도착했어요. 각각 답하실 수 있습니다.`
             : "만남 요청이 도착했어요. 가능한 날짜를 알려주세요."}

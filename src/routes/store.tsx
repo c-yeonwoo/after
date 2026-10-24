@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
+import { GuideNote } from "@/components/app/GuideNote";
 import { BRAND } from "@/lib/brand";
 import {
   myPendingTicketOrder,
@@ -164,6 +165,11 @@ function StorePage() {
   if (!current.paid)
     return (
       <AppScreen title="베타 이용 안내" back="/me">
+        <div className="mt-3 mb-5">
+          <GuideNote assistant>
+            지금은 무료 베타예요. 자동 결제 없이 소개와 만남 조율을 이용해요.
+          </GuideNote>
+        </div>
         <div className="app-elevated mt-3 rounded-surface bg-card px-6 py-8">
           <Ticket className="mb-5 size-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
           <h2 className="text-xl font-semibold">지금은 티켓 신청 없이 이용해요</h2>
@@ -244,6 +250,11 @@ function StorePage() {
         ) : undefined
       }
     >
+      <div className="mt-3 mb-5">
+        <GuideNote assistant>
+          필요한 티켓만 골라주세요. 금액을 확인한 뒤 결제창에서 직접 승인해요.
+        </GuideNote>
+      </div>
       {kindPicker}
       <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{spec.guide}</p>
       <p className="mt-5 text-sm text-muted-foreground">

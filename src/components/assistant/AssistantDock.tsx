@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowUp, ArrowUpRight } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowUp } from "lucide-react";
 import { AssistantMark } from "./AssistantMark";
+import { AssistantActions } from "./AssistantActions";
 import { assistantIntent, type AssistantIntent } from "@/lib/assistant";
+import { assistantReply } from "@/lib/assistantExperience";
+import { privateAssistantSafety } from "../../../supabase/functions/_shared/assistant-private";
 import { getAssistantFlags } from "@/lib/privateAssistant";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import { useMe } from "@/lib/me";
@@ -11,56 +14,30 @@ import { setAssistantDraft } from "@/lib/assistantDraft";
 export function AssistantDock({
   status,
   counterpartId,
+  state,
 }: {
   status: string;
   counterpartId?: string | null;
+  state?: string;
 }) {
   const { me } = useMe();
   const navigate = useNavigate();
   const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
   const [input, setInput] = useState("");
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
+  const [safety, setSafety] = useState<string | null>(null);
   const awaitingCapabilities = flags.isPending && assistantIntent(input.trim()) === "unknown";
-  const replies = {
-    status: { text: status, to: null, label: "" },
-    profile: {
-      text: "나답게 고쳐볼까요? 저장한 프로필만 상대에게 보여요.",
-      to: "/profile",
-      label: "내 프로필 보기",
-    },
-    schedule: {
-      text:
-        flags.data?.schedule && !flags.isError && !flags.isPaused
-          ? "시간을 함께 정리해요. 승인한 초안만 전달해요."
-          : "편한 시간을 알려주세요. 약속 변경은 상세에서 확인해요.",
-      to:
-        flags.data?.schedule && !flags.isError && !flags.isPaused
-          ? "/assistant-schedule"
-          : "/availability",
-      label:
-        flags.data?.schedule && !flags.isError && !flags.isPaused
-          ? "일정 정리하기"
-          : "가능한 시간 보기",
-    },
-    prepare: {
-      text: counterpartId
-        ? "상대의 이야기에서 대화의 실마리를 찾아봐요."
-        : "소개가 열리면 그분에게 맞는 대화 팁을 준비해요.",
-      to: null,
-      label: "",
-    },
-    support: {
-      text: "결제·취소·신고는 제가 자동 처리하지 않아요. 고객센터에서 도와드릴게요.",
-      to: "/support",
-      label: "고객센터",
-    },
-    unknown: {
-      text: "진행 상황, 프로필, 일정, 대화 팁을 도와드릴게요. 어떤 게 궁금하세요?",
-      to: null,
-      label: "",
-    },
-  };
-  const reply = intent ? replies[intent] : null;
+  const reply = intent
+    ? assistantReply(intent, {
+        gender: me?.gender ?? null,
+        complete: Boolean(me && me.onboarding_step >= 7),
+        status,
+        state,
+        counterpartId,
+        schedule: Boolean(flags.data?.schedule && !flags.isError && !flags.isPaused),
+        memory: Boolean(flags.data?.memory && !flags.isError && !flags.isPaused),
+      })
+    : null;
   return (
     <section className="assistant-dock" aria-label="비서에게 물어보기">
       <div className="flex items-center gap-2.5">
@@ -74,6 +51,8 @@ export function AssistantDock({
         {(
           [
             ["status", "지금 내 상태"],
+            ["intro", "소개 확인"],
+            ["profile", "내 프로필"],
             ["prepare", "대화 팁"],
             ["schedule", "일정 정리"],
           ] as const
@@ -82,33 +61,20 @@ export function AssistantDock({
             key={key}
             className="assistant-suggestion pressable"
             aria-pressed={intent === key}
-            onClick={() => setIntent(key)}
+            onClick={() => {
+              setSafety(null);
+              setIntent(key);
+            }}
           >
             {label}
           </button>
         ))}
       </div>
-      {reply ? (
+      {safety || reply ? (
         <div className="assistant-reply mt-4" role="status">
-          <p className="text-sm leading-relaxed">{reply.text}</p>
-          {reply.to ? (
-            <Link
-              to={reply.to}
-              className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold"
-            >
-              {reply.label}
-              <ArrowUpRight className="size-4" />
-            </Link>
-          ) : null}
-          {intent === "prepare" && counterpartId ? (
-            <Link
-              to="/conversation-prep"
-              search={{ target: counterpartId }}
-              className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold"
-            >
-              대화 준비하기
-              <ArrowUpRight className="size-4" />
-            </Link>
+          <p className="text-sm leading-relaxed">{safety ?? reply?.text}</p>
+          {!safety && reply ? (
+            <AssistantActions actions={reply.actions} counterpartId={counterpartId} />
           ) : null}
         </div>
       ) : null}
@@ -119,12 +85,22 @@ export function AssistantDock({
           event.preventDefault();
           const text = input.trim();
           if (text) {
+            // Harm/privacy checks precede navigation. Transaction requests still
+            // lead to explicit structured confirmation, never an automatic write.
+            const refusal = privateAssistantSafety(text, { execution: false });
+            if (refusal) {
+              setSafety(refusal);
+              setIntent(null);
+              setInput("");
+              return;
+            }
             const next = assistantIntent(text);
             if (next === "unknown" && flags.isPending) return;
             if (next === "unknown" && me && flags.data?.chat && !flags.isError && !flags.isPaused) {
               setAssistantDraft(me.id, text);
               void navigate({ to: "/assistant", search: { panel: "chat" } });
             } else {
+              setSafety(null);
               setIntent(next);
             }
             setInput("");

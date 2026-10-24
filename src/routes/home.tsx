@@ -427,6 +427,7 @@ function HomePage() {
 
       <AssistantDock
         key={me.id}
+        state={loadError || live.isError || live.isPaused ? undefined : (primaryState ?? undefined)}
         status={
           live.isError || live.isPaused
             ? "연결이 끊겨 최신 상태를 확인하지 못했어요. 위의 다시 확인하기를 눌러주세요."

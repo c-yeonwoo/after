@@ -4,6 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BookmarkPlus, Send, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
+import { AssistantActions } from "@/components/assistant/AssistantActions";
+import { assistantIntent } from "@/lib/assistant";
+import { assistantReply, type AssistantReply } from "@/lib/assistantExperience";
+import { privateAssistantSafety } from "../../supabase/functions/_shared/assistant-private";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMe } from "@/lib/me";
@@ -61,11 +65,13 @@ function revealInConversation(
 }
 
 function PrivateAssistant({ owner }: { owner: string }) {
+  const { me } = useMe();
   const { panel } = Route.useSearch();
   const client = useQueryClient();
   const live = useMemberLiveQuery("assistant-private", owner, getPrivateAssistant);
   const data = !live.isError && !live.isPaused ? live.data : undefined;
   const [input, setInput] = useState("");
+  const [workflowReply, setWorkflowReply] = useState<AssistantReply | null>(null);
   useEffect(() => {
     const draft = takeAssistantDraft(owner);
     if (draft) setInput(draft);
@@ -173,6 +179,23 @@ function PrivateAssistant({ owner }: { owner: string }) {
   const send = () =>
     run(async () => {
       if (!input.trim() || !data) return;
+      const refusal = privateAssistantSafety(input, { execution: false });
+      const intent = assistantIntent(input);
+      if (refusal || intent !== "unknown") {
+        setWorkflowReply(
+          refusal
+            ? { text: refusal, actions: [] }
+            : assistantReply(intent, {
+                gender: me?.gender ?? null,
+                complete: Boolean(me && me.onboarding_step >= 7),
+                schedule: data.flags.schedule,
+                memory: data.flags.memory,
+              }),
+        );
+        setInput("");
+        return;
+      }
+      setWorkflowReply(null);
       if (
         !pendingRequest.current ||
         pendingRequest.current.text !== input.trim() ||
@@ -387,6 +410,12 @@ function PrivateAssistant({ owner }: { owner: string }) {
                 </ol>
               )}
               <div ref={conversationEnd} aria-hidden="true" />
+              {workflowReply ? (
+                <section className="assistant-reply mt-4" role="status">
+                  <p className="text-sm leading-relaxed">{workflowReply.text}</p>
+                  <AssistantActions actions={workflowReply.actions} />
+                </section>
+              ) : null}
               <Button
                 variant="ghost"
                 className="mt-5"

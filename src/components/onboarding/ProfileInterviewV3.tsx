@@ -374,7 +374,7 @@ export function ProfileInterviewV3({
     eyebrow = "내 비서와 프로필 준비",
   ) => (
     <StepShell
-      assistant={data.stage.startsWith("story") || data.stage === "start"}
+      assistant
       step={progressStep}
       total={progressTotal}
       progressLabel="프로필 작성"

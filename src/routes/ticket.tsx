@@ -79,7 +79,7 @@ function TicketPage() {
   return (
     <AppScreen title={paid ? "만남 티켓" : "만남 준비"} hideTabs back="/intro">
       <div className="mt-3">
-        <GuideNote introduce>
+        <GuideNote introduce assistant>
           {waiting
             ? meeting?.proposed_slots?.length
               ? "후보를 보냈어요. 상대가 하나를 고르면 바로 알려드릴게요."

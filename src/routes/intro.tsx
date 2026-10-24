@@ -263,9 +263,17 @@ function IntroPage() {
                     className="mt-6 w-full"
                     disabled={busy}
                     onClick={async () => {
+                      if (sending.current || !me) return;
+                      sending.current = true;
+                      const account = accountEpoch.current;
                       setBusy(true);
                       try {
                         const r = await ensureOpenIntro();
+                        if (account !== accountEpoch.current) return;
+                        queryClient.removeQueries({
+                          queryKey: ["member-home", me.id],
+                          exact: true,
+                        });
                         if (r.ok) {
                           await load();
                         } else if (r.reason === "no_intro_ticket") {
@@ -275,8 +283,16 @@ function IntroPage() {
                           toast.error("지금은 열 수 있는 소개가 없습니다.");
                           await load();
                         }
+                      } catch {
+                        if (account === accountEpoch.current) {
+                          toast.error("열람 결과를 확인하지 못했어요. 상태를 다시 확인할게요.");
+                          await load();
+                        }
                       } finally {
-                        setBusy(false);
+                        if (account === accountEpoch.current) {
+                          sending.current = false;
+                          setBusy(false);
+                        }
                       }
                     }}
                   >
@@ -457,6 +473,16 @@ function IntroPage() {
           )}
         </div>
       ) : null}
+
+      <div className="mb-5">
+        <GuideNote assistant>
+          {maleAnswered
+            ? "요청을 전달했어요. 약속 상태가 바뀌면 다음 단계를 확인해요."
+            : isMale
+              ? "프로필을 읽어보세요. 마음이 가면 날짜와 장소를 함께 제안해요."
+              : "어떤 분인지 천천히 읽어보세요. 좋아요를 남기면 소개와 만남 조율을 이어가요."}
+        </GuideNote>
+      </div>
 
       <ProfileDetail key={candidate.id} p={view} />
       {candidate.id ? (
