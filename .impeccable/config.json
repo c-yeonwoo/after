@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "gowun batang",
+        "createdAt": "2026-10-24T09:25:23.297Z",
+        "reason": "Agent: DESIGN.md Typography explicitly retains the incumbent serif utility for short quotations; src/styles.css --font-serif and the existing index.tsx SampleIntro / intro.tsx TeaserCard use Gowun Batang. Assistant UI uses Wanted Sans."
+      }
+    ]
+  }
+}
