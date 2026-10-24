@@ -167,11 +167,7 @@ async function login(page, person) {
 async function waitForHome(page) {
   await page.waitForURL("**/home", { timeout: 15_000 });
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
-  await page
-    .getByRole("main")
-    .getByText(/님과 함께하는 애프터|함께하는 애프터/)
-    .waitFor();
-  await page.locator(".assistant-status h2").waitFor();
+  await page.locator(".home-greeting h1").waitFor();
 }
 
 async function checkPage(page, name, accessibility = true) {
@@ -316,7 +312,7 @@ try {
   await checkPage(publicPage, "sunset vivid dark landing");
   assert.equal(
     await publicPage.locator('meta[name="theme-color"]').getAttribute("content"),
-    "#1B1720",
+    "#141518",
   );
   if (screenshotDir)
     await publicPage.screenshot({ path: join(screenshotDir, "landing-vivid-dark.png") });
@@ -324,7 +320,7 @@ try {
   await publicPage.waitForFunction(() => !document.documentElement.classList.contains("dark"));
   assert.equal(
     await publicPage.locator('meta[name="theme-color"]').getAttribute("content"),
-    "#FDFAF7",
+    "#FFFFFF",
   );
   await publicPage.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
@@ -437,8 +433,10 @@ try {
   assert.equal(await signupPage.getByText(existing.name).count(), 0);
   await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
   await waitForHome(signupPage);
-  await signupPage.getByText(`${existing.name}님과 함께하는 애프터`, { exact: true }).waitFor();
-  await signupPage.getByText("판교권 · 현재 진행 상황", { exact: true }).waitFor();
+  await signupPage.getByRole("link", { name: "나", exact: true }).click();
+  await signupPage.getByText(existing.name, { exact: true }).waitFor();
+  await signupPage.getByRole("link", { name: "뒤로", exact: true }).click();
+  await waitForHome(signupPage);
   // A landscape brand photo must remain uncropped at every app-shell width.
   // The old portrait + fixed 160px cover box discarded most of the scene.
   const readiness = signupPage.getByRole("region", { name: "소개 설정", exact: true });
@@ -683,7 +681,7 @@ try {
   await freshPage.getByRole("button", { name: "인증하고 계속", exact: true }).click();
   await freshPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
   await freshPage.getByRole("button", { name: "나중에 내 비서에서 이어하기" }).click();
-  await freshPage.getByRole("heading", { name: "반가워요. 이제 당신을 알아갈게요." }).waitFor();
+  await freshPage.getByRole("heading", { name: "반가워요. 어떤 분인지 들려주세요." }).waitFor();
   assert.equal(
     await freshPage.getByRole("link", { name: "소개", exact: true }).count(),
     0,
@@ -1517,10 +1515,10 @@ try {
   assert.equal(
     await femalePage
       .getByRole("navigation", { name: "주요 메뉴", exact: true })
-      .getByRole("link", { name: "나", exact: true })
-      .getAttribute("aria-current"),
-    "page",
-    "profile keeps the account tab selected",
+      .locator('[aria-current="page"]')
+      .count(),
+    0,
+    "profile belongs to the top account utility rather than a bottom tab",
   );
   const profileArticle = femalePage.locator("article");
   assert.equal(

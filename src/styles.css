@@ -169,13 +169,11 @@
 }
 
 /*
- * 애프터 — Sunset Companion (2026-10-24).
- *
- * 선셋 코럴은 행동, 플럼 잉크는 선택, 라일락은 비서의 발화에 쓴다.
- * 다크는 같은 역할을 밝은 코럴·라일락과 별도의 플럼 표면에 배치한다.
- * primary(행동)와 selection(이미 고른 상태)을 섞지 않는다. 오류는 라즈베리다.
- *
- * OKLCH 토큰이 기준이며 기존 코럴 팔레트의 hex 주석은 대응값이다.
+ * 애프터 — Orange Companion (2026-10-25).
+ * 선명한 오렌지는 행동·선택, 중립 표면은 비서 발화에 쓴다.
+ * 라이트는 화이트, 다크는 차콜 바탕. 오렌지 위에는 짙은 잉크를 사용한다.
+ * 작은 링크에는 대비가 높은 primary-strong을 쓴다. 오류는 라즈베리다.
+ * OKLCH 토큰이 기준이며 hex 주석은 대응값이다.
  * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
  */
 :root {
@@ -194,19 +192,19 @@
   --motion-feedback: 140ms;
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
-  --assistant-surface: oklch(0.944 0.025 305);
-  --assistant-ink: oklch(0.35 0.085 310);
-  --assistant-soft: oklch(0.974 0.009 305);
+  --assistant-surface: oklch(0.96667 0.00171 247.84);
+  --assistant-ink: oklch(0.21303 0.00846 264.38);
+  --assistant-soft: oklch(0.98 0.001 250);
 
   --brand-50: oklch(0.98482 0.01128 71.9); /* #FFF9F2 Evening Ivory */
   --brand-100: oklch(0.94975 0.01272 86.83); /* #F2EEE5 */
   --brand-200: oklch(0.93145 0.03647 41.23); /* #FFE1D6 */
   --brand-300: oklch(0.81823 0.10615 40.04); /* #FFAC8F */
   --brand-400: oklch(0.76707 0.14186 38.38); /* #FF916E */
-  --brand-500: oklch(0.68081 0.17356 37.28); /* #EF6A42 — 밝은 그래픽, 작은 흰 글자 금지 */
-  --brand-600: oklch(0.58015 0.19245 31.57); /* #D43C25 Sunset Coral */
-  --brand-700: oklch(0.51977 0.17762 31.17); /* #B92F1C */
-  --brand-800: oklch(0.43653 0.14918 31.09); /* #922314 */
+  --brand-500: oklch(0.70978 0.19321 44.55); /* #FF701F */
+  --brand-600: oklch(0.68141 0.21359 40.06); /* #FF5A00 — orange action, dark ink */
+  --brand-700: oklch(0.54213 0.18304 36.62); /* #C23700 — readable small brand text */
+  --brand-800: oklch(0.48249 0.16102 37.13); /* #A52F00 */
   --brand-pine: oklch(0.32903 0.0471 173.52); /* #173D33 Midnight Green */
   --brand-sage: oklch(0.693 0.06414 160.45); /* #79A98F */
   --brand-dusk: oklch(0.47564 0.03006 164.57); /* #4D6258 */
@@ -220,12 +218,12 @@
   --peach-300: var(--brand-tint);
   --peach-500: var(--brand-signature);
 
-  /* 만년필 잉크 */
-  --ink: oklch(0.28 0.018 305);
-  --ink-muted: oklch(0.47 0.02 305);
+  /* Neutral ink remains readable beside the vivid orange accent. */
+  --ink: oklch(0.21303 0.00846 264.38);
+  --ink-muted: oklch(0.45294 0.012 267.25);
 
-  --surface: oklch(0.998 0.001 305);
-  --surface-subtle: oklch(0.957 0.012 305);
+  --surface: oklch(1 0 0);
+  --surface-subtle: oklch(0.96667 0.00171 247.84);
   --scrim: oklch(0.18 0.015 169 / 48%);
   --success: oklch(0.45766 0.08285 169.76); /* #166650 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
@@ -237,29 +235,22 @@
   --shadow-brand: 0 14px 34px -18px oklch(0.5465 0.1214 28.1 / 16%);
 
   /* ── 시맨틱 (shadcn) ── */
-  --background: oklch(0.986 0.005 60);
+  --background: oklch(1 0 0);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  /*
-    ── 두 토큰의 역할이 갈린다 ──
-    --primary        = 다음 행동을 실행하는 버튼 — 선셋 코럴.
-    --selection      = 선택한 옵션·탭·날짜 — 플럼 잉크.
-    --primary-strong = 본문 안의 브랜드 강조 — 진한 코럴.
-  */
+  /* Vivid orange uses dark ink; small links use the deeper orange token. */
   --primary: var(--brand-600);
-  --primary-hover: oklch(
-    0.52784 0.18076 31.3
-  ); /* #BD301C — 투명도 hover는 흰 글자 대비를 깨뜨린다 */
+  --primary-hover: var(--brand-500);
   --primary-strong: var(--brand-text);
-  --primary-foreground: var(--surface);
-  --selection: var(--assistant-ink);
-  --selection-foreground: var(--brand-50);
+  --primary-foreground: var(--ink);
+  --selection: var(--primary);
+  --selection-foreground: var(--ink);
 
-  /* 내 말풍선·선택 면은 엷은 종이 틴트, 글자는 잉크. */
-  --bubble-mine: oklch(0.946 0.029 45);
+  /* My messages share the strong orange selection surface. */
+  --bubble-mine: var(--selection);
   --bubble-mine-foreground: var(--ink);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -270,8 +261,8 @@
   /* 오류는 코럴(h≈28)과 구별되는 라즈베리(h≈359)를 쓴다. */
   --destructive: oklch(0.493 0.1674 359); /* #A6285F */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.89 0.012 305);
-  --input: oklch(0.62 0.025 305);
+  --border: oklch(0.91211 0.00461 258.33);
+  --input: oklch(0.58946 0.01122 267.3);
   /* 포커스 링은 얇은 선이라 채움색으로는 안 보인다(2.14). 글자 역할과 같은 톤을 쓴다. */
   --ring: var(--brand-text);
 
@@ -291,25 +282,25 @@
 }
 
 .dark {
-  --assistant-surface: oklch(0.32 0.04 305);
-  --assistant-ink: oklch(0.9 0.045 305);
-  --assistant-soft: oklch(0.265 0.025 305);
+  --assistant-surface: oklch(0.32011 0.00982 260.71);
+  --assistant-ink: oklch(0.96 0.002 260);
+  --assistant-soft: oklch(0.26406 0.008 264.43);
   --scrim: oklch(0.12 0.012 169 / 64%);
   color-scheme: dark;
 
   /* 밤 종이 위의 같은 잉크 */
-  --ink: var(--brand-50); /* 밤 종이 위의 Warm Paper */
-  --ink-muted: oklch(0.83 0.022 305);
+  --ink: oklch(0.96 0.002 260);
+  --ink-muted: oklch(0.7981 0.01038 267.34);
 
-  --surface: oklch(0.275 0.025 305);
-  --surface-subtle: oklch(0.33 0.025 305);
+  --surface: oklch(0.26406 0.008 264.43);
+  --surface-subtle: oklch(0.32011 0.00982 260.71);
 
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 60%);
   --shadow-card: none;
   --shadow-elevated: 0 8px 24px -12px oklch(0.08 0.008 165 / 60%);
   --shadow-brand: 0 12px 34px -16px oklch(0.7826 0.0836 27.4 / 16%);
 
-  --background: oklch(0.215 0.018 305);
+  --background: oklch(0.19595 0.00621 271.09);
   --foreground: var(--ink);
 
   --card: var(--surface);
@@ -317,12 +308,12 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  --primary: var(--brand-400);
-  --primary-hover: oklch(0.80044 0.11845 39.92); /* #FFA383 */
+  --primary: var(--brand-600);
+  --primary-hover: var(--brand-500);
   --primary-foreground: var(--background);
-  --primary-strong: var(--brand-300);
-  --selection: oklch(0.87 0.06 305);
-  --selection-foreground: oklch(0.28 0.05 305);
+  --primary-strong: oklch(0.72447 0.1832 46.71);
+  --selection: var(--primary);
+  --selection-foreground: var(--background);
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -337,15 +328,15 @@
   --success: oklch(0.77 0.07 158); /* #95C5AC */
   --warning: oklch(0.82 0.08 82); /* #E4C285 */
 
-  --border: oklch(0.35 0.025 305);
-  --input: oklch(0.66 0.025 305);
+  --border: oklch(0.4 0.01 265);
+  --input: oklch(0.64 0.011 267);
   --ring: var(--primary-strong);
 
-  --bubble-mine: oklch(0.38 0.035 45);
-  --bubble-mine-foreground: var(--ink);
-  --brand-signature: var(--brand-400);
+  --bubble-mine: var(--selection);
+  --bubble-mine-foreground: var(--selection-foreground);
+  --brand-signature: var(--brand-600);
   --brand-blush: var(--brand-signature);
-  --brand-text: var(--brand-300);
+  --brand-text: var(--primary-strong);
   --brand-tint: var(--surface-subtle);
 
   --chart-1: var(--brand-300);
@@ -365,15 +356,65 @@
 }
 
 .assistant-mark {
+  position: relative;
   display: inline-flex;
   width: 2.5rem;
   height: 2.5rem;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 14px 14px 14px 5px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--muted);
+  color: var(--foreground);
+}
+.assistant-mark img {
+  position: absolute;
+  top: -4%;
+  left: 50%;
+  width: 160%;
+  max-width: none;
+  height: auto;
+  transform: translateX(-50%);
+}
+.home-greeting {
+  padding-top: 0.75rem;
+}
+.home-appointment {
+  padding: 1.25rem;
+  border-radius: var(--radius-surface);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.home-appointment-action {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-control);
   background: var(--assistant-ink);
   color: var(--assistant-surface);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.home-appointment-action:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.app-header-action {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  background: var(--muted);
+}
+.app-header-action:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 .assistant-status,
 .assistant-welcome {
@@ -387,11 +428,14 @@
   color: var(--assistant-ink);
 }
 .assistant-dock {
-  margin-top: 2rem;
-  padding: 1.25rem;
-  border-radius: 16px;
+  margin-top: 1.5rem;
+  padding: 0.25rem 0;
+}
+.assistant-composer {
+  padding: 0.375rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-surface);
   background: var(--card);
-  box-shadow: var(--shadow-elevated);
 }
 .assistant-suggestion {
   min-height: 44px;
@@ -399,7 +443,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 600;
-  background: var(--assistant-surface);
+  background: var(--muted);
   color: var(--assistant-ink);
   touch-action: manipulation;
 }
@@ -701,8 +745,8 @@
 }
 
 .readiness-status {
-  background: var(--selection);
-  color: var(--selection-foreground);
+  background: var(--muted);
+  color: var(--foreground);
 }
 
 .app-switch::before {
@@ -723,7 +767,7 @@
 }
 
 .readiness-status .app-switch:focus-visible {
-  outline: 2px solid var(--selection-foreground);
+  outline: 2px solid var(--ring);
   outline-offset: 3px;
   box-shadow: none;
 }

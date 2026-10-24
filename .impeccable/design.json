@@ -1,267 +1,132 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-24T09:25:23Z",
+  "generatedAt": "2026-10-24T18:24:56Z",
   "title": "Design System: After",
   "extensions": {
     "colorMeta": {
       "primary": {
         "role": "primary",
-        "displayName": "Primary",
+        "displayName": "Vivid Orange",
         "tonalRamp": [
-          "oklch(0.15 0.19245 31.57)",
-          "oklch(0.26 0.19245 31.57)",
-          "oklch(0.38 0.19245 31.57)",
-          "oklch(0.49 0.19245 31.57)",
-          "oklch(0.61 0.19245 31.57)",
-          "oklch(0.72 0.19245 31.57)",
-          "oklch(0.84 0.19245 31.57)",
-          "oklch(0.95 0.19245 31.57)"
+          "oklch(0.15 0.21359 40.06)",
+          "oklch(0.26 0.21359 40.06)",
+          "oklch(0.38 0.21359 40.06)",
+          "oklch(0.49 0.21359 40.06)",
+          "oklch(0.61 0.21359 40.06)",
+          "oklch(0.72 0.21359 40.06)",
+          "oklch(0.84 0.21359 40.06)",
+          "oklch(0.95 0.21359 40.06)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "primary-hover": {
         "role": "primary",
-        "displayName": "Primary Hover",
+        "displayName": "Orange Hover",
         "tonalRamp": [
-          "oklch(0.15 0.18076 31.3)",
-          "oklch(0.26 0.18076 31.3)",
-          "oklch(0.38 0.18076 31.3)",
-          "oklch(0.49 0.18076 31.3)",
-          "oklch(0.61 0.18076 31.3)",
-          "oklch(0.72 0.18076 31.3)",
-          "oklch(0.84 0.18076 31.3)",
-          "oklch(0.95 0.18076 31.3)"
+          "oklch(0.15 0.19321 44.55)",
+          "oklch(0.26 0.19321 44.55)",
+          "oklch(0.38 0.19321 44.55)",
+          "oklch(0.49 0.19321 44.55)",
+          "oklch(0.61 0.19321 44.55)",
+          "oklch(0.72 0.19321 44.55)",
+          "oklch(0.84 0.19321 44.55)",
+          "oklch(0.95 0.19321 44.55)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "primary-strong": {
         "role": "primary",
-        "displayName": "Primary Strong",
+        "displayName": "Readable Orange",
         "tonalRamp": [
-          "oklch(0.15 0.17762 31.17)",
-          "oklch(0.26 0.17762 31.17)",
-          "oklch(0.38 0.17762 31.17)",
-          "oklch(0.49 0.17762 31.17)",
-          "oklch(0.61 0.17762 31.17)",
-          "oklch(0.72 0.17762 31.17)",
-          "oklch(0.84 0.17762 31.17)",
-          "oklch(0.95 0.17762 31.17)"
+          "oklch(0.15 0.18304 36.62)",
+          "oklch(0.26 0.18304 36.62)",
+          "oklch(0.38 0.18304 36.62)",
+          "oklch(0.49 0.18304 36.62)",
+          "oklch(0.61 0.18304 36.62)",
+          "oklch(0.72 0.18304 36.62)",
+          "oklch(0.84 0.18304 36.62)",
+          "oklch(0.95 0.18304 36.62)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "primary-foreground": {
-        "role": "primary",
-        "displayName": "Primary Foreground",
+        "role": "neutral",
+        "displayName": "Action Ink",
         "tonalRamp": [
-          "oklch(0.15 0.001 305)",
-          "oklch(0.26 0.001 305)",
-          "oklch(0.38 0.001 305)",
-          "oklch(0.49 0.001 305)",
-          "oklch(0.61 0.001 305)",
-          "oklch(0.72 0.001 305)",
-          "oklch(0.84 0.001 305)",
-          "oklch(0.95 0.001 305)"
+          "oklch(0.15 0.00846 264.38)",
+          "oklch(0.26 0.00846 264.38)",
+          "oklch(0.38 0.00846 264.38)",
+          "oklch(0.49 0.00846 264.38)",
+          "oklch(0.61 0.00846 264.38)",
+          "oklch(0.72 0.00846 264.38)",
+          "oklch(0.84 0.00846 264.38)",
+          "oklch(0.95 0.00846 264.38)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "selection": {
-        "role": "secondary",
-        "displayName": "Selection",
+        "role": "primary",
+        "displayName": "Orange Selection",
         "tonalRamp": [
-          "oklch(0.15 0.085 310)",
-          "oklch(0.26 0.085 310)",
-          "oklch(0.38 0.085 310)",
-          "oklch(0.49 0.085 310)",
-          "oklch(0.61 0.085 310)",
-          "oklch(0.72 0.085 310)",
-          "oklch(0.84 0.085 310)",
-          "oklch(0.95 0.085 310)"
+          "oklch(0.15 0.21359 40.06)",
+          "oklch(0.26 0.21359 40.06)",
+          "oklch(0.38 0.21359 40.06)",
+          "oklch(0.49 0.21359 40.06)",
+          "oklch(0.61 0.21359 40.06)",
+          "oklch(0.72 0.21359 40.06)",
+          "oklch(0.84 0.21359 40.06)",
+          "oklch(0.95 0.21359 40.06)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "selection-foreground": {
-        "role": "secondary",
-        "displayName": "Selection Foreground",
+        "role": "neutral",
+        "displayName": "Selection Ink",
         "tonalRamp": [
-          "oklch(0.15 0.01128 71.9)",
-          "oklch(0.26 0.01128 71.9)",
-          "oklch(0.38 0.01128 71.9)",
-          "oklch(0.49 0.01128 71.9)",
-          "oklch(0.61 0.01128 71.9)",
-          "oklch(0.72 0.01128 71.9)",
-          "oklch(0.84 0.01128 71.9)",
-          "oklch(0.95 0.01128 71.9)"
+          "oklch(0.15 0.00846 264.38)",
+          "oklch(0.26 0.00846 264.38)",
+          "oklch(0.38 0.00846 264.38)",
+          "oklch(0.49 0.00846 264.38)",
+          "oklch(0.61 0.00846 264.38)",
+          "oklch(0.72 0.00846 264.38)",
+          "oklch(0.84 0.00846 264.38)",
+          "oklch(0.95 0.00846 264.38)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "assistant-surface": {
-        "role": "secondary",
-        "displayName": "Assistant Surface",
+        "role": "neutral",
+        "displayName": "Neutral Speech",
         "tonalRamp": [
-          "oklch(0.15 0.025 305)",
-          "oklch(0.26 0.025 305)",
-          "oklch(0.38 0.025 305)",
-          "oklch(0.49 0.025 305)",
-          "oklch(0.61 0.025 305)",
-          "oklch(0.72 0.025 305)",
-          "oklch(0.84 0.025 305)",
-          "oklch(0.95 0.025 305)"
+          "oklch(0.15 0.00171 247.84)",
+          "oklch(0.26 0.00171 247.84)",
+          "oklch(0.38 0.00171 247.84)",
+          "oklch(0.49 0.00171 247.84)",
+          "oklch(0.61 0.00171 247.84)",
+          "oklch(0.72 0.00171 247.84)",
+          "oklch(0.84 0.00171 247.84)",
+          "oklch(0.95 0.00171 247.84)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "assistant-ink": {
-        "role": "secondary",
-        "displayName": "Assistant Ink",
+        "role": "neutral",
+        "displayName": "Speech Ink",
         "tonalRamp": [
-          "oklch(0.15 0.085 310)",
-          "oklch(0.26 0.085 310)",
-          "oklch(0.38 0.085 310)",
-          "oklch(0.49 0.085 310)",
-          "oklch(0.61 0.085 310)",
-          "oklch(0.72 0.085 310)",
-          "oklch(0.84 0.085 310)",
-          "oklch(0.95 0.085 310)"
+          "oklch(0.15 0.00846 264.38)",
+          "oklch(0.26 0.00846 264.38)",
+          "oklch(0.38 0.00846 264.38)",
+          "oklch(0.49 0.00846 264.38)",
+          "oklch(0.61 0.00846 264.38)",
+          "oklch(0.72 0.00846 264.38)",
+          "oklch(0.84 0.00846 264.38)",
+          "oklch(0.95 0.00846 264.38)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "background": {
         "role": "neutral",
-        "displayName": "Background",
-        "tonalRamp": [
-          "oklch(0.15 0.005 60)",
-          "oklch(0.26 0.005 60)",
-          "oklch(0.38 0.005 60)",
-          "oklch(0.49 0.005 60)",
-          "oklch(0.61 0.005 60)",
-          "oklch(0.72 0.005 60)",
-          "oklch(0.84 0.005 60)",
-          "oklch(0.95 0.005 60)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "foreground": {
-        "role": "neutral",
-        "displayName": "Foreground",
-        "tonalRamp": [
-          "oklch(0.15 0.018 305)",
-          "oklch(0.26 0.018 305)",
-          "oklch(0.38 0.018 305)",
-          "oklch(0.49 0.018 305)",
-          "oklch(0.61 0.018 305)",
-          "oklch(0.72 0.018 305)",
-          "oklch(0.84 0.018 305)",
-          "oklch(0.95 0.018 305)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "card": {
-        "role": "neutral",
-        "displayName": "Card",
-        "tonalRamp": [
-          "oklch(0.15 0.001 305)",
-          "oklch(0.26 0.001 305)",
-          "oklch(0.38 0.001 305)",
-          "oklch(0.49 0.001 305)",
-          "oklch(0.61 0.001 305)",
-          "oklch(0.72 0.001 305)",
-          "oklch(0.84 0.001 305)",
-          "oklch(0.95 0.001 305)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "muted": {
-        "role": "neutral",
-        "displayName": "Muted",
-        "tonalRamp": [
-          "oklch(0.15 0.012 305)",
-          "oklch(0.26 0.012 305)",
-          "oklch(0.38 0.012 305)",
-          "oklch(0.49 0.012 305)",
-          "oklch(0.61 0.012 305)",
-          "oklch(0.72 0.012 305)",
-          "oklch(0.84 0.012 305)",
-          "oklch(0.95 0.012 305)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "muted-foreground": {
-        "role": "neutral",
-        "displayName": "Muted Foreground",
-        "tonalRamp": [
-          "oklch(0.15 0.02 305)",
-          "oklch(0.26 0.02 305)",
-          "oklch(0.38 0.02 305)",
-          "oklch(0.49 0.02 305)",
-          "oklch(0.61 0.02 305)",
-          "oklch(0.72 0.02 305)",
-          "oklch(0.84 0.02 305)",
-          "oklch(0.95 0.02 305)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "border": {
-        "role": "neutral",
-        "displayName": "Border",
-        "tonalRamp": [
-          "oklch(0.15 0.012 305)",
-          "oklch(0.26 0.012 305)",
-          "oklch(0.38 0.012 305)",
-          "oklch(0.49 0.012 305)",
-          "oklch(0.61 0.012 305)",
-          "oklch(0.72 0.012 305)",
-          "oklch(0.84 0.012 305)",
-          "oklch(0.95 0.012 305)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "input": {
-        "role": "neutral",
-        "displayName": "Input",
-        "tonalRamp": [
-          "oklch(0.15 0.025 305)",
-          "oklch(0.26 0.025 305)",
-          "oklch(0.38 0.025 305)",
-          "oklch(0.49 0.025 305)",
-          "oklch(0.61 0.025 305)",
-          "oklch(0.72 0.025 305)",
-          "oklch(0.84 0.025 305)",
-          "oklch(0.95 0.025 305)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "bubble-mine": {
-        "role": "neutral",
-        "displayName": "Bubble Mine",
-        "tonalRamp": [
-          "oklch(0.15 0.029 45)",
-          "oklch(0.26 0.029 45)",
-          "oklch(0.38 0.029 45)",
-          "oklch(0.49 0.029 45)",
-          "oklch(0.61 0.029 45)",
-          "oklch(0.72 0.029 45)",
-          "oklch(0.84 0.029 45)",
-          "oklch(0.95 0.029 45)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "destructive": {
-        "role": "neutral",
-        "displayName": "Destructive",
-        "tonalRamp": [
-          "oklch(0.15 0.1674 359)",
-          "oklch(0.26 0.1674 359)",
-          "oklch(0.38 0.1674 359)",
-          "oklch(0.49 0.1674 359)",
-          "oklch(0.61 0.1674 359)",
-          "oklch(0.72 0.1674 359)",
-          "oklch(0.84 0.1674 359)",
-          "oklch(0.95 0.1674 359)"
-        ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
-      },
-      "destructive-foreground": {
-        "role": "neutral",
-        "displayName": "Destructive Foreground",
+        "displayName": "White Canvas",
         "tonalRamp": [
           "oklch(0.15 0 0)",
           "oklch(0.26 0 0)",
@@ -272,11 +137,146 @@
           "oklch(0.84 0 0)",
           "oklch(0.95 0 0)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Charcoal Ink",
+        "tonalRamp": [
+          "oklch(0.15 0.00846 264.38)",
+          "oklch(0.26 0.00846 264.38)",
+          "oklch(0.38 0.00846 264.38)",
+          "oklch(0.49 0.00846 264.38)",
+          "oklch(0.61 0.00846 264.38)",
+          "oklch(0.72 0.00846 264.38)",
+          "oklch(0.84 0.00846 264.38)",
+          "oklch(0.95 0.00846 264.38)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.49 0 0)",
+          "oklch(0.61 0 0)",
+          "oklch(0.72 0 0)",
+          "oklch(0.84 0 0)",
+          "oklch(0.95 0 0)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Quiet Surface",
+        "tonalRamp": [
+          "oklch(0.15 0.00171 247.84)",
+          "oklch(0.26 0.00171 247.84)",
+          "oklch(0.38 0.00171 247.84)",
+          "oklch(0.49 0.00171 247.84)",
+          "oklch(0.61 0.00171 247.84)",
+          "oklch(0.72 0.00171 247.84)",
+          "oklch(0.84 0.00171 247.84)",
+          "oklch(0.95 0.00171 247.84)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "tonalRamp": [
+          "oklch(0.15 0.012 267.25)",
+          "oklch(0.26 0.012 267.25)",
+          "oklch(0.38 0.012 267.25)",
+          "oklch(0.49 0.012 267.25)",
+          "oklch(0.61 0.012 267.25)",
+          "oklch(0.72 0.012 267.25)",
+          "oklch(0.84 0.012 267.25)",
+          "oklch(0.95 0.012 267.25)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Soft Edge",
+        "tonalRamp": [
+          "oklch(0.15 0.00461 258.33)",
+          "oklch(0.26 0.00461 258.33)",
+          "oklch(0.38 0.00461 258.33)",
+          "oklch(0.49 0.00461 258.33)",
+          "oklch(0.61 0.00461 258.33)",
+          "oklch(0.72 0.00461 258.33)",
+          "oklch(0.84 0.00461 258.33)",
+          "oklch(0.95 0.00461 258.33)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "input": {
+        "role": "neutral",
+        "displayName": "Field Edge",
+        "tonalRamp": [
+          "oklch(0.15 0.01122 267.3)",
+          "oklch(0.26 0.01122 267.3)",
+          "oklch(0.38 0.01122 267.3)",
+          "oklch(0.49 0.01122 267.3)",
+          "oklch(0.61 0.01122 267.3)",
+          "oklch(0.72 0.01122 267.3)",
+          "oklch(0.84 0.01122 267.3)",
+          "oklch(0.95 0.01122 267.3)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "bubble-mine": {
+        "role": "primary",
+        "displayName": "Orange Reply",
+        "tonalRamp": [
+          "oklch(0.15 0.21359 40.06)",
+          "oklch(0.26 0.21359 40.06)",
+          "oklch(0.38 0.21359 40.06)",
+          "oklch(0.49 0.21359 40.06)",
+          "oklch(0.61 0.21359 40.06)",
+          "oklch(0.72 0.21359 40.06)",
+          "oklch(0.84 0.21359 40.06)",
+          "oklch(0.95 0.21359 40.06)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "destructive": {
+        "role": "neutral",
+        "displayName": "Raspberry Error",
+        "tonalRamp": [
+          "oklch(0.15 0.1674 359)",
+          "oklch(0.26 0.1674 359)",
+          "oklch(0.38 0.1674 359)",
+          "oklch(0.49 0.1674 359)",
+          "oklch(0.61 0.1674 359)",
+          "oklch(0.72 0.1674 359)",
+          "oklch(0.84 0.1674 359)",
+          "oklch(0.95 0.1674 359)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
+      },
+      "destructive-foreground": {
+        "role": "neutral",
+        "displayName": "Error Foreground",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.49 0 0)",
+          "oklch(0.61 0 0)",
+          "oklch(0.72 0 0)",
+          "oklch(0.84 0 0)",
+          "oklch(0.95 0 0)"
+        ],
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "success": {
         "role": "neutral",
-        "displayName": "Success",
+        "displayName": "Green Success",
         "tonalRamp": [
           "oklch(0.15 0.08285 169.76)",
           "oklch(0.26 0.08285 169.76)",
@@ -287,11 +287,11 @@
           "oklch(0.84 0.08285 169.76)",
           "oklch(0.95 0.08285 169.76)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "warning": {
         "role": "neutral",
-        "displayName": "Warning",
+        "displayName": "Amber Warning",
         "tonalRamp": [
           "oklch(0.15 0.089 80)",
           "oklch(0.26 0.089 80)",
@@ -302,251 +302,251 @@
           "oklch(0.84 0.089 80)",
           "oklch(0.95 0.089 80)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-primary": {
         "role": "primary",
-        "displayName": "Dark Primary",
+        "displayName": "Vivid Orange at Night",
         "tonalRamp": [
-          "oklch(0.15 0.14186 38.38)",
-          "oklch(0.26 0.14186 38.38)",
-          "oklch(0.38 0.14186 38.38)",
-          "oklch(0.49 0.14186 38.38)",
-          "oklch(0.61 0.14186 38.38)",
-          "oklch(0.72 0.14186 38.38)",
-          "oklch(0.84 0.14186 38.38)",
-          "oklch(0.95 0.14186 38.38)"
+          "oklch(0.15 0.21359 40.06)",
+          "oklch(0.26 0.21359 40.06)",
+          "oklch(0.38 0.21359 40.06)",
+          "oklch(0.49 0.21359 40.06)",
+          "oklch(0.61 0.21359 40.06)",
+          "oklch(0.72 0.21359 40.06)",
+          "oklch(0.84 0.21359 40.06)",
+          "oklch(0.95 0.21359 40.06)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-primary-hover": {
         "role": "primary",
-        "displayName": "Dark Primary Hover",
+        "displayName": "Orange Hover at Night",
         "tonalRamp": [
-          "oklch(0.15 0.11845 39.92)",
-          "oklch(0.26 0.11845 39.92)",
-          "oklch(0.38 0.11845 39.92)",
-          "oklch(0.49 0.11845 39.92)",
-          "oklch(0.61 0.11845 39.92)",
-          "oklch(0.72 0.11845 39.92)",
-          "oklch(0.84 0.11845 39.92)",
-          "oklch(0.95 0.11845 39.92)"
+          "oklch(0.15 0.19321 44.55)",
+          "oklch(0.26 0.19321 44.55)",
+          "oklch(0.38 0.19321 44.55)",
+          "oklch(0.49 0.19321 44.55)",
+          "oklch(0.61 0.19321 44.55)",
+          "oklch(0.72 0.19321 44.55)",
+          "oklch(0.84 0.19321 44.55)",
+          "oklch(0.95 0.19321 44.55)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-primary-strong": {
         "role": "primary",
-        "displayName": "Dark Primary Strong",
+        "displayName": "Readable Orange at Night",
         "tonalRamp": [
-          "oklch(0.15 0.10615 40.04)",
-          "oklch(0.26 0.10615 40.04)",
-          "oklch(0.38 0.10615 40.04)",
-          "oklch(0.49 0.10615 40.04)",
-          "oklch(0.61 0.10615 40.04)",
-          "oklch(0.72 0.10615 40.04)",
-          "oklch(0.84 0.10615 40.04)",
-          "oklch(0.95 0.10615 40.04)"
+          "oklch(0.15 0.1832 46.71)",
+          "oklch(0.26 0.1832 46.71)",
+          "oklch(0.38 0.1832 46.71)",
+          "oklch(0.49 0.1832 46.71)",
+          "oklch(0.61 0.1832 46.71)",
+          "oklch(0.72 0.1832 46.71)",
+          "oklch(0.84 0.1832 46.71)",
+          "oklch(0.95 0.1832 46.71)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-primary-foreground": {
-        "role": "primary",
-        "displayName": "Dark Primary Foreground",
+        "role": "neutral",
+        "displayName": "Night Action Ink",
         "tonalRamp": [
-          "oklch(0.15 0.018 305)",
-          "oklch(0.26 0.018 305)",
-          "oklch(0.38 0.018 305)",
-          "oklch(0.49 0.018 305)",
-          "oklch(0.61 0.018 305)",
-          "oklch(0.72 0.018 305)",
-          "oklch(0.84 0.018 305)",
-          "oklch(0.95 0.018 305)"
+          "oklch(0.15 0.00621 271.09)",
+          "oklch(0.26 0.00621 271.09)",
+          "oklch(0.38 0.00621 271.09)",
+          "oklch(0.49 0.00621 271.09)",
+          "oklch(0.61 0.00621 271.09)",
+          "oklch(0.72 0.00621 271.09)",
+          "oklch(0.84 0.00621 271.09)",
+          "oklch(0.95 0.00621 271.09)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-selection": {
-        "role": "secondary",
-        "displayName": "Dark Selection",
+        "role": "primary",
+        "displayName": "Orange Selection at Night",
         "tonalRamp": [
-          "oklch(0.15 0.06 305)",
-          "oklch(0.26 0.06 305)",
-          "oklch(0.38 0.06 305)",
-          "oklch(0.49 0.06 305)",
-          "oklch(0.61 0.06 305)",
-          "oklch(0.72 0.06 305)",
-          "oklch(0.84 0.06 305)",
-          "oklch(0.95 0.06 305)"
+          "oklch(0.15 0.21359 40.06)",
+          "oklch(0.26 0.21359 40.06)",
+          "oklch(0.38 0.21359 40.06)",
+          "oklch(0.49 0.21359 40.06)",
+          "oklch(0.61 0.21359 40.06)",
+          "oklch(0.72 0.21359 40.06)",
+          "oklch(0.84 0.21359 40.06)",
+          "oklch(0.95 0.21359 40.06)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-selection-foreground": {
-        "role": "secondary",
-        "displayName": "Dark Selection Foreground",
+        "role": "neutral",
+        "displayName": "Night Selection Ink",
         "tonalRamp": [
-          "oklch(0.15 0.05 305)",
-          "oklch(0.26 0.05 305)",
-          "oklch(0.38 0.05 305)",
-          "oklch(0.49 0.05 305)",
-          "oklch(0.61 0.05 305)",
-          "oklch(0.72 0.05 305)",
-          "oklch(0.84 0.05 305)",
-          "oklch(0.95 0.05 305)"
+          "oklch(0.15 0.00621 271.09)",
+          "oklch(0.26 0.00621 271.09)",
+          "oklch(0.38 0.00621 271.09)",
+          "oklch(0.49 0.00621 271.09)",
+          "oklch(0.61 0.00621 271.09)",
+          "oklch(0.72 0.00621 271.09)",
+          "oklch(0.84 0.00621 271.09)",
+          "oklch(0.95 0.00621 271.09)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-assistant-surface": {
-        "role": "secondary",
-        "displayName": "Dark Assistant Surface",
+        "role": "neutral",
+        "displayName": "Charcoal Speech",
         "tonalRamp": [
-          "oklch(0.15 0.04 305)",
-          "oklch(0.26 0.04 305)",
-          "oklch(0.38 0.04 305)",
-          "oklch(0.49 0.04 305)",
-          "oklch(0.61 0.04 305)",
-          "oklch(0.72 0.04 305)",
-          "oklch(0.84 0.04 305)",
-          "oklch(0.95 0.04 305)"
+          "oklch(0.15 0.00982 260.71)",
+          "oklch(0.26 0.00982 260.71)",
+          "oklch(0.38 0.00982 260.71)",
+          "oklch(0.49 0.00982 260.71)",
+          "oklch(0.61 0.00982 260.71)",
+          "oklch(0.72 0.00982 260.71)",
+          "oklch(0.84 0.00982 260.71)",
+          "oklch(0.95 0.00982 260.71)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-assistant-ink": {
-        "role": "secondary",
-        "displayName": "Dark Assistant Ink",
+        "role": "neutral",
+        "displayName": "Light Speech Ink",
         "tonalRamp": [
-          "oklch(0.15 0.045 305)",
-          "oklch(0.26 0.045 305)",
-          "oklch(0.38 0.045 305)",
-          "oklch(0.49 0.045 305)",
-          "oklch(0.61 0.045 305)",
-          "oklch(0.72 0.045 305)",
-          "oklch(0.84 0.045 305)",
-          "oklch(0.95 0.045 305)"
+          "oklch(0.15 0.002 260)",
+          "oklch(0.26 0.002 260)",
+          "oklch(0.38 0.002 260)",
+          "oklch(0.49 0.002 260)",
+          "oklch(0.61 0.002 260)",
+          "oklch(0.72 0.002 260)",
+          "oklch(0.84 0.002 260)",
+          "oklch(0.95 0.002 260)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-background": {
         "role": "neutral",
-        "displayName": "Dark Background",
+        "displayName": "Charcoal Canvas",
         "tonalRamp": [
-          "oklch(0.15 0.018 305)",
-          "oklch(0.26 0.018 305)",
-          "oklch(0.38 0.018 305)",
-          "oklch(0.49 0.018 305)",
-          "oklch(0.61 0.018 305)",
-          "oklch(0.72 0.018 305)",
-          "oklch(0.84 0.018 305)",
-          "oklch(0.95 0.018 305)"
+          "oklch(0.15 0.00621 271.09)",
+          "oklch(0.26 0.00621 271.09)",
+          "oklch(0.38 0.00621 271.09)",
+          "oklch(0.49 0.00621 271.09)",
+          "oklch(0.61 0.00621 271.09)",
+          "oklch(0.72 0.00621 271.09)",
+          "oklch(0.84 0.00621 271.09)",
+          "oklch(0.95 0.00621 271.09)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-foreground": {
         "role": "neutral",
-        "displayName": "Dark Foreground",
+        "displayName": "Light Ink",
         "tonalRamp": [
-          "oklch(0.15 0.01128 71.9)",
-          "oklch(0.26 0.01128 71.9)",
-          "oklch(0.38 0.01128 71.9)",
-          "oklch(0.49 0.01128 71.9)",
-          "oklch(0.61 0.01128 71.9)",
-          "oklch(0.72 0.01128 71.9)",
-          "oklch(0.84 0.01128 71.9)",
-          "oklch(0.95 0.01128 71.9)"
+          "oklch(0.15 0.002 260)",
+          "oklch(0.26 0.002 260)",
+          "oklch(0.38 0.002 260)",
+          "oklch(0.49 0.002 260)",
+          "oklch(0.61 0.002 260)",
+          "oklch(0.72 0.002 260)",
+          "oklch(0.84 0.002 260)",
+          "oklch(0.95 0.002 260)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-card": {
         "role": "neutral",
-        "displayName": "Dark Card",
+        "displayName": "Charcoal Surface",
         "tonalRamp": [
-          "oklch(0.15 0.025 305)",
-          "oklch(0.26 0.025 305)",
-          "oklch(0.38 0.025 305)",
-          "oklch(0.49 0.025 305)",
-          "oklch(0.61 0.025 305)",
-          "oklch(0.72 0.025 305)",
-          "oklch(0.84 0.025 305)",
-          "oklch(0.95 0.025 305)"
+          "oklch(0.15 0.008 264.43)",
+          "oklch(0.26 0.008 264.43)",
+          "oklch(0.38 0.008 264.43)",
+          "oklch(0.49 0.008 264.43)",
+          "oklch(0.61 0.008 264.43)",
+          "oklch(0.72 0.008 264.43)",
+          "oklch(0.84 0.008 264.43)",
+          "oklch(0.95 0.008 264.43)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-muted": {
         "role": "neutral",
-        "displayName": "Dark Muted",
+        "displayName": "Quiet Charcoal",
         "tonalRamp": [
-          "oklch(0.15 0.025 305)",
-          "oklch(0.26 0.025 305)",
-          "oklch(0.38 0.025 305)",
-          "oklch(0.49 0.025 305)",
-          "oklch(0.61 0.025 305)",
-          "oklch(0.72 0.025 305)",
-          "oklch(0.84 0.025 305)",
-          "oklch(0.95 0.025 305)"
+          "oklch(0.15 0.00982 260.71)",
+          "oklch(0.26 0.00982 260.71)",
+          "oklch(0.38 0.00982 260.71)",
+          "oklch(0.49 0.00982 260.71)",
+          "oklch(0.61 0.00982 260.71)",
+          "oklch(0.72 0.00982 260.71)",
+          "oklch(0.84 0.00982 260.71)",
+          "oklch(0.95 0.00982 260.71)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-muted-foreground": {
         "role": "neutral",
-        "displayName": "Dark Muted Foreground",
+        "displayName": "Quiet Light Ink",
         "tonalRamp": [
-          "oklch(0.15 0.022 305)",
-          "oklch(0.26 0.022 305)",
-          "oklch(0.38 0.022 305)",
-          "oklch(0.49 0.022 305)",
-          "oklch(0.61 0.022 305)",
-          "oklch(0.72 0.022 305)",
-          "oklch(0.84 0.022 305)",
-          "oklch(0.95 0.022 305)"
+          "oklch(0.15 0.01038 267.34)",
+          "oklch(0.26 0.01038 267.34)",
+          "oklch(0.38 0.01038 267.34)",
+          "oklch(0.49 0.01038 267.34)",
+          "oklch(0.61 0.01038 267.34)",
+          "oklch(0.72 0.01038 267.34)",
+          "oklch(0.84 0.01038 267.34)",
+          "oklch(0.95 0.01038 267.34)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-border": {
         "role": "neutral",
-        "displayName": "Dark Border",
+        "displayName": "Night Soft Edge",
         "tonalRamp": [
-          "oklch(0.15 0.025 305)",
-          "oklch(0.26 0.025 305)",
-          "oklch(0.38 0.025 305)",
-          "oklch(0.49 0.025 305)",
-          "oklch(0.61 0.025 305)",
-          "oklch(0.72 0.025 305)",
-          "oklch(0.84 0.025 305)",
-          "oklch(0.95 0.025 305)"
+          "oklch(0.15 0.01 265)",
+          "oklch(0.26 0.01 265)",
+          "oklch(0.38 0.01 265)",
+          "oklch(0.49 0.01 265)",
+          "oklch(0.61 0.01 265)",
+          "oklch(0.72 0.01 265)",
+          "oklch(0.84 0.01 265)",
+          "oklch(0.95 0.01 265)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-input": {
         "role": "neutral",
-        "displayName": "Dark Input",
+        "displayName": "Night Field Edge",
         "tonalRamp": [
-          "oklch(0.15 0.025 305)",
-          "oklch(0.26 0.025 305)",
-          "oklch(0.38 0.025 305)",
-          "oklch(0.49 0.025 305)",
-          "oklch(0.61 0.025 305)",
-          "oklch(0.72 0.025 305)",
-          "oklch(0.84 0.025 305)",
-          "oklch(0.95 0.025 305)"
+          "oklch(0.15 0.011 267)",
+          "oklch(0.26 0.011 267)",
+          "oklch(0.38 0.011 267)",
+          "oklch(0.49 0.011 267)",
+          "oklch(0.61 0.011 267)",
+          "oklch(0.72 0.011 267)",
+          "oklch(0.84 0.011 267)",
+          "oklch(0.95 0.011 267)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-bubble-mine": {
-        "role": "neutral",
-        "displayName": "Dark Bubble Mine",
+        "role": "primary",
+        "displayName": "Orange Reply at Night",
         "tonalRamp": [
-          "oklch(0.15 0.035 45)",
-          "oklch(0.26 0.035 45)",
-          "oklch(0.38 0.035 45)",
-          "oklch(0.49 0.035 45)",
-          "oklch(0.61 0.035 45)",
-          "oklch(0.72 0.035 45)",
-          "oklch(0.84 0.035 45)",
-          "oklch(0.95 0.035 45)"
+          "oklch(0.15 0.21359 40.06)",
+          "oklch(0.26 0.21359 40.06)",
+          "oklch(0.38 0.21359 40.06)",
+          "oklch(0.49 0.21359 40.06)",
+          "oklch(0.61 0.21359 40.06)",
+          "oklch(0.72 0.21359 40.06)",
+          "oklch(0.84 0.21359 40.06)",
+          "oklch(0.95 0.21359 40.06)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-destructive": {
         "role": "neutral",
-        "displayName": "Dark Destructive",
+        "displayName": "Night Raspberry Error",
         "tonalRamp": [
           "oklch(0.15 0.12131 0.43)",
           "oklch(0.26 0.12131 0.43)",
@@ -557,11 +557,11 @@
           "oklch(0.84 0.12131 0.43)",
           "oklch(0.95 0.12131 0.43)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-success": {
         "role": "neutral",
-        "displayName": "Dark Success",
+        "displayName": "Night Green Success",
         "tonalRamp": [
           "oklch(0.15 0.07 158)",
           "oklch(0.26 0.07 158)",
@@ -572,11 +572,11 @@
           "oklch(0.84 0.07 158)",
           "oklch(0.95 0.07 158)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
       "dark-warning": {
         "role": "neutral",
-        "displayName": "Dark Warning",
+        "displayName": "Night Amber Warning",
         "tonalRamp": [
           "oklch(0.15 0.08 82)",
           "oklch(0.26 0.08 82)",
@@ -587,59 +587,91 @@
           "oklch(0.84 0.08 82)",
           "oklch(0.95 0.08 82)"
         ],
-        "rampPurpose": "Synthesized visualization only; runtime semantic colors remain the frontmatter/source values."
+        "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       }
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Welcome display",
+        "displayName": "Display",
         "purpose": "Profile-preparation welcome."
       },
       "headline": {
-        "displayName": "Assistant headline",
-        "purpose": "Current status and conversation preparation."
+        "displayName": "Headline",
+        "purpose": "Short home state title and conversation-preparation title."
       },
       "onboarding-headline": {
         "displayName": "Onboarding headline",
         "purpose": "Responsive question title."
       },
       "title": {
-        "displayName": "Topic title",
-        "purpose": "Conversation-preparation topic heading."
+        "displayName": "Title",
+        "purpose": "Preparation topic headings."
       },
       "body": {
-        "displayName": "Answer body",
-        "purpose": "Readable, selectable human answers."
+        "displayName": "Body",
+        "purpose": "Human answers and substantial text."
       },
       "supporting": {
-        "displayName": "Supporting text",
-        "purpose": "Assistant context and explanations."
+        "displayName": "Supporting",
+        "purpose": "Assistant context and default controls."
       },
       "label": {
-        "displayName": "Useful label",
-        "purpose": "Navigation and factual metadata, never decorative kickers."
+        "displayName": "Label",
+        "purpose": "Compact navigation and status."
+      },
+      "micro-label": {
+        "displayName": "Micro label",
+        "purpose": "Existing 3xs scale; 12px with 1.45 line height."
+      },
+      "button-large": {
+        "displayName": "Large button",
+        "purpose": "Existing 15px large control."
+      },
+      "profile-title": {
+        "displayName": "Profile title",
+        "purpose": "Established profile-specific heading."
+      },
+      "profile-introduction": {
+        "displayName": "Profile introduction",
+        "purpose": "Established profile introduction treatment."
+      },
+      "wordmark": {
+        "displayName": "Wordmark utility",
+        "purpose": "Existing brand utility."
+      },
+      "logo": {
+        "displayName": "Logo",
+        "purpose": "Logo-specific tighter tracking."
+      },
+      "display-wordmark": {
+        "displayName": "Display wordmark",
+        "purpose": "Existing larger wordmark utility."
+      },
+      "quote": {
+        "displayName": "Short quotation",
+        "purpose": "Existing serif quotation only; not an assistant UI font."
       }
     },
     "shadows": [
       {
         "name": "frame",
         "value": "0 0 70px -24px oklch(0.295 0.02 169 / 16%)",
-        "purpose": "Mobile frame."
+        "purpose": "Centered mobile app frame."
       },
       {
         "name": "frame-dark",
         "value": "0 0 60px -20px oklch(0 0 0 / 60%)",
-        "purpose": "Dark mobile frame."
+        "purpose": "Dark centered app frame."
       },
       {
         "name": "card",
         "value": "none",
-        "purpose": "Flat card token, not a global shadow prohibition."
+        "purpose": "Flat default surfaces."
       },
       {
         "name": "elevated",
         "value": "0 8px 24px -12px oklch(0.30902 0.02966 167.48 / 24%)",
-        "purpose": "Assistant dock and preparation-topic surfaces."
+        "purpose": "Preparation topics and shared elevated utility; not the assistant dock."
       },
       {
         "name": "elevated-dark",
@@ -649,54 +681,76 @@
       {
         "name": "primary-control",
         "value": "0 5px 12px -6px oklch(0.2955 0.0198 169.4 / 48%)",
-        "purpose": "Main action; removed on press."
+        "purpose": "Primary control at rest; removed on press."
       },
       {
         "name": "tab-bar",
         "value": "0 -6px 24px -14px oklch(0.2955 0.0198 169.4 / 28%)",
-        "purpose": "Bottom chrome."
+        "purpose": "Bottom navigation separation."
+      },
+      {
+        "name": "chat-composer",
+        "value": "0 5px 18px -10px oklch(0.2955 0.0198 169.4 / 30%)",
+        "purpose": "Existing member-chat composer."
       }
     ],
     "motion": [
       {
         "name": "ease-out",
         "value": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "Shared tactile easing."
+        "purpose": "Shared decelerating feedback."
       },
       {
         "name": "feedback",
         "value": "140ms",
-        "purpose": "Press feedback."
+        "purpose": "Press, state changes, and exit timing."
       },
       {
-        "name": "assistant-reply-arrival",
+        "name": "assistant-reply",
         "value": "200ms",
-        "purpose": "5px translateY to rest only without reduced motion."
+        "purpose": "5px reply arrival only without reduced motion."
       },
       {
         "name": "content-arrival",
-        "value": "260ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Existing body arrival, 12px translation and opacity .82 to 1; disabled for reduced motion."
+        "value": "260ms",
+        "purpose": "Existing content and active-tab arrival."
       },
       {
-        "name": "tab-selection",
-        "value": "260ms",
-        "purpose": "Existing active icon scale .86 to 1; disabled for reduced motion."
+        "name": "landing-photo",
+        "value": "420ms",
+        "purpose": "Existing landing photo reveal; not a general UI duration."
       }
     ],
     "breakpoints": [
       {
-        "name": "compact-height",
+        "name": "short-viewport",
         "value": "540px",
-        "purpose": "Maximum-height query relaxing safety floors for keyboard/form/conversation screens."
+        "purpose": "Maximum height for relaxed safe-area floors."
+      },
+      {
+        "name": "app-max-width",
+        "value": "430px",
+        "purpose": "Centered customer-app frame width, not a desktop breakpoint."
       }
     ],
-    "layoutMeta": {
-      "mobileMaxWidth": "430px",
-      "height": "calc(100dvh - var(--keyboard-height))",
-      "safeTop": "max(calc(env(safe-area-inset-top, 0px) + 0.5rem), 2.75rem)",
-      "safeBottom": "max(env(safe-area-inset-bottom, 0px), 2.125rem)",
-      "scrollOwner": "Screen body; chrome stays in flex flow."
+    "assistantArtwork": {
+      "sources": [
+        "/brand/concierge/male.webp",
+        "/brand/concierge/female.webp"
+      ],
+      "mapping": {
+        "femaleMember": "male",
+        "maleMember": "female"
+      },
+      "defaultSize": "40px",
+      "welcomeOverride": "56px",
+      "crop": "Circular; image top -4%, width 160%, centered horizontally.",
+      "preservation": "Preserve the user-approved detailed v2 adult character artwork. Do not redraw, simplify, stylize, or artistically transform it.",
+      "fallback": "MessageCircleHeart icon only when member gender is unavailable."
+    },
+    "evidence": {
+      "source": "Current implementation source inspection",
+      "browserQA": "Not asserted by this documentation refresh"
     }
   },
   "components": [
@@ -704,55 +758,55 @@
       "name": "Button · primary",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Main consequential action.",
-      "html": "<button type=\"button\" class=\"ds-button-primary\">다음으로</button>",
-      "css": ".ds-button-primary{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border-radius:12px;border:0;font-size:.875rem;font-weight:600;line-height:1.4286;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-button-primary:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-button-primary:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}.ds-button-primary:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none}.ds-button-primary:active{transform:none}}.ds-button-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 5px 12px -6px oklch(0.2955 0.0198 169.4 / 48%);}.ds-button-primary:hover:not(:disabled){background:var(--primary-hover);}.ds-button-primary:active{box-shadow:none}.ds-button-primary:disabled{background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}"
+      "description": "Shared primary action with the implemented focus, press, and disabled states.",
+      "html": "<button type=\"button\" class=\"ds-button-primary\">주요 행동</button>",
+      "css": ".ds-button-primary{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;line-height:1.4286;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(.23,1,.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;background:var(--primary);color:var(--primary-foreground);box-shadow:0 5px 12px -6px oklch(.2955 .0198 169.4 / 48%);}.ds-button-primary:hover:not(:disabled){background:var(--primary-hover);}.ds-button-primary:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-button-primary:active:not(:disabled){transform:scale(.98);box-shadow:none}.ds-button-primary:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none}.ds-button-primary:active{transform:none}}"
     },
     {
       "name": "Button · destructive",
       "kind": "button",
       "refersTo": "button-destructive",
-      "description": "Destructive action, visually distinct from coral.",
+      "description": "Shared destructive action with the implemented focus, press, and disabled states.",
       "html": "<button type=\"button\" class=\"ds-button-destructive\">삭제</button>",
-      "css": ".ds-button-destructive{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border-radius:12px;border:0;font-size:.875rem;font-weight:600;line-height:1.4286;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-button-destructive:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-button-destructive:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}.ds-button-destructive:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-button-destructive{transition:none}.ds-button-destructive:active{transform:none}}.ds-button-destructive{background:var(--destructive);color:var(--destructive-foreground);}.ds-button-destructive:hover:not(:disabled){background:color-mix(in oklab,var(--destructive) 90%,transparent);}.ds-button-destructive:disabled{background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}"
+      "css": ".ds-button-destructive{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;line-height:1.4286;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(.23,1,.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;background:var(--destructive);color:var(--destructive-foreground);}.ds-button-destructive:hover:not(:disabled){background:color-mix(in oklab,var(--destructive) 90%,transparent);}.ds-button-destructive:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-button-destructive:active:not(:disabled){transform:scale(.98);box-shadow:none}.ds-button-destructive:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}@media(prefers-reduced-motion:reduce){.ds-button-destructive{transition:none}.ds-button-destructive:active{transform:none}}"
     },
     {
       "name": "Button · outline",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Secondary bordered action.",
+      "description": "Shared outline action with the implemented focus, press, and disabled states.",
       "html": "<button type=\"button\" class=\"ds-button-outline\">다시 확인</button>",
-      "css": ".ds-button-outline{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border-radius:12px;border:0;font-size:.875rem;font-weight:600;line-height:1.4286;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-button-outline:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-button-outline:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}.ds-button-outline:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-button-outline{transition:none}.ds-button-outline:active{transform:none}}.ds-button-outline{border:1px solid var(--border);background:transparent;color:var(--foreground);}.ds-button-outline:hover:not(:disabled){background:var(--muted);}.ds-button-outline:disabled{background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}"
+      "css": ".ds-button-outline{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;line-height:1.4286;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(.23,1,.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;border:1px solid var(--border);background:transparent;color:var(--foreground);}.ds-button-outline:hover:not(:disabled){background:var(--muted);}.ds-button-outline:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-button-outline:active:not(:disabled){transform:scale(.98);box-shadow:none}.ds-button-outline:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}@media(prefers-reduced-motion:reduce){.ds-button-outline{transition:none}.ds-button-outline:active{transform:none}}"
     },
     {
       "name": "Button · secondary",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Quiet filled action.",
+      "description": "Shared secondary action with the implemented focus, press, and disabled states.",
       "html": "<button type=\"button\" class=\"ds-button-secondary\">나중에</button>",
-      "css": ".ds-button-secondary{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border-radius:12px;border:0;font-size:.875rem;font-weight:600;line-height:1.4286;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-button-secondary:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-button-secondary:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}.ds-button-secondary:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none}.ds-button-secondary:active{transform:none}}.ds-button-secondary{background:var(--secondary);color:var(--secondary-foreground);}.ds-button-secondary:hover:not(:disabled){background:color-mix(in oklab,var(--secondary) 80%,transparent);}.ds-button-secondary:disabled{background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}"
+      "css": ".ds-button-secondary{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;line-height:1.4286;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(.23,1,.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;background:var(--secondary);color:var(--secondary-foreground);}.ds-button-secondary:hover:not(:disabled){background:color-mix(in oklab,var(--secondary) 80%,transparent);}.ds-button-secondary:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-button-secondary:active:not(:disabled){transform:scale(.98);box-shadow:none}.ds-button-secondary:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none}.ds-button-secondary:active{transform:none}}"
     },
     {
       "name": "Button · ghost",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "Low-emphasis action.",
+      "description": "Shared ghost action with the implemented focus, press, and disabled states.",
       "html": "<button type=\"button\" class=\"ds-button-ghost\">닫기</button>",
-      "css": ".ds-button-ghost{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border-radius:12px;border:0;font-size:.875rem;font-weight:600;line-height:1.4286;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-button-ghost:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-button-ghost:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}.ds-button-ghost:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none}.ds-button-ghost:active{transform:none}}.ds-button-ghost{background:transparent;color:var(--muted-foreground);}.ds-button-ghost:hover:not(:disabled){background:var(--muted);color:var(--foreground);}.ds-button-ghost:disabled{background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}"
+      "css": ".ds-button-ghost{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;line-height:1.4286;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(.23,1,.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;background:transparent;color:var(--muted-foreground);}.ds-button-ghost:hover:not(:disabled){background:var(--muted);color:var(--foreground);}.ds-button-ghost:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-button-ghost:active:not(:disabled){transform:scale(.98);box-shadow:none}.ds-button-ghost:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none}.ds-button-ghost:active{transform:none}}"
     },
     {
       "name": "Button · link",
       "kind": "button",
       "refersTo": "button-link",
-      "description": "Inline-style action using stronger coral.",
+      "description": "Shared link action with the implemented focus, press, and disabled states.",
       "html": "<button type=\"button\" class=\"ds-button-link\">자세히 보기</button>",
-      "css": ".ds-button-link{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border-radius:12px;border:0;font-size:.875rem;font-weight:600;line-height:1.4286;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-button-link:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-button-link:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}.ds-button-link:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-button-link{transition:none}.ds-button-link:active{transform:none}}.ds-button-link{background:transparent;color:var(--primary-strong);text-underline-offset:4px;}.ds-button-link:hover:not(:disabled){text-decoration:underline;}.ds-button-link:disabled{background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}"
+      "css": ".ds-button-link{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;padding:.5rem 1rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;line-height:1.4286;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(.23,1,.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;background:transparent;color:var(--primary-strong);text-underline-offset:4px;}.ds-button-link:hover:not(:disabled){text-decoration:underline;}.ds-button-link:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-button-link:active:not(:disabled){transform:scale(.98);box-shadow:none}.ds-button-link:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);box-shadow:none;border-color:transparent}@media(prefers-reduced-motion:reduce){.ds-button-link{transition:none}.ds-button-link:active{transform:none}}"
     },
     {
       "name": "Text field",
       "kind": "input",
       "refersTo": "input",
-      "description": "The shared 48px field, with focus, invalid, and disabled treatments.",
+      "description": "Shared 48px field with visible focus, invalid, and disabled treatments.",
       "html": "<input class=\"ds-input\" aria-label=\"이름\" placeholder=\"이름을 알려주세요\">",
       "css": ".ds-input{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:flex;width:100%;height:48px;border:1px solid var(--input);border-radius:12px;background:var(--card);padding:.5rem .875rem;color:var(--foreground);font-size:1rem;caret-color:var(--primary-strong);transition:color 150ms,box-shadow 150ms,border-color 150ms}.ds-input::placeholder{color:var(--muted-foreground)}.ds-input:focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-color:var(--ring)}.ds-input[aria-invalid=true]{border-color:var(--destructive);box-shadow:0 0 0 1px color-mix(in oklab,var(--destructive) 40%,transparent)}.ds-input[aria-invalid=true]:focus-visible{outline-color:var(--destructive)}.ds-input:disabled{cursor:not-allowed;opacity:.6}@media(pointer:coarse){.ds-input{font-size:max(1rem,16px)}}"
     },
@@ -760,46 +814,54 @@
       "name": "App navigation",
       "kind": "nav",
       "refersTo": "navigation",
-      "description": "Four equal tabs; the current tab uses a plum icon tile and stronger icon stroke.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"주요 메뉴\"><a class=\"ds-tab\" href=\"/home\" aria-current=\"page\"><span class=\"ds-tab-icon\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/><path d=\"M7.828 13.07A3 3 0 0 1 12 8.764a3 3 0 0 1 5.004 2.224 3 3 0 0 1-.832 2.083l-3.447 3.62a1 1 0 0 1-1.45-.001z\"/></svg></span>내 비서</a><a class=\"ds-tab\" href=\"/intro\"><span class=\"ds-tab-icon\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\"/></svg></span>소개</a><a class=\"ds-tab\" href=\"/chats\"><span class=\"ds-tab-icon\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/></svg></span>대화</a><a class=\"ds-tab\" href=\"/me\"><span class=\"ds-tab-icon\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg></span>나</a></nav>",
-      "css": ".ds-nav{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:flex;padding:0 .5rem var(--safe-bottom,2.125rem);border-radius:1rem 1rem 0 0;background:var(--card);box-shadow:0 -6px 24px -14px oklch(0.2955 0.0198 169.4 / 28%)}.ds-tab{flex:1;display:flex;min-height:64px;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding-top:.5rem;color:var(--muted-foreground);text-decoration:none;font-size:.75rem;font-weight:500;line-height:1.5;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-tab-icon{display:flex;width:48px;height:32px;align-items:center;justify-content:center;border-radius:12px;transition:background-color 150ms}.ds-tab svg{stroke-width:1.7}.ds-tab[aria-current=page]{color:var(--foreground)}.ds-tab[aria-current=page] .ds-tab-icon{background:var(--selection);color:var(--selection-foreground)}.ds-tab[aria-current=page] svg{stroke-width:2.3}.ds-tab:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-tab:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-tab{transition:none}.ds-tab:active{transform:none}}@media(prefers-reduced-motion:reduce){.ds-tab-icon{transition:none}}"
+      "description": "Two bottom destinations, Home and Introduction, with an orange active icon tile. Account and male-only shop are header utilities.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"주요 메뉴\"><div class=\"ds-nav-row\"><a class=\"ds-tab\" href=\"/home\" aria-current=\"page\"><span class=\"ds-tab-icon\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/></svg></span>홈</a><a class=\"ds-tab\" href=\"/intro\"><span class=\"ds-tab-icon\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z\"/></svg></span>소개</a></div></nav>",
+      "css": ".ds-nav{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);padding-bottom:var(--safe-bottom,2.125rem);border-radius:1rem 1rem 0 0;background:var(--card);box-shadow:0 -6px 24px -14px oklch(.2955 .0198 169.4 / 28%)}.ds-nav-row{display:flex;gap:1rem;max-width:18rem;margin:0 auto;padding:0 1rem}.ds-tab{flex:1;display:flex;min-height:64px;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding-top:.5rem;color:var(--muted-foreground);text-decoration:none;font-size:.75rem;font-weight:500;line-height:1.5;transition:transform 140ms var(--ease-out)}.ds-tab-icon{display:flex;width:48px;height:32px;align-items:center;justify-content:center;border-radius:12px;transition:background-color 150ms}.ds-tab[aria-current=page]{color:var(--foreground)}.ds-tab[aria-current=page] .ds-tab-icon{background:var(--selection);color:var(--selection-foreground)}.ds-tab:focus-visible{outline:2px solid var(--ring)}.ds-tab:active{transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-tab,.ds-tab-icon{transition:none}.ds-tab:active{transform:none}}"
     },
     {
       "name": "Choice chip",
       "kind": "chip",
       "refersTo": "chip-selected",
-      "description": "Chosen values combine plum fill and a check; aria-pressed exposes selection.",
-      "html": "<button class=\"ds-chip\" type=\"button\" aria-pressed=\"true\">함께 산책하기<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg></button>",
-      "css": ".ds-chip{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;min-height:44px;align-items:center;justify-content:center;padding:.625rem 1rem;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--foreground);font-size:.875rem;font-weight:500;line-height:1.375;letter-spacing:-.01em;word-break:keep-all;cursor:pointer;transition:transform var(--motion-feedback,140ms) var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color var(--motion-feedback,140ms) ease-out,color var(--motion-feedback,140ms) ease-out;}.ds-chip[aria-pressed=true]{border-color:var(--selection);background:var(--selection);color:var(--selection-foreground);font-weight:600}.ds-chip svg{margin-left:.375rem;flex-shrink:0}.ds-chip[aria-pressed=false] svg{display:none}.ds-chip:disabled:not([aria-pressed=true]){cursor:not-allowed;opacity:.45}.ds-chip:focus-visible{outline:2px solid var(--ring);outline-offset:2px;}.ds-chip:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-chip{transition:none}.ds-chip:active{transform:none}}"
+      "description": "Orange selection and check icon expose a chosen value.",
+      "html": "<button class=\"ds-chip\" type=\"button\" aria-pressed=\"true\">함께 산책하기<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m20 6-11 11-5-5\"/></svg></button>",
+      "css": ".ds-chip{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);display:inline-flex;min-height:44px;align-items:center;justify-content:center;padding:.625rem 1rem;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--foreground);font-size:.875rem;font-weight:500;line-height:1.375;letter-spacing:-.01em;word-break:keep-all;cursor:pointer;transition:transform 140ms var(--ease-out),background-color 140ms}.ds-chip[aria-pressed=true]{border-color:var(--selection);background:var(--selection);color:var(--selection-foreground);font-weight:600}.ds-chip svg{margin-left:.375rem;flex-shrink:0}.ds-chip[aria-pressed=false] svg{display:none}.ds-chip:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-chip:active:not(:disabled){transform:scale(.98)}.ds-chip:disabled:not([aria-pressed=true]){cursor:not-allowed;opacity:.45}@media(prefers-reduced-motion:reduce){.ds-chip{transition:none}.ds-chip:active{transform:none}}"
     },
     {
-      "name": "Assistant signature and dock",
+      "name": "Compact appointment",
       "kind": "card",
-      "refersTo": "assistant-speech",
-      "description": "Lilac assistant speech with the code-rendered mark, followed by the canonical lifted white dock and a focusable suggestion.",
-      "html": "<div class=\"ds-assistant\"><section class=\"ds-speech\"><span class=\"ds-mark\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/><path d=\"M7.828 13.07A3 3 0 0 1 12 8.764a3 3 0 0 1 5.004 2.224 3 3 0 0 1-.832 2.083l-3.447 3.62a1 1 0 0 1-1.45-.001z\"/></svg></span><h2 class=\"ds-headline\">소개를 준비하고 있어요</h2><p class=\"ds-context\">지금 필요한 준비를 함께 확인해요.</p></section><section class=\"ds-dock\" aria-label=\"내 비서에게 물어보기\"><h3 class=\"ds-dock-title\">내 비서에게 물어보기</h3><button class=\"ds-suggestion\" type=\"button\">지금 내 상태</button><p class=\"ds-reply\">진행 상태와 다음 행동을 안내할게요.</p></section></div>",
-      "css": ".ds-assistant{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);color:var(--foreground)}.ds-speech{padding:1.5rem;background:var(--assistant-surface);color:var(--assistant-ink);border-radius:16px 16px 16px 5px}.ds-mark{display:inline-flex;width:40px;height:40px;align-items:center;justify-content:center;flex-shrink:0;border-radius:14px 14px 14px 5px;background:var(--assistant-ink);color:var(--assistant-surface)}.ds-headline{margin:1rem 0 0;font-size:1.75rem;font-weight:700;line-height:1.3;letter-spacing:-.025em;word-break:keep-all;text-wrap:balance}.ds-context{margin:.75rem 0 0;font-size:.875rem;line-height:1.625;word-break:keep-all}.ds-dock{margin-top:2rem;padding:1.25rem;border-radius:16px;background:var(--card);box-shadow:var(--shadow-elevated)}.ds-dock-title{margin:0;font-size:1rem;font-weight:600}.ds-suggestion{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);margin-top:1rem;min-height:44px;padding:.65rem .85rem;border:0;border-radius:12px;background:var(--assistant-surface);color:var(--assistant-ink);font-size:.875rem;font-weight:600;touch-action:manipulation}.ds-suggestion:focus-visible{outline:2px solid var(--ring);outline-offset:3px}.ds-reply{margin:1rem 0 0;padding:1rem;border-radius:4px 16px 16px;background:var(--assistant-surface);color:var(--assistant-ink);font-size:.875rem;line-height:1.625}@media(prefers-reduced-motion:no-preference){.ds-reply{animation:ds-reply-arrive 200ms var(--ease-out)}@keyframes ds-reply-arrive{from{transform:translateY(5px)}to{transform:translateY(0)}}}"
+      "refersTo": "home-appointment",
+      "description": "Orange confirmed-appointment surface; the sample omits personal facts and contains no AI portrait.",
+      "html": "<section class=\"ds-appointment\" aria-label=\"다음 약속\"><div class=\"ds-appointment-heading\"><h2>다음 약속</h2><span>확정</span></div><p>약속의 날짜와 장소</p><a class=\"ds-appointment-action\" href=\"/home\">약속 확인하기<span aria-hidden=\"true\">→</span></a></section>",
+      "css": ".ds-appointment{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);padding:1.25rem;border-radius:16px;background:var(--primary);color:var(--primary-foreground)}.ds-appointment-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}.ds-appointment h2{margin:0;font-size:1rem;font-weight:600;word-break:keep-all}.ds-appointment-heading span{font-size:.75rem;font-weight:600}.ds-appointment p{margin:0;font-size:1rem;line-height:1.5}.ds-appointment-action{display:flex;min-height:48px;align-items:center;justify-content:space-between;margin-top:1rem;padding:.75rem 1rem;border-radius:12px;background:var(--assistant-ink);color:var(--assistant-surface);font-size:.875rem;font-weight:700;text-decoration:none;transition:transform 140ms var(--ease-out)}.ds-appointment-action:focus-visible{outline:2px solid currentColor;outline-offset:3px}.ds-appointment-action:active{transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-appointment-action{transition:none}.ds-appointment-action:active{transform:none}}"
+    },
+    {
+      "name": "Assistant dock controls",
+      "kind": "custom",
+      "refersTo": "assistant-dock",
+      "description": "Unboxed assistant controls, neutral suggestions/reply, and bordered composer. Character artwork is deliberately not represented by a simplified preview; production uses the approved detailed assets.",
+      "html": "<section class=\"ds-dock\" aria-label=\"비서에게 물어보기\"><div class=\"ds-suggestions\"><button class=\"ds-suggestion\" type=\"button\" aria-pressed=\"true\">지금 내 상태</button><button class=\"ds-suggestion\" type=\"button\">대화 팁</button></div><p class=\"ds-reply\" role=\"status\">현재 상태와 필요한 다음 행동을 안내해요.</p><div class=\"ds-composer\"><input class=\"ds-composer-input\" aria-label=\"비서에게 물어볼 내용\" placeholder=\"비서에게 말해보세요\"><button class=\"ds-send\" type=\"button\" aria-label=\"비서에게 질문하기\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7M12 5v14\"/></svg></button></div><p class=\"ds-private\">비서에게만 보여요</p></section>",
+      "css": ".ds-dock{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);margin-top:1.5rem;padding:.25rem 0;color:var(--foreground)}.ds-suggestions{display:flex;flex-wrap:wrap;gap:.5rem}.ds-suggestion{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);min-height:44px;padding:.65rem .85rem;border:0;border-radius:12px;font-size:.875rem;font-weight:600;background:var(--muted);color:var(--assistant-ink);touch-action:manipulation}.ds-suggestion:focus-visible{outline:2px solid var(--ring);outline-offset:3px}.ds-reply{margin:1rem 0 0;padding:1rem;border-radius:4px 16px 16px;background:var(--assistant-surface);color:var(--assistant-ink);font-size:.875rem;line-height:1.625}.ds-composer{display:flex;align-items:center;gap:.5rem;margin-top:1rem;padding:.375rem;border:1px solid var(--input);border-radius:16px;background:var(--card)}.ds-composer-input{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);min-width:0;flex:1;border:0;border-radius:12px;background:transparent;padding:.5rem .75rem;font-size:1rem;color:var(--foreground)}.ds-composer-input::placeholder{color:var(--muted-foreground)}.ds-composer-input:focus-visible{outline:2px solid var(--ring)}.ds-send{display:flex;width:44px;height:44px;flex-shrink:0;align-items:center;justify-content:center;border:0;border-radius:12px;background:var(--selection);color:var(--selection-foreground)}.ds-send:focus-visible{outline:2px solid var(--ring)}.ds-send:disabled{opacity:.5}.ds-suggestion,.ds-send{cursor:pointer;transition:transform 140ms var(--ease-out)}.ds-suggestion:active,.ds-send:active{transform:scale(.98)}.ds-private{margin:.5rem 0 0;text-align:center;font-size:.75rem;line-height:1.5;color:var(--muted-foreground)}@media(prefers-reduced-motion:no-preference){.ds-reply{animation:ds-reply-arrive 200ms var(--ease-out)}@keyframes ds-reply-arrive{from{transform:translateY(5px)}to{transform:translateY(0)}}}@media(prefers-reduced-motion:reduce){.ds-suggestion,.ds-send{transition:none}.ds-suggestion:active,.ds-send:active{transform:none}}"
     }
   ],
   "narrative": {
-    "northStar": "Sunset Companion",
-    "overview": "After feels like a composed companion at the end of a working day. Warm coral identifies the next consequential action; plum and lilac identify the assistant and selected state. Korean, Latin text, and numbers share one clear type family, with strong titles and comfortable conversational body copy.\n\nThe visual system separates a speaker from a person's answer through tone and corner direction. It uses compact mobile proportions, honest state labels, and restrained depth. Existing profile photography stays human and contextual; the assistant's identity is a code-rendered speech mark, not a generated portrait.",
+    "northStar": "Orange Companion",
+    "overview": "After pairs vivid orange action with clear neutral surfaces and a detailed adult assistant character. Short Korean titles explain the member's actual progress; compact controls and comfortable conversational text keep the next action easy to find. Korean, Latin text, and numbers share the self-hosted Wanted Sans family.\n\nWhite is the light canvas and neutral charcoal is the dark canvas. The same orange remains recognizable in both themes, with dark ink on its filled controls. Small assistant avatars identify the speaker beside conversational content; human profile photography remains contextual to the person being introduced.",
     "keyCharacteristics": [
-      "Coral actions, plum selection, and lilac assistant speech.",
-      "A single Korean-capable variable sans family.",
-      "Directional speech corners and quieter answer surfaces.",
+      "Vivid orange actions and selections with dark ink.",
+      "Neutral assistant speech, a white light canvas, and a charcoal dark canvas.",
+      "Detailed adult character avatars beside assistant messages.",
       "A mobile frame with stable chrome and an independently scrolling body.",
       "Brief tactile feedback that respects reduced motion."
     ],
     "rules": [
       {
-        "name": "The Role Before Hue Rule",
-        "body": "Coral communicates an action; plum communicates an existing selection; lilac identifies assistant speech. Do not swap these roles for decorative variety.",
+        "name": "The Same Orange Rule",
+        "body": "Keep the primary orange fill consistent across light and dark themes; use theme-specific neutral ink and the stronger text token for readability.",
         "section": "colors"
       },
       {
-        "name": "The One Family Rule",
-        "body": "Use Wanted Sans for assistant titles, questions, answers, controls, and numerals.",
+        "name": "The UI Family Rule",
+        "body": "Use Wanted Sans for assistant titles, questions, answers, controls, and numerals; retain the established serif quotation exception.",
         "section": "typography"
       },
       {
@@ -809,18 +871,20 @@
       }
     ],
     "dos": [
-      "Do use semantic color variables so light and dark themes preserve the same roles.",
+      "Do use the same vivid orange fill and semantic theme variables across light and dark themes.",
+      "Do preserve the supplied detailed adult assistant artwork and the member-to-assistant gender mapping.",
       "Do preserve visible keyboard focus, 44px control targets, and reduced-motion behavior.",
-      "Do use tone and directional corners to distinguish assistant speech from a person's answer.",
       "Do keep the stable app chrome, safe areas, and keyboard-aware body scrolling.",
-      "Do reuse the self-hosted Wanted Sans family and retain its provenance."
+      "Do reuse self-hosted Wanted Sans and retain the existing short serif quotation exception.",
+      "Do derive status titles and appointment facts from real state and retain existing capability gates."
     ],
     "donts": [
-      "Don't use the action coral to mean an already selected option.",
-      "Don't use assistant lilac and the assistant mark to impersonate a counterpart's message.",
+      "Don't reintroduce purple, lilac, or pastel assistant speech as the system identity.",
+      "Don't redraw, artistically simplify, or transform the approved detailed v2 character assets.",
+      "Don't put an AI portrait into the compact appointment card or impersonate a counterpart's message.",
       "Don't introduce decorative eyebrow labels above already clear titles.",
       "Don't wrap supporting evidence in another card inside a topic card.",
-      "Don't promote legacy divider-heavy layouts or the generic Card's border-plus-shadow into assistant defaults."
+      "Don't treat the legacy generic Card or a removed dock shadow as assistant defaults."
     ]
   }
 }

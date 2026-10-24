@@ -42,7 +42,7 @@ function apply(choice: ThemeChoice) {
   // OS 모드가 아닌 앱 내부 선택도 브라우저 상단 색에 반영한다.
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", dark ? "#1B1720" : "#FDFAF7");
+    ?.setAttribute("content", dark ? "#141518" : "#FFFFFF");
   return dark;
 }
 

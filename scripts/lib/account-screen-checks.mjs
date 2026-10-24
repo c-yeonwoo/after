@@ -25,9 +25,9 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
   assert.equal(
     await page
       .getByRole("navigation", { name: "주요 메뉴" })
-      .getByRole("link", { name: "나", exact: true })
-      .getAttribute("aria-current"),
-    "page",
+      .locator('[aria-current="page"]')
+      .count(),
+    0,
   );
 
   await page.route(reminderUrl, fail);

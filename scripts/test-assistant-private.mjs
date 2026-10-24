@@ -125,7 +125,30 @@ try {
   }
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await page.waitForURL("**/home");
-  await page.getByRole("heading", { name: "내 비서", exact: true }).waitFor();
+  await page
+    .getByRole("navigation", { name: "주요 메뉴" })
+    .getByRole("link", { name: "홈", exact: true })
+    .waitFor();
+  assert.deepEqual(
+    await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link").allTextContents(),
+    ["홈", "소개"],
+  );
+  await page.getByRole("link", { name: "상점", exact: true }).waitFor();
+  await page.locator('.assistant-mark img[src$="female.webp"]').waitFor();
+  const draftedQuestion = "처음 만나는 날 긴장이 많이 돼요";
+  let draftApiCalls = 0;
+  const countDraftCalls = (request) => {
+    if (request.url().includes("/functions/v1/assistant-chat")) draftApiCalls++;
+  };
+  page.on("request", countDraftCalls);
+  await page.getByLabel("비서에게 물어볼 내용").fill(draftedQuestion);
+  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page.waitForURL("**/assistant?panel=chat");
+  await page.getByLabel("비서에게 상담할 내용").waitFor();
+  assert.equal(await page.getByLabel("비서에게 상담할 내용").inputValue(), draftedQuestion);
+  assert.equal(draftApiCalls, 0, "home handoff must not submit a private question automatically");
+  assert.equal(new URL(page.url()).search, "?panel=chat", "private draft never appears in URL");
+  page.off("request", countDraftCalls);
   await page.goto(`${base}/assistant?panel=memory`);
   await page.getByRole("button", { name: "기억할 선호 추가" }).click();
   await page

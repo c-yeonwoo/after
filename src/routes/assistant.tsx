@@ -7,6 +7,7 @@ import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMe } from "@/lib/me";
+import { takeAssistantDraft } from "@/lib/assistantDraft";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import {
   assistantRpc,
@@ -65,6 +66,10 @@ function PrivateAssistant({ owner }: { owner: string }) {
   const live = useMemberLiveQuery("assistant-private", owner, getPrivateAssistant);
   const data = !live.isError && !live.isPaused ? live.data : undefined;
   const [input, setInput] = useState("");
+  useEffect(() => {
+    const draft = takeAssistantDraft(owner);
+    if (draft) setInput(draft);
+  }, [owner]);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");

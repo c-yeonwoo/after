@@ -100,7 +100,21 @@ try {
     }
     await page.getByRole("button", { name: "로그인", exact: true }).click();
     await page.waitForURL("**/home");
-    await page.getByRole("heading", { name: "내 비서", exact: true }).waitFor();
+    await page
+      .getByRole("navigation", { name: "주요 메뉴" })
+      .getByRole("link", { name: "홈", exact: true })
+      .waitFor();
+    await page
+      .locator(`.assistant-mark img[src$="${member.gender === "female" ? "male" : "female"}.webp"]`)
+      .waitFor();
+    assert.equal(
+      await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link").count(),
+      2,
+    );
+    assert.equal(
+      await page.getByRole("link", { name: "상점", exact: true }).count(),
+      member.gender === "male" ? 1 : 0,
+    );
     await page.goto(`${base}/assistant-schedule`);
   }
   await login(members[1]);

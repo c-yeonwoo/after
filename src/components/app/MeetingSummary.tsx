@@ -7,11 +7,13 @@ export function MeetingSummary({
   scheduledAt,
   placeName,
   counterpartName,
+  placeUrl,
   children,
 }: {
   scheduledAt?: string | null;
   placeName?: string | null;
   counterpartName?: string | null;
+  placeUrl?: string | null;
   children?: ReactNode;
 }) {
   return (
@@ -37,7 +39,19 @@ export function MeetingSummary({
             장소
           </dt>
           <dd data-selectable className="min-w-0 break-keep break-words">
-            {placeName || "장소 선택 중"}
+            {placeUrl ? (
+              <a
+                href={placeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center underline underline-offset-4"
+              >
+                {placeName || "약속 장소"}
+                <span className="sr-only"> 지도에서 보기</span>
+              </a>
+            ) : (
+              placeName || "장소 선택 중"
+            )}
           </dd>
         </div>
       </dl>

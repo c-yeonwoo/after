@@ -1,11 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Heart, MessageCircleHeart, MessageCircle, User } from "lucide-react";
+import { ArrowLeft, Heart, House, ShoppingBag, User } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useContentArrival } from "@/lib/contentMotion";
 import { useKeepFieldVisible } from "@/lib/keyboard";
+import { useMe } from "@/lib/me";
 
 /**
  * 탭 라벨은 성별과 무관하게 "소개" 하나로 둔다.
@@ -13,10 +14,8 @@ import { useKeepFieldVisible } from "@/lib/keyboard";
  * 다르지만 둘 다 "소개"가 대상이라 라벨을 나눌 만큼의 차이는 아니었다.
  */
 const TABS = [
-  { to: "/home", label: "내 비서", icon: MessageCircleHeart },
+  { to: "/home", label: "홈", icon: House },
   { to: "/intro", label: "소개", icon: Heart },
-  { to: "/chats", label: "대화", icon: MessageCircle },
-  { to: "/me", label: "나", icon: User },
 ] as const;
 
 /**
@@ -67,6 +66,18 @@ export function AppScreen({
   keyboardAware?: boolean;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { me } = useMe();
+  const utilityRoot = !back && ["/home", "/intro"].includes(pathname);
+  const accountActive = [
+    "/me",
+    "/profile",
+    "/settings",
+    "/support",
+    "/notifications",
+    "/orders",
+    "/availability",
+    "/store",
+  ].includes(pathname);
 
   /*
     화면이 바뀌면 **본문을 맨 위로 되돌린다.**
@@ -136,7 +147,21 @@ export function AppScreen({
           ) : (
             <Logo size="sm" className="min-w-0 flex-1 shrink" />
           )}
-          {action}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {action}
+            {utilityRoot ? (
+              <>
+                {me?.gender === "male" ? (
+                  <Link to="/store" aria-label="상점" className="app-header-action pressable">
+                    <ShoppingBag className="size-5" aria-hidden="true" />
+                  </Link>
+                ) : null}
+                <Link to="/me" aria-label="나" className="app-header-action pressable">
+                  <User className="size-5" aria-hidden="true" />
+                </Link>
+              </>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -181,14 +206,10 @@ export function AppScreen({
           style={{ paddingBottom: "var(--safe-bottom)" }}
           aria-label="주요 메뉴"
         >
-          <ul className="flex items-stretch px-2">
+          <ul className="mx-auto flex max-w-72 items-stretch gap-4 px-4">
             {TABS.map((t) => {
-              const active =
-                pathname === t.to ||
-                pathname.startsWith(`${t.to}/`) ||
-                (t.to === "/me" &&
-                  ["/profile", "/settings", "/support", "/store", "/orders"].includes(pathname)) ||
-                (t.to === "/chats" && pathname.startsWith("/chat/"));
+              const introActive = pathname === "/intro" || pathname.startsWith("/intro/");
+              const active = t.to === "/intro" ? introActive : !introActive && !accountActive;
               const Icon = t.icon;
               return (
                 <li key={t.to} className="flex-1">
