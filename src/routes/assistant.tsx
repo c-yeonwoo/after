@@ -39,6 +39,26 @@ function AssistantPage() {
   );
 }
 
+function revealInConversation(
+  element: HTMLElement | null,
+  alignment: "end" | "center" | "nearest",
+) {
+  const main = element?.closest("main");
+  if (!element || !main) return;
+  const box = element.getBoundingClientRect();
+  const viewport = main.getBoundingClientRect();
+  if (alignment === "nearest" && box.top >= viewport.top && box.bottom <= viewport.bottom) return;
+  const offset =
+    alignment === "center"
+      ? (main.clientHeight - box.height) / 2
+      : alignment === "end" || box.bottom > viewport.bottom
+        ? main.clientHeight - box.height
+        : 0;
+  // Scroll only the app body; scrollIntoView also moves outer frames and can
+  // push the persistent header offscreen on a phone.
+  main.scrollTo({ top: main.scrollTop + box.top - viewport.top - offset, behavior: "instant" });
+}
+
 function PrivateAssistant({ owner }: { owner: string }) {
   const { panel } = Route.useSearch();
   const client = useQueryClient();
@@ -59,6 +79,52 @@ function PrivateAssistant({ owner }: { owner: string }) {
   const sending = useRef(false);
   const alive = useRef(true);
   const pendingRequest = useRef<{ id: string; text: string; revision: number } | null>(null);
+  const conversationEnd = useRef<HTMLDivElement>(null);
+  const memoryInput = useRef<HTMLInputElement>(null);
+  const eraseConfirmation = useRef<HTMLElement>(null);
+  const historyPositioned = useRef(false);
+  const followTurn = useRef<string | null>(null);
+  const memoryOpen = memory !== null;
+  const hasData = data !== undefined;
+  useEffect(() => {
+    if (panel !== "chat") {
+      historyPositioned.current = false;
+      return;
+    }
+    if (!data) return;
+    const ownTurn = data.turns.find((turn) => turn.id === followTurn.current);
+    if (historyPositioned.current && !ownTurn) return;
+    let secondFrame = 0;
+    // Run after the app shell's route scroll reset. Background polling must not
+    // pull someone away from older messages they are reading.
+    const frame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        revealInConversation(conversationEnd.current, "end");
+        historyPositioned.current = true;
+        if (ownTurn && ownTurn.state !== "pending") followTurn.current = null;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [panel, data]);
+  useEffect(() => {
+    if (!memoryOpen || !hasData) return;
+    const frame = requestAnimationFrame(() => {
+      revealInConversation(memoryInput.current, "center");
+      memoryInput.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [memoryOpen, hasData]);
+  useEffect(() => {
+    if (!erase || !hasData) return;
+    const frame = requestAnimationFrame(() => {
+      revealInConversation(eraseConfirmation.current, "nearest");
+      eraseConfirmation.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [erase, hasData]);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -113,6 +179,7 @@ function PrivateAssistant({ owner }: { owner: string }) {
           revision: data.revision,
         };
       try {
+        followTurn.current = pendingRequest.current.id;
         await askPrivateAssistant(
           pendingRequest.current.text,
           pendingRequest.current.id,
@@ -146,7 +213,7 @@ function PrivateAssistant({ owner }: { owner: string }) {
       hideTabs
       keyboardAware
       footer={
-        panel === "chat" && data?.consented && data.flags.chat ? (
+        panel === "chat" && data?.consented && data.flags.chat && !memory && !erase ? (
           <form
             className="flex items-end gap-2"
             onSubmit={(e) => {
@@ -314,6 +381,7 @@ function PrivateAssistant({ owner }: { owner: string }) {
                   ))}
                 </ol>
               )}
+              <div ref={conversationEnd} aria-hidden="true" />
               <Button
                 variant="ghost"
                 className="mt-5"
@@ -337,7 +405,9 @@ function PrivateAssistant({ owner }: { owner: string }) {
                 <ul className="mt-6 space-y-5">
                   {data.memories.map((item) => (
                     <li key={item.id} className="rounded-surface bg-card p-4">
-                      <p className="break-keep text-base leading-relaxed">{item.content}</p>
+                      <p className="break-keep break-words text-base leading-relaxed">
+                        {item.content}
+                      </p>
                       <p className="mt-2 text-xs text-muted-foreground">
                         {new Date(item.expires_at).toLocaleDateString("ko-KR")}까지 사용 · 내가
                         승인함
@@ -398,6 +468,7 @@ function PrivateAssistant({ owner }: { owner: string }) {
               <label className="mt-3 block">
                 <span className="sr-only">기억할 선호</span>
                 <Input
+                  ref={memoryInput}
                   maxLength={240}
                   value={memory.text}
                   onChange={(e) => {
@@ -453,7 +524,12 @@ function PrivateAssistant({ owner }: { owner: string }) {
             </section>
           ) : null}
           {erase ? (
-            <section className="mt-6 rounded-surface bg-muted p-4" role="alert">
+            <section
+              ref={eraseConfirmation}
+              tabIndex={-1}
+              className="mt-6 rounded-surface bg-muted p-4"
+              role="alert"
+            >
               <h2 className="text-lg font-bold">기록을 지울까요?</h2>
               <p className="mt-2 text-sm leading-relaxed">
                 {erase === "history"
