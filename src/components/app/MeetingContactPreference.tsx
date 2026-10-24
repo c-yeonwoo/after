@@ -46,7 +46,7 @@ export function MeetingContactPreference() {
           disabled={allowed === null || busy || error}
           aria-describedby={`${id}-help`}
           onChange={(e) => setAllowed(e.target.checked)}
-          className="size-5 shrink-0 accent-primary"
+          className="size-5 shrink-0 accent-selection"
         />
         약속 확인을 위한 운영팀 연락에 동의해요 (선택)
       </label>

@@ -181,7 +181,7 @@ function RequestsPage() {
                   <Link
                     to="/prefs"
                     search={{ meetingId: meeting.id }}
-                    className="pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     가능한 날짜 보내기
                     <ArrowRight className="size-4" aria-hidden="true" />

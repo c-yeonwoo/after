@@ -271,7 +271,7 @@ function AdminSettingsPage() {
                       <Link
                         to="/admin/members/$id"
                         params={{ id: run.user_id }}
-                        className="mt-2 inline-block text-xs text-primary underline"
+                        className="mt-2 inline-block text-xs text-primary-strong underline"
                       >
                         받는 회원 확인
                       </Link>

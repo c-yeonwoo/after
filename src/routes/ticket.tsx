@@ -93,17 +93,17 @@ function TicketPage() {
       </div>
 
       <div className="app-elevated mt-6 overflow-hidden rounded-surface bg-card">
-        <div className="bg-primary px-6 py-6 text-primary-foreground">
-          <Ticket className="size-5 text-primary-foreground" aria-hidden="true" />
+        <div className="bg-selection px-6 py-6 text-selection-foreground">
+          <Ticket className="size-5 text-selection-foreground" aria-hidden="true" />
           <div className="mt-3 flex items-baseline justify-between gap-3">
-            <p className="text-lg font-semibold text-primary-foreground">
+            <p className="text-lg font-semibold text-selection-foreground">
               {paid ? "만남 티켓 1장" : "만남 조율"}
             </p>
-            <p className="text-lg font-semibold text-primary-foreground">
+            <p className="text-lg font-semibold text-selection-foreground">
               {paid ? MEETING_TICKET_PRICE_LABEL : "베타 무료"}
             </p>
           </div>
-          <p className="mt-1 text-xs text-primary-foreground/85">한 사람과의 만남을 조율합니다.</p>
+          <p className="mt-1 text-xs text-selection-foreground">한 사람과의 만남을 조율합니다.</p>
         </div>
         <ul className="space-y-2.5 px-6 py-5 text-sm">
           {[

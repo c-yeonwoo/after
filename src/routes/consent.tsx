@@ -99,7 +99,7 @@ function ConsentPage() {
               type="checkbox"
               checked={terms}
               onChange={(e) => setTerms(e.target.checked)}
-              className="size-5 accent-primary"
+              className="size-5 accent-selection"
             />
             <span className="flex-1 text-sm">이용약관에 동의합니다.</span>
             <Link to="/terms" className="text-xs underline">
@@ -111,7 +111,7 @@ function ConsentPage() {
               type="checkbox"
               checked={privacy}
               onChange={(e) => setPrivacy(e.target.checked)}
-              className="size-5 accent-primary"
+              className="size-5 accent-selection"
             />
             <span className="flex-1 text-sm">개인정보 수집·이용에 동의합니다.</span>
             <Link to="/privacy" className="text-xs underline">

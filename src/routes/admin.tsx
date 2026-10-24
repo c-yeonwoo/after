@@ -242,7 +242,7 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
                         key={item.to}
                         to={item.to}
                         activeOptions={{ exact: item.exact ?? false }}
-                        className="pressable flex min-h-11 items-center gap-2.5 rounded-control px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-primary data-[status=active]:font-semibold data-[status=active]:text-primary-foreground"
+                        className="pressable flex min-h-11 items-center gap-2.5 rounded-control px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-selection data-[status=active]:font-semibold data-[status=active]:text-selection-foreground"
                       >
                         <Icon className="size-4" aria-hidden="true" />
                         {item.label}
@@ -272,7 +272,7 @@ function Shell({ children, showTabs }: { children: React.ReactNode; showTabs: bo
                   key={item.to}
                   to={item.to}
                   activeOptions={{ exact: item.exact ?? false }}
-                  className="pressable flex min-h-11 flex-1 items-center justify-center rounded-control px-1 text-xs font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-primary data-[status=active]:font-semibold data-[status=active]:text-primary-foreground"
+                  className="pressable flex min-h-11 flex-1 items-center justify-center rounded-control px-1 text-xs font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-selection data-[status=active]:font-semibold data-[status=active]:text-selection-foreground"
                 >
                   {item.label}
                 </Link>

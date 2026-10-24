@@ -778,7 +778,7 @@ function Filter({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`min-h-11 rounded-full px-3 py-1.5 text-xs ${active ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`}
+      className={`min-h-11 rounded-control px-3 py-1.5 text-xs ${active ? "bg-selection text-selection-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`}
     >
       {label}
     </button>

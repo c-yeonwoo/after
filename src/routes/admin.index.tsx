@@ -144,7 +144,10 @@ function OperationsHome() {
         </p>
       ) : null}
 
-      <div aria-label="운영 작업 요약" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div
+        aria-label="운영 작업 요약"
+        className="grid grid-cols-2 gap-x-6 gap-y-5 border-y border-border py-5 xl:grid-cols-4"
+      >
         <Summary label="미처리 작업" value={overview?.total} to="/admin/tasks" />
         <Summary
           label="기한 초과"
@@ -286,7 +289,7 @@ function Summary({
     <Link
       to={to}
       search={{ focus }}
-      className="app-elevated pressable rounded-surface bg-card px-4 py-4 transition-colors hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="pressable min-w-0 rounded-control px-1 py-1 transition-colors hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p

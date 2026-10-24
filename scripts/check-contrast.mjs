@@ -130,8 +130,19 @@ function audit(themeName, block) {
 
   console.log("\n── 채움 역할: primary (그 위의 글자, 4.5) ──");
   chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
+  chk(
+    "primary-hover + primary-foreground",
+    cr(toS(parseOklch(tokenRaw("primary-hover"))), primaryFg),
+    4.5,
+  );
   chk("스위치 손잡이 / 켜진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("brand-signature")))), 3);
   chk("스위치 손잡이 / 꺼진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("input")))), 3);
+
+  console.log("\n── 선택 역할: 행동 버튼과 분리한 그린 (4.5) ──");
+  const selection = toS(parseOklch(tokenRaw("selection")));
+  const selectionFg = toS(parseOklch(tokenRaw("selection-foreground")));
+  chk("선택한 항목 / 선택 글자", cr(selection, selectionFg), 4.5);
+  chk("선택한 스위치 / 손잡이", cr(selection, primaryFg), 3);
 
   console.log("\n── 틴트 표면 (GuideNote bg-primary/8, 칩 /10) ──");
   chk("primary-strong / bg-primary\\8 (배경)", cr(strong, over(primary, bg, 0.08)), 4.5);
@@ -165,10 +176,13 @@ function audit(themeName, block) {
   console.log("\n── 포커스 링·입력 경계 (비텍스트 3.0) ──");
   chk("ring / 배경", cr(toS(parseOklch(tokenRaw("ring"))), bg), 3.0);
   chk("input / 배경", cr(toS(parseOklch(tokenRaw("input"))), bg), 3.0);
+  chk("input / 카드", cr(toS(parseOklch(tokenRaw("input"))), card), 3.0);
+  chk("오류 글자 / 배경", cr(toS(parseOklch(tokenRaw("destructive"))), bg), 4.5);
+  chk("오류 글자 / 카드", cr(toS(parseOklch(tokenRaw("destructive"))), card), 4.5);
 }
 
-audit("라이트 — 소개장 크림", lightBlock);
-audit("다크 — 밤 종이", darkBlock);
+audit("라이트 — 선셋 비비드", lightBlock);
+audit("다크 — 미드나이트 그린", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

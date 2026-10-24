@@ -184,7 +184,7 @@ function PrefsPage() {
                     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     !d.selectable && "text-muted-foreground/35",
                     d.selectable && !on && "text-foreground hover:bg-muted",
-                    on && "bg-primary font-semibold text-primary-foreground",
+                    on && "bg-selection font-semibold text-selection-foreground",
                   )}
                 >
                   {d.firstOfMonth ? `${d.month}/1` : d.day}
@@ -232,7 +232,7 @@ function PrefsPage() {
                             "min-h-11 rounded-control border text-sm transition-colors",
                             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                             on
-                              ? "border-primary bg-primary font-semibold text-primary-foreground"
+                              ? "border-selection bg-selection font-semibold text-selection-foreground"
                               : "border-border text-foreground",
                           )}
                         >
@@ -263,7 +263,7 @@ function PrefsPage() {
             {stations.map((st) => (
               <span
                 key={st}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-control bg-primary pr-2 pl-3.5 text-sm font-semibold text-primary-foreground"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-control bg-selection pr-2 pl-3.5 text-sm font-semibold text-selection-foreground"
               >
                 <MapPin className="size-3.5" aria-hidden="true" />
                 {st}
@@ -271,7 +271,7 @@ function PrefsPage() {
                   type="button"
                   onClick={() => setStations((p) => p.filter((x) => x !== st))}
                   aria-label={`${st}역 빼기`}
-                  className="rounded-full p-1.5 hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="rounded-full p-1.5 hover:bg-selection-foreground/15 focus-visible:ring-2 focus-visible:ring-selection-foreground focus-visible:outline-none"
                 >
                   <X className="size-3.5" aria-hidden="true" />
                 </button>
@@ -328,7 +328,7 @@ function PrefsPage() {
             "mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-control border text-sm transition-colors",
             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             anywhere
-              ? "border-primary bg-primary font-semibold text-primary-foreground"
+              ? "border-selection bg-selection font-semibold text-selection-foreground"
               : "border-border bg-card text-foreground",
           )}
         >

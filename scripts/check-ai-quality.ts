@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { z } from "zod";
 
 import {
   escapeXml,
@@ -726,5 +727,74 @@ assert.throws(() =>
   estimateUsageUsd({ "claude-sonnet-5-5": { input_tokens: 0, output_tokens: -1 } }),
 );
 checked += 7;
+// Exercise the shipped Edge schemas with the same patched Zod version without
+// loading handlers, reading secrets, or calling a model/provider.
+for (const [file, names, samples] of [
+  [
+    "compose-profile",
+    ["FOLLOWUP_IDS", "Composed", "Followups"],
+    {
+      Composed: {
+        headlines: ["산책을 좋아해요"],
+        intro: "안녕하세요",
+        evidence: [{ sourceField: "interests", quote: "산책" }],
+      },
+      Followups: { ids: ["walk"], topics: ["산책"] },
+    },
+  ],
+  [
+    "compose-pair-brief",
+    ["evidence", "Brief", "Check"],
+    {
+      Brief: {
+        commonGround: [],
+        conversationStarters: ["하나", "둘", "셋"],
+        considerations: [],
+        recommendation: null,
+      },
+      Check: { pass: true, findings: [] },
+    },
+  ],
+] as const) {
+  const source = readFileSync(
+    new URL(`../supabase/functions/${file}/index.ts`, import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /from "npm:zod@4\.6\.7"/);
+  const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest);
+  const declarations = ast.statements.filter(
+    (node) =>
+      ts.isVariableStatement(node) &&
+      node.declarationList.declarations.some(
+        (declaration) =>
+          ts.isIdentifier(declaration.name) &&
+          (names as readonly string[]).includes(declaration.name.text),
+      ),
+  );
+  assert.equal(declarations.length, names.length);
+  const code = ts.transpileModule(
+    `${declarations.map((node) => node.getText(ast)).join("\n")}\nmodule.exports = { ${Object.keys(samples).join(", ")} };`,
+    { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } },
+  ).outputText;
+  const context: { exports: Record<string, z.ZodType> } = { exports: {} };
+  runInNewContext(code, { module: context, z });
+  for (const [name, sample] of Object.entries(samples)) {
+    const schema = context.exports[name];
+    assert.equal(schema.safeParse(sample).success, true, `${file}/${name}: valid output`);
+    assert.equal(schema.safeParse({}).success, false, `${file}/${name}: incomplete output`);
+    assert.equal(z.toJSONSchema(schema).type, "object", `${file}/${name}: structured output`);
+    checked += 3;
+  }
+  checked += 2;
+}
+// A bounded regression for GHSA-mrhx-c7xc-m3w5: reject collection size before
+// accumulating one issue per invalid element. No unbounded stress input.
+const oversized = z.array(z.string()).max(2).safeParse(Array(1000).fill(null));
+assert.equal(oversized.success, false);
+if (!oversized.success) {
+  assert.equal(oversized.error.issues.length, 1);
+  assert.equal(oversized.error.issues[0].code, "too_big");
+}
+checked += 3;
 assert.ok(checked >= 50, "AI 품질 회귀 케이스는 최소 50개여야 합니다.");
 console.log(`AI quality gates passed: ${checked} cases`);

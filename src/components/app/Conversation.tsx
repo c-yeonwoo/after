@@ -200,7 +200,7 @@ export function Conversation({
           className="app-elevated max-h-[50%] min-h-0 overflow-y-auto overscroll-contain rounded-surface bg-card focus-visible:outline-2 focus-visible:outline-ring"
         >
           {meeting.scheduled_at ? (
-            <div className="bg-primary px-4 py-4 text-primary-foreground">
+            <div className="bg-selection px-4 py-4 text-selection-foreground">
               <MeetingSummary scheduledAt={meeting.scheduled_at} placeName={meeting.place_name} />
             </div>
           ) : null}
@@ -231,7 +231,9 @@ export function Conversation({
               className={cn(
                 "pressable min-h-11 flex-1 rounded-control px-3.5 text-sm font-medium",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                channel === c.id ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                channel === c.id
+                  ? "bg-selection text-selection-foreground"
+                  : "text-muted-foreground",
               )}
             >
               {c.label}
@@ -314,7 +316,7 @@ export function Conversation({
                   className={cn(
                     "chat-message min-w-0 max-w-[76%] px-4 py-3 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]",
                     row.mine
-                      ? "rounded-2xl bg-primary text-primary-foreground"
+                      ? "rounded-2xl bg-bubble-mine text-bubble-mine-foreground"
                       : "rounded-2xl bg-card text-foreground shadow-sm",
                     // 덩어리의 마지막만 꼬리를 뾰족하게 — 이어진 말은 둥글게 둔다
                     row.lastOfGroup && (row.mine ? "rounded-br-sm" : "rounded-bl-sm"),

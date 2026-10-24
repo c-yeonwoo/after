@@ -1,7 +1,7 @@
 // Operator-reviewed introductions: public evidence -> prose -> independent
 // grounding check -> short-lived draft -> explicit server-checked approval.
 import Anthropic from "npm:@anthropic-ai/sdk@0.124.0";
-import { z } from "npm:zod@4.5.4";
+import { z } from "npm:zod@4.6.7";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.124.0/helpers/zod";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sourceHash } from "../_shared/ai-grounding.ts";

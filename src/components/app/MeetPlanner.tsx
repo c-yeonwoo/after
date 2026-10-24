@@ -56,7 +56,7 @@ export function MeetPlanner({
 
   return (
     <div className="app-elevated overflow-hidden rounded-surface bg-card p-5">
-      <div className="-mx-5 -mt-5 mb-5 bg-primary px-5 py-5 text-primary-foreground">
+      <div className="-mx-5 -mt-5 mb-5 bg-selection px-5 py-5 text-selection-foreground">
         <MeetingSummary
           scheduledAt={date}
           placeName={placeName}
@@ -86,7 +86,7 @@ export function MeetPlanner({
               "pressable flex min-h-12 w-full items-center justify-between gap-3 rounded-control border px-4 py-3 text-left text-sm",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               date === iso
-                ? "border-primary bg-primary font-semibold text-primary-foreground"
+                ? "border-selection bg-selection font-semibold text-selection-foreground"
                 : "border-border",
             )}
           >
@@ -117,7 +117,7 @@ export function MeetPlanner({
             className={cn(
               "pressable min-h-11 rounded-control border px-3 text-sm",
               placeKind === h
-                ? "border-primary bg-primary text-primary-foreground"
+                ? "border-selection bg-selection text-selection-foreground"
                 : "border-border bg-background",
             )}
           >

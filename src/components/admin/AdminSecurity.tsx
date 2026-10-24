@@ -224,7 +224,7 @@ export function AdminSecurity() {
                 checked={recovery}
                 disabled={busy || !aal2}
                 onChange={(event) => setRecovery(event.target.checked)}
-                className="size-5 shrink-0 accent-primary"
+                className="size-5 shrink-0 accent-selection"
               />
               본인 복구수단을 별도로 확인했어요
             </label>

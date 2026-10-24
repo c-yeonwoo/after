@@ -727,7 +727,7 @@ function AfterMeetingCard({
               release();
             }
           }}
-          className="min-h-12 rounded-control bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+          className="min-h-12 rounded-control bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
         >
           {busy ? "기록하는 중…" : "만났어요"}
         </button>
@@ -762,7 +762,7 @@ function ConfirmedCard({
 
   return (
     <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
-      <div className="bg-primary px-5 py-5 text-primary-foreground">
+      <div className="bg-selection px-5 py-5 text-selection-foreground">
         <MeetingSummary
           scheduledAt={meeting.scheduled_at}
           placeName={meeting.place_name}
@@ -773,7 +773,7 @@ function ConfirmedCard({
             href={mapUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary-foreground underline underline-offset-4"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-selection-foreground underline underline-offset-4"
           >
             지도에서 보기
           </a>
@@ -828,7 +828,7 @@ function CardAction({
         버튼은 카드 속의 또 다른 카드로 읽혀서, 읽을 것과 누를 것의 경계가
         흐려졌다. CandidatePreview 의 링크와 같은 모양으로 맞춘다.
       */
-      className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {children}
       <ArrowRight className="size-4" aria-hidden="true" />

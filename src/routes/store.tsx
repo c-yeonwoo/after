@@ -91,7 +91,7 @@ function StorePage() {
           className={cn(
             "pressable min-h-12 flex-1 rounded-control px-3 py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
             kind === item.v
-              ? "bg-primary text-primary-foreground"
+              ? "bg-selection text-selection-foreground"
               : "bg-surface-subtle text-foreground",
           )}
         >
@@ -272,7 +272,7 @@ function StorePage() {
                   className={cn(
                     "app-elevated pressable flex min-h-24 w-full items-center gap-3 rounded-surface px-4 py-4 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
                     on
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-selection text-selection-foreground"
                       : "bg-card text-foreground hover:bg-muted/40",
                   )}
                 >
@@ -284,7 +284,7 @@ function StorePage() {
                     <span
                       className={cn(
                         "mt-1 block text-xs",
-                        on ? "text-primary-foreground" : "text-muted-foreground",
+                        on ? "text-selection-foreground" : "text-muted-foreground",
                       )}
                     >
                       장당 {won(Math.round(amount / quantity))}
