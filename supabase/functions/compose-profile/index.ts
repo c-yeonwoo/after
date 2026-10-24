@@ -22,10 +22,9 @@ import Anthropic from "npm:@anthropic-ai/sdk@0.124.0";
   쓰기 때문에, v3 스키마를 넘기면 `Cannot read properties of undefined (reading
   'def')` 로 죽는다. 배포 전에 로컬에서 확인했다.
 
-  앱 쪽 package.json 의 zod 는 3.x 그대로다. Deno 함수와 브라우저 번들은 모듈
-  그래프가 달라 서로 간섭하지 않는다.
+  Deno 함수는 앱 의존성과 별도 모듈 그래프이므로 보안 패치 버전을 직접 고정한다.
 */
-import { z } from "npm:zod@4.5.4";
+import { z } from "npm:zod@4.6.7";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.124.0/helpers/zod";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { escapeXml, validInterviewComposition } from "../_shared/ai-quality.ts";
