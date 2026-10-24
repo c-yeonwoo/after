@@ -1,10 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Check, Clock } from "lucide-react";
 import { toast } from "sonner";
 
-import { NotificationBell } from "@/components/app/NotificationBell";
-import { MeetingCheckin } from "@/components/app/MeetingCheckin";
 import { MeetingSummary } from "@/components/app/MeetingSummary";
 import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
@@ -13,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
-import { BRAND, HUBS } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import {
   homeStateV2,
   markMet,
@@ -27,7 +25,6 @@ import {
 import { useMe } from "@/lib/me";
 import { myMeetWindow, type MeetWindow } from "@/lib/meetWindow";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
-import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
 
@@ -68,9 +65,9 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
     case "meeting_outcome_required":
       return "만나보셨나요?";
     case "meeting_confirmed":
-      return "만남이 잡혔어요.";
+      return "곧, 만나겠네요.";
     case "profile_incomplete":
-      return "소개받을 준비를 마저 해주세요.";
+      return "소개받을 준비를 해볼까요?";
     case "policy_required":
       return "약관을 확인해 주세요.";
     case "identity_required":
@@ -82,21 +79,21 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
     case "photos_pending":
       return "사진을 확인하고 있어요.";
     case "schedule_selection":
-      return "가능한 날짜를 골라주세요.";
+      return "언제 만나볼까요?";
     case "schedule_waiting":
       return "답변을 기다리고 있어요.";
     case "request_received":
       return "만남 요청이 왔어요.";
     case "request_waiting":
-      return "상대의 답변을 기다리고 있어요.";
+      return "마음을 전했어요.";
     case "intro_available":
-      return isMale ? "소개가 열려 있어요." : "살펴볼 소개가 있어요.";
+      return isMale ? "새로운 분이 도착했어요." : "어떤 분인지 살펴볼까요?";
     case "intro_delivered":
       return "소개가 도착했어요.";
     case "paused":
       return "소개를 잠시 쉬고 있어요.";
     case "waiting":
-      return isMale ? "소개를 준비하고 있어요." : "새 소개를 기다리고 있어요.";
+      return "잘 맞는 분을 찾고 있어요.";
   }
 }
 
@@ -160,7 +157,6 @@ function HomePage() {
     }
   }, [serverState?.as_of]);
 
-  const hub = HUBS.find((h) => h.id === currentProfile?.hub_id);
   const isMale = me?.gender === "male";
   const primaryState = serverState?.primary_state;
   const needsPhone = primaryState === "identity_required" || primaryState === "phone_required";
@@ -209,31 +205,11 @@ function HomePage() {
   }
 
   return (
-    <AppScreen title="내 비서" action={<NotificationBell />} keyboardAware>
-      <div className="assistant-status">
-        <div className="flex items-center gap-2.5">
-          <AssistantMark />
-          <span className="text-sm font-semibold">
-            {currentProfile?.name
-              ? `${currentProfile.name}님과 함께하는 애프터`
-              : "함께하는 애프터"}
-          </span>
-        </div>
-        {/*
-        예전에는 아랫줄을 브랜드 색으로 칠했다. 그런데 그 자리에 오는 문장은
-        "상대의 답변을 기다리는 중." 처럼 **행동이 아니라 상태**다. 화면에서
-        가장 크고 진한 색이 누를 수 없는 것을 가리키고 있었고, 바로 아래 카드와
-        버튼까지 같은 분홍이라 화면 전체가 한 색으로 덮였다.
-
-        강조색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
-        상태 문장이 저절로 앞으로 나온다. 살구색은 작은 포인트와 선택 상태에 쓴다.
-      */}
-        <h2 className="mt-4 max-w-[19rem] text-[1.75rem] leading-[1.3] font-bold tracking-[-0.025em]">
+    <AppScreen keyboardAware>
+      <div className="home-greeting">
+        <h1 className="max-w-[19rem] text-[1.75rem] leading-[1.3] font-bold tracking-[-0.025em] break-keep">
           {headline}
-        </h2>
-        {hub ? (
-          <p className="mt-3 text-xs text-muted-foreground">{hub.label} · 현재 진행 상황</p>
-        ) : null}
+        </h1>
       </div>
 
       {(live.isError || live.isPaused) && live.data ? (
@@ -261,7 +237,7 @@ function HomePage() {
         따로 두면 같은 내용을 두 번 말하게 된다 — 예전 "다음 단계" 리스트와 같은 중복이었다.
         확정 상태처럼 카드 자체가 정보를 다 담는 경우엔 별도 안내를 보태지 않는다.
       */}
-      <div className="mt-7">
+      <div className="mt-5">
         {loading ? (
           <div className="rounded-surface border border-border bg-card px-6 py-10 text-center">
             <p className="text-sm text-muted-foreground">불러오는 중입니다…</p>
@@ -309,14 +285,23 @@ function HomePage() {
           <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
             {requestCount > 1
               ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
-              : "만나고 싶다는 요청이 도착했어요. 날짜를 확인하고 답해 주세요."}
+              : "날짜를 확인하고 답해 주세요."}
           </GuideNote>
         ) : meeting ? (
-          <WaitingCard
-            now={now}
-            deadlineAt={serverState?.deadline_at ?? null}
-            paid={introPaymentsEnabled === true}
-          />
+          <>
+            <WaitingCard
+              now={now}
+              deadlineAt={serverState?.deadline_at ?? null}
+              paid={introPaymentsEnabled === true}
+            />
+            <Link
+              to="/chats"
+              className="mt-2 flex min-h-11 items-center gap-2 text-sm font-semibold"
+            >
+              요청·약속 확인
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </>
         ) : blocksNewIntro ? (
           primaryState === "photos_pending" ? (
             <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
@@ -609,7 +594,7 @@ function ReadinessPanel({
           alt=""
           width="1536"
           height="1024"
-          className="app-elevated mt-6 block h-auto w-full rounded-surface"
+          className="mt-6 block h-auto w-full rounded-surface"
         />
       ) : null}
     </section>
@@ -763,77 +748,46 @@ function ConfirmedCard({
   meeting: Meeting;
   counterpart: PublicProfile | null;
 }) {
-  /* 운영팀 장소로 정한 약속이면 지도 링크를 붙인다(s51). 직접 적은 장소엔 없다. */
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   useEffect(() => {
     setMapUrl(null);
     if (!meeting.place_id) return;
     let alive = true;
     meetPlacesForMe()
-      .then((list) => {
-        if (alive) setMapUrl(list.find((p) => p.id === meeting.place_id)?.map_url ?? null);
+      .then((places) => {
+        if (alive)
+          setMapUrl(places.find((place) => place.id === meeting.place_id)?.map_url ?? null);
       })
       .catch(() => undefined);
     return () => {
       alive = false;
     };
   }, [meeting.place_id]);
-
   return (
-    <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
-      <div className="bg-selection px-5 py-5 text-selection-foreground">
-        <MeetingSummary
-          scheduledAt={meeting.scheduled_at}
-          placeName={meeting.place_name}
-          counterpartName={counterpart?.name}
-        />
-        {mapUrl ? (
-          <a
-            href={mapUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-selection-foreground underline underline-offset-4"
-          >
-            지도에서 보기
-          </a>
-        ) : null}
+    <section className="home-appointment" aria-label="다음 약속">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="min-w-0 break-keep font-semibold">
+          {counterpart?.name ? `${counterpart.name}님과의 약속` : "다음 약속"}
+        </h2>
+        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold">
+          <Check className="size-3.5" aria-hidden="true" />
+          확정
+        </span>
       </div>
-      <div className="px-5 py-4">
-        {counterpart?.id && !meeting.completed_at ? (
-          <Link
-            to="/conversation-prep"
-            search={{ target: counterpart.id }}
-            className="mb-3 flex min-h-12 items-center justify-between gap-2 rounded-control bg-(--assistant-surface) px-4 text-sm font-semibold text-(--assistant-ink)"
-          >
-            만남 전, 내 비서의 맞춤 팁<ArrowRight className="size-4 shrink-0" />
-          </Link>
-        ) : null}
-        <MeetingCheckin
-          key={`${meeting.id}:${meeting.schedule_revision}`}
-          meetingId={meeting.id}
-          embedded
-        />
-        {meeting.private_opens_at ? (
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            사적인 대화는{" "}
-            <span className="font-semibold text-foreground">
-              {formatWhen(meeting.private_opens_at)}
-            </span>
-            에 열립니다.
-          </p>
-        ) : null}
-        <Link
-          to="/chats"
-          className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-control border border-border text-sm font-semibold transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          대화방 열기
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </Link>
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          일정 변경·취소도 대화방에서 확인할 수 있어요.
-        </p>
-      </div>
-    </div>
+      <MeetingSummary
+        scheduledAt={meeting.scheduled_at}
+        placeName={meeting.place_name}
+        placeUrl={mapUrl}
+      />
+      <Link
+        to="/chat/$id"
+        params={{ id: meeting.id }}
+        className="home-appointment-action pressable"
+      >
+        약속 보기
+        <ArrowRight className="size-4" aria-hidden="true" />
+      </Link>
+    </section>
   );
 }
 

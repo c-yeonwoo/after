@@ -82,7 +82,10 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/home`);
-  await page.getByRole("heading", { name: "내 비서", exact: true }).waitFor();
+  await page
+    .getByRole("navigation", { name: "주요 메뉴" })
+    .getByRole("link", { name: "홈", exact: true })
+    .waitFor();
   await page.getByRole("button", { name: "지금 내 상태", exact: true }).click();
   assert.equal(await page.locator(".assistant-reply").count(), 1);
   await page.getByLabel("비서에게 물어볼 내용").fill("약속 취소해줘");

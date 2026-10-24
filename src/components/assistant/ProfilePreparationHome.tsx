@@ -10,16 +10,16 @@ import type { Profile } from "@/lib/api";
 export function ProfilePreparationHome({ profile }: { profile: Profile }) {
   const checked = accountChecksComplete(profile, carrierIdentityEnabled);
   return (
-    <AppScreen title="내 비서" hideTabs>
+    <AppScreen hideTabs>
       <div className="assistant-welcome">
         <AssistantMark className="size-14" />
         <h2 className="mt-5 text-[1.875rem] font-bold leading-[1.25] tracking-tight break-keep">
-          {checked ? "반가워요. 이제 당신을 알아갈게요." : "먼저 계정을 확인할게요."}
+          {checked ? "반가워요. 어떤 분인지 들려주세요." : "먼저 계정을 확인할게요."}
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
           {checked
-            ? "사진과 몇 가지 이야기를 알려주세요. 내 비서와 함께 나다운 프로필을 준비해요."
-            : "약관과 인증을 마친 뒤, 내 비서와 프로필을 준비할 수 있어요."}
+            ? "사진과 짧은 이야기로 나다운 프로필을 만들어요."
+            : "약관과 인증을 마치면 프로필을 준비해요."}
         </p>
       </div>
       <ol className="assistant-checklist mt-7" aria-label="소개 준비 단계">

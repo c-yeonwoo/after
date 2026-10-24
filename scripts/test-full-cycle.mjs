@@ -121,11 +121,19 @@ async function waitForHome(page) {
   // WebKit can expose the new URL before the SPA has committed the screen.
   // Wait for the home UI, not a delay or a second forced navigation.
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
-  await page
-    .getByRole("main")
-    .getByText(/님과 함께하는 애프터|함께하는 애프터/)
-    .waitFor();
-  await page.locator(".assistant-status h2").waitFor();
+  await page.locator(".home-greeting h1").waitFor();
+}
+
+async function finishFeedback(page) {
+  // Memory-enabled local labs intentionally retain the submitted receipt so a
+  // member can choose to save a preference. The beta OFF path goes straight home.
+  await Promise.race([
+    page.waitForURL("**/home"),
+    page.getByText("후기를 남겨주셨어요. 고마워요.", { exact: true }).waitFor(),
+  ]);
+  if (new URL(page.url()).pathname === "/feedback")
+    await page.getByRole("button", { name: "홈으로", exact: true }).click();
+  await waitForHome(page);
 }
 function localTotp(secret) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -586,7 +594,7 @@ try {
     assert.equal(sql(`select count(*) from tickets where user_id='${m1.id}'`), "0");
   });
   await check("home background failure preserves state and retry recovers", async () => {
-    const headline = await m1.page.locator(".assistant-status h2").innerText();
+    const headline = await m1.page.locator(".home-greeting h1").innerText();
     await m1.page.route("**/rest/v1/rpc/home_state_v2", (route) =>
       route.fulfill({
         status: 503,
@@ -599,7 +607,7 @@ try {
         exact: true,
       })
       .waitFor();
-    assert.equal(await m1.page.locator(".assistant-status h2").innerText(), headline);
+    assert.equal(await m1.page.locator(".home-greeting h1").innerText(), headline);
     await m1.page.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).waitFor();
     await m1.page.unroute("**/rest/v1/rpc/home_state_v2");
     await m1.page.getByRole("button", { name: "상태 다시 확인", exact: true }).click();
@@ -926,7 +934,7 @@ try {
       .click();
     await waitForHome(f.page);
     await homeObserver
-      .getByRole("heading", { name: "만남이 잡혔어요.", exact: true })
+      .getByRole("heading", { name: "곧, 만나겠네요.", exact: true })
       .waitFor({ timeout: 25000 });
     await homeObserver.close();
     assert.equal(
@@ -1171,7 +1179,7 @@ try {
     await m1.page.getByRole("button", { name: "대화가 편했어요", exact: true }).click();
     await screen(m1.page, "survey-mobile");
     await m1.page.getByRole("button", { name: "보내기", exact: true }).click();
-    await waitForHome(m1.page);
+    await finishFeedback(m1.page);
     await m1.page.goto(`${base}/feedback?meetingId=${success.id}`);
     await m1.page.getByText("후기를 남겨주셨어요. 고마워요.", { exact: true }).waitFor();
     assert.equal(
@@ -1205,7 +1213,7 @@ try {
       .getByRole("button", { name: "좋았지만 인연은 아니에요", exact: true })
       .click();
     await success.female.page.getByRole("button", { name: "보내기", exact: true }).click();
-    await waitForHome(success.female.page);
+    await finishFeedback(success.female.page);
     assert.equal(sql(`select count(*) from feedbacks where meeting_id='${success.id}'`), "2");
     assert.equal(
       sql(`select cardinality(completed_by) from meetings where id='${success.id}'`),

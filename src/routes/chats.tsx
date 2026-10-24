@@ -51,7 +51,7 @@ function ChatsPage() {
 
   if (loading) {
     return (
-      <AppScreen title="대화">
+      <AppScreen title="약속" back="/home">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       </AppScreen>
     );
@@ -59,7 +59,7 @@ function ChatsPage() {
 
   if (items.length === 0) {
     return (
-      <AppScreen title="대화">
+      <AppScreen title="약속" back="/home">
         <div className="mt-16 px-6 py-12 text-center">
           <p className="headline text-base">아직 열린 대화가 없습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -78,6 +78,7 @@ function ChatsPage() {
     return (
       <AppScreen
         title={title}
+        back="/home"
         fill
         action={
           <SafetyMenu
@@ -97,7 +98,7 @@ function ChatsPage() {
   }
 
   return (
-    <AppScreen title="대화">
+    <AppScreen title="약속" back="/home">
       <p className="mt-2 text-sm text-muted-foreground">진행 중인 대화 {items.length}개</p>
       <ul className="mt-4 divide-y divide-border">
         {items.map(({ meeting, counterpart }) => (
