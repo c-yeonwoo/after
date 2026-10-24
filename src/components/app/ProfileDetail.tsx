@@ -27,7 +27,7 @@ export type ProfileView = {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-t border-border pt-4 first:border-t-0 first:pt-0">
+    <section className="pt-4 first:pt-0">
       <h3 className="text-base leading-snug font-semibold text-foreground">{title}</h3>
       <div className="mt-3">{children}</div>
     </section>
@@ -56,14 +56,9 @@ function InterviewAnswer({
   section: NonNullable<ProfileView["story"]>["sections"][number];
 }) {
   return (
-    <section className="py-5">
-      <h3 className="break-keep break-words text-pretty text-sm leading-[1.5] font-semibold text-primary-strong">
-        {section.question}
-      </h3>
-      <p
-        data-selectable
-        className="mt-2.5 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
-      >
+    <section className="profile-interview">
+      <h3 className="profile-question">{section.question}</h3>
+      <p data-selectable className="profile-answer">
         {section.answer}
       </p>
     </section>
@@ -137,7 +132,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
       ) : null}
 
       {p.story?.sections.length ? (
-        <div className="divide-y divide-border">
+        <div className="space-y-6">
           {p.story.sections.map((section) => (
             <InterviewAnswer key={section.id} section={section} />
           ))}

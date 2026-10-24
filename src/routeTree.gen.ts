@@ -15,6 +15,7 @@ import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as ChatsRouteImport } from './routes/chats'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ConsentRouteImport } from './routes/consent'
+import { Route as ConversationPrepRouteImport } from './routes/conversation-prep'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
@@ -81,6 +82,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const ConsentRoute = ConsentRouteImport.update({
   id: '/consent',
   path: '/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConversationPrepRoute = ConversationPrepRouteImport.update({
+  id: '/conversation-prep',
+  path: '/conversation-prep',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
   '/consent': typeof ConsentRoute
+  '/conversation-prep': typeof ConversationPrepRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
   '/consent': typeof ConsentRoute
+  '/conversation-prep': typeof ConversationPrepRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -366,6 +374,7 @@ export interface FileRoutesById {
   '/chats': typeof ChatsRoute
   '/checkout': typeof CheckoutRoute
   '/consent': typeof ConsentRoute
+  '/conversation-prep': typeof ConversationPrepRoute
   '/delete-account': typeof DeleteAccountRoute
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/checkout'
     | '/consent'
+    | '/conversation-prep'
     | '/delete-account'
     | '/feedback'
     | '/home'
@@ -457,6 +467,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/checkout'
     | '/consent'
+    | '/conversation-prep'
     | '/delete-account'
     | '/feedback'
     | '/home'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/checkout'
     | '/consent'
+    | '/conversation-prep'
     | '/delete-account'
     | '/feedback'
     | '/home'
@@ -548,6 +560,7 @@ export interface RootRouteChildren {
   ChatsRoute: typeof ChatsRoute
   CheckoutRoute: typeof CheckoutRoute
   ConsentRoute: typeof ConsentRoute
+  ConversationPrepRoute: typeof ConversationPrepRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
@@ -615,6 +628,13 @@ declare module '@tanstack/react-router' {
       path: '/consent'
       fullPath: '/consent'
       preLoaderRoute: typeof ConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conversation-prep': {
+      id: '/conversation-prep'
+      path: '/conversation-prep'
+      fullPath: '/conversation-prep'
+      preLoaderRoute: typeof ConversationPrepRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delete-account': {
@@ -932,6 +952,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatsRoute: ChatsRoute,
   CheckoutRoute: CheckoutRoute,
   ConsentRoute: ConsentRoute,
+  ConversationPrepRoute: ConversationPrepRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,

@@ -88,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
       },
-      { name: "theme-color", content: "#FFF9F2" },
+      { name: "theme-color", content: "#FDFAF7" },
       { title: `${BRAND.name} — ${BRAND.tagline}` },
       {
         name: "description",
@@ -109,10 +109,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "preconnect", href: "https://cdn.jsdelivr.net", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
+        href: "/fonts/wanted-sans/WantedSansVariable.css",
       },
       /*
         소개장(D3)의 세리프. 사람 이름·한 줄 소개·소개글·화면 제목에 쓴다.

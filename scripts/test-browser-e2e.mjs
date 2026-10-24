@@ -14,6 +14,7 @@ import { checkTicketScreens } from "./lib/ticket-screen-checks.mjs";
 import { checkPaymentScreens } from "./lib/payment-screen-checks.mjs";
 import { checkAdminScreens } from "./lib/admin-screen-checks.mjs";
 import { checkAdminReviewScreens } from "./lib/admin-review-screen-checks.mjs";
+import { checkAssistantScreens } from "./lib/assistant-screen-checks.mjs";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
@@ -168,9 +169,9 @@ async function waitForHome(page) {
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
   await page
     .getByRole("main")
-    .getByText(/님의 애프터|나의 애프터/)
+    .getByText(/님과 함께하는 애프터|함께하는 애프터/)
     .waitFor();
-  await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor();
+  await page.locator(".assistant-status h2").waitFor();
 }
 
 async function checkPage(page, name, accessibility = true) {
@@ -315,7 +316,7 @@ try {
   await checkPage(publicPage, "sunset vivid dark landing");
   assert.equal(
     await publicPage.locator('meta[name="theme-color"]').getAttribute("content"),
-    "#161F1B",
+    "#1B1720",
   );
   if (screenshotDir)
     await publicPage.screenshot({ path: join(screenshotDir, "landing-vivid-dark.png") });
@@ -323,7 +324,7 @@ try {
   await publicPage.waitForFunction(() => !document.documentElement.classList.contains("dark"));
   assert.equal(
     await publicPage.locator('meta[name="theme-color"]').getAttribute("content"),
-    "#FFF9F2",
+    "#FDFAF7",
   );
   await publicPage.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
@@ -436,7 +437,8 @@ try {
   assert.equal(await signupPage.getByText(existing.name).count(), 0);
   await signupPage.getByRole("button", { name: "기존 계정으로 계속" }).click();
   await waitForHome(signupPage);
-  await signupPage.getByText(`${existing.name}님의 애프터 · 판교권`, { exact: true }).waitFor();
+  await signupPage.getByText(`${existing.name}님과 함께하는 애프터`, { exact: true }).waitFor();
+  await signupPage.getByText("판교권 · 현재 진행 상황", { exact: true }).waitFor();
   // A landscape brand photo must remain uncropped at every app-shell width.
   // The old portrait + fixed 160px cover box discarded most of the scene.
   const readiness = signupPage.getByRole("region", { name: "소개 설정", exact: true });
@@ -570,7 +572,7 @@ try {
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
   await incompletePage.getByRole("button", { name: "가입 이어하기" }).click();
-  await incompletePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await incompletePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   assert.equal(await incompletePage.getByLabel("이름").inputValue(), incomplete.name);
   await incompletePage.getByLabel("생년월일", { exact: true }).fill("2020-01-01");
   await incompletePage.getByText("만 19~79세만 가입할 수 있습니다.", { exact: true }).waitFor();
@@ -679,7 +681,25 @@ try {
   await freshPage.getByText("인증번호가 맞지 않아요.", { exact: true }).waitFor();
   await smsInput.fill(smsCode);
   await freshPage.getByRole("button", { name: "인증하고 계속", exact: true }).click();
-  await freshPage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await freshPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
+  await freshPage.getByRole("button", { name: "나중에 내 비서에서 이어하기" }).click();
+  await freshPage.getByRole("heading", { name: "반가워요. 이제 당신을 알아갈게요." }).waitFor();
+  assert.equal(
+    await freshPage.getByRole("link", { name: "소개", exact: true }).count(),
+    0,
+    "incomplete profile has no introduction tab",
+  );
+  if (screenshotDir) {
+    await freshPage.bringToFront();
+    await freshPage.mouse.move(0, 0);
+    await freshPage
+      .locator("[data-sonner-toast]")
+      .first()
+      .waitFor({ state: "detached", timeout: 10000 });
+    await freshPage.screenshot({ path: join(screenshotDir, "assistant-profile-setup.png") });
+  }
+  await freshPage.getByRole("link", { name: "내 비서와 프로필 만들기" }).click();
+  await freshPage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   assert.equal(await freshPage.getByLabel("생년월일", { exact: true }).inputValue(), "");
   assert.equal(
     await freshPage.getByLabel("생년월일", { exact: true }).getAttribute("readonly"),
@@ -763,7 +783,7 @@ try {
   await removePhoto.click();
   await freshPage.getByRole("button", { name: "2번째 사진을 대표로", exact: true }).click();
   await freshPage.setViewportSize({ width: 390, height: 844 });
-  await freshPage.getByRole("heading", { name: "기본적인 것부터" }).focus();
+  await freshPage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).focus();
   await freshPage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
   await checkPage(freshPage, "signup basics and photos");
   if (screenshotDir) await freshPage.screenshot({ path: join(screenshotDir, "signup-basics.png") });
@@ -876,7 +896,9 @@ try {
   await carrierPage.getByLabel("비밀번호").fill(password);
   await carrierPage.getByRole("button", { name: "가입 계속하기" }).click();
   await chooseWorkZone(carrierPage);
-  await carrierPage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await carrierPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
+  await carrierPage.getByRole("button", { name: "프로필 준비 시작" }).click();
+  await carrierPage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   assert.equal(await carrierPage.getByLabel("생년월일").inputValue(), "1994-02-15");
   assert.notEqual(await carrierPage.getByLabel("생년월일").getAttribute("readonly"), null);
   assert.equal(
@@ -926,6 +948,13 @@ try {
     "browser opened exactly one introduction",
   );
   await checkPage(malePage, "male opened introduction");
+  await checkAssistantScreens({
+    page: malePage,
+    baseUrl,
+    target: female.id,
+    checkPage,
+    screenshotDir,
+  });
   if (screenshotDir)
     await malePage.screenshot({ path: join(screenshotDir, "intro-native-390px.png") });
   await malePage.setViewportSize({ width: 320, height: 568 });
@@ -1161,7 +1190,7 @@ try {
     select headline,intro,profile_story from public.profiles where id='${female.id}'
   ) p`);
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   await femalePage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
@@ -1315,7 +1344,7 @@ try {
     "private draft retains edited job",
   );
   await femalePage.reload();
-  await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   assert.equal(
     await femalePage.getByLabel("직업", { exact: true }).inputValue(),
     "서비스 기획자",
@@ -1608,7 +1637,7 @@ try {
     "published question identities stay unchanged by the input-only prompts",
   );
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
@@ -1650,7 +1679,7 @@ try {
     ))
     on conflict (user_id) do update set revision=1,data=excluded.data`);
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "기본적인 것부터" }).waitFor();
+  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();

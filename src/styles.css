@@ -24,22 +24,23 @@
    * 이전에는 Hind 가 맨 앞이었는데 Hind 에는 한글 글리프가 없어서,
    * 한 줄 안에서 라틴/숫자만 Hind·한글은 Pretendard 로 갈라져 렌더됐다
    * (실측: "MBTI ENFP" 73.74px = Hind, "한글만" 41.48px = Pretendard).
-   * Pretendard 는 Inter 계열 라틴을 한글과 함께 설계한 서체라 혼용이 자연스럽다.
+   * Wanted Sans는 한글·라틴을 함께 설계한 가변 서체이며 공식 unicode-range
+   * 조각을 자체 호스팅해 실제 화면에 쓰인 글자만 내려받는다. SIL OFL 1.1.
    */
-  --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Wanted Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
   /* 한글 제목과 숫자도 같은 서체 계열로 읽히게 한다. */
-  --font-display: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Wanted Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
   /* 애프터 워드마크 전용. */
-  --font-wordmark: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-wordmark: "Wanted Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
   /* 랜딩 히어로도 본문과 같은 서체 계열을 쓴다. */
-  --font-hero: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-hero: "Wanted Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
   /*
    * 소개장(D3, 2026-10-10) — 사람의 문장을 읽히게 하는 세리프.
-   * 한 줄 소개처럼 사람의 목소리를 인용하는 자리에만 쓴다. 제목·본문·폼은 Pretendard 다.
+   * 기존 한 줄 인용에만 남긴다. 비서·인터뷰·제목·본문·폼은 Wanted Sans다.
    * 세리프를 UI 전체에 깔면 "청첩장·결정사" 로 미끄러진다(진단 디자인 C 리스크).
    */
   --font-serif: "Gowun Batang", "Nanum Myeongjo", "AppleMyungjo", serif;
@@ -168,13 +169,13 @@
 }
 
 /*
- * 애프터 — Sunset Vivid (2026-10-24).
+ * 애프터 — Sunset Companion (2026-10-24).
  *
- * 선셋 코럴은 행동, 미드나이트 그린은 선택, 아이보리는 읽기에 쓴다.
- * 다크는 같은 역할을 밝은 코럴·민트와 별도의 녹색 표면에 배치한다.
+ * 선셋 코럴은 행동, 플럼 잉크는 선택, 라일락은 비서의 발화에 쓴다.
+ * 다크는 같은 역할을 밝은 코럴·라일락과 별도의 플럼 표면에 배치한다.
  * primary(행동)와 selection(이미 고른 상태)을 섞지 않는다. 오류는 라즈베리다.
  *
- * 값은 hex 로 정하고 대비를 검증한 뒤 oklch 로 옮겼다 — 주석의 hex 가 원본이다.
+ * OKLCH 토큰이 기준이며 기존 코럴 팔레트의 hex 주석은 대응값이다.
  * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
  */
 :root {
@@ -193,6 +194,9 @@
   --motion-feedback: 140ms;
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
+  --assistant-surface: oklch(0.944 0.025 305);
+  --assistant-ink: oklch(0.35 0.085 310);
+  --assistant-soft: oklch(0.974 0.009 305);
 
   --brand-50: oklch(0.98482 0.01128 71.9); /* #FFF9F2 Evening Ivory */
   --brand-100: oklch(0.94975 0.01272 86.83); /* #F2EEE5 */
@@ -217,11 +221,11 @@
   --peach-500: var(--brand-signature);
 
   /* 만년필 잉크 */
-  --ink: oklch(0.30902 0.02966 167.48); /* #21352D */
-  --ink-muted: var(--brand-dusk);
+  --ink: oklch(0.28 0.018 305);
+  --ink-muted: oklch(0.47 0.02 305);
 
-  --surface: oklch(0.99668 0.00537 95.1); /* #FFFEFA */
-  --surface-subtle: var(--brand-100);
+  --surface: oklch(0.998 0.001 305);
+  --surface-subtle: oklch(0.957 0.012 305);
   --scrim: oklch(0.18 0.015 169 / 48%);
   --success: oklch(0.45766 0.08285 169.76); /* #166650 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */
@@ -233,7 +237,7 @@
   --shadow-brand: 0 14px 34px -18px oklch(0.5465 0.1214 28.1 / 16%);
 
   /* ── 시맨틱 (shadcn) ── */
-  --background: var(--brand-50);
+  --background: oklch(0.986 0.005 60);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
@@ -242,7 +246,7 @@
   /*
     ── 두 토큰의 역할이 갈린다 ──
     --primary        = 다음 행동을 실행하는 버튼 — 선셋 코럴.
-    --selection      = 선택한 옵션·탭·날짜 — 미드나이트 그린.
+    --selection      = 선택한 옵션·탭·날짜 — 플럼 잉크.
     --primary-strong = 본문 안의 브랜드 강조 — 진한 코럴.
   */
   --primary: var(--brand-600);
@@ -251,11 +255,11 @@
   ); /* #BD301C — 투명도 hover는 흰 글자 대비를 깨뜨린다 */
   --primary-strong: var(--brand-text);
   --primary-foreground: var(--surface);
-  --selection: var(--brand-pine);
+  --selection: var(--assistant-ink);
   --selection-foreground: var(--brand-50);
 
   /* 내 말풍선·선택 면은 엷은 종이 틴트, 글자는 잉크. */
-  --bubble-mine: oklch(0.93458 0.0175 153.56); /* #E1EDE4 */
+  --bubble-mine: oklch(0.946 0.029 45);
   --bubble-mine-foreground: var(--ink);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -266,8 +270,8 @@
   /* 오류는 코럴(h≈28)과 구별되는 라즈베리(h≈359)를 쓴다. */
   --destructive: oklch(0.493 0.1674 359); /* #A6285F */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.8909 0.0145 128.64); /* #D8DDD3 */
-  --input: oklch(0.62127 0.02387 153.83); /* #7C8B80 */
+  --border: oklch(0.89 0.012 305);
+  --input: oklch(0.62 0.025 305);
   /* 포커스 링은 얇은 선이라 채움색으로는 안 보인다(2.14). 글자 역할과 같은 톤을 쓴다. */
   --ring: var(--brand-text);
 
@@ -287,22 +291,25 @@
 }
 
 .dark {
+  --assistant-surface: oklch(0.32 0.04 305);
+  --assistant-ink: oklch(0.9 0.045 305);
+  --assistant-soft: oklch(0.265 0.025 305);
   --scrim: oklch(0.12 0.012 169 / 64%);
   color-scheme: dark;
 
   /* 밤 종이 위의 같은 잉크 */
   --ink: var(--brand-50); /* 밤 종이 위의 Warm Paper */
-  --ink-muted: oklch(0.81739 0.02315 155.82); /* #B8C8BD */
+  --ink-muted: oklch(0.83 0.022 305);
 
-  --surface: oklch(0.28303 0.02086 164.98); /* #202D27 */
-  --surface-subtle: oklch(0.33012 0.02833 158.59); /* #293A30 */
+  --surface: oklch(0.275 0.025 305);
+  --surface-subtle: oklch(0.33 0.025 305);
 
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 60%);
   --shadow-card: none;
   --shadow-elevated: 0 8px 24px -12px oklch(0.08 0.008 165 / 60%);
   --shadow-brand: 0 12px 34px -16px oklch(0.7826 0.0836 27.4 / 16%);
 
-  --background: oklch(0.22891 0.01514 166.13); /* #161F1B */
+  --background: oklch(0.215 0.018 305);
   --foreground: var(--ink);
 
   --card: var(--surface);
@@ -314,8 +321,8 @@
   --primary-hover: oklch(0.80044 0.11845 39.92); /* #FFA383 */
   --primary-foreground: var(--background);
   --primary-strong: var(--brand-300);
-  --selection: oklch(0.86612 0.05094 162.27); /* #B6DEC9 */
-  --selection-foreground: var(--brand-pine);
+  --selection: oklch(0.87 0.06 305);
+  --selection-foreground: oklch(0.28 0.05 305);
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -330,11 +337,11 @@
   --success: oklch(0.77 0.07 158); /* #95C5AC */
   --warning: oklch(0.82 0.08 82); /* #E4C285 */
 
-  --border: oklch(0.349 0.016 163.9); /* #333D38 */
-  --input: oklch(0.65454 0.03235 160.62); /* #80978A */
+  --border: oklch(0.35 0.025 305);
+  --input: oklch(0.66 0.025 305);
   --ring: var(--primary-strong);
 
-  --bubble-mine: oklch(0.38407 0.05689 163.65); /* #234D3B */
+  --bubble-mine: oklch(0.38 0.035 45);
   --bubble-mine-foreground: var(--ink);
   --brand-signature: var(--brand-400);
   --brand-blush: var(--brand-signature);
@@ -355,6 +362,144 @@
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--primary-strong);
+}
+
+.assistant-mark {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px 14px 14px 5px;
+  background: var(--assistant-ink);
+  color: var(--assistant-surface);
+}
+.assistant-status,
+.assistant-welcome {
+  padding: 1.5rem;
+  background: var(--assistant-surface);
+  color: var(--assistant-ink);
+  border-radius: 16px 16px 16px 5px;
+}
+.assistant-status .text-muted-foreground,
+.assistant-welcome .text-muted-foreground {
+  color: var(--assistant-ink);
+}
+.assistant-dock {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-elevated);
+}
+.assistant-suggestion {
+  min-height: 44px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--assistant-surface);
+  color: var(--assistant-ink);
+  touch-action: manipulation;
+}
+.assistant-suggestion:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.assistant-reply {
+  padding: 1rem;
+  border-radius: 4px 16px 16px;
+  background: var(--assistant-surface);
+  color: var(--assistant-ink);
+}
+.assistant-checklist {
+  display: grid;
+  gap: 1.5rem;
+}
+.assistant-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.assistant-checklist p {
+  margin-top: 0.3rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.assistant-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: var(--assistant-surface);
+  color: var(--assistant-ink);
+}
+.assistant-step-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.profile-question {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px 12px 12px 4px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  color: var(--assistant-ink);
+  background: var(--assistant-surface);
+}
+.profile-answer {
+  margin: 0.75rem 0 0 1rem;
+  padding: 1.15rem;
+  border-radius: 16px 4px 16px 16px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.65;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.prep-topic {
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-elevated);
+}
+.prep-topic h2 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+.prep-evidence {
+  margin-top: 1rem;
+  padding-left: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .assistant-reply {
+    animation: assistant-reply-arrive 200ms var(--ease-out);
+  }
+  @keyframes assistant-reply-arrive {
+    from {
+      transform: translateY(5px);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 }
 
 @layer base {
@@ -631,7 +776,7 @@
   }
 }
 
-/* 헤드라인 — Pretendard Bold. 한글은 0.98 행간이면 두 줄이 붙어서 1.25 로 연다. */
+/* 헤드라인 — Wanted Sans Bold. 두 줄 한글 제목이 붙지 않도록 행간을 확보한다. */
 @utility headline {
   font-family: var(--font-display);
   font-weight: 700;

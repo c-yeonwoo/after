@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { Logo } from "@/components/Logo";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { useKeepFieldVisible, useKeyboardOpen } from "@/lib/keyboard";
 import { useContentArrival } from "@/lib/contentMotion";
 
@@ -16,6 +17,7 @@ export function StepShell({
   progressLabel,
   transitionKey,
   progress,
+  assistant = false,
 }: {
   step: number;
   total: number;
@@ -28,6 +30,7 @@ export function StepShell({
   progressLabel?: string;
   transitionKey?: string;
   progress?: number;
+  assistant?: boolean;
 }) {
   // 키보드가 떠 있으면 하단 고정 영역을 접는다 — 그만큼 본문이 넓어진다.
   const keyboardOpen = useKeyboardOpen();
@@ -91,18 +94,21 @@ export function StepShell({
         className="mx-auto w-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-6 pb-8"
       >
         <div ref={contentRef}>
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="break-keep text-balance text-[clamp(1.5rem,7vw,1.75rem)] leading-[1.35] font-semibold tracking-[-0.03em] outline-none"
-          >
-            {title}
-          </h1>
-          {description ? (
-            <p className="mt-2.5 break-keep text-sm leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
+          <div className={assistant ? "assistant-status" : undefined}>
+            {assistant ? <AssistantMark className="mb-4" /> : null}
+            <h1
+              ref={headingRef}
+              tabIndex={-1}
+              className="break-keep text-balance text-[clamp(1.5rem,7vw,1.75rem)] leading-[1.35] font-semibold tracking-[-0.03em] outline-none"
+            >
+              {title}
+            </h1>
+            {description ? (
+              <p className="mt-2.5 break-keep text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            ) : null}
+          </div>
           <div className="mt-6">{children}</div>
         </div>
       </main>

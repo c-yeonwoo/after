@@ -27,6 +27,9 @@ import {
 import { useMe } from "@/lib/me";
 import { myMeetWindow, type MeetWindow } from "@/lib/meetWindow";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
+import { AssistantDock } from "@/components/assistant/AssistantDock";
+import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -140,7 +143,6 @@ function HomePage() {
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
-    if (ready && me && me.onboarding_step < 7) navigate({ to: "/signup" });
   }, [ready, me, navigate]);
 
   // 하이드레이션 불일치를 피하려고 마운트 후에만 시각을 잡는다.
@@ -196,7 +198,9 @@ function HomePage() {
         : stateHeadline(primaryState, isMale)
       : "지금 상태를 확인하고 있어요.";
 
-  if (!ready || !me || me.onboarding_step < 7) {
+  if (ready && me && me.onboarding_step < 7) return <ProfilePreparationHome profile={me} />;
+
+  if (!ready || !me) {
     return (
       <AppScreen>
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
@@ -205,12 +209,17 @@ function HomePage() {
   }
 
   return (
-    <AppScreen action={<NotificationBell />}>
-      <p className="mt-5 text-xs font-medium text-muted-foreground">
-        {currentProfile?.name ? `${currentProfile.name}님의 애프터` : "나의 애프터"}
-        {hub ? ` · ${hub.label}` : ""}
-      </p>
-      {/*
+    <AppScreen title="내 비서" action={<NotificationBell />} keyboardAware>
+      <div className="assistant-status">
+        <div className="flex items-center gap-2.5">
+          <AssistantMark />
+          <span className="text-sm font-semibold">
+            {currentProfile?.name
+              ? `${currentProfile.name}님과 함께하는 애프터`
+              : "함께하는 애프터"}
+          </span>
+        </div>
+        {/*
         예전에는 아랫줄을 브랜드 색으로 칠했다. 그런데 그 자리에 오는 문장은
         "상대의 답변을 기다리는 중." 처럼 **행동이 아니라 상태**다. 화면에서
         가장 크고 진한 색이 누를 수 없는 것을 가리키고 있었고, 바로 아래 카드와
@@ -219,9 +228,13 @@ function HomePage() {
         강조색을 빼고 굵기와 크기로만 위계를 만든다. 이름 줄을 흐리게 내리면
         상태 문장이 저절로 앞으로 나온다. 살구색은 작은 포인트와 선택 상태에 쓴다.
       */}
-      <h1 className="mt-3 max-w-[19rem] text-[1.75rem] leading-[1.35] font-semibold tracking-[-0.035em]">
-        {headline}
-      </h1>
+        <h2 className="mt-4 max-w-[19rem] text-[1.75rem] leading-[1.3] font-bold tracking-[-0.025em]">
+          {headline}
+        </h2>
+        {hub ? (
+          <p className="mt-3 text-xs text-muted-foreground">{hub.label} · 현재 진행 상황</p>
+        ) : null}
+      </div>
 
       {(live.isError || live.isPaused) && live.data ? (
         <LiveRefreshNotice retry={() => void live.refetch()} />
@@ -427,6 +440,15 @@ function HomePage() {
         </section>
       ) : null}
 
+      <AssistantDock
+        key={me.id}
+        status={
+          live.isError || live.isPaused
+            ? "연결이 끊겨 최신 상태를 확인하지 못했어요. 위의 다시 확인하기를 눌러주세요."
+            : headline
+        }
+        counterpartId={candidate?.id}
+      />
       {/*
         진행 중인 만남이 없을 때만 띄운다. 약속이 잡혀 있으면 화면에 이미 할 일이
         있고, 그때 "소개 받기" 스위치는 지금 하는 일과 무관한 잡음이다.
@@ -597,12 +619,9 @@ function ReadinessPanel({
 /** 소개가 도착한 상태 — 상세는 /intro 가 담당하므로 여기선 최소한만 보여준다. */
 function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isMale: boolean }) {
   return (
-    <div className="overflow-hidden rounded-surface border border-border bg-card shadow-card">
+    <div className="app-elevated overflow-hidden rounded-surface bg-card">
       <div className="px-5 pt-5 pb-6">
-        <p className="text-3xs font-semibold text-muted-foreground">
-          {isMale ? "오늘의 소개" : "살펴볼 소개"}
-        </p>
-        <p className="mt-3 text-2xl leading-[1.3] font-semibold">
+        <p className="text-2xl leading-[1.3] font-semibold">
           {candidate.name}
           {candidate.age !== null ? (
             <span className="ml-2 text-base text-muted-foreground">{candidate.age}</span>
@@ -610,14 +629,14 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
         {candidate.headline ? (
-          <p className="serif mt-4 line-clamp-2 break-keep break-words border-l-2 border-brand-blush pl-3 text-lg leading-[1.5] text-foreground">
+          <p className="mt-4 line-clamp-2 break-keep break-words text-lg leading-[1.5] font-medium text-foreground">
             {candidate.headline}
           </p>
         ) : null}
       </div>
       <Link
         to="/intro"
-        className="pressable flex min-h-14 items-center justify-between gap-2 border-t border-border px-5 text-sm font-semibold text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="pressable mx-5 mb-5 flex min-h-12 items-center justify-between gap-2 rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {isMale ? "프로필 열어보기" : "읽고 답하기"}
         <ArrowRight className="size-4" aria-hidden="true" />

@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Heart, Home, MessageCircle, User } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircleHeart, MessageCircle, User } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ import { useKeepFieldVisible } from "@/lib/keyboard";
  * 다르지만 둘 다 "소개"가 대상이라 라벨을 나눌 만큼의 차이는 아니었다.
  */
 const TABS = [
-  { to: "/home", label: "홈", icon: Home },
+  { to: "/home", label: "내 비서", icon: MessageCircleHeart },
   { to: "/intro", label: "소개", icon: Heart },
   { to: "/chats", label: "대화", icon: MessageCircle },
   { to: "/me", label: "나", icon: User },

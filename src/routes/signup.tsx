@@ -63,10 +63,15 @@ import { isProfileInterviewV3Data, newProfileInterviewV3 } from "@/lib/profileIn
 import { pruneMyPhotos } from "@/lib/photo";
 import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 
 export const Route = createFileRoute("/signup")({
-  validateSearch: (search: Record<string, unknown>): { edit?: true } =>
-    search.edit === "1" || search.edit === true ? { edit: true } : {},
+  validateSearch: (search: Record<string, unknown>): { edit?: true; prepare?: true } => ({
+    ...(search.edit === "1" || search.edit === true ? { edit: true as const } : {}),
+    ...(search.prepare === "1" || search.prepare === true || search.prepare === "true"
+      ? { prepare: true as const }
+      : {}),
+  }),
   head: () => ({
     meta: [
       { title: `가입 — ${BRAND.name}` },
@@ -98,12 +103,15 @@ const Q_FIRST = 11;
 const CONDITIONS = 15;
 const CONSENT = 0;
 const PHONE = 5;
+const ACCOUNT_READY = 21;
 const ORDER = carrierIdentityEnabled
   ? [CONSENT, PHONE, 4, 3, 2, CONDITIONS, Q_FIRST]
   : [CONSENT, 1, 4, 3, PHONE, 2, CONDITIONS, Q_FIRST];
-const TOTAL = ORDER.length;
+const PROFILE_ORDER = [2, CONDITIONS, Q_FIRST];
+const ACCOUNT_ORDER = ORDER.filter((id) => !PROFILE_ORDER.includes(id));
 /** 화면에 보이는 단계 번호. */
-const shown = (id: number) => ORDER.indexOf(id) + 1;
+const shown = (id: number) =>
+  (PROFILE_ORDER.includes(id) ? PROFILE_ORDER : ACCOUNT_ORDER).indexOf(id) + 1;
 type Gender = "female" | "male";
 
 function resumeStep(me: Profile) {
@@ -116,10 +124,11 @@ function resumeStep(me: Profile) {
 
 function Onboarding() {
   const navigate = useNavigate();
-  const { edit } = Route.useSearch();
+  const { edit, prepare } = Route.useSearch();
   const editing = Boolean(edit);
   const { me, ready, refresh, setMe } = useMe();
   const [step, setStep] = useState(editing ? 2 : CONSENT);
+  const TOTAL = PROFILE_ORDER.includes(step) ? PROFILE_ORDER.length : ACCOUNT_ORDER.length;
   const [gender, setGender] = useState<Gender | null>(null);
   // 모집 중인 지역이 하나여도 직장 위치를 추측해 자동 배정하지 않는다.
   const [hubId, setHubId] = useState<string | null>(null);
@@ -149,7 +158,7 @@ function Onboarding() {
   /** 저장된 프로필을 한 번만 불어온다 — me 가 갱신될 때마다 폼을 덮어쓰면 입력이 날아간다. */
   const [resumed, setResumed] = useState(false);
   /** 기존 세션의 사진·이름은 사용자가 명시적으로 '이어하기'를 고르기 전에는 불러오지 않는다. */
-  const [resumeConfirmed, setResumeConfirmed] = useState(false);
+  const [resumeConfirmed, setResumeConfirmed] = useState(Boolean(prepare));
   const [editDraftReady, setEditDraftReady] = useState(!editing);
   const [editDraftLoadError, setEditDraftLoadError] = useState(false);
 
@@ -302,10 +311,13 @@ function Onboarding() {
       clearSignupSession();
       setMe(created);
       setUserId(created.id);
+      setResumeConfirmed(true);
+      setResumed(true);
+      savedStep.current = created.onboarding_step;
       if (created.birth) setBasics((value) => ({ ...value, birth: created.birth! }));
       setStep(
         (carrierIdentityEnabled ? created.identity_verified_at : created.phone_verified_at)
-          ? 2
+          ? ACCOUNT_READY
           : PHONE,
       );
     } catch (error) {
@@ -429,6 +441,33 @@ function Onboarding() {
           </div>
         ) : null}
       </StepShell>
+    );
+  }
+
+  if (step === ACCOUNT_READY && me) {
+    return (
+      <AppScreen title="계정 확인 완료" hideTabs>
+        <div className="assistant-welcome mt-6">
+          <AssistantMark className="size-14" />
+          <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight">
+            내 비서가 생겼어요.
+          </h2>
+          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+            이제 나다운 프로필을 준비할 차례예요. 나이와 사진, 몇 가지 이야기를 확인한 뒤 소개를
+            시작해요.
+          </p>
+        </div>
+        <Button size="lg" className="mt-8 w-full" onClick={() => setStep(2)}>
+          프로필 준비 시작
+        </Button>
+        <Button
+          variant="ghost"
+          className="mt-3 w-full"
+          onClick={() => navigate({ to: "/home", replace: true })}
+        >
+          나중에 내 비서에서 이어하기
+        </Button>
+      </AppScreen>
     );
   }
 
@@ -582,7 +621,11 @@ function Onboarding() {
         {alreadyVerified ? (
           <div>
             <p className="text-sm text-muted-foreground">인증을 마쳤어요. 가입을 이어가세요.</p>
-            <Button className="mt-6 w-full" size="lg" onClick={() => setStep(me ? 2 : 4)}>
+            <Button
+              className="mt-6 w-full"
+              size="lg"
+              onClick={() => setStep(me ? ACCOUNT_READY : 4)}
+            >
               다음
             </Button>
           </div>
@@ -604,14 +647,14 @@ function Onboarding() {
               if (me) await refresh();
               setBasics((previous) => ({ ...previous, birth }));
               setAuthError(null);
-              setStep(me ? 2 : 4);
+              setStep(me ? ACCOUNT_READY : 4);
             }}
           />
         ) : (
           <PhoneVerifyForm
             onVerified={async () => {
               await refresh();
-              setStep(2);
+              setStep(ACCOUNT_READY);
             }}
           />
         )}
@@ -660,8 +703,8 @@ function Onboarding() {
         step={shown(2)}
         total={TOTAL}
         eyebrow="기본 정보"
-        title="기본적인 것부터"
-        description="이름과 나이는 소개가 열린 상대에게만 보입니다."
+        title="당신을 알아가는 첫걸음"
+        description="사진과 기본 정보를 알려주세요. 소개가 열린 상대에게만 보여요."
       >
         <div className="app-elevated space-y-5 rounded-surface bg-card p-5">
           <div>

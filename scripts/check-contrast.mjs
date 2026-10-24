@@ -179,10 +179,20 @@ function audit(themeName, block) {
   chk("input / 카드", cr(toS(parseOklch(tokenRaw("input"))), card), 3.0);
   chk("오류 글자 / 배경", cr(toS(parseOklch(tokenRaw("destructive"))), bg), 4.5);
   chk("오류 글자 / 카드", cr(toS(parseOklch(tokenRaw("destructive"))), card), 4.5);
+  chk(
+    "비서 글자 / 비서 표면",
+    cr(toS(parseOklch(tokenRaw("assistant-ink"))), toS(parseOklch(tokenRaw("assistant-surface")))),
+    4.5,
+  );
+  chk(
+    "본문 / 근거 표면",
+    cr(toS(parseOklch(tokenRaw("foreground"))), toS(parseOklch(tokenRaw("assistant-soft")))),
+    4.5,
+  );
 }
 
 audit("라이트 — 선셋 비비드", lightBlock);
-audit("다크 — 미드나이트 그린", darkBlock);
+audit("다크 — 플럼", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);
 process.exit(fails === 0 ? 0 : 1);

@@ -459,6 +459,15 @@ function IntroPage() {
       ) : null}
 
       <ProfileDetail key={candidate.id} p={view} />
+      {candidate.id ? (
+        <Link
+          to="/conversation-prep"
+          search={{ target: candidate.id }}
+          className="assistant-suggestion mt-4 mb-5 flex items-center justify-between gap-3"
+        >
+          내 비서와 대화 준비하기<span aria-hidden="true">→</span>
+        </Link>
+      ) : null}
 
       {maleAnswered ? (
         <div className="app-elevated mt-8 rounded-surface bg-card px-5 py-5 text-sm">

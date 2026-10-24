@@ -371,9 +371,10 @@ export function ProfileInterviewV3({
     title: string,
     description: string,
     children: ReactNode,
-    eyebrow = "나의 이야기",
+    eyebrow = "내 비서와 프로필 준비",
   ) => (
     <StepShell
+      assistant={data.stage.startsWith("story") || data.stage === "start"}
       step={progressStep}
       total={progressTotal}
       progressLabel="프로필 작성"
@@ -475,9 +476,9 @@ export function ProfileInterviewV3({
       "나에게 편한 방식",
       "끌리는 답만 골라주세요. 정답은 없어요.",
       <>
-        <div className="divide-y divide-border">
+        <div className="space-y-5">
           {questions.map((question) => (
-            <div key={question.id} className="py-5 first:pt-0">
+            <div key={question.id} className="rounded-surface bg-card p-5">
               <fieldset className="min-w-0">
                 <legend className="break-keep text-base font-semibold leading-snug text-foreground">
                   {question.title}
@@ -592,7 +593,7 @@ export function ProfileInterviewV3({
       prompt.guide,
       <>
         <div>
-          <label htmlFor="story-answer" className="sr-only">
+          <label htmlFor="story-answer" className="mb-2 block text-sm font-semibold">
             내 답변
           </label>
           <Textarea
