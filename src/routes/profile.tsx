@@ -4,6 +4,7 @@ import { Pencil } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
+import { GuideNote } from "@/components/app/GuideNote";
 import { BRAND } from "@/lib/brand";
 import { useMe } from "@/lib/me";
 import { toProfileView } from "@/lib/profileView";
@@ -58,6 +59,11 @@ function ProfilePage() {
         </Link>
       }
     >
+      <div className="mb-6">
+        <GuideNote assistant>
+          지금 공개되는 프로필이에요. 수정한 내용은 마지막에 저장해야 반영돼요.
+        </GuideNote>
+      </div>
       <ProfileDetail p={view} />
     </AppScreen>
   );

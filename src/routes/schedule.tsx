@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { MeetPlanner } from "@/components/app/MeetPlanner";
+import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
@@ -106,6 +107,11 @@ function SchedulePage() {
 
   return (
     <AppScreen title="날짜 정하기" hideTabs back="/home">
+      <div className="mt-3">
+        <GuideNote assistant>
+          서로 가능한 날짜를 받았어요. 시간과 장소를 확인하고 약속을 정해 주세요.
+        </GuideNote>
+      </div>
       <div className="mt-5">
         <MeetPlanner
           key={meeting.id}

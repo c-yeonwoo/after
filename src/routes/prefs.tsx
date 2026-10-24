@@ -144,7 +144,7 @@ function PrefsPage() {
   return (
     <AppScreen title="만남 선호" hideTabs back="/requests">
       <div className="mt-3">
-        <GuideNote>
+        <GuideNote assistant>
           {candidateName
             ? `${candidateName}님이 만남 티켓을 사용했어요. 가능한 날과 편한 지역만 알려 주세요.`
             : "만남 요청이 도착했어요. 가능한 날과 편한 지역만 알려 주세요."}

@@ -5,6 +5,7 @@ import { Ticket } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { PaymentState } from "@/components/app/PaymentState";
+import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { getTicketOrder, type Profile, type TicketOrder } from "@/lib/api";
 import { BRAND } from "@/lib/brand";
@@ -222,6 +223,11 @@ function PaymentForm({ order, me }: { order: TicketOrder; me: Profile }) {
         </>
       }
     >
+      <div className="mb-5">
+        <GuideNote assistant>
+          상품과 금액을 확인해 주세요. 결제창에서 승인한 결과를 확인한 뒤 티켓을 지급해요.
+        </GuideNote>
+      </div>
       <section aria-label="주문 상품" className="app-elevated mt-3 rounded-surface bg-card p-5">
         <div className="flex items-center gap-3">
           <Ticket className="size-6 shrink-0 text-primary" aria-hidden="true" />

@@ -381,7 +381,14 @@ async function purchase(person, kind) {
 
 async function openAndRequest(male, beta = false, expectedReason) {
   const page = male.page;
-  await page.goto(`${base}/intro`);
+  await page.goto(`${base}/home`);
+  await waitForHome(page);
+  await page.getByLabel("비서에게 물어볼 내용").fill("소개 보여줘");
+  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page
+    .locator(".assistant-reply")
+    .getByRole("link", { name: "소개 확인하기", exact: true })
+    .click();
   await page
     .getByRole("button", {
       name: beta ? "베타 무료로 열기" : "소개 티켓 1장 쓰고 열기",
@@ -623,7 +630,27 @@ try {
     [f3, ["like", "like"]],
   ]) {
     await check(`${f.key} evaluates both men with explicit like/pass`, async () => {
-      await f.page.goto(`${base}/intro`);
+      await f.page.goto(`${base}/home`);
+      await waitForHome(f.page);
+      await f.page.getByLabel("비서에게 물어볼 내용").fill("티켓 구매하고 싶어");
+      await f.page.getByRole("button", { name: "비서에게 질문하기" }).click();
+      await f.page
+        .getByText("현재 여성 회원에게 티켓 구매를 요청하지 않아요.", { exact: false })
+        .waitFor();
+      assert.equal(
+        await f.page
+          .locator(".assistant-reply")
+          .getByRole("link", { name: "티켓·가격 확인" })
+          .count(),
+        0,
+      );
+      await f.page.getByLabel("비서에게 물어볼 내용").fill("호감 보내줘");
+      await f.page.getByRole("button", { name: "비서에게 질문하기" }).click();
+      await f.page
+        .locator(".assistant-reply")
+        .getByRole("link", { name: "소개 확인하기", exact: true })
+        .click();
+      await f.page.getByLabel("비서 안내", { exact: true }).waitFor();
       for (let n = 0; n < 2; n++) {
         await f.page.getByRole("button", { name: "좋아요", exact: true }).waitFor();
         const current = (await f.page.getByRole("main").innerText()).includes(m1.name) ? m1 : m2;

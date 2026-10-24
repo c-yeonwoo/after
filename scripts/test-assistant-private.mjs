@@ -31,7 +31,7 @@ const service = createClient(env.API_URL, env.SERVICE_ROLE_KEY, {
 const member = createClient(env.API_URL, env.ANON_KEY, { auth: { persistSession: false } });
 const email = `assistant-private-${randomUUID()}@verify.local`,
   password = randomUUID() + "Aa1!";
-let id, server, browser;
+let id, femaleId, server, browser;
 const port = Number(process.env.AFTER_TEST_PORT ?? 4193),
   base = `http://127.0.0.1:${port}`;
 const rpc = async (name, args = {}) => {
@@ -81,6 +81,68 @@ try {
     "safe refusal uses no model",
   );
   await rpc("assistant_forget", { p_scope: "history" });
+  for (const question of [
+    "지금 진행 상태",
+    "프로필 준비",
+    "프로필 수정",
+    "티켓 결제 방법",
+    "좋아요",
+    "약속 잡아줘",
+    "대화 팁 알려줘",
+    "휴대폰 인증이 안 돼요",
+    "만남을 취소하고 싶어요",
+    "상대 프로필을 바탕으로 대화 주제를 추천해줘",
+  ]) {
+    const receipt = randomUUID();
+    const answered = await call(question, receipt);
+    assert.equal(answered.status, 200, JSON.stringify(answered.body));
+    assert.equal((await call(question, receipt)).body.reused, true);
+    const ownTurn = (await rpc("my_assistant_state")).turns.find((t) => t.id === receipt);
+    assert.equal(ownTurn.state, "complete");
+    assert.ok(ownTurn.answer.length >= 10);
+  }
+  assert.equal(
+    sql(`select count(*) from ai_runs where user_id='${id}'`),
+    "0",
+    "product questions and repeated receipts never invoke a model",
+  );
+  await rpc("assistant_forget", { p_scope: "history" });
+  const femaleEmail = `assistant-private-female-${randomUUID()}@verify.local`;
+  const femaleUser = await service.auth.admin.createUser({
+    email: femaleEmail,
+    password,
+    email_confirm: true,
+  });
+  assert.ifError(femaleUser.error);
+  femaleId = femaleUser.data.user.id;
+  sql(`insert into profiles(id,gender,hub_id,company_email,name,birth,job,onboarding_step,terms_agreed_at,privacy_agreed_at,phone_verified_at)
+    values('${femaleId}','female','gangnam','${femaleEmail}','가상 여성 상담 QA','1996-01-01','기획',7,now(),now(),now());`);
+  const femaleClient = createClient(env.API_URL, env.ANON_KEY, { auth: { persistSession: false } });
+  const femaleLogin = await femaleClient.auth.signInWithPassword({ email: femaleEmail, password });
+  assert.ifError(femaleLogin.error);
+  const femaleConsent = await femaleClient.rpc("assistant_consent", { p_agree: true });
+  assert.ifError(femaleConsent.error);
+  const femaleState = await femaleClient.rpc("my_assistant_state");
+  assert.ifError(femaleState.error);
+  const femaleResponse = await fetch(`${env.API_URL}/functions/v1/assistant-chat`, {
+    method: "POST",
+    headers: {
+      apikey: env.ANON_KEY,
+      Authorization: `Bearer ${femaleLogin.data.session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      question: "티켓 결제 방법",
+      requestId: randomUUID(),
+      revision: femaleState.data.revision,
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+  assert.equal(femaleResponse.status, 200);
+  const femaleAnswer = await femaleClient.rpc("my_assistant_state");
+  assert.ifError(femaleAnswer.error);
+  assert.match(femaleAnswer.data.turns[0].answer, /여성 회원에게 티켓 구매를 요청하지 않아요/);
+  assert.equal(sql(`select count(*) from ai_runs where user_id='${femaleId}'`), "0");
   if (process.env.AFTER_LOCAL_AI_CONFIRM === "synthetic-only") {
     const generated = await call(
       "처음 만나는 자리에서 긴장하면 질문만 계속하게 돼요. 서로 편하게 이야기하려면 어떻게 하면 좋을까요?",
@@ -148,6 +210,12 @@ try {
   assert.equal(await page.getByLabel("비서에게 상담할 내용").inputValue(), draftedQuestion);
   assert.equal(draftApiCalls, 0, "home handoff must not submit a private question automatically");
   assert.equal(new URL(page.url()).search, "?panel=chat", "private draft never appears in URL");
+  page.off("request", countDraftCalls);
+  await page.getByLabel("비서에게 상담할 내용").fill("소개글 수정해줘");
+  page.on("request", countDraftCalls);
+  await page.getByRole("button", { name: "상담 보내기", exact: true }).click();
+  await page.getByRole("link", { name: "프로필 수정하기", exact: true }).waitFor();
+  assert.equal(draftApiCalls, 0, "service commands inside private chat also bypass model calls");
   page.off("request", countDraftCalls);
   await page.goto(`${base}/assistant?panel=memory`);
   await page.getByRole("button", { name: "기억할 선호 추가" }).click();
@@ -345,4 +413,5 @@ try {
     `update app_settings set assistant_chat_enabled=${original.chat},assistant_memory_enabled=${original.memory},assistant_schedule_enabled=${original.schedule}`,
   );
   if (id) await service.auth.admin.deleteUser(id);
+  if (femaleId) await service.auth.admin.deleteUser(femaleId);
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 
 /** 안내자 「애프터」 — 전환 지점에서만 등장하는 목소리 */
 export const GUIDE_NAME = "애프터";
@@ -55,10 +56,12 @@ export function GuideNote({
    * 따로 두면 "안내"와 "지금 할 일"이 같은 내용을 두 번 말하게 된다.
    */
   action,
+  assistant = false,
 }: {
   children: ReactNode;
   introduce?: boolean;
   action?: ReactNode;
+  assistant?: boolean;
 }) {
   const lines = splitSentences(children);
 
@@ -66,25 +69,28 @@ export function GuideNote({
     /*
       안내 문장은 바탕에 직접 두고, 행동만 별도 버튼으로 구분한다.
     */
-    <div className="space-y-4">
-      <div>
-        {lines ? (
-          <div className="space-y-1.5">
-            {lines.map((line) => (
-              <p key={line} className="text-sm leading-relaxed text-foreground">
-                {line}
-              </p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm leading-relaxed text-foreground">{children}</p>
-        )}
+    <div className="space-y-4" aria-label={assistant ? "비서 안내" : undefined}>
+      <div className={assistant ? "flex items-start gap-3" : undefined}>
+        {assistant ? <AssistantMark className="shrink-0" /> : null}
+        <div className="min-w-0">
+          {lines ? (
+            <div className="space-y-1.5">
+              {lines.map((line) => (
+                <p key={line} className="text-sm leading-relaxed text-foreground">
+                  {line}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm leading-relaxed text-foreground">{children}</p>
+          )}
 
-        {introduce ? (
-          <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-            {GUIDE_NAME} {GUIDE_ROLE}는 약속 조율을 돕지만, 예약을 대신 잡지는 않습니다.
-          </p>
-        ) : null}
+          {introduce ? (
+            <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+              {GUIDE_NAME} {GUIDE_ROLE}는 약속 조율을 돕지만, 예약을 대신 잡지는 않습니다.
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {/*

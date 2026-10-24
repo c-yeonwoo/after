@@ -88,6 +88,30 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     .waitFor();
   await page.getByRole("button", { name: "지금 내 상태", exact: true }).click();
   assert.equal(await page.locator(".assistant-reply").count(), 1);
+  let privateCalls = 0;
+  const countPrivateCalls = (request) => {
+    if (request.url().includes("/functions/v1/assistant-chat")) privateCalls++;
+  };
+  page.on("request", countPrivateCalls);
+  for (const [query, link] of [
+    ["프로필 준비", "내 프로필 보기"],
+    ["소개글 수정해줘", "프로필 수정하기"],
+    ["소개 보여줘", "소개 확인하기"],
+    ["호감 보내줘", "소개 확인하기"],
+    ["결제 방법", "티켓·가격 확인"],
+    ["약속 잡아줘", /만남 요청 확인|비서와 일정 정리/],
+  ]) {
+    await page.getByLabel("비서에게 물어볼 내용").fill(query);
+    await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+    await page.locator(".assistant-reply").getByRole("link", { name: link, exact: true }).waitFor();
+    assert.equal(
+      new URL(page.url()).pathname,
+      "/home",
+      "commands only suggest a confirmed next step",
+    );
+  }
+  assert.equal(privateCalls, 0, "service workflow navigation never invokes LLM");
+  page.off("request", countPrivateCalls);
   await page.getByLabel("비서에게 물어볼 내용").fill("약속 취소해줘");
   await page.getByRole("button", { name: "비서에게 질문하기" }).click();
   await page.getByText("결제·취소·신고는 제가 자동 처리하지 않아요.", { exact: false }).waitFor();
