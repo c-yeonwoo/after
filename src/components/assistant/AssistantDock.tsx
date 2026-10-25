@@ -15,10 +15,14 @@ export function AssistantDock({
   status,
   counterpartId,
   state,
+  hasMeeting,
+  hasOpenIntro,
 }: {
   status: string;
   counterpartId?: string | null;
   state?: string;
+  hasMeeting?: boolean;
+  hasOpenIntro?: boolean;
 }) {
   const { me } = useMe();
   const navigate = useNavigate();
@@ -34,6 +38,8 @@ export function AssistantDock({
         status,
         state,
         counterpartId,
+        hasMeeting,
+        hasOpenIntro,
         schedule: Boolean(flags.data?.schedule && !flags.isError && !flags.isPaused),
         memory: Boolean(flags.data?.memory && !flags.isError && !flags.isPaused),
       })
