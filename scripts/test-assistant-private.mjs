@@ -178,6 +178,21 @@ try {
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const sharedReads = { flags: 0, payments: 0, avatarUrls: new Set() };
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith("/rpc/assistant_capabilities")) sharedReads.flags++;
+    if (
+      url.pathname.endsWith("/app_settings") &&
+      url.searchParams.get("select") === "payments_enabled"
+    )
+      sharedReads.payments++;
+    if (
+      request.resourceType() === "image" &&
+      url.pathname.includes("/assets/concierge/female.webp")
+    )
+      sharedReads.avatarUrls.add(url.href);
+  });
   // Fail closed before any UI request can spend tokens. Live advice is opt-in.
   await page.route("**/functions/v1/assistant-chat", async (route) => {
     const question = route.request().postDataJSON().question;
@@ -210,7 +225,19 @@ try {
     ["홈", "소개"],
   );
   await page.getByRole("link", { name: "상점", exact: true }).waitFor();
-  await page.locator('.assistant-mark img[src$="female.webp"]').waitFor();
+  await page.locator('.assistant-mark img[data-assistant-avatar="female"]').waitFor();
+  await page.getByLabel("비서에게 상담할 내용").waitFor();
+  assert.equal(sharedReads.flags, 1, "one capability observer, not nested duplicate readers");
+  assert.equal(sharedReads.payments, 1);
+  await page.getByRole("link", { name: "대화 전체 보기" }).click();
+  await page.getByRole("heading", { name: "나와 비서", exact: true }).waitFor();
+  await page.goBack();
+  await page.getByRole("link", { name: "대화 전체 보기" }).waitFor();
+  assert.equal(sharedReads.flags, 1, "returning home reuses the fresh capability snapshot");
+  assert.equal(sharedReads.payments, 1, "home remount reuses the payment display setting");
+  // Playwright routing disables HTTP caching in this harness. Assert stable
+  // asset identity here; hashed production cache headers are checked in the build.
+  assert.equal(sharedReads.avatarUrls.size, 1, "all assistant utterances use one avatar URL");
   const draftedQuestion = "처음 만나는 날 긴장이 많이 돼요";
   let draftApiCalls = 0;
   const countDraftCalls = (request) => {

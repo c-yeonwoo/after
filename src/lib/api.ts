@@ -13,6 +13,7 @@ import type { MeetPrefs } from "@/lib/meet";
 import { deleteMyPhotos } from "@/lib/photo";
 import { POLICY_VERSION } from "@/lib/policy";
 import { supabase } from "@/lib/supabase";
+import { paymentModeCache } from "@/lib/sharedConfigCache";
 
 import type { Database, Json } from "./database.types";
 
@@ -1676,6 +1677,11 @@ export async function reportContent(
  * 막아 주지 않는다.
  */
 export async function paymentsEnabled(): Promise<boolean> {
+  // SSR must never share a process-wide cache between requests/accounts.
+  return typeof window === "undefined" ? readPaymentMode() : paymentModeCache.read(readPaymentMode);
+}
+
+async function readPaymentMode(): Promise<boolean> {
   const { data, error } = await supabase
     .from("app_settings")
     .select("payments_enabled")

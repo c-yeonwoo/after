@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/database.types";
 import { track } from "@/lib/api";
+import { paymentModeCache } from "./sharedConfigCache";
 
 /**
  * 운영자 전용 호출.
@@ -757,6 +758,7 @@ export type OrderFilter = "pending" | "confirmed" | "canceling" | "canceled" | "
 export async function setPayments(on: boolean, note: string): Promise<void> {
   const { error } = await supabase.rpc("admin_set_payments", { p_on: on, p_note: note });
   if (error) throw error;
+  paymentModeCache.clear();
 }
 
 export async function fetchOrders(state?: OrderFilter): Promise<AdminOrder[]> {

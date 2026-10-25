@@ -16,6 +16,8 @@ import {
 } from "react";
 
 import { supabase } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
+import { paymentModeCache } from "./sharedConfigCache";
 
 import type { Profile } from "./api";
 
@@ -37,6 +39,7 @@ type MeState = {
 const MeContext = createContext<MeState | null>(null);
 
 export function MeProvider({ children }: { children: ReactNode }) {
+  const client = useQueryClient();
   const [me, setMe] = useState<Profile | null>(null);
   const [ready, setReady] = useState(false);
   const loadGeneration = useRef(0);
@@ -49,12 +52,16 @@ export function MeProvider({ children }: { children: ReactNode }) {
     } = await supabase.auth.getSession();
     if (generation !== loadGeneration.current) return;
     if (!session) {
+      paymentModeCache.clear();
+      client.removeQueries({ queryKey: ["assistant-capabilities"] });
       identity.current = null;
       setMe(null);
       setReady(true);
       return;
     }
     if (identity.current !== session.user.id) {
+      paymentModeCache.clear();
+      client.removeQueries({ queryKey: ["assistant-capabilities"] });
       identity.current = session.user.id;
       setMe(null);
       setReady(false);
@@ -86,7 +93,7 @@ export function MeProvider({ children }: { children: ReactNode }) {
 
     setMe(data);
     setReady(true);
-  }, []);
+  }, [client]);
 
   useEffect(() => {
     load();
@@ -94,6 +101,8 @@ export function MeProvider({ children }: { children: ReactNode }) {
     // 예전에는 그때마다 재조회가 돌았다.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        paymentModeCache.clear();
+        client.removeQueries({ queryKey: ["assistant-capabilities"] });
         loadGeneration.current++;
         identity.current = null;
         setMe(null);
@@ -101,6 +110,8 @@ export function MeProvider({ children }: { children: ReactNode }) {
       } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
         loadGeneration.current++;
         if (identity.current !== session?.user.id) {
+          paymentModeCache.clear();
+          client.removeQueries({ queryKey: ["assistant-capabilities"] });
           identity.current = session?.user.id ?? null;
           setReady(false);
           setMe(null);
@@ -109,7 +120,7 @@ export function MeProvider({ children }: { children: ReactNode }) {
       }
     });
     return () => sub.subscription.unsubscribe();
-  }, [load]);
+  }, [load, client]);
 
   const value = useMemo<MeState>(() => ({ me, ready, refresh: load, setMe }), [me, ready, load]);
   return <MeContext.Provider value={value}>{children}</MeContext.Provider>;
