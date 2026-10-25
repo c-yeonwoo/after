@@ -171,7 +171,11 @@ function StorePage() {
           </GuideNote>
         </div>
         <div className="app-elevated mt-3 rounded-surface bg-card px-6 py-8">
-          <Ticket className="mb-5 size-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
+          <Ticket
+            className="mb-5 size-7 text-primary-strong"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
           <h2 className="text-xl font-semibold">지금은 티켓 신청 없이 이용해요</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             소개가 도착하면 무료로 열어보고, 마음이 가는 분에게 만남을 요청할 수 있습니다. 유료로
@@ -337,7 +341,7 @@ function StorePage() {
       <ul className="mt-7 space-y-3 border-t border-border pt-5 text-xs">
         {spec.terms.map((term) => (
           <li key={term} className="flex gap-2.5 text-muted-foreground">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
             <span className="leading-relaxed">{term}</span>
           </li>
         ))}

@@ -1009,7 +1009,7 @@ function Onboarding() {
         ) : null}
 
         {codeSent && !emailVerified && LOCAL_DEV_AUTH_BYPASS ? (
-          <div className="mt-6 rounded-surface border border-primary/25 bg-primary/10 px-4 py-3">
+          <div className="mt-6 rounded-surface border border-border bg-muted px-4 py-3">
             <p className="text-sm font-semibold text-foreground">로컬 개발 환경</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               인증 코드를 확인하지 않습니다. 아래에서 바로 가입 흐름을 이어가세요.

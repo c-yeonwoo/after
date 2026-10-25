@@ -230,7 +230,7 @@ function PaymentForm({ order, me }: { order: TicketOrder; me: Profile }) {
       </div>
       <section aria-label="주문 상품" className="app-elevated mt-3 rounded-surface bg-card p-5">
         <div className="flex items-center gap-3">
-          <Ticket className="size-6 shrink-0 text-primary" aria-hidden="true" />
+          <Ticket className="size-6 shrink-0 text-primary-strong" aria-hidden="true" />
           <h2 className="text-base font-semibold">
             {label} {order.quantity}장
           </h2>

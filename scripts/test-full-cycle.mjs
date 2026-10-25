@@ -262,7 +262,7 @@ async function signup(person, i) {
   await page.getByRole("button", { name: "인증하고 계속" }).click();
   await page.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
   await page.getByRole("button", { name: "프로필 준비 시작", exact: true }).click();
-  await page.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await page.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   const image = await page.evaluate((name) => {
     const c = document.createElement("canvas");
     c.width = 360;

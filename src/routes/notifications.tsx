@@ -104,7 +104,11 @@ function NotificationsPage() {
         </p>
       ) : items.length === 0 ? (
         <div className="app-elevated mt-3 rounded-surface bg-card px-6 py-10 text-center">
-          <Bell className="mx-auto size-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
+          <Bell
+            className="mx-auto size-7 text-primary-strong"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
           <h2 className="mt-4 text-base font-semibold">아직 알림이 없어요</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             소개가 도착하거나 약속이 움직이면

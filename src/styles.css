@@ -169,10 +169,10 @@
 }
 
 /*
- * 애프터 — Indigo & Pink Concierge (2026-10-25).
- * 인디고는 행동·선택, 핑크는 브랜드의 작은 포인트에 쓴다.
- * 긴 대화와 약속 정보는 중립 표면으로 읽고, 채운 버튼에는 흰 글자를 쓴다.
- * 작은 링크에는 대비가 높은 primary-strong을 쓴다. 오류는 라즈베리다.
+ * 애프터 — White & Pink Concierge (2026-10-25, 사용자 승인 시안).
+ * 흰 표면과 #EF8798 테두리로 행동을 구별하고 #F2B1B5는 작은 선택 표시에 쓴다.
+ * 말풍선은 #FFF2F6와 중립 회색이며, 작은 글자·아이콘·포커스는 별도 고대비 잉크다.
+ * primary는 버튼 표면, brand-signature는 핑크 포인트다. 두 역할을 혼용하지 않는다.
  * OKLCH 토큰이 기준이며 hex 주석은 대응값이다.
  * `bun run check:contrast` 가 이 파일의 실제 값을 다시 계산해 고정한다.
  */
@@ -193,18 +193,18 @@
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
   --assistant-surface: oklch(0.96667 0.00171 247.84);
-  --assistant-ink: oklch(0.21303 0.00846 264.38);
+  --assistant-ink: oklch(0.35309 0.0124 273.05);
   --assistant-soft: oklch(0.98 0.001 250);
 
-  --brand-50: oklch(0.98353 0.00661 286.28); /* #F9F9FE */
-  --brand-100: oklch(0.958 0.02019 279.94); /* #EEF0FF */
-  --brand-200: oklch(0.958 0.02019 279.94);
-  --brand-300: oklch(0.84674 0.07909 285.38); /* #C7C6FF */
-  --brand-400: oklch(0.72527 0.17523 349.76); /* #F472B6 */
-  --brand-500: oklch(0.45678 0.21458 277.02); /* #4338CA — hover */
-  --brand-600: oklch(0.51057 0.23005 276.97); /* #4F46E5 — indigo */
-  --brand-700: oklch(0.45678 0.21458 277.02);
-  --brand-800: oklch(0.39843 0.17734 277.37); /* #3730A3 */
+  --brand-50: oklch(0.97244 0.0149 356.61); /* #FFF2F6 — 말풍선 */
+  --brand-100: oklch(0.97244 0.0149 356.61);
+  --brand-200: oklch(0.82186 0.07621 14.77); /* #F2B1B5 — 보조색 */
+  --brand-300: oklch(0.82186 0.07621 14.77);
+  --brand-400: oklch(0.74001 0.1277 10.22); /* #EF8798 — 대표색 */
+  --brand-500: oklch(0.74001 0.1277 10.22);
+  --brand-600: oklch(0.74001 0.1277 10.22);
+  --brand-700: oklch(0.44773 0.01632 294.9); /* #55535D — 읽기·행동 잉크 */
+  --brand-800: oklch(0.35309 0.0124 273.05); /* #393B42 */
   --brand-pine: oklch(0.32903 0.0471 173.52); /* #173D33 Midnight Green */
   --brand-sage: oklch(0.693 0.06414 160.45); /* #79A98F */
   --brand-dusk: oklch(0.47564 0.03006 164.57); /* #4D6258 */
@@ -212,15 +212,15 @@
 
   /* 글자 강조는 버튼의 채움보다 진하게 두어 보조면에서도 읽힌다. */
   --brand-signature: var(--brand-600);
-  --brand-blush: oklch(0.59165 0.21798 0.58); /* #DB2777 — pink signature */
+  --brand-blush: var(--brand-signature);
   --brand-text: var(--brand-700);
-  --brand-tint: var(--brand-200);
+  --brand-tint: var(--brand-50);
   --peach-300: var(--brand-tint);
   --peach-500: var(--brand-signature);
 
   /* Neutral ink keeps extended profile and assistant reading comfortable. */
-  --ink: oklch(0.21303 0.00846 264.38);
-  --ink-muted: oklch(0.45294 0.012 267.25);
+  --ink: oklch(0.35309 0.0124 273.05); /* #393B42 */
+  --ink-muted: oklch(0.5387 0.01446 271.14); /* #6B6E77 */
 
   --surface: oklch(1 0 0);
   --surface-subtle: oklch(0.96667 0.00171 247.84);
@@ -232,7 +232,7 @@
   /* 카드는 평평하게 둔다. 테두리와 그림자를 함께 쓰면 상자가 두 번 그려진다. */
   --shadow-card: none;
   --shadow-elevated: 0 8px 24px -12px oklch(0.30902 0.02966 167.48 / 24%);
-  --shadow-brand: 0 14px 34px -18px oklch(0.39843 0.08 277.37 / 16%);
+  --shadow-brand: none;
 
   /* ── 시맨틱 (shadcn) ── */
   --background: oklch(1 0 0);
@@ -241,17 +241,16 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  /* A compact indigo action uses white ink in both themes. */
-  --primary: var(--brand-600);
-  --primary-hover: var(--brand-500);
+  /* 주 행동은 흰 표면 + 핑크 테두리. 글자는 중립 회색으로 유지한다. */
+  --primary: var(--surface);
+  --primary-hover: var(--brand-50);
   --primary-strong: var(--brand-text);
-  --primary-foreground: oklch(1 0 0);
-  --selection: var(--primary);
-  --selection-foreground: var(--primary-foreground);
+  --primary-foreground: var(--brand-text);
+  --selection: var(--brand-50);
+  --selection-foreground: oklch(0.46351 0.02203 306.31); /* #5C5663 */
 
-  /* My messages and selections share a readable action surface. */
-  --bubble-mine: var(--selection);
-  --bubble-mine-foreground: var(--primary-foreground);
+  --bubble-mine: var(--brand-50);
+  --bubble-mine-foreground: var(--selection-foreground);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-subtle);
@@ -298,7 +297,7 @@
   --shadow-frame: 0 0 60px -20px oklch(0 0 0 / 60%);
   --shadow-card: none;
   --shadow-elevated: 0 8px 24px -12px oklch(0.08 0.008 165 / 60%);
-  --shadow-brand: 0 12px 34px -16px oklch(0.7826 0.0836 27.4 / 16%);
+  --shadow-brand: none;
 
   --background: oklch(0.19595 0.00621 271.09);
   --foreground: var(--ink);
@@ -308,12 +307,12 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  --primary: var(--brand-600);
-  --primary-hover: var(--brand-500);
-  --primary-foreground: oklch(1 0 0);
-  --primary-strong: var(--brand-300);
-  --selection: var(--primary);
-  --selection-foreground: var(--primary-foreground);
+  --primary: var(--surface);
+  --primary-hover: oklch(0.29764 0.01585 312.95);
+  --primary-foreground: oklch(0.94244 0.01146 308.33); /* #EEEAF2 */
+  --primary-strong: var(--primary-foreground);
+  --selection: oklch(0.29764 0.01585 312.95); /* #302B33 */
+  --selection-foreground: oklch(0.92068 0.01606 310.1); /* #E8E2ED */
 
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -335,7 +334,7 @@
   --bubble-mine: var(--selection);
   --bubble-mine-foreground: var(--selection-foreground);
   --brand-signature: var(--brand-600);
-  --brand-blush: var(--brand-400);
+  --brand-blush: var(--brand-signature);
   --brand-text: var(--primary-strong);
   --brand-tint: var(--surface-subtle);
 
@@ -394,6 +393,7 @@
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-control);
+  border: 1.5px solid var(--brand-signature);
   background: var(--primary);
   color: var(--primary-foreground);
   font-size: 0.875rem;
@@ -787,8 +787,13 @@
   }
 }
 
+.app-primary-button {
+  border: 1.5px solid transparent;
+}
+
 .app-primary-button:not(:disabled):not([aria-disabled="true"]) {
-  box-shadow: 0 5px 12px -6px oklch(0.2955 0.0198 169.4 / 48%);
+  border-color: var(--brand-signature);
+  box-shadow: none;
 }
 
 .app-primary-button:active:not(:disabled) {
@@ -801,6 +806,8 @@
 }
 
 .app-tab[aria-current="page"] .app-tab-icon {
+  border: 1.5px solid var(--brand-200);
+  background: var(--card);
   animation: after-tab-select 260ms var(--ease-out);
 }
 
@@ -820,10 +827,6 @@
 
 .app-switch[data-state="checked"]::before {
   background: var(--selection);
-}
-
-.readiness-status .app-switch[data-state="checked"]::before {
-  background: var(--brand-signature);
 }
 
 .readiness-status .app-switch:focus-visible {

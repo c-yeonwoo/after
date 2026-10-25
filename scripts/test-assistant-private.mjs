@@ -178,6 +178,20 @@ try {
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  // Fail closed before any UI request can spend tokens. Live advice is opt-in.
+  await page.route("**/functions/v1/assistant-chat", async (route) => {
+    const question = route.request().postDataJSON().question;
+    if (
+      process.env.AFTER_LOCAL_AI_CONFIRM !== "synthetic-only" &&
+      !["소개글 수정해줘", "지금 진행 상태"].includes(question)
+    ) {
+      return route.fulfill({
+        status: 400,
+        json: { code: "test_unexpected_question", syntheticQuestion: question },
+      });
+    }
+    return route.continue();
+  });
   await page.goto(`${base}/login`);
   for (let n = 0; n < 20; n++) {
     await page.getByLabel("가입한 이메일").fill(email);
@@ -203,20 +217,136 @@ try {
     if (request.url().includes("/functions/v1/assistant-chat")) draftApiCalls++;
   };
   page.on("request", countDraftCalls);
-  await page.getByLabel("비서에게 물어볼 내용").fill(draftedQuestion);
-  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page.getByLabel("비서에게 상담할 내용").fill(draftedQuestion);
+  await page.getByRole("link", { name: "대화 전체 보기" }).click();
   await page.waitForURL("**/assistant?panel=chat");
+  // Router URL commits before its outgoing home surface unmounts.
+  await page.getByRole("heading", { name: "나와 비서", exact: true }).waitFor();
   await page.getByLabel("비서에게 상담할 내용").waitFor();
   assert.equal(await page.getByLabel("비서에게 상담할 내용").inputValue(), draftedQuestion);
-  assert.equal(draftApiCalls, 0, "home handoff must not submit a private question automatically");
+  assert.equal(draftApiCalls, 0, "expanding the same conversation must not submit the draft");
   assert.equal(new URL(page.url()).search, "?panel=chat", "private draft never appears in URL");
   page.off("request", countDraftCalls);
   await page.getByLabel("비서에게 상담할 내용").fill("소개글 수정해줘");
+  await delay(200);
+  assert.equal(
+    await page.getByLabel("비서에게 상담할 내용").inputValue(),
+    "소개글 수정해줘",
+    "visible edit is not overwritten by a transferred draft",
+  );
   page.on("request", countDraftCalls);
+  const serviceResponse = page.waitForResponse((response) =>
+    response.url().includes("/functions/v1/assistant-chat"),
+  );
   await page.getByRole("button", { name: "상담 보내기", exact: true }).click();
+  const received = await serviceResponse;
+  assert.equal(received.status(), 200, await received.text());
+  assert.ok(
+    (await rpc("my_assistant_state")).turns.some((turn) => turn.question === "소개글 수정해줘"),
+    "server persisted service command",
+  );
   await page.getByRole("link", { name: "프로필 수정하기", exact: true }).waitFor();
-  assert.equal(draftApiCalls, 0, "service commands inside private chat also bypass model calls");
+  assert.equal(draftApiCalls, 1, "service command uses the persistent server conversation");
+  assert.equal(
+    sql(`select count(*) from ai_runs where user_id='${id}'`),
+    process.env.AFTER_LOCAL_AI_CONFIRM === "synthetic-only" ? "1" : "0",
+    "service command does not spend model tokens",
+  );
   page.off("request", countDraftCalls);
+  await page.goto(`${base}/home`);
+  await page.getByText("소개글 수정해줘", { exact: true }).waitFor();
+  await page.getByLabel("비서에게 상담할 내용").fill("지금 진행 상태");
+  await page.getByRole("button", { name: "상담 보내기", exact: true }).click();
+  await page.getByText("지금 진행 상태", { exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, "/home", "home sends in place");
+  await page.reload();
+  await page.getByText("지금 진행 상태", { exact: true }).waitFor();
+  await page.getByRole("link", { name: "대화 전체 보기" }).click();
+  await page.getByText("소개글 수정해줘", { exact: true }).waitFor();
+  await page.getByText("지금 진행 상태", { exact: true }).waitFor();
+  // Same-timestamp records exercise the stable timestamp + UUID cursor.
+  sql(`insert into assistant_turns(id,owner_id,privacy_revision,question,answer,state,created_at)
+    select gen_random_uuid(),'${id}',${(await rpc("my_assistant_state")).revision},'이전 대화 '||n,'합성 답변 '||n,'complete',now()-interval '1 hour'
+    from generate_series(1,25) n;`);
+  await page.reload();
+  await page.getByRole("button", { name: "이전 대화 보기", exact: true }).click();
+  await page.waitForFunction(
+    () => document.querySelectorAll('ol[aria-label="나만의 상담 기록"] > li').length === 27,
+  );
+  const loadedQuestions = await page
+    .locator('ol[aria-label="나만의 상담 기록"] > li')
+    .allTextContents();
+  sql(`insert into assistant_turns(id,owner_id,privacy_revision,question,answer,state)
+    values(gen_random_uuid(),'${id}',${(await rpc("my_assistant_state")).revision},'새 합성 질문','새 합성 답변','complete');`);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await page.waitForFunction(
+    () => document.querySelectorAll('ol[aria-label="나만의 상담 기록"] > li').length === 28,
+  );
+  const refreshedQuestions = await page
+    .locator('ol[aria-label="나만의 상담 기록"] > li')
+    .allTextContents();
+  assert.ok(
+    loadedQuestions.every((text) => refreshedQuestions.includes(text)),
+    "new polling window cannot drop already loaded turns",
+  );
+  sql(`insert into assistant_turns(id,owner_id,privacy_revision,question,answer,state,created_at)
+    select gen_random_uuid(),'${id}',${(await rpc("my_assistant_state")).revision},'이어지는 합성 질문 '||n,'이어지는 합성 답변 '||n,'complete',now()+n*interval '1 microsecond' from generate_series(1,20) n;`);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await page.waitForFunction(
+    () => document.querySelectorAll('ol[aria-label="나만의 상담 기록"] > li').length === 48,
+  );
+  await page.getByText("새 합성 질문", { exact: true }).waitFor();
+  // Render synthetic server receipts without a paid generation or real action.
+  // Actual trigger creation/deduplication is covered by the transaction SQL suite.
+  sql(`insert into assistant_turns(id,owner_id,privacy_revision,question,answer,state,kind,source_id,created_at)
+    values
+      (gen_random_uuid(),'${id}',${(await rpc("my_assistant_state")).revision},'프로필 반영 결과',
+       '확인하신 수정안을 프로필에 반영했어요. 내 프로필에서 확인할 수 있어요.',
+       'complete','profile_applied',gen_random_uuid(),now()+interval '1 second'),
+      (gen_random_uuid(),'${id}',${(await rpc("my_assistant_state")).revision},'일정 처리 결과',
+       '승인하신 가능한 시간을 전달했어요. 약속 상세에서 다음 단계를 확인해 주세요.',
+       'complete','schedule_applied',gen_random_uuid(),now()+interval '2 seconds');`);
+  await page.reload();
+  await page.getByText("프로필 반영 완료", { exact: true }).waitFor();
+  await page.getByText("일정 처리 완료", { exact: true }).waitFor();
+  assert.equal(
+    await page.getByText("프로필 반영 결과", { exact: true }).count(),
+    0,
+    "server receipt never impersonates a user message",
+  );
+  const continuityShots = process.env.AFTER_E2E_SCREENSHOT_DIR;
+  if (continuityShots) {
+    await mkdir(continuityShots, { recursive: true });
+    for (const scheme of ["light", "dark"]) {
+      await page.emulateMedia({ colorScheme: scheme });
+      for (const width of [390, 1440]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const surface of ["home", "assistant"]) {
+          await page.goto(`${base}/${surface}`);
+          await page.getByLabel("비서에게 상담할 내용").waitFor();
+          await page.getByText("이어지는 합성 질문 20", { exact: true }).waitFor();
+          if (surface === "home") {
+            await page.locator("main").evaluate((main) => {
+              main.scrollTop = 0;
+            });
+            await page.screenshot({ path: `${continuityShots}/home-top-${scheme}-${width}.png` });
+          }
+          await page.locator("main").evaluate((main) => {
+            main.scrollTop = main.scrollHeight;
+          });
+          await page.screenshot({ path: `${continuityShots}/${surface}-${scheme}-${width}.png` });
+          const issues = (await new AxeBuilder({ page }).analyze()).violations.filter((v) =>
+            ["serious", "critical"].includes(v.impact),
+          );
+          assert.deepEqual(
+            issues.map((v) => v.id),
+            [],
+            `${surface} accessibility`,
+          );
+        }
+      }
+    }
+  }
   await page.goto(`${base}/assistant?panel=memory`);
   await page.getByRole("button", { name: "기억할 선호 추가" }).click();
   await page
@@ -364,7 +494,7 @@ try {
   assert.deepEqual(uiIssues, [], "native conversation and approval flow");
   await rpc("assistant_forget", { p_scope: "all" });
   await page.goto(`${base}/assistant`);
-  await page.getByRole("link", { name: "나만의 상담", exact: true }).click();
+  await page.getByRole("link", { name: "대화", exact: true }).click();
   await page.getByLabel("비서에게 상담할 내용").fill("첫 만남이 긴장돼요");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("--keyboard-height", "300px"),
@@ -400,6 +530,14 @@ try {
   );
   await page.unroute("**/functions/v1/assistant-chat");
   console.log("Private assistant API + mobile/dark/memory consent/deletion QA PASS");
+} catch (error) {
+  const failedPage = browser?.contexts()[0]?.pages()[0];
+  if (failedPage) {
+    await mkdir("/tmp/after-continuity-failure", { recursive: true });
+    await failedPage.screenshot({ path: "/tmp/after-continuity-failure/screen.png" });
+    console.error((await failedPage.locator("body").innerText()).slice(-5000));
+  }
+  throw error;
 } finally {
   await browser?.close();
   if (server?.pid) {

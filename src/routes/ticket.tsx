@@ -114,7 +114,7 @@ function TicketPage() {
             "상대가 하나를 고르면 약속이 정해지고 대화가 열립니다",
           ].map((t) => (
             <li key={t} className="flex gap-2.5 text-foreground">
-              <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
               <span className="leading-relaxed">{t}</span>
             </li>
           ))}
@@ -174,7 +174,7 @@ function TicketPage() {
           </Button>
         </div>
       ) : order && paid ? (
-        <div className="mt-7 rounded-surface border border-primary/30 bg-primary/8 px-6 py-7 text-center">
+        <div className="mt-7 rounded-surface border border-brand-200 bg-selection px-6 py-7 text-center">
           <p className="text-sm font-semibold text-foreground">결제를 기다리는 주문이 있습니다</p>
           <p className="mt-2 text-xs text-muted-foreground">
             결제가 끝나면 만남 티켓을 바로 사용할 수 있습니다.
@@ -187,7 +187,7 @@ function TicketPage() {
           </Button>
         </div>
       ) : order ? (
-        <div className="mt-7 rounded-surface border border-primary/30 bg-primary/8 px-6 py-7 text-center">
+        <div className="mt-7 rounded-surface border border-brand-200 bg-selection px-6 py-7 text-center">
           <p className="text-sm font-semibold text-foreground">신청을 받았습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             만남 티켓이 준비되면 이 화면에서 바로 사용하실 수 있습니다. 그때까지 소개는 그대로 열려

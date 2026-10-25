@@ -253,7 +253,7 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
               <label className="flex min-h-11 items-start gap-2 py-2 text-sm leading-relaxed">
                 <input
                   type="checkbox"
-                  className="mt-1 size-4 shrink-0 accent-primary"
+                  className="mt-1 size-4 shrink-0 accent-primary-strong"
                   checked={consent}
                   onChange={(event) => setConsent(event.target.checked)}
                   disabled={busy}

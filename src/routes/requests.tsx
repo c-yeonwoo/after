@@ -181,7 +181,7 @@ function RequestsPage() {
                   <Link
                     to="/prefs"
                     search={{ meetingId: meeting.id }}
-                    className="pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="app-primary-button pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     가능한 날짜 보내기
                     <ArrowRight className="size-4" aria-hidden="true" />
@@ -255,7 +255,7 @@ function SlotChoices({
                 release();
               }
             }}
-            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 py-3 text-left text-sm font-semibold text-foreground hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 py-3 text-left text-sm font-semibold text-foreground hover:border-brand-signature focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
           >
             <span>{formatMeetTime(iso)}</span>
             <span className="shrink-0 text-xs font-medium text-primary-strong">

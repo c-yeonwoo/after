@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
+import { AssistantConversation } from "./AssistantConversation";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUp } from "lucide-react";
 import { AssistantMark } from "./AssistantMark";
@@ -11,7 +12,34 @@ import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import { useMe } from "@/lib/me";
 import { setAssistantDraft } from "@/lib/assistantDraft";
 
-export function AssistantDock({
+export function AssistantDock(props: ComponentProps<typeof LegacyAssistantDock>) {
+  const { me } = useMe();
+  const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
+  if (!flags.data && me && me.onboarding_step >= 7) {
+    return (
+      <div className="py-4 text-sm text-muted-foreground" role="status">
+        {flags.isError || flags.isPaused ? "대화를 불러오지 못했어요." : "대화를 불러오고 있어요…"}
+        {flags.isError || flags.isPaused ? (
+          <button
+            type="button"
+            className="ml-2 min-h-11 font-semibold text-primary-strong"
+            onClick={() => void flags.refetch()}
+          >
+            다시 확인
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+  // Keep the conversation mounted through a transient capability read failure.
+  // Its own RPC enforces live consent/flags before any send.
+  if (me && me.onboarding_step >= 7 && flags.data?.chat) {
+    return <AssistantConversation key={me.id} owner={me.id} compact context={props} />;
+  }
+  return <LegacyAssistantDock {...props} />;
+}
+
+function LegacyAssistantDock({
   status,
   counterpartId,
   state,
@@ -149,7 +177,7 @@ export function AssistantDock({
           type="submit"
           disabled={!input.trim() || awaitingCapabilities}
           aria-label="비서에게 질문하기"
-          className="pressable flex size-11 shrink-0 items-center justify-center rounded-control bg-selection text-selection-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:bg-muted disabled:text-muted-foreground"
+          className="app-primary-button pressable flex size-11 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:bg-muted disabled:text-muted-foreground"
         >
           <ArrowUp className="size-5" />
         </button>

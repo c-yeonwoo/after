@@ -18,7 +18,7 @@ export function PaymentState({
   }[tone];
   return (
     <section className="app-elevated mt-3 rounded-surface bg-card px-5 py-8 text-center">
-      <span className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-surface-subtle text-primary">
+      <span className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-surface-subtle text-primary-strong">
         <Icon className="size-6" strokeWidth={1.8} aria-hidden="true" />
       </span>
       <h2 className="text-xl font-semibold text-balance break-keep tracking-[-0.025em]">{title}</h2>

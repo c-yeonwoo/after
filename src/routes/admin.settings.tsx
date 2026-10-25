@@ -230,7 +230,7 @@ function AdminSettingsPage() {
                 type="button"
                 onClick={() => void save()}
                 disabled={busy || loading || error || reason.trim().length < 3}
-                className="min-h-11 rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                className="app-primary-button min-h-11 rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
               >
                 설정 저장
               </button>

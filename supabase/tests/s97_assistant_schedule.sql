@@ -15,7 +15,8 @@ select ok(not has_table_privilege('authenticated','assistant_actions','update'),
 select ok(not has_function_privilege('authenticated','assistant_check_schedule(uuid,text,jsonb)','execute'),'internal checker inaccessible');
 select set_config('request.jwt.claim.sub','97000000-0000-0000-0000-000000000002',true);
 select throws_ok($$select assistant_draft_schedule(gen_random_uuid(),'97000000-0000-0000-0000-000000000012','preferences',jsonb_build_object('dates',jsonb_build_array((select d from dates)),'stations','[]'::jsonb,'anywhere',true))$$,'PT403','feature disabled','schedule flag enforced');
-update app_settings set assistant_schedule_enabled=true;
+update app_settings set assistant_schedule_enabled=true,assistant_chat_enabled=true;
+select assistant_consent(true);
 create temp table initial_notifications as select count(*)::int as n from notifications where meeting_id='97000000-0000-0000-0000-000000000012';
 select lives_ok($$select assistant_draft_schedule('97000000-0000-0000-0000-000000000020','97000000-0000-0000-0000-000000000012','preferences',jsonb_build_object('dates',jsonb_build_array((select d from dates)),'stations','[]'::jsonb,'anywhere',true))$$,'female makes preferences draft');
 select ok((select prefs_submitted_at is null from meetings where id='97000000-0000-0000-0000-000000000012'),'draft has no effect on meeting');
@@ -28,6 +29,8 @@ select set_config('request.jwt.claim.sub','97000000-0000-0000-0000-000000000002'
 select lives_ok($$select assistant_approve_schedule('97000000-0000-0000-0000-000000000020',(select approval_token from assistant_actions where id='97000000-0000-0000-0000-000000000020'),true)$$,'approved preferences call existing command');
 select ok((select prefs_submitted_at is not null and female_attendance_policy_ack_at is not null from meetings where id='97000000-0000-0000-0000-000000000012'),'preferences and policy ack retained');
 select lives_ok($$select assistant_approve_schedule('97000000-0000-0000-0000-000000000020',(select approval_token from assistant_actions where id='97000000-0000-0000-0000-000000000020'),true)$$,'repeated approval receipt');
+select is((select count(*)::int from assistant_turns where source_id='97000000-0000-0000-0000-000000000020' and kind='schedule_applied'),1,'approved schedule writes exactly one conversation receipt');
+select ok((select answer like '%가능한 시간을 전달%' from assistant_turns where source_id='97000000-0000-0000-0000-000000000020'),'schedule receipt describes preferences, not a confirmed meeting');
 select throws_ok($$select assistant_draft_schedule(gen_random_uuid(),'97000000-0000-0000-0000-000000000012','confirm',jsonb_build_object('at',(select d from dates),'place','가상카페','placeKind','카페'))$$,'22023','invalid confirmation','female cannot bypass male confirmation role');
 select set_config('request.jwt.claim.sub','97000000-0000-0000-0000-000000000001',true);
 select assistant_draft_schedule('97000000-0000-0000-0000-000000000021','97000000-0000-0000-0000-000000000012','confirm',jsonb_build_object('at',(select d from dates),'place','가상카페','placeKind','카페'));

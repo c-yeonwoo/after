@@ -376,7 +376,7 @@ function Action({
           <MeetingPolicyNote />
           <label className="flex min-h-11 items-start gap-3 text-sm leading-relaxed">
             <input
-              className="mt-1 size-5 shrink-0 accent-primary"
+              className="mt-1 size-5 shrink-0 accent-primary-strong"
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
