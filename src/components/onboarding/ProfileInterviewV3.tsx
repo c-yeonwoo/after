@@ -24,6 +24,11 @@ import {
 } from "@/lib/profileInterviewV3";
 import { hasContactDetail } from "@/lib/profileInterview";
 import { PROFILE_INTERVIEW_PROMPTS } from "@/lib/profileInterviewPrompts";
+import {
+  profileAnswerCoaching,
+  profileCoachingSources,
+  type ProfileCoachingSource,
+} from "@/lib/profileCoaching";
 import { toProfileView } from "@/lib/profileView";
 import {
   CHOICE_QUESTIONS,
@@ -68,6 +73,27 @@ function resultError(result: StoryGenerationResult): string {
     default:
       return "소개글을 다듬는 데 문제가 생겼어요. 답변은 저장되어 있어요.";
   }
+}
+
+function SourceNotes({ sources, label }: { sources: ProfileCoachingSource[]; label: string }) {
+  if (!sources.length) return null;
+  return (
+    <details className="mt-2 text-sm">
+      <summary className="min-h-11 cursor-pointer content-center rounded-control py-2 font-medium text-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {label}
+      </summary>
+      <dl className="space-y-4 pb-3 pt-1">
+        {sources.map((source) => (
+          <div key={source.id}>
+            <dt className="text-xs leading-relaxed text-muted-foreground">{source.label}</dt>
+            <dd className="mt-1 break-words whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {source.text}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
 }
 
 export function ProfileInterviewV3({
@@ -446,7 +472,7 @@ export function ProfileInterviewV3({
   if (data.stage === "start")
     return shell(
       "내 이야기를 시작해 볼까요?",
-      "몇 가지를 고르고 세 가지 이야기를 짧게 들려주세요.",
+      "세 가지 이야기를 들려주세요. 소개글로 다듬고 함께 확인해요.",
       <>
         {data.story ? (
           <p className="mb-5 text-sm text-muted-foreground">
@@ -474,7 +500,11 @@ export function ProfileInterviewV3({
     const questions = CHOICE_QUESTIONS.slice(page * 2, page * 2 + 2);
     return shell(
       "나에게 편한 방식",
-      "끌리는 답만 골라주세요. 정답은 없어요.",
+      [
+        "일상과 첫 만남에서 편한 쪽을 알려주세요.",
+        "연락·약속은 어떤 방식이 편한가요? 이 두 답은 공개하지 않아요.",
+        "가까워지는 순간과 나누고 싶은 이야기를 골라주세요.",
+      ][page],
       <>
         <div className="space-y-5">
           {questions.map((question) => (
@@ -588,6 +618,7 @@ export function ProfileInterviewV3({
     const question = STORY_QUESTIONS[index];
     const prompt = PROFILE_INTERVIEW_PROMPTS[question.id];
     const value = data.answers[question.id];
+    const coaching = profileAnswerCoaching(question.id, value);
     return shell(
       prompt.question,
       prompt.guide,
@@ -598,6 +629,9 @@ export function ProfileInterviewV3({
           </label>
           <Textarea
             id="story-answer"
+            aria-describedby={
+              coaching ? "story-answer-note story-answer-help" : "story-answer-note"
+            }
             rows={5}
             maxLength={300}
             className="text-base"
@@ -611,7 +645,7 @@ export function ProfileInterviewV3({
             }
           />
           <div className="mt-3 flex items-start justify-between gap-3">
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p id="story-answer-note" className="text-xs leading-relaxed text-muted-foreground">
               쓴 내용은 마지막에 고치거나 빼실 수 있어요.
             </p>
             <output
@@ -621,6 +655,13 @@ export function ProfileInterviewV3({
               {value.length}/300
             </output>
           </div>
+          {coaching ? (
+            <div id="story-answer-help" className="mt-5 text-sm leading-relaxed">
+              <p className="font-medium text-foreground">조금 더 떠올려보고 싶다면</p>
+              <p className="mt-1 break-keep text-muted-foreground">{coaching}</p>
+              <p className="mt-2 text-xs text-muted-foreground">지금 답변으로 넘어가도 괜찮아요.</p>
+            </div>
+          ) : null}
         </div>
         <div className="mt-8 flex gap-2">
           <Button
@@ -666,7 +707,7 @@ export function ProfileInterviewV3({
   if (data.stage === "analyzing")
     return shell(
       "내 이야기를 살펴볼게요",
-      "답변을 바탕으로 중요한 내용을 정리합니다.",
+      "소개할 내용을 정리한 뒤, 뜻이 맞는지 함께 확인해요.",
       <>
         <Button size="lg" className="w-full" disabled={busy} onClick={() => void analyze()}>
           {busy ? "살펴보는 중…" : "내용 정리하기"}
@@ -705,7 +746,7 @@ export function ProfileInterviewV3({
   if (data.stage === "followups")
     return shell(
       "조금만 더 들려주세요",
-      "선택 · 추가 질문은 최대 두 개예요.",
+      "최대 두 가지만 더 여쭤볼게요. 건너뛰어도 괜찮아요.",
       <>
         <div className="space-y-5">
           {data.followupIds.map((id) => (
@@ -749,13 +790,17 @@ export function ProfileInterviewV3({
   if (data.stage === "understanding")
     return shell(
       "이렇게 이해했어요",
-      "맞는 내용인지 확인해 주세요.",
+      "내 뜻과 같은가요? 원래 답변도 펼쳐볼 수 있어요.",
       <>
         {data.understanding.length ? (
           <ul className="divide-y divide-border">
             {data.understanding.map((fact, index) => (
               <li key={index} className="py-4 text-base leading-relaxed">
                 {fact.text}
+                <SourceNotes
+                  sources={profileCoachingSources(data, fact.sourceIds, "owner")}
+                  label="참고한 내 답변 보기"
+                />
               </li>
             ))}
           </ul>
@@ -792,7 +837,7 @@ export function ProfileInterviewV3({
   if (data.stage === "review")
     return shell(
       "프로필에 담을 이야기",
-      "공개하지 않을 내용은 빼주세요.",
+      "선택한 답변만 소개글로 다듬어요. 공개하지 않을 내용은 빼주세요.",
       <>
         <div className="divide-y divide-border">
           {picked
@@ -885,11 +930,26 @@ export function ProfileInterviewV3({
     data.storySourceRevision === data.sourceRevision;
   return shell(
     "이렇게 소개할까요?",
-    "내 말과 다른 곳은 직접 고쳐 주세요.",
+    "상대에게 보여줄 모습이에요. 확인하고 저장해 주세요.",
     <>
+      {data.generatedStory ? (
+        <div className="mb-6 text-sm leading-relaxed">
+          <p className="font-medium text-foreground">선택한 답변을 AI가 다듬은 초안이에요</p>
+          <p className="mt-1 break-keep text-muted-foreground">
+            말투는 다듬어도 뜻은 그대로. 내 취향·경험과 다른 부분은 고쳐주세요.
+          </p>
+          <SourceNotes
+            sources={profileCoachingSources(data, picked, "public")}
+            label="프로필 재료로 고른 내 답변 보기"
+          />
+        </div>
+      ) : null}
       {story ? <ProfileDetail p={preview} /> : null}
       {editingCopy ? (
         <fieldset disabled={busy} className="mt-7 min-w-0 space-y-5 border-t border-border pt-6">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            여기서는 상대에게 보여줄 문장만 고쳐요. 인터뷰에서 남긴 원래 답변은 바뀌지 않아요.
+          </p>
           <div>
             <label htmlFor="story-headline" className="text-sm font-semibold">
               한 줄 소개

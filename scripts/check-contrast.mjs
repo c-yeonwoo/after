@@ -138,7 +138,7 @@ function audit(themeName, block) {
   chk("스위치 손잡이 / 켜진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("brand-signature")))), 3);
   chk("스위치 손잡이 / 꺼진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("input")))), 3);
 
-  console.log("\n── 선택 역할: 선명한 오렌지 (4.5) ──");
+  console.log("\n── 선택 역할: 인디고 (4.5) ──");
   const selection = toS(parseOklch(tokenRaw("selection")));
   const selectionFg = toS(parseOklch(tokenRaw("selection-foreground")));
   chk("선택한 항목 / 선택 글자", cr(selection, selectionFg), 4.5);
@@ -191,7 +191,7 @@ function audit(themeName, block) {
   );
 }
 
-audit("라이트 — 선셋 비비드", lightBlock);
+audit("라이트 — 인디고 · 핑크", lightBlock);
 audit("다크 — 차콜", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);

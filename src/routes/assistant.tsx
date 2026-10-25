@@ -11,7 +11,7 @@ import { privateAssistantSafety } from "../../supabase/functions/_shared/assista
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMe } from "@/lib/me";
-import { takeAssistantDraft } from "@/lib/assistantDraft";
+import { setAssistantDraft, takeAssistantDraft } from "@/lib/assistantDraft";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import {
   assistantRpc,
@@ -66,6 +66,7 @@ function revealInConversation(
 
 function PrivateAssistant({ owner }: { owner: string }) {
   const { me } = useMe();
+  const navigate = useNavigate();
   const { panel } = Route.useSearch();
   const client = useQueryClient();
   const live = useMemberLiveQuery("assistant-private", owner, getPrivateAssistant);
@@ -181,6 +182,12 @@ function PrivateAssistant({ owner }: { owner: string }) {
       if (!input.trim() || !data) return;
       const refusal = privateAssistantSafety(input, { execution: false });
       const intent = assistantIntent(input);
+      if (!refusal && intent === "edit" && data.flags.profileEdit) {
+        setAssistantDraft(owner, input.trim());
+        setInput("");
+        void navigate({ to: "/assistant-profile" });
+        return;
+      }
       if (refusal || intent !== "unknown") {
         setWorkflowReply(
           refusal
@@ -190,6 +197,7 @@ function PrivateAssistant({ owner }: { owner: string }) {
                 complete: Boolean(me && me.onboarding_step >= 7),
                 schedule: data.flags.schedule,
                 memory: data.flags.memory,
+                profileEdit: data.flags.profileEdit,
               }),
         );
         setInput("");

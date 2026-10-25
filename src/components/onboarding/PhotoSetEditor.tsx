@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { MAX_PHOTOS, MIN_PHOTOS } from "@/components/onboarding/basics";
 import { uploadProfilePhoto, usePhotoUrl } from "@/lib/photo";
 import { cn } from "@/lib/utils";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
+import { inspectPhotoForCoaching, photoTips, type PhotoObservation } from "@/lib/photoCoaching";
 
 /**
  * 프로필 사진 묶음 편집 (s53, 2026-10-10).
@@ -27,6 +29,7 @@ export function PhotoSetEditor({
   /* 경로 → 방금 고른 파일의 blob URL. 서명 URL 을 받기 전에도 바로 보이게. */
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(0);
+  const [observations, setObservations] = useState<Record<string, PhotoObservation | null>>({});
   const uploadingRef = useRef(false);
   const previewUrls = useRef<Record<string, string>>({});
   const room = MAX_PHOTOS - photos.length;
@@ -56,10 +59,12 @@ export function PhotoSetEditor({
     setBusy(picked.length);
     for (const file of picked) {
       try {
+        const observation = await inspectPhotoForCoaching(file);
         const path = await uploadProfilePhoto(file);
         const preview = URL.createObjectURL(file);
         previewUrls.current[path] = preview;
         setPreviews((m) => ({ ...m, [path]: preview }));
+        setObservations((previous) => ({ ...previous, [path]: observation }));
         next = [...next, path];
         onChange(next);
       } catch (err) {
@@ -124,7 +129,53 @@ export function PhotoSetEditor({
           ? `${MIN_PHOTOS - photos.length}장 더 필요해요 (${photos.length}/${MIN_PHOTOS})`
           : `${photos.length}/${MAX_PHOTOS}장 · 사진을 누르면 대표 사진이 돼요`}
       </p>
+      <PhotoCoach photos={photos} observations={observations} />
     </div>
+  );
+}
+
+function PhotoCoach({
+  photos,
+  observations,
+}: {
+  photos: string[];
+  observations: Record<string, PhotoObservation | null>;
+}) {
+  const findings = photos.flatMap((path, index) =>
+    photoTips(observations[path] ?? null).map((tip) => ({ ...tip, index })),
+  );
+  return (
+    <section className="photo-coach mt-5" aria-label="사진 구성 도움">
+      <div className="flex items-center gap-2">
+        <AssistantMark className="size-8" />
+        <h3 className="text-sm font-semibold">사진에도 나다운 모습이 담기게</h3>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-foreground">
+        {photos.length === 0
+          ? "첫 장은 얼굴이 또렷한 사진으로. 평소의 옷차림과 좋아하는 일도 보여주세요."
+          : photos.length < MIN_PHOTOS
+            ? "셀카만 고르셨다면, 평소 옷차림이 보이는 전신사진이나 취미 사진도 한 장 어때요?"
+            : "비슷한 구도만 있다면 한 장은 일상이나 취미 사진으로. 만나서 꺼낼 이야기가 생겨요."}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
+        <span>얼굴이 잘 보이는 사진</span>
+        <span>평소의 옷차림</span>
+        <span>좋아하는 일</span>
+      </div>
+      {findings.length ? (
+        <ul className="mt-4 space-y-2" aria-live="polite" aria-label="방금 고른 사진 확인">
+          {findings.slice(0, 3).map((tip) => (
+            <li key={`${tip.index}-${tip.kind}`} className="text-sm leading-relaxed">
+              <span className="font-semibold">{tip.index + 1}번 사진 · </span>
+              {tip.text}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        밝기·크기 안내예요. 사진 검수 결과와는 별개예요.
+      </p>
+    </section>
   );
 }
 

@@ -8,12 +8,19 @@ import { chromium } from "playwright";
 export const marker = "after-manual-cycle-v1";
 export const password = "AfterLocal!2026"; // Deliberately public LOCAL fixture only.
 export function localEnvironment() {
-  const env = JSON.parse(
-    execFileSync("npx", ["supabase", "status", "-o", "json"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    }),
-  );
+  let env;
+  try {
+    env = JSON.parse(
+      execFileSync("npx", ["supabase", "status", "-o", "json"], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      }),
+    );
+  } catch {
+    // A child-process exception includes captured stdout, which may contain
+    // local API keys. Keep status diagnostics out of test failure reports.
+    throw new Error("Local Supabase status unavailable");
+  }
   assert.match(env.API_URL, /^http:\/\/127\.0\.0\.1:\d+$/);
   assert.equal(new URL(env.DB_URL).hostname, "127.0.0.1");
   return env;
@@ -141,6 +148,39 @@ export function legacyFingerprint(env) {
       ),
     ]),
   );
+}
+
+/** Every existing public row is hashed inside Postgres. New QA rows can be added,
+ * but no pre-existing row (including a participant's manual cycle) may change. */
+export function existingPublicRecordHashes(env) {
+  const tables = JSON.parse(
+    database(
+      env,
+      "select coalesce(json_agg(tablename order by tablename),'[]') from pg_tables where schemaname='public'",
+    ),
+  );
+  return Object.fromEntries(
+    tables.map((table) => {
+      assert.match(table, /^[a-z0-9_]+$/);
+      const rows = JSON.parse(
+        database(
+          env,
+          `select coalesce(json_agg(hash order by hash),'[]') from (select md5(to_jsonb(t)::text) hash from public.${table} t) rows`,
+        ),
+      );
+      return [table, rows];
+    }),
+  );
+}
+export function assertExistingPublicRecordsPreserved(before, after) {
+  for (const [table, hashes] of Object.entries(before)) {
+    const remaining = new Map();
+    for (const hash of after[table] ?? []) remaining.set(hash, (remaining.get(hash) ?? 0) + 1);
+    for (const hash of hashes) {
+      assert.ok((remaining.get(hash) ?? 0) > 0, `Existing ${table} record was changed or removed`);
+      remaining.set(hash, remaining.get(hash) - 1);
+    }
+  }
 }
 export async function prepareCycle(env, tag = "manual") {
   if (existsSync(manifestPath(tag))) {

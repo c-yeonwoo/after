@@ -26,7 +26,9 @@ import { useMe } from "@/lib/me";
 import { myMeetWindow, type MeetWindow } from "@/lib/meetWindow";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
+import { assistantWelcome } from "@/lib/assistantExperience";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -93,7 +95,7 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
     case "paused":
       return "소개를 잠시 쉬고 있어요.";
     case "waiting":
-      return "잘 맞는 분을 찾고 있어요.";
+      return "아직 새 소개가 없어요.";
   }
 }
 
@@ -188,11 +190,24 @@ function HomePage() {
 
   const headline = loadError
     ? "상태를 확인할 수 없어요."
-    : primaryState
-      ? primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
-        ? "마음을 남긴 소개가 있어요."
-        : stateHeadline(primaryState, isMale)
-      : "지금 상태를 확인하고 있어요.";
+    : live.isError || live.isPaused
+      ? "최신 상태를 확인하지 못했어요."
+      : primaryState
+        ? primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
+          ? "마음을 남긴 소개가 있어요."
+          : stateHeadline(primaryState, isMale)
+        : "지금 상태를 확인하고 있어요.";
+  const hasPriorityContent = Boolean(
+    loading ||
+    loadError ||
+    meeting ||
+    (!isMale && requestCount > 0) ||
+    (blocksNewIntro &&
+      ["photos_pending", "profile_incomplete", "policy_required"].includes(primaryState ?? "")) ||
+    candidate ||
+    (isMale && queued > 0),
+  );
+  const welcome = assistantWelcome(currentProfile?.name, now);
 
   if (ready && me && me.onboarding_step < 7) return <ProfilePreparationHome profile={me} />;
 
@@ -206,10 +221,29 @@ function HomePage() {
 
   return (
     <AppScreen keyboardAware>
-      <div className="home-greeting">
-        <h1 className="max-w-[19rem] text-[1.75rem] leading-[1.3] font-bold tracking-[-0.025em] break-keep">
-          {headline}
-        </h1>
+      <div className="home-greeting assistant-home-greeting" aria-label="애프터 AI 안내">
+        <AssistantMark className="size-12 shrink-0" />
+        <div className="assistant-home-status min-w-0">
+          <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
+            <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
+          </h1>
+          <p className="mt-2 break-keep text-sm leading-relaxed text-muted-foreground">
+            {welcome.invitation}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <h2 className="break-keep text-base font-semibold leading-relaxed">{headline}</h2>
+        {!live.isError &&
+        !live.isPaused &&
+        primaryState === "waiting" &&
+        !isMale &&
+        serverState?.intro_progress?.has_likes ? (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            만남 요청이 오면 날짜를 보고 결정해요.
+          </p>
+        ) : null}
       </div>
 
       {(live.isError || live.isPaused) && live.data ? (
@@ -237,153 +271,141 @@ function HomePage() {
         따로 두면 같은 내용을 두 번 말하게 된다 — 예전 "다음 단계" 리스트와 같은 중복이었다.
         확정 상태처럼 카드 자체가 정보를 다 담는 경우엔 별도 안내를 보태지 않는다.
       */}
-      <div className="mt-5">
-        {loading ? (
-          <div className="rounded-surface border border-border bg-card px-6 py-10 text-center">
-            <p className="text-sm text-muted-foreground">불러오는 중입니다…</p>
-          </div>
-        ) : loadError ? (
-          <div role="alert" className="rounded-surface border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground">현재 진행 상태를 불러오지 못했습니다.</p>
-            <Button className="mt-4" variant="outline" onClick={() => void live.refetch()}>
-              다시 확인
-            </Button>
-          </div>
-        ) : awaitingOutcome && meeting ? (
-          <AfterMeetingCard
-            key={meeting.id}
-            meeting={meeting}
-            counterpart={candidate}
-            onInteractionStart={live.beginInteraction}
-            onDone={(m) =>
-              live.update((previous) => ({
-                ...previous,
-                state: { ...previous.state, meeting: m },
-              }))
-            }
-          />
-        ) : meeting?.confirmed_at ? (
-          <ConfirmedCard meeting={meeting} counterpart={candidate} />
-        ) : meeting?.prefs_submitted_at ? (
-          // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
-          isMale ? (
-            <GuideNote
-              action={
-                <CardAction to="/schedule" search={{ meetingId: meeting.id }}>
-                  날짜 고르기
-                </CardAction>
+      {hasPriorityContent ? (
+        <div className="mt-5">
+          {loading ? (
+            <div className="rounded-surface border border-border bg-card px-6 py-10 text-center">
+              <p className="text-sm text-muted-foreground">불러오는 중입니다…</p>
+            </div>
+          ) : loadError ? (
+            <div role="alert" className="rounded-surface border border-border bg-card p-6">
+              <p className="text-sm text-muted-foreground">현재 진행 상태를 불러오지 못했습니다.</p>
+              <Button className="mt-4" variant="outline" onClick={() => void live.refetch()}>
+                다시 확인
+              </Button>
+            </div>
+          ) : awaitingOutcome && meeting ? (
+            <AfterMeetingCard
+              key={meeting.id}
+              meeting={meeting}
+              counterpart={candidate}
+              onInteractionStart={live.beginInteraction}
+              onDone={(m) =>
+                live.update((previous) => ({
+                  ...previous,
+                  state: { ...previous.state, meeting: m },
+                }))
               }
-            >
-              가능한 날짜를 받아왔어요. 하나를 고르시면 대화가 열립니다.
-            </GuideNote>
-          ) : (
-            <GuideNote>보내주신 날짜를 전달했어요. 상대가 고르면 대화가 열립니다.</GuideNote>
-          )
-        ) : !isMale && requestCount > 0 ? (
-          // 여러 남성이 동시에 티켓을 쓸 수 있다 — 한 건만 보여주면 나머지는
-          // 답을 못 받고 24시간 뒤 자동 환불된다.
-          <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
-            {requestCount > 1
-              ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
-              : "날짜를 확인하고 답해 주세요."}
-          </GuideNote>
-        ) : meeting ? (
-          <>
-            <WaitingCard
-              now={now}
-              deadlineAt={serverState?.deadline_at ?? null}
-              paid={introPaymentsEnabled === true}
             />
-            <Link
-              to="/chats"
-              className="mt-2 flex min-h-11 items-center gap-2 text-sm font-semibold"
-            >
-              요청·약속 확인
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </>
-        ) : blocksNewIntro ? (
-          primaryState === "photos_pending" ? (
-            <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
-          ) : primaryState === "profile_incomplete" ? (
-            <GuideNote
-              action={
-                <CardAction to="/signup" search={{ edit: "1" }}>
-                  프로필 확인하기
-                </CardAction>
-              }
-            >
-              아직 확인할 정보가 있어요.
+          ) : meeting?.confirmed_at ? (
+            <ConfirmedCard meeting={meeting} counterpart={candidate} />
+          ) : meeting?.prefs_submitted_at ? (
+            // S7: 확정 전까지는 대화가 열리지 않는다 — 자동 안내로 전달한다.
+            isMale ? (
+              <GuideNote
+                action={
+                  <CardAction to="/schedule" search={{ meetingId: meeting.id }}>
+                    날짜 고르기
+                  </CardAction>
+                }
+              >
+                가능한 날짜를 받아왔어요. 하나를 고르시면 대화가 열립니다.
+              </GuideNote>
+            ) : (
+              <GuideNote>보내주신 날짜를 전달했어요. 상대가 고르면 대화가 열립니다.</GuideNote>
+            )
+          ) : !isMale && requestCount > 0 ? (
+            // 여러 남성이 동시에 티켓을 쓸 수 있다 — 한 건만 보여주면 나머지는
+            // 답을 못 받고 24시간 뒤 자동 환불된다.
+            <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
+              {requestCount > 1
+                ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
+                : "날짜를 확인하고 답해 주세요."}
             </GuideNote>
-          ) : primaryState === "policy_required" ? (
-            <GuideNote action={<CardAction to="/consent">내용 확인하기</CardAction>}>
-              새 소개를 받으려면 현재 약관에 동의해 주세요.
-            </GuideNote>
-          ) : null
-        ) : candidate ? (
-          /*
+          ) : meeting ? (
+            <>
+              <WaitingCard
+                now={now}
+                deadlineAt={serverState?.deadline_at ?? null}
+                paid={introPaymentsEnabled === true}
+              />
+              <Link
+                to="/chats"
+                className="mt-2 flex min-h-11 items-center gap-2 text-sm font-semibold"
+              >
+                요청·약속 확인
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </>
+          ) : blocksNewIntro ? (
+            primaryState === "photos_pending" ? (
+              <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
+            ) : primaryState === "profile_incomplete" ? (
+              <GuideNote
+                action={
+                  <CardAction to="/signup" search={{ edit: "1" }}>
+                    프로필 확인하기
+                  </CardAction>
+                }
+              >
+                아직 확인할 정보가 있어요.
+              </GuideNote>
+            ) : primaryState === "policy_required" ? (
+              <GuideNote action={<CardAction to="/consent">내용 확인하기</CardAction>}>
+                새 소개를 받으려면 현재 약관에 동의해 주세요.
+              </GuideNote>
+            ) : null
+          ) : candidate ? (
+            /*
             "답은 상대에게 바로 보이지 않습니다" 는 여성의 평가에만 맞는 말이다. 남성에게
             여기 오는 candidate 는 이미 연 소개라 답할 것이 없다 — 예전에는 둘 다에게
             같은 안내가 붙어 남성 화면이 사실과 다른 말을 했다.
           */
-          <>
-            {isMale ? null : (
-              <GuideNote>
-                {serverState?.intro_progress?.has_likes
-                  ? "마음을 남긴 소개가 있어요. 만남 요청이 오면 홈에서 확인할 수 있어요."
-                  : "좋아요는 만남 확정이 아니에요. 요청이 오면 날짜를 보고 결정해요."}
-              </GuideNote>
-            )}
-            <div className={isMale ? undefined : "mt-4"}>
-              <CandidatePreview candidate={candidate} isMale={isMale} />
-            </div>
-          </>
-        ) : isMale && queued > 0 ? (
-          /*
+            <>
+              {isMale ? null : (
+                <GuideNote>
+                  {serverState?.intro_progress?.has_likes
+                    ? "마음을 남긴 소개가 있어요. 요청이 오면 날짜를 보고 결정해요."
+                    : "좋아요는 만남 확정이 아니에요. 요청이 오면 날짜를 보고 결정해요."}
+                </GuideNote>
+              )}
+              <div className={isMale ? undefined : "mt-4"}>
+                <CandidatePreview candidate={candidate} isMale={isMale} />
+              </div>
+            </>
+          ) : isMale && queued > 0 ? (
+            /*
             큐에 카드가 도착한 상태. 여는 데 소개 티켓 1장이 들어가므로 홈에서
             바로 열지 않고 /intro 의 확인 화면으로 보낸다 — 돈이 빠지는 행동을
             링크 한 번으로 일으키지 않는다.
           */
-          <GuideNote
-            action={
-              introTickets > 0 || introPaymentsEnabled === false ? (
-                <CardAction to="/intro">소개 열어보기</CardAction>
-              ) : (
-                <CardAction to="/store" search={{ kind: "intro" }}>
-                  {introPaymentsEnabled === null
-                    ? "티켓 확인하기"
-                    : introPaymentsEnabled
-                      ? "소개 티켓 구매하기"
-                      : "무료 티켓 신청하기"}
-                </CardAction>
-              )
-            }
-          >
-            {queued > 1
-              ? `${queued}건의 소개가 기다리고 있어요. 한 분씩 확인해 보세요.`
-              : "한 분의 소개가 기다리고 있어요."}
-            {introTickets === 0 && introPaymentsEnabled !== false
-              ? introPaymentsEnabled === null
-                ? " 티켓 안내를 확인해 주세요."
-                : introPaymentsEnabled
-                  ? " 열람에는 소개 티켓 1장이 필요해요."
-                  : " 열람 전에 무료 티켓을 신청해 주세요."
-              : ""}
-          </GuideNote>
-        ) : null}
-      </div>
-
-      {!isMale &&
-      !meeting &&
-      !candidate &&
-      requestCount === 0 &&
-      !blocksNewIntro &&
-      primaryState !== "paused" &&
-      serverState?.intro_progress?.has_likes ? (
-        <div className="mt-5">
-          <GuideNote>
-            애프터가 어울릴 소개를 살펴봐요. 만남 요청이 오면 이곳에서 확인할 수 있어요.
-          </GuideNote>
+            <GuideNote
+              action={
+                introTickets > 0 || introPaymentsEnabled === false ? (
+                  <CardAction to="/intro">소개 열어보기</CardAction>
+                ) : (
+                  <CardAction to="/store" search={{ kind: "intro" }}>
+                    {introPaymentsEnabled === null
+                      ? "티켓 확인하기"
+                      : introPaymentsEnabled
+                        ? "소개 티켓 구매하기"
+                        : "무료 티켓 신청하기"}
+                  </CardAction>
+                )
+              }
+            >
+              {queued > 1
+                ? `${queued}건의 소개가 기다리고 있어요. 한 분씩 확인해 보세요.`
+                : "한 분의 소개가 기다리고 있어요."}
+              {introTickets === 0 && introPaymentsEnabled !== false
+                ? introPaymentsEnabled === null
+                  ? " 티켓 안내를 확인해 주세요."
+                  : introPaymentsEnabled
+                    ? " 열람에는 소개 티켓 1장이 필요해요."
+                    : " 열람 전에 무료 티켓을 신청해 주세요."
+                : ""}
+            </GuideNote>
+          ) : null}
         </div>
       ) : null}
 
@@ -427,6 +449,7 @@ function HomePage() {
 
       <AssistantDock
         key={me.id}
+        showIdentity={false}
         hasMeeting={
           loading || loadError || live.isError || live.isPaused ? undefined : Boolean(meeting)
         }
@@ -518,18 +541,16 @@ function ReadinessPanel({
   const [busy, setBusy] = useState(false);
 
   return (
-    <section className="mt-4" aria-label="소개 설정">
-      <div className="app-elevated overflow-hidden rounded-surface bg-card">
-        <div className="readiness-status flex min-h-24 items-center gap-3.5 px-5 py-4">
+    <section className="mt-7 border-t border-border pt-2" aria-label="소개 설정">
+      <div className="home-readiness">
+        <div className="flex min-h-16 items-center gap-3.5 py-3">
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold">
-              {paused ? "소개 쉬어가기" : "새 소개 받기"}
-            </span>
-            <span className="mt-1 block text-xs leading-relaxed">
-              {paused
-                ? "새 소개가 오지 않습니다. 진행 중인 약속은 그대로입니다."
-                : "새 소개는 이곳에서 확인할 수 있어요."}
-            </span>
+            <span className="block text-sm font-semibold">새 소개 받기</span>
+            {paused ? (
+              <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                쉬는 동안에도 진행 중인 약속은 유지돼요.
+              </span>
+            ) : null}
           </span>
           {/*
             체크박스가 아니라 스위치다. 왼쪽 체크박스는 "동의합니다" 처럼 읽히고,
@@ -557,7 +578,7 @@ function ReadinessPanel({
           쓰지 않으므로 이 줄이 없다.
         */}
         {isMale && !paused ? (
-          <div className="flex min-h-14 items-center gap-3.5 border-t border-border px-5">
+          <div className="flex min-h-14 items-center gap-3.5 border-t border-border py-2">
             <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
               {introPaymentsEnabled === false
                 ? "베타 기간에는 무료로 열 수 있어요."
@@ -573,7 +594,7 @@ function ReadinessPanel({
               <Link
                 to="/store"
                 search={{ kind: "intro" as const }}
-                className="shrink-0 text-xs font-semibold text-foreground underline underline-offset-4"
+                className="flex min-h-11 shrink-0 items-center text-xs font-semibold text-foreground underline underline-offset-4"
               >
                 {introPaymentsEnabled === null
                   ? "티켓 보기"
@@ -587,7 +608,7 @@ function ReadinessPanel({
         {!paused ? (
           <Link
             to="/availability"
-            className="pressable flex min-h-14 items-center justify-between gap-3 border-t border-border px-5 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="pressable flex min-h-14 items-center justify-between gap-3 border-t border-border text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <span className="font-medium">만남 가능 시간</span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -597,15 +618,6 @@ function ReadinessPanel({
           </Link>
         ) : null}
       </div>
-      {!paused ? (
-        <img
-          src="/brand/after-first-conversation.jpg"
-          alt=""
-          width="1536"
-          height="1024"
-          className="mt-6 block h-auto w-full rounded-surface"
-        />
-      ) : null}
     </section>
   );
 }

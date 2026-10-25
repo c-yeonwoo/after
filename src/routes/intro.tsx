@@ -9,6 +9,7 @@ import { SafetyMenu } from "@/components/app/SafetyMenu";
 import { GuideNote } from "@/components/app/GuideNote";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
 import { IntroductionReason } from "@/components/app/IntroductionReason";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -484,7 +485,13 @@ function IntroPage() {
         </GuideNote>
       </div>
 
-      <ProfileDetail key={candidate.id} p={view} />
+      <ProfileDetail
+        key={candidate.id}
+        p={view}
+        viewer={toProfileView(me)}
+        assistantSignature={<AssistantMark />}
+        introductionTarget={candidate.id ?? undefined}
+      />
       {candidate.id ? (
         <Link
           to="/conversation-prep"

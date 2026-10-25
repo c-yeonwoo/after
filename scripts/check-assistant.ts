@@ -7,11 +7,32 @@ import {
   validPrivateAdvice,
 } from "../supabase/functions/_shared/assistant-private";
 import { seoulAppointment, scheduleKind, scheduleInputIssue } from "../src/lib/assistantSchedule";
-import { assistantReply, type AssistantContext } from "../src/lib/assistantExperience";
+import {
+  assistantReply,
+  assistantWelcome,
+  visibleAssistantActions,
+  type AssistantContext,
+} from "../src/lib/assistantExperience";
 import {
   assistantServiceReply,
   assistantStatusText,
 } from "../supabase/functions/_shared/assistant-workflow";
+
+assert.deepEqual(assistantWelcome(" 지훈 ", null), {
+  greeting: "지훈님, 반가워요.",
+  invitation: "오늘은 어떤 이야기를 나눠볼까요?",
+});
+assert.equal(assistantWelcome("  ", null).greeting, "안녕하세요, 반가워요.");
+assert.equal(assistantWelcome(undefined, NaN).invitation, "오늘은 어떤 이야기를 나눠볼까요?");
+for (const [iso, invitation] of [
+  ["2026-10-24T20:00:00Z", "오늘 하루는 어떻게 시작하고 계세요?"],
+  ["2026-10-25T02:00:00Z", "오늘은 어떤 이야기를 나눠볼까요?"],
+  ["2026-10-25T08:00:00Z", "오늘 하루는 어땠어요?"],
+  ["2026-10-25T13:00:00Z", "늦은 시간에도 편하게 이야기해요."],
+  ["2026-10-25T15:00:00Z", "늦은 시간에도 편하게 이야기해요."],
+]) {
+  assert.equal(assistantWelcome("지안", Date.parse(iso)).invitation, invitation);
+}
 
 assert.equal(assistantIntent("약속 취소해줘"), "support");
 assert.equal(assistantIntent("대화 주제 알려줘"), "prepare");
@@ -45,6 +66,18 @@ const routingCases = [
 ] as const;
 for (const [text, intent] of routingCases) assert.equal(assistantIntent(text), intent, text);
 const ctx: AssistantContext = { gender: "male", complete: true, schedule: false, memory: false };
+assert.deepEqual(visibleAssistantActions(["home", "profile"], "/home"), ["profile"]);
+assert.deepEqual(visibleAssistantActions(["home"], "/home/"), []);
+assert.deepEqual(visibleAssistantActions(["home"], "/assistant"), ["home"]);
+assert.deepEqual(visibleAssistantActions(["prepare"], "/home"), []);
+assert.deepEqual(visibleAssistantActions(["prepare"], "/home", "permitted"), ["prepare"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "waiting" }).actions, []);
+assert.match(assistantReply("intro", { ...ctx, state: "waiting" }).text, /아직 새 소개가 없어요/);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "paused" }).actions, ["home"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "intro_available" }).actions, ["intro"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, complete: false, state: "waiting" }).actions, [
+  "account",
+]);
 assert.deepEqual(
   assistantReply("schedule", { ...ctx, schedule: true, hasMeeting: false, hasOpenIntro: false })
     .actions,

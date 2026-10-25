@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { ProfilePhotos } from "@/components/app/ProfilePhotos";
 import { cn } from "@/lib/utils";
 import type { ProfileStoryV3 } from "@/lib/profileStory";
+import type { ConciergeProfile } from "@/lib/profileConcierge";
+import { ProfileConcierge } from "@/components/app/ProfileConcierge";
 
 export type ProfileView = {
   name: string;
@@ -57,7 +59,7 @@ function InterviewAnswer({
 }) {
   return (
     <section className="profile-interview">
-      <h3 className="profile-question">{section.question}</h3>
+      <h4 className="profile-question">{section.question}</h4>
       <p data-selectable className="profile-answer">
         {section.answer}
       </p>
@@ -65,7 +67,19 @@ function InterviewAnswer({
   );
 }
 
-export function ProfileDetail({ p }: { p: ProfileView }) {
+export function ProfileDetail({
+  p,
+  viewer,
+  own = false,
+  assistantSignature,
+  introductionTarget,
+}: {
+  p: ProfileView;
+  viewer?: ConciergeProfile;
+  own?: boolean;
+  assistantSignature?: ReactNode;
+  introductionTarget?: string;
+}) {
   const paragraphs = (p.intro || "")
     .split(/\n\s*\n/)
     .map((x) => x.trim())
@@ -131,8 +145,20 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
         </dl>
       ) : null}
 
+      {viewer && !own ? (
+        <ProfileConcierge
+          profile={p}
+          viewer={viewer}
+          signature={assistantSignature}
+          targetId={introductionTarget}
+        />
+      ) : null}
+
       {p.story?.sections.length ? (
         <div className="space-y-6">
+          <h3 className="text-lg font-semibold leading-snug text-foreground">
+            {own ? "내가 들려준 이야기" : "직접 들려준 이야기"}
+          </h3>
           {p.story.sections.map((section) => (
             <InterviewAnswer key={section.id} section={section} />
           ))}
@@ -193,6 +219,7 @@ export function ProfileDetail({ p }: { p: ProfileView }) {
           ) : null}
         </div>
       ) : null}
+      {own ? <ProfileConcierge profile={p} own signature={assistantSignature} /> : null}
     </article>
   );
 }

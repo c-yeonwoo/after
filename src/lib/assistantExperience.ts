@@ -5,6 +5,7 @@ export type AssistantAction =
   | "account"
   | "profile"
   | "edit"
+  | "revise"
   | "intro"
   | "meeting"
   | "store"
@@ -27,7 +28,41 @@ export type AssistantContext = {
   hasOpenIntro?: boolean;
   schedule: boolean;
   memory: boolean;
+  profileEdit?: boolean;
 };
+
+/** A small welcome, not an AI call or a claim about the member's mood. */
+export function assistantWelcome(name: string | null | undefined, now: number | null) {
+  const displayName = name?.trim().replace(/\s+/gu, " ");
+  const greeting = displayName ? `${displayName}님, 반가워요.` : "안녕하세요, 반가워요.";
+  let invitation = "오늘은 어떤 이야기를 나눠볼까요?";
+  if (now !== null && Number.isFinite(now)) {
+    const hour = Number(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Seoul",
+        hour: "2-digit",
+        hourCycle: "h23",
+      }).format(new Date(now)),
+    );
+    if (hour >= 5 && hour < 11) invitation = "오늘 하루는 어떻게 시작하고 계세요?";
+    else if (hour >= 17 && hour < 22) invitation = "오늘 하루는 어땠어요?";
+    else if (hour >= 22 || hour < 5) invitation = "늦은 시간에도 편하게 이야기해요.";
+  }
+  return { greeting, invitation };
+}
+
+/** Keep navigation useful on the current surface, including empty replies. */
+export function visibleAssistantActions(
+  actions: AssistantAction[],
+  pathname: string,
+  counterpartId?: string | null,
+): AssistantAction[] {
+  const currentPath = pathname.replace(/\/+$/, "");
+  return actions.filter(
+    (action) =>
+      !(action === "home" && currentPath === "/home") && !(action === "prepare" && !counterpartId),
+  );
+}
 
 /** Routes to a bounded structured step; never executes a consequential action. */
 export function assistantReply(intent: AssistantIntent, context: AssistantContext): AssistantReply {
@@ -63,8 +98,23 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
           }
         : generic("프로필 준비", ["account"]);
     case "edit":
-      return generic("프로필 수정", [context.complete ? "edit" : "account"]);
+      return context.complete && context.profileEdit
+        ? {
+            text: "바꾸고 싶은 이야기를 들려주세요. 수정안을 함께 보고, 괜찮으면 프로필에 반영해요.",
+            actions: ["revise", "edit"],
+          }
+        : generic("프로필 수정", [context.complete ? "edit" : "account"]);
     case "intro":
+      if (context.complete && context.state === "waiting")
+        return {
+          text: "아직 새 소개가 없어요. 도착한 소개는 소개 탭에서 확인할 수 있어요.",
+          actions: [],
+        };
+      if (context.complete && context.state === "paused")
+        return {
+          text: "소개를 잠시 쉬고 있어요. 홈의 소개 설정에서 다시 받을 수 있어요.",
+          actions: ["home"],
+        };
       return generic("소개 보여줘", [context.complete ? "intro" : "account"]);
     case "interest":
       return context.gender === "female"
@@ -127,7 +177,7 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
       return generic("약속 취소", ["appointments", "support"]);
     case "unknown":
       return {
-        text: "어떤 도움이 필요하세요? 소개·프로필·일정·티켓을 안내해드려요. 자유 상담은 준비 중이에요.",
+        text: "소개·프로필·일정·티켓 이용 방법을 안내해드릴 수 있어요. 궁금한 항목을 골라주세요.",
         actions: [],
       };
   }

@@ -703,20 +703,19 @@ function Onboarding() {
         step={shown(2)}
         total={TOTAL}
         eyebrow="기본 정보"
-        title="당신을 알아가는 첫걸음"
-        description="사진과 기본 정보를 알려주세요. 소개가 열린 상대에게만 보여요."
+        title="어떤 모습으로 소개할까요?"
+        description="사진과 기본 정보부터 함께 준비해요."
       >
         <div className="app-elevated space-y-5 rounded-surface bg-card p-5">
           <div>
             <p className="text-sm font-semibold text-foreground">프로필 사진</p>
-            <p className="mt-1 mb-3 text-sm text-muted-foreground">
-              얼굴이 잘 보이는 사진과 평소 모습이 담긴 사진을 섞어 주세요.
-            </p>
-            <PhotoSetEditor
-              photos={basics.photos}
-              onChange={(photos) => setB({ photos })}
-              onUploadingChange={setPhotosUploading}
-            />
+            <div className="mt-3">
+              <PhotoSetEditor
+                photos={basics.photos}
+                onChange={(photos) => setB({ photos })}
+                onUploadingChange={setPhotosUploading}
+              />
+            </div>
             {me?.photo_url && me.photo_state !== "approved" ? (
               <p
                 className={`mt-3 text-xs leading-relaxed ${

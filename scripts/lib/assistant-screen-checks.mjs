@@ -86,7 +86,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     .getByRole("navigation", { name: "주요 메뉴" })
     .getByRole("link", { name: "홈", exact: true })
     .waitFor();
-  await page.getByRole("button", { name: "지금 내 상태", exact: true }).click();
+  await page.getByRole("button", { name: "내 상태", exact: true }).click();
   assert.equal(await page.locator(".assistant-reply").count(), 1);
   let privateCalls = 0;
   const countPrivateCalls = (request) => {
