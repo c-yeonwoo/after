@@ -490,6 +490,7 @@ function IntroPage() {
         p={view}
         viewer={toProfileView(me)}
         assistantSignature={<AssistantMark />}
+        introductionTarget={candidate.id ?? undefined}
       />
       {candidate.id ? (
         <Link

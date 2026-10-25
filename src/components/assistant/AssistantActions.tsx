@@ -43,6 +43,12 @@ export function AssistantActions({
                 {content("프로필 수정하기")}
               </Link>
             );
+          case "revise":
+            return (
+              <Link key={action} className={style} to="/assistant-profile">
+                {content("비서와 프로필 다듬기")}
+              </Link>
+            );
           case "intro":
             return (
               <Link key={action} className={style} to="/intro">

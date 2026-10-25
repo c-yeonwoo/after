@@ -1,6 +1,12 @@
 import { supabase } from "./supabase";
 
-export type AssistantFlags = { chat: boolean; memory: boolean; schedule: boolean };
+export type AssistantFlags = {
+  chat: boolean;
+  memory: boolean;
+  schedule: boolean;
+  introduction?: boolean;
+  profileEdit?: boolean;
+};
 export type AssistantMemory = {
   id: string;
   content: string;

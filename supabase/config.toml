@@ -448,6 +448,12 @@ verify_jwt = false
 [functions.assistant-chat]
 verify_jwt = false
 
+[functions.introduce-member]
+verify_jwt = false
+
+[functions.revise-profile]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

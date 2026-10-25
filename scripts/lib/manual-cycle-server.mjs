@@ -5,7 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 import { marker, readManifest } from "./manual-cycle-fixtures.mjs";
 
 export const manualOrigin = "http://127.0.0.1:5191";
-export async function startManualServer(env, tag = "manual") {
+export function manualOriginForPort(port = 5191) {
+  assert.ok(Number.isInteger(port) && port >= 1024 && port <= 65535, "Invalid lab port");
+  return `http://127.0.0.1:${port}`;
+}
+export async function startManualServer(env, tag = "manual", { port = 5191 } = {}) {
+  const origin = manualOriginForPort(port);
+  const host = new URL(origin).host;
   const manifest = readManifest(env, tag);
   assert.match(env.API_URL, /^http:\/\/127\.0\.0\.1:\d+$/);
   const authorized = new Map();
@@ -14,10 +20,11 @@ export async function startManualServer(env, tag = "manual") {
   });
   // Process-local config only. No .env, shared Vite config or running 5190 server changes.
   Object.assign(process.env, {
-    VITE_SUPABASE_URL: `${manualOrigin}/__lab/supabase`,
+    VITE_SUPABASE_URL: `${origin}/__lab/supabase`,
     VITE_SUPABASE_ANON_KEY: env.ANON_KEY,
     VITE_CARRIER_IDENTITY_ENABLED: "false",
     VITE_TOSS_CLIENT_KEY: "local_manual_mock",
+    VITE_MANUAL_CYCLE_ORIGIN: origin,
   });
   const send = (res, status, body) => {
     res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -26,7 +33,7 @@ export async function startManualServer(env, tag = "manual") {
   const { createServer } = await import("vite");
   const server = await createServer({
     configFile: resolve("vite.config.ts"),
-    cacheDir: "node_modules/.vite-manual-cycle",
+    cacheDir: `node_modules/.vite-manual-cycle-${port}`,
     resolve: {
       alias: [
         {
@@ -38,7 +45,7 @@ export async function startManualServer(env, tag = "manual") {
     optimizeDeps: { exclude: ["@tosspayments/tosspayments-sdk"] },
     server: {
       host: "127.0.0.1",
-      port: 5191,
+      port,
       strictPort: true,
       proxy: {
         // GoTrue rounds token iat to a second; the local PostgREST container can
@@ -55,7 +62,7 @@ export async function startManualServer(env, tag = "manual") {
                 const chunks = [];
                 for await (const chunk of upstream) chunks.push(chunk);
                 const body = Buffer.concat(chunks);
-                if (upstream.statusCode === 200) await delay(1100);
+                if (upstream.statusCode === 200) await delay(2000);
                 if (res.destroyed || res.writableEnded) return;
                 const headers = { ...upstream.headers, "cache-control": "no-store" };
                 delete headers["transfer-encoding"];
@@ -94,7 +101,7 @@ export async function startManualServer(env, tag = "manual") {
               return send(res, 409, { error: "Use the local mock checkout or order cancellation" });
             if (!approving && !confirming && !canceling) return next();
             if (req.method !== "POST") return send(res, 405, { error: "POST required" });
-            if (req.headers.host !== "127.0.0.1:5191" || req.headers.origin !== manualOrigin)
+            if (req.headers.host !== host || req.headers.origin !== origin)
               return send(res, 403, { error: "Loopback same-origin only" });
             try {
               let raw = "";
@@ -204,6 +211,6 @@ export async function startManualServer(env, tag = "manual") {
     ],
   });
   await server.listen();
-  console.log(`Manual cycle ready: ${manualOrigin}/login (LOCAL MOCK / no real payment)`);
+  console.log(`Manual cycle ready: ${origin}/login (LOCAL MOCK / no real payment)`);
   return server;
 }

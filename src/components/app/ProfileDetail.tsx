@@ -72,11 +72,13 @@ export function ProfileDetail({
   viewer,
   own = false,
   assistantSignature,
+  introductionTarget,
 }: {
   p: ProfileView;
   viewer?: ConciergeProfile;
   own?: boolean;
   assistantSignature?: ReactNode;
+  introductionTarget?: string;
 }) {
   const paragraphs = (p.intro || "")
     .split(/\n\s*\n/)
@@ -144,7 +146,12 @@ export function ProfileDetail({
       ) : null}
 
       {viewer && !own ? (
-        <ProfileConcierge profile={p} viewer={viewer} signature={assistantSignature} />
+        <ProfileConcierge
+          profile={p}
+          viewer={viewer}
+          signature={assistantSignature}
+          targetId={introductionTarget}
+        />
       ) : null}
 
       {p.story?.sections.length ? (

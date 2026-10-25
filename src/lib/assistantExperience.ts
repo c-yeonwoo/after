@@ -5,6 +5,7 @@ export type AssistantAction =
   | "account"
   | "profile"
   | "edit"
+  | "revise"
   | "intro"
   | "meeting"
   | "store"
@@ -27,6 +28,7 @@ export type AssistantContext = {
   hasOpenIntro?: boolean;
   schedule: boolean;
   memory: boolean;
+  profileEdit?: boolean;
 };
 
 /** A small welcome, not an AI call or a claim about the member's mood. */
@@ -96,7 +98,12 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
           }
         : generic("프로필 준비", ["account"]);
     case "edit":
-      return generic("프로필 수정", [context.complete ? "edit" : "account"]);
+      return context.complete && context.profileEdit
+        ? {
+            text: "바꾸고 싶은 이야기를 들려주세요. 수정안을 함께 보고, 괜찮으면 프로필에 반영해요.",
+            actions: ["revise", "edit"],
+          }
+        : generic("프로필 수정", [context.complete ? "edit" : "account"]);
     case "intro":
       if (context.complete && context.state === "waiting")
         return {

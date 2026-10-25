@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AssistantRouteImport } from './routes/assistant'
+import { Route as AssistantProfileRouteImport } from './routes/assistant-profile'
 import { Route as AssistantScheduleRouteImport } from './routes/assistant-schedule'
 import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as ChatsRouteImport } from './routes/chats'
@@ -69,6 +70,11 @@ const AdminRoute = AdminRouteImport.update({
 const AssistantRoute = AssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistantProfileRoute = AssistantProfileRouteImport.update({
+  id: '/assistant-profile',
+  path: '/assistant-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssistantScheduleRoute = AssistantScheduleRouteImport.update({
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/assistant': typeof AssistantRoute
+  '/assistant-profile': typeof AssistantProfileRoute
   '/assistant-schedule': typeof AssistantScheduleRoute
   '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
+  '/assistant-profile': typeof AssistantProfileRoute
   '/assistant-schedule': typeof AssistantScheduleRoute
   '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
@@ -387,6 +395,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/assistant': typeof AssistantRoute
+  '/assistant-profile': typeof AssistantProfileRoute
   '/assistant-schedule': typeof AssistantScheduleRoute
   '/availability': typeof AvailabilityRoute
   '/chats': typeof ChatsRoute
@@ -437,6 +446,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/assistant'
+    | '/assistant-profile'
     | '/assistant-schedule'
     | '/availability'
     | '/chats'
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/assistant'
+    | '/assistant-profile'
     | '/assistant-schedule'
     | '/availability'
     | '/chats'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/assistant'
+    | '/assistant-profile'
     | '/assistant-schedule'
     | '/availability'
     | '/chats'
@@ -581,6 +593,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AssistantRoute: typeof AssistantRoute
+  AssistantProfileRoute: typeof AssistantProfileRoute
   AssistantScheduleRoute: typeof AssistantScheduleRoute
   AvailabilityRoute: typeof AvailabilityRoute
   ChatsRoute: typeof ChatsRoute
@@ -633,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/assistant'
       fullPath: '/assistant'
       preLoaderRoute: typeof AssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistant-profile': {
+      id: '/assistant-profile'
+      path: '/assistant-profile'
+      fullPath: '/assistant-profile'
+      preLoaderRoute: typeof AssistantProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/assistant-schedule': {
@@ -989,6 +1009,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AssistantRoute: AssistantRoute,
+  AssistantProfileRoute: AssistantProfileRoute,
   AssistantScheduleRoute: AssistantScheduleRoute,
   AvailabilityRoute: AvailabilityRoute,
   ChatsRoute: ChatsRoute,

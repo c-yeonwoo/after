@@ -22,4 +22,4 @@
 
 ## Stack
 
-React 19, TanStack Start/Router/Query, Tailwind 4, Radix, Lucide, Supabase Edge Functions/Postgres, Capacitor. 기존 앱 저장소와 배포 경로를 유지한다. 기존 승인 구현과 별개로, 2026-10-25 인디고·핑크 비서 개편은 로컬 시안 검토 단계다. 사용자가 시안을 검토한 뒤 디자인 문서와 운영 반영을 확정한다. 현재 제안과 구현 경계는 `docs/ai-concierge-product-architecture.md`를 따른다.
+React 19, TanStack Start/Router/Query, Tailwind 4, Radix, Lucide, Supabase Edge Functions/Postgres, Capacitor. 기존 앱 저장소와 배포 경로를 유지한다. 2026-10-25 사용자가 인디고·핑크 비서 디자인을 확정했다. 회원용 매니저 소개와 비서 프로필 수정은 로컬에서 실제 LLM으로 검증하며 운영 기능 플래그는 OFF를 유지한다. 현재 제안과 구현 경계는 `docs/ai-concierge-product-architecture.md`를 따른다.

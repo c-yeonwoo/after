@@ -2,9 +2,13 @@
 import { supabase } from "../../src/lib/supabase.ts";
 
 export async function loadTossPayments(key) {
+  // Older 5191 lab processes may already be running when the QA launcher gains
+  // a second port. Keep their existing SDK alias working until the next restart.
+  const labOrigin = import.meta.env.VITE_MANUAL_CYCLE_ORIGIN ?? "http://127.0.0.1:5191";
   if (
     !import.meta.env.DEV ||
-    location.origin !== "http://127.0.0.1:5191" ||
+    !/^http:\/\/127\.0\.0\.1:\d+$/.test(labOrigin) ||
+    location.origin !== labOrigin ||
     key !== "local_manual_mock"
   )
     throw Error("Local mock unavailable");

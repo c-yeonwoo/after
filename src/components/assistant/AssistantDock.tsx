@@ -32,7 +32,8 @@ export function AssistantDock({
   const [input, setInput] = useState("");
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
   const [safety, setSafety] = useState<string | null>(null);
-  const awaitingCapabilities = flags.isPending && assistantIntent(input.trim()) === "unknown";
+  const inputIntent = assistantIntent(input.trim());
+  const awaitingCapabilities = flags.isPending && ["unknown", "edit"].includes(inputIntent);
   const reply = intent
     ? assistantReply(intent, {
         gender: me?.gender ?? null,
@@ -44,6 +45,7 @@ export function AssistantDock({
         hasOpenIntro,
         schedule: Boolean(flags.data?.schedule && !flags.isError && !flags.isPaused),
         memory: Boolean(flags.data?.memory && !flags.isError && !flags.isPaused),
+        profileEdit: Boolean(flags.data?.profileEdit && !flags.isError && !flags.isPaused),
       })
     : null;
   return (
@@ -106,8 +108,24 @@ export function AssistantDock({
               return;
             }
             const next = assistantIntent(text);
-            if (next === "unknown" && flags.isPending) return;
-            if (next === "unknown" && me && flags.data?.chat && !flags.isError && !flags.isPaused) {
+            if (["unknown", "edit"].includes(next) && flags.isPending) return;
+            if (
+              next === "edit" &&
+              me?.onboarding_step &&
+              me.onboarding_step >= 7 &&
+              flags.data?.profileEdit &&
+              !flags.isError &&
+              !flags.isPaused
+            ) {
+              setAssistantDraft(me.id, text);
+              void navigate({ to: "/assistant-profile" });
+            } else if (
+              next === "unknown" &&
+              me &&
+              flags.data?.chat &&
+              !flags.isError &&
+              !flags.isPaused
+            ) {
               setAssistantDraft(me.id, text);
               void navigate({ to: "/assistant", search: { panel: "chat" } });
             } else {
