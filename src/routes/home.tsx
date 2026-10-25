@@ -28,6 +28,7 @@ import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
+import { assistantWelcome } from "@/lib/assistantExperience";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -206,6 +207,7 @@ function HomePage() {
     candidate ||
     (isMale && queued > 0),
   );
+  const welcome = assistantWelcome(currentProfile?.name, now);
 
   if (ready && me && me.onboarding_step < 7) return <ProfilePreparationHome profile={me} />;
 
@@ -223,18 +225,25 @@ function HomePage() {
         <AssistantMark className="size-12 shrink-0" />
         <div className="assistant-home-status min-w-0">
           <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
-            {headline}
+            <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
           </h1>
-          {!live.isError &&
-          !live.isPaused &&
-          primaryState === "waiting" &&
-          !isMale &&
-          serverState?.intro_progress?.has_likes ? (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              만남 요청이 오면 날짜를 보고 결정해요.
-            </p>
-          ) : null}
+          <p className="mt-2 break-keep text-sm leading-relaxed text-muted-foreground">
+            {welcome.invitation}
+          </p>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <h2 className="break-keep text-base font-semibold leading-relaxed">{headline}</h2>
+        {!live.isError &&
+        !live.isPaused &&
+        primaryState === "waiting" &&
+        !isMale &&
+        serverState?.intro_progress?.has_likes ? (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            만남 요청이 오면 날짜를 보고 결정해요.
+          </p>
+        ) : null}
       </div>
 
       {(live.isError || live.isPaused) && live.data ? (

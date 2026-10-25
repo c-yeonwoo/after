@@ -29,6 +29,26 @@ export type AssistantContext = {
   memory: boolean;
 };
 
+/** A small welcome, not an AI call or a claim about the member's mood. */
+export function assistantWelcome(name: string | null | undefined, now: number | null) {
+  const displayName = name?.trim().replace(/\s+/gu, " ");
+  const greeting = displayName ? `${displayName}님, 반가워요.` : "안녕하세요, 반가워요.";
+  let invitation = "오늘은 어떤 이야기를 나눠볼까요?";
+  if (now !== null && Number.isFinite(now)) {
+    const hour = Number(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Seoul",
+        hour: "2-digit",
+        hourCycle: "h23",
+      }).format(new Date(now)),
+    );
+    if (hour >= 5 && hour < 11) invitation = "오늘 하루는 어떻게 시작하고 계세요?";
+    else if (hour >= 17 && hour < 22) invitation = "오늘 하루는 어땠어요?";
+    else if (hour >= 22 || hour < 5) invitation = "늦은 시간에도 편하게 이야기해요.";
+  }
+  return { greeting, invitation };
+}
+
 /** Keep navigation useful on the current surface, including empty replies. */
 export function visibleAssistantActions(
   actions: AssistantAction[],

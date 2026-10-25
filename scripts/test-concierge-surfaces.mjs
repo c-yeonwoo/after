@@ -113,7 +113,7 @@ const draft = (stage) => ({
   sourceRevision: 1,
   storySourceRevision: 1,
 });
-const fixtures = [
+const allFixtures = [
   { name: "home", path: "/home", heading: "아직 새 소개가 없어요." },
   { name: "intro", path: "/intro", heading: "합성 도윤" },
   { name: "profile", path: "/profile", heading: "합성 지수" },
@@ -127,6 +127,11 @@ const fixtures = [
   },
   { name: "draft", path: "/signup?prepare=true", stage: "preview", heading: "이렇게 소개할까요?" },
 ];
+const fixtureNames = process.env.AFTER_CONCIERGE_SCREENS?.split(",");
+const fixtures = fixtureNames
+  ? allFixtures.filter((fixture) => fixtureNames.includes(fixture.name))
+  : allFixtures;
+assert.ok(fixtures.length > 0, "at least one known surface is required");
 
 const session = {
   access_token: `${Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url")}.${Buffer.from(JSON.stringify({ sub: id, exp: Math.floor(Date.now() / 1000) + 86400 })).toString("base64url")}.synthetic`,
@@ -190,6 +195,8 @@ async function audit(page, name) {
 }
 
 async function verifyHome(page, width) {
+  await page.getByRole("heading", { level: 1, name: "합성 지수님, 반가워요." }).waitFor();
+  await page.getByRole("heading", { level: 2, name: "아직 새 소개가 없어요." }).waitFor();
   assert.equal(await page.getByText("비서에게만 보여요", { exact: true }).count(), 0);
   assert.equal(await page.locator('img[src*="after-first-conversation"]').count(), 0);
   const metrics = await page.locator(".assistant-quick-actions").evaluate((row) => {
