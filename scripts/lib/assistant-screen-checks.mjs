@@ -99,7 +99,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     ["소개 보여줘", "소개 확인하기"],
     ["호감 보내줘", "소개 확인하기"],
     ["결제 방법", "티켓·가격 확인"],
-    ["약속 잡아줘", /만남 요청 확인|비서와 일정 정리/],
+    ["약속 잡아줘", /만남 요청 확인|비서와 일정 정리|소개 확인하기/],
   ]) {
     await page.getByLabel("비서에게 물어볼 내용").fill(query);
     await page.getByRole("button", { name: "비서에게 질문하기" }).click();

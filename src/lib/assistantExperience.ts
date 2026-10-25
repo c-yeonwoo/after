@@ -23,6 +23,8 @@ export type AssistantContext = {
   status?: string;
   state?: string;
   counterpartId?: string | null;
+  hasMeeting?: boolean;
+  hasOpenIntro?: boolean;
   schedule: boolean;
   memory: boolean;
 };
@@ -82,6 +84,17 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
             actions: context.complete ? ["intro", "requests"] : ["account"],
           };
     case "schedule":
+      if (context.complete && context.hasMeeting === false)
+        return {
+          text:
+            context.gender === "male"
+              ? "먼저 소개를 확인하고 만남을 요청해 주세요. 날짜·장소를 함께 제안할 수 있어요."
+              : "만남 요청이 오면 편한 시간을 함께 정해요. 지금은 소개를 살펴보세요.",
+          actions:
+            context.gender === "male"
+              ? [context.hasOpenIntro ? "meeting" : "intro", "availability"]
+              : ["requests", "intro"],
+        };
       return !context.complete
         ? generic("일정", ["account"])
         : context.schedule

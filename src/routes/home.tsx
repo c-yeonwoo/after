@@ -427,6 +427,14 @@ function HomePage() {
 
       <AssistantDock
         key={me.id}
+        hasMeeting={
+          loading || loadError || live.isError || live.isPaused ? undefined : Boolean(meeting)
+        }
+        hasOpenIntro={
+          loading || loadError || live.isError || live.isPaused
+            ? undefined
+            : Boolean(serverState?.has_open_intro)
+        }
         state={loadError || live.isError || live.isPaused ? undefined : (primaryState ?? undefined)}
         status={
           live.isError || live.isPaused

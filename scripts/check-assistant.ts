@@ -45,6 +45,25 @@ const routingCases = [
 ] as const;
 for (const [text, intent] of routingCases) assert.equal(assistantIntent(text), intent, text);
 const ctx: AssistantContext = { gender: "male", complete: true, schedule: false, memory: false };
+assert.deepEqual(
+  assistantReply("schedule", { ...ctx, schedule: true, hasMeeting: false, hasOpenIntro: false })
+    .actions,
+  ["intro", "availability"],
+);
+assert.deepEqual(
+  assistantReply("schedule", { ...ctx, schedule: true, hasMeeting: false, hasOpenIntro: true })
+    .actions,
+  ["meeting", "availability"],
+);
+assert.equal(assistantIntent("이 여자 소개시켜줘"), "intro");
+assert.deepEqual(
+  assistantReply("schedule", { ...ctx, gender: "female", hasMeeting: false }).actions,
+  ["requests", "intro"],
+);
+assert.deepEqual(
+  assistantReply("schedule", { ...ctx, complete: false, hasMeeting: false }).actions,
+  ["account"],
+);
 assert.deepEqual(assistantReply("payment", ctx).actions, ["store", "meeting"]);
 assert.ok(!assistantReply("payment", { ...ctx, gender: "female" }).actions.includes("store"));
 assert.deepEqual(assistantReply("edit", { ...ctx, complete: false }).actions, ["account"]);

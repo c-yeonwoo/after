@@ -41,7 +41,7 @@ export function assistantIntent(raw: string): AssistantIntent {
     )
   )
     return "schedule";
-  if (/소개.*(보여|보기|확인|도착|왔)|누굴 만나|상대.*보여/.test(text)) return "intro";
+  if (/소개.*(보여|보기|확인|도착|왔|시켜)|누굴 만나|상대.*보여/.test(text)) return "intro";
   if (/상태|진행|언제.*소개|소개.*언제|기다리는|지금.*할 일|다음 단계/.test(text)) return "status";
   return "unknown";
 }
