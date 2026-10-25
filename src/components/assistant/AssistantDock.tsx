@@ -7,14 +7,13 @@ import { AssistantActions } from "./AssistantActions";
 import { assistantIntent, type AssistantIntent } from "@/lib/assistant";
 import { assistantReply } from "@/lib/assistantExperience";
 import { privateAssistantSafety } from "../../../supabase/functions/_shared/assistant-private";
-import { getAssistantFlags } from "@/lib/privateAssistant";
-import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
+import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { useMe } from "@/lib/me";
 import { setAssistantDraft } from "@/lib/assistantDraft";
 
-export function AssistantDock(props: ComponentProps<typeof LegacyAssistantDock>) {
+export function AssistantDock(props: Omit<ComponentProps<typeof LegacyAssistantDock>, "flags">) {
   const { me } = useMe();
-  const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
+  const flags = useAssistantFlags(me?.id);
   if (!flags.data && me && me.onboarding_step >= 7) {
     return (
       <div className="py-4 text-sm text-muted-foreground" role="status">
@@ -36,7 +35,7 @@ export function AssistantDock(props: ComponentProps<typeof LegacyAssistantDock>)
   if (me && me.onboarding_step >= 7 && flags.data?.chat) {
     return <AssistantConversation key={me.id} owner={me.id} compact context={props} />;
   }
-  return <LegacyAssistantDock {...props} />;
+  return <LegacyAssistantDock {...props} flags={flags} />;
 }
 
 function LegacyAssistantDock({
@@ -46,6 +45,7 @@ function LegacyAssistantDock({
   hasMeeting,
   hasOpenIntro,
   showIdentity = true,
+  flags,
 }: {
   status: string;
   counterpartId?: string | null;
@@ -53,10 +53,10 @@ function LegacyAssistantDock({
   hasMeeting?: boolean;
   hasOpenIntro?: boolean;
   showIdentity?: boolean;
+  flags: ReturnType<typeof useAssistantFlags>;
 }) {
   const { me } = useMe();
   const navigate = useNavigate();
-  const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
   const [input, setInput] = useState("");
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
   const [safety, setSafety] = useState<string | null>(null);

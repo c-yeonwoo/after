@@ -339,7 +339,7 @@ The shared switch keeps a 44px target around a rounded track. Its selected track
 
 ### Assistant Signature
 
-The default signature is a 40px circular crop of the user-approved detailed adult character asset. Female members see the male assistant asset; male members see the female assistant asset. The current asset paths are `/brand/concierge/male.webp` and `/brand/concierge/female.webp`. When member gender is unavailable, the existing MessageCircleHeart icon is the fallback. The avatar is decorative alongside the assistant's text identity and does not impersonate the counterpart.
+The default signature is a 40px circular crop of the user-approved detailed adult character asset. Female members see the male assistant asset; male members see the female assistant asset. Source assets live in `src/assets/concierge/` and are imported by `AssistantMark`; Vite emits content-hashed URLs under `/assets/` for immutable browser caching. When member gender is unavailable, the existing MessageCircleHeart icon is the fallback. The avatar is decorative alongside the assistant's text identity and does not impersonate the counterpart.
 
 Preserve the supplied detailed v2 character artwork. Cropping and sizing may serve the interface; do not redraw, simplify, stylize, or artistically transform the approved character. The profile-preparation welcome currently overrides the default mark to 56px; it is a local welcome treatment, not a larger appointment portrait.
 
