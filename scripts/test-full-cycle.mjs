@@ -37,6 +37,13 @@ const ids = [],
   paths = [],
   contexts = [];
 const settings = sql("select row_to_json(a) from app_settings a");
+const assistantFlagColumns = [
+  "assistant_chat_enabled",
+  "assistant_memory_enabled",
+  "assistant_schedule_enabled",
+  "assistant_introduction_enabled",
+  "assistant_profile_edit_enabled",
+];
 const cohortHub = ["jongno", "yeouido", "pangyo"].find(
   (hub) => sql(`select count(*) from profiles where hub_id='${hub}' and role='member'`) === "0",
 );
@@ -453,7 +460,10 @@ async function readNotices(people) {
 
 try {
   sql(
-    "update app_settings set payments_enabled=false,identity_required=false,admin_mfa_required=false",
+    // This suite exercises the production baseline. The separate assistant
+    // suites cover enabled features; preserve the operator's local lab switches.
+    `update app_settings set payments_enabled=false,identity_required=false,admin_mfa_required=false,
+      ${assistantFlagColumns.map((column) => `${column}=false`).join(",")}`,
   );
   server = spawn(
     process.execPath,
@@ -762,9 +772,10 @@ try {
       await f.page
         .getByRole("heading", { name: "마음을 남긴 소개가 있어요.", exact: true })
         .waitFor();
-      await f.page.getByText("애프터가 어울릴 소개를 살펴봐요.", { exact: true }).waitFor();
+      await f.page.getByText("만남 요청이 오면 날짜를 보고 결정해요.", { exact: true }).waitFor();
       await f.page
-        .getByText("만남 요청이 오면 이곳에서 확인할 수 있어요.", { exact: true })
+        .getByRole("navigation", { name: "주요 메뉴", exact: true })
+        .getByRole("link", { name: "소개", exact: true })
         .waitFor();
     });
   }
@@ -1498,6 +1509,7 @@ try {
   const old = JSON.parse(settings);
   sql(`begin; set local request.jwt.claims='{"role":"service_role","aal":"aal2"}';
     update app_settings set admin_mfa_required=${old.admin_mfa_required},payments_enabled=${old.payments_enabled},identity_required=${old.identity_required},
+      ${assistantFlagColumns.map((column) => `${column}=${old[column]}`).join(",")},
       updated_at='${old.updated_at}'::timestamptz,updated_by=${old.updated_by ? `'${old.updated_by}'::uuid` : "null"}; commit;`);
   if (ids.length) {
     const listed = ids.map((id) => `'${id}'`).join(",");
