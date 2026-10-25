@@ -294,7 +294,7 @@ function MemberManagerIntroduction({
               checked={consent}
               disabled={busy}
               onChange={(event) => setConsent(event.target.checked)}
-              className="mt-0.5 size-5 shrink-0 accent-primary"
+              className="mt-0.5 size-5 shrink-0 accent-primary-strong"
             />
             <span>두 사람의 공개 답변을 AI에 보내 소개 설명을 준비하는 데 동의해요.</span>
           </label>

@@ -102,7 +102,7 @@ function MemberDetail({ id }: { id: string }) {
       </header>
 
       {banned && p.banned_reason ? (
-        <p className="mt-2 rounded-surface bg-primary/10 px-3 py-2 text-sm text-primary-strong">
+        <p className="mt-2 rounded-surface bg-selection px-3 py-2 text-sm text-primary-strong">
           정지 사유 · {p.banned_reason}
         </p>
       ) : null}

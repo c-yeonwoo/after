@@ -158,7 +158,7 @@ function ConversationPrep() {
                   type="checkbox"
                   checked={consent}
                   onChange={(event) => setConsent(event.target.checked)}
-                  className="mt-1 size-5 shrink-0 accent-primary"
+                  className="mt-1 size-5 shrink-0 accent-primary-strong"
                   disabled={busy}
                 />
                 <span>

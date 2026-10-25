@@ -642,7 +642,7 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
       </div>
       <Link
         to="/intro"
-        className="pressable mx-5 mb-5 flex min-h-12 items-center justify-between gap-2 rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="app-primary-button pressable mx-5 mb-5 flex min-h-12 items-center justify-between gap-2 rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {isMale ? "프로필 열어보기" : "읽고 답하기"}
         <ArrowRight className="size-4" aria-hidden="true" />
@@ -752,7 +752,7 @@ function AfterMeetingCard({
               release();
             }
           }}
-          className="min-h-12 rounded-control bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+          className="app-primary-button min-h-12 rounded-control bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
         >
           {busy ? "기록하는 중…" : "만났어요"}
         </button>
@@ -831,7 +831,7 @@ function CardAction({
         버튼은 카드 속의 또 다른 카드로 읽혀서, 읽을 것과 누를 것의 경계가
         흐려졌다. CandidatePreview 의 링크와 같은 모양으로 맞춘다.
       */
-      className="flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="app-primary-button flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {children}
       <ArrowRight className="size-4" aria-hidden="true" />

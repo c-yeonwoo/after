@@ -70,7 +70,7 @@ export async function loadTossPayments(key) {
             cancel.textContent = "모의 결제 취소";
             const approve = document.createElement("button");
             approve.className =
-              "mt-2 min-h-11 w-full rounded-control bg-primary px-4 font-semibold text-primary-foreground";
+              "app-primary-button mt-2 min-h-11 w-full rounded-control bg-primary px-4 font-semibold text-primary-foreground";
             approve.textContent = "청구 없이 모의 결제 승인";
             const finish = (value) => {
               dialog.close();

@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 // PRD 완료조건 285: 비활성 버튼에 opacity 를 쓰지 않는다.
-//   opacity 를 낮추면 코럴 배경이 "연한 코럴"로 보여 활성 버튼으로 오인된다.
+//   opacity 를 낮추면 핑크 테두리가 희미해져 활성 버튼과 구분하기 어렵다.
 //   대신 회색(muted)으로 완전히 바꿔 비활성임이 색으로 구분되게 한다.
 //   `disabled:` 는 `&:disabled` 로 컴파일돼 의사클래스 특이도(0,2,0)를 얻으므로
 //   variant 의 `bg-primary`(0,1,0)를 확실히 덮는다.

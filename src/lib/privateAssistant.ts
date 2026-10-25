@@ -22,6 +22,7 @@ export type AssistantPrivateState = {
   memories: AssistantMemory[];
   turns: {
     id: string;
+    kind?: "conversation" | "profile_applied" | "schedule_applied";
     question: string;
     answer: string | null;
     state: "pending" | "complete" | "failed";
@@ -31,6 +32,7 @@ export type AssistantPrivateState = {
 type AssistantRpcName =
   | "assistant_capabilities"
   | "my_assistant_state"
+  | "assistant_history"
   | "assistant_consent"
   | "assistant_save_memory"
   | "assistant_forget"

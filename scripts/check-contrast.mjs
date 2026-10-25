@@ -35,11 +35,7 @@ function block(selectorPattern) {
 }
 
 const lightBlock = block(":root");
-/*
-  다크와 브랜드 접점(랜딩·로그인)은 **한 규칙을 공유한다**(styles.css). 팔레트를
-  한 벌로 통일하면서 합쳤다 — 따로 두면 반드시 어긋나고, 어긋난 쪽은 검사에
-  안 걸린다. 그래서 여기서도 하나로 본다.
-*/
+/* 다크는 기본 토큰을 상속하고 표면·글자만 별도로 정의한다. */
 const darkBlock = block("\\.dark");
 
 let scope = lightBlock;
@@ -128,21 +124,22 @@ function audit(themeName, block) {
   chk("primary-strong / 배경", cr(strong, bg), 4.5);
   chk("primary-strong / 카드", cr(strong, card), 4.5);
 
-  console.log("\n── 채움 역할: primary (그 위의 글자, 4.5) ──");
+  console.log("\n── 행동 표면: primary (그 위의 글자, 4.5) ──");
   chk("primary 필 + primary-foreground", cr(primary, primaryFg), 4.5);
   chk(
     "primary-hover + primary-foreground",
     cr(toS(parseOklch(tokenRaw("primary-hover"))), primaryFg),
     4.5,
   );
-  chk("스위치 손잡이 / 켜진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("brand-signature")))), 3);
-  chk("스위치 손잡이 / 꺼진 트랙", cr(primaryFg, toS(parseOklch(tokenRaw("input")))), 3);
+  // Switch uses selection-foreground when checked and background when unchecked.
+  // Those are distinct roles from the outlined primary button's label.
+  chk("스위치 손잡이 / 꺼진 트랙", cr(bg, toS(parseOklch(tokenRaw("input")))), 3);
 
-  console.log("\n── 선택 역할: 인디고 (4.5) ──");
+  console.log("\n── 선택 역할: 연한 핑크 표면 (4.5) ──");
   const selection = toS(parseOklch(tokenRaw("selection")));
   const selectionFg = toS(parseOklch(tokenRaw("selection-foreground")));
   chk("선택한 항목 / 선택 글자", cr(selection, selectionFg), 4.5);
-  chk("선택한 스위치 / 손잡이", cr(selection, primaryFg), 3);
+  chk("선택한 스위치 / 손잡이", cr(selection, selectionFg), 3);
 
   console.log("\n── 틴트 표면 (GuideNote bg-primary/8, 칩 /10) ──");
   chk("primary-strong / bg-primary\\8 (배경)", cr(strong, over(primary, bg, 0.08)), 4.5);
@@ -191,7 +188,7 @@ function audit(themeName, block) {
   );
 }
 
-audit("라이트 — 인디고 · 핑크", lightBlock);
+audit("라이트 — 화이트 · 핑크 테두리", lightBlock);
 audit("다크 — 차콜", darkBlock);
 
 console.log(fails === 0 ? "\n✅ 전부 통과" : `\n❌ ${fails}건 실패`);

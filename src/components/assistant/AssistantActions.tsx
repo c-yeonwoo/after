@@ -1,15 +1,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { visibleAssistantActions, type AssistantAction } from "@/lib/assistantExperience";
+import { setAssistantDraft } from "@/lib/assistantDraft";
 
 const style =
   "assistant-suggestion inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold";
 export function AssistantActions({
   actions,
   counterpartId,
+  draft,
 }: {
   actions: AssistantAction[];
   counterpartId?: string | null;
+  draft?: { owner: string; text: string };
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const visibleActions = visibleAssistantActions(actions, pathname, counterpartId);
@@ -45,7 +48,14 @@ export function AssistantActions({
             );
           case "revise":
             return (
-              <Link key={action} className={style} to="/assistant-profile">
+              <Link
+                key={action}
+                className={style}
+                to="/assistant-profile"
+                onClick={() => {
+                  if (draft) setAssistantDraft(draft.owner, draft.text);
+                }}
+              >
                 {content("비서와 프로필 다듬기")}
               </Link>
             );

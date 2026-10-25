@@ -3,7 +3,7 @@ export function Tag({ children, tone }: { children: React.ReactNode; tone: "mute
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-2xs ${
-        tone === "alert" ? "bg-primary/10 text-primary-strong" : "bg-muted text-muted-foreground"
+        tone === "alert" ? "bg-selection text-primary-strong" : "bg-muted text-muted-foreground"
       }`}
     >
       {children}

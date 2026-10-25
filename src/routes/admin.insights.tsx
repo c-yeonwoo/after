@@ -258,7 +258,7 @@ function DashboardTab() {
                   className={`rounded-full px-2 py-1 text-2xs font-bold ${
                     item.priority === "P0"
                       ? "bg-destructive/10 text-destructive"
-                      : "bg-primary/10 text-primary-strong"
+                      : "bg-selection text-primary-strong"
                   }`}
                 >
                   {item.priority}

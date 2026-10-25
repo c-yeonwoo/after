@@ -344,7 +344,7 @@ function TasksTab() {
       </div>
 
       {preview && preview.missing_total > 0 ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-surface border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-surface border border-brand-200 bg-selection px-4 py-3 text-sm">
           <p className="min-w-0 flex-1">
             기존 미처리 건 {preview.missing_total}건이 아직 작업함에 없습니다. 현재 상태를 확인한 뒤
             반영할 수 있습니다.

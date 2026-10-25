@@ -147,7 +147,7 @@ function OrdersPage() {
       ) : orders.length === 0 ? (
         <div className="app-elevated mt-3 rounded-surface bg-card px-5 py-8 text-center">
           <Receipt
-            className="mx-auto mb-4 size-7 text-primary"
+            className="mx-auto mb-4 size-7 text-primary-strong"
             strokeWidth={1.5}
             aria-hidden="true"
           />
@@ -232,7 +232,10 @@ function OrdersPage() {
                   : (ticket.used_at ?? ticket.issued_at);
               return (
                 <li key={ticket.id} className="flex items-start gap-3 p-4 text-sm">
-                  <TicketIcon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                  <TicketIcon
+                    className="mt-0.5 size-5 shrink-0 text-primary-strong"
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
                       {ticket.kind === "intro" ? "소개 열람" : "만남 조율"} 티켓 · {state}

@@ -67,6 +67,15 @@ function sql(statement) {
 }
 
 const originalPaymentsEnabled = sql("select payments_enabled from public.app_settings");
+const originalAssistantFlags = JSON.parse(
+  sql(`select json_build_object(
+    'assistant_chat_enabled',assistant_chat_enabled,
+    'assistant_memory_enabled',assistant_memory_enabled,
+    'assistant_schedule_enabled',assistant_schedule_enabled,
+    'assistant_introduction_enabled',assistant_introduction_enabled,
+    'assistant_profile_edit_enabled',assistant_profile_edit_enabled
+  ) from public.app_settings`),
+);
 
 async function waitForServer(target = baseUrl) {
   for (let attempt = 0; attempt < 90; attempt += 1) {
@@ -245,6 +254,13 @@ try {
   // The first scenario verifies paid-ticket behavior, even when a freshly
   // started Supabase defaults to free beta. The outer finally restores it.
   sql("update public.app_settings set payments_enabled=true");
+  // Exercise the standard workflow independently of a developer's assistant lab.
+  // Dedicated assistant suites cover enabled capabilities on this same local DB.
+  sql(
+    `update public.app_settings set ${Object.keys(originalAssistantFlags)
+      .map((key) => `${key}=false`)
+      .join(",")}`,
+  );
   server = spawn(
     process.execPath,
     [
@@ -437,46 +453,20 @@ try {
   await signupPage.getByText(existing.name, { exact: true }).waitFor();
   await signupPage.getByRole("link", { name: "뒤로", exact: true }).click();
   await waitForHome(signupPage);
-  // A landscape brand photo must remain uncropped at every app-shell width.
-  // The old portrait + fixed 160px cover box discarded most of the scene.
+  // The assistant home keeps operational readiness and availability here.
+  // The former promotional photo no longer belongs to this surface.
   const readiness = signupPage.getByRole("region", { name: "소개 설정", exact: true });
-  const readinessPhoto = readiness.locator('img[src="/brand/after-first-conversation.jpg"]');
-  await readinessPhoto.waitFor();
-  await readinessPhoto.evaluate((image) => image.decode());
+  await readiness.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).waitFor();
   await signupPage
     .locator("[data-sonner-toast]")
     .last()
     .waitFor({ state: "hidden", timeout: 10000 });
   for (const width of [320, 390, 430, 768, 1440]) {
     await signupPage.setViewportSize({ width, height: 900 });
-    const imageSize = await readinessPhoto.evaluate((image) => ({
-      width: image.getBoundingClientRect().width,
-      height: image.getBoundingClientRect().height,
-      naturalWidth: image.naturalWidth,
-      naturalHeight: image.naturalHeight,
-      declaredWidth: Number(image.getAttribute("width")),
-      declaredHeight: Number(image.getAttribute("height")),
-    }));
-    assert.ok(imageSize.width > 0 && imageSize.naturalWidth > 0, "waiting photo loaded");
     const availabilityBox = await readiness
       .getByRole("link", { name: /만남 가능 시간/ })
       .boundingBox();
-    const photoBox = await readinessPhoto.boundingBox();
-    assert.ok(
-      availabilityBox.y + availabilityBox.height <= photoBox.y,
-      "settings and next action precede the brand photo",
-    );
-    assert.equal(
-      imageSize.declaredWidth / imageSize.declaredHeight,
-      imageSize.naturalWidth / imageSize.naturalHeight,
-      "photo reserves its intrinsic ratio before loading",
-    );
-    assert.ok(
-      Math.abs(
-        imageSize.width / imageSize.height - imageSize.naturalWidth / imageSize.naturalHeight,
-      ) < 0.01,
-      `waiting photo is uncropped at ${width}px`,
-    );
+    assert.ok(availabilityBox.width > 0 && availabilityBox.height >= 44);
     await checkPage(signupPage, `waiting home ${width}px`, width === 390);
     if (screenshotDir && [320, 390, 1440].includes(width)) {
       await signupPage.evaluate(() => {
@@ -508,9 +498,13 @@ try {
   await signupPage.emulateMedia({ reducedMotion: "no-preference" });
   await readiness.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).click();
   await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).waitFor();
-  assert.equal(await readinessPhoto.count(), 0, "paused introductions do not show a waiting photo");
+  assert.equal(
+    await readiness.getByRole("link", { name: /만남 가능 시간/ }).count(),
+    0,
+    "paused introductions hide the new-introduction availability action",
+  );
   await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).click();
-  await readinessPhoto.waitFor();
+  await readiness.getByRole("link", { name: /만남 가능 시간/ }).waitFor();
   assert.equal(
     sql(
       `select count(*) from public.profiles where lower(company_email)=lower('${existing.email}')`,
@@ -570,7 +564,7 @@ try {
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
   await incompletePage.getByRole("button", { name: "가입 이어하기" }).click();
-  await incompletePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await incompletePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(await incompletePage.getByLabel("이름").inputValue(), incomplete.name);
   await incompletePage.getByLabel("생년월일", { exact: true }).fill("2020-01-01");
   await incompletePage.getByText("만 19~79세만 가입할 수 있습니다.", { exact: true }).waitFor();
@@ -697,7 +691,7 @@ try {
     await freshPage.screenshot({ path: join(screenshotDir, "assistant-profile-setup.png") });
   }
   await freshPage.getByRole("link", { name: "내 비서와 프로필 만들기" }).click();
-  await freshPage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await freshPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(await freshPage.getByLabel("생년월일", { exact: true }).inputValue(), "");
   assert.equal(
     await freshPage.getByLabel("생년월일", { exact: true }).getAttribute("readonly"),
@@ -781,7 +775,7 @@ try {
   await removePhoto.click();
   await freshPage.getByRole("button", { name: "2번째 사진을 대표로", exact: true }).click();
   await freshPage.setViewportSize({ width: 390, height: 844 });
-  await freshPage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).focus();
+  await freshPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).focus();
   await freshPage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
   await checkPage(freshPage, "signup basics and photos");
   if (screenshotDir) await freshPage.screenshot({ path: join(screenshotDir, "signup-basics.png") });
@@ -896,7 +890,7 @@ try {
   await chooseWorkZone(carrierPage);
   await carrierPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
   await carrierPage.getByRole("button", { name: "프로필 준비 시작" }).click();
-  await carrierPage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await carrierPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(await carrierPage.getByLabel("생년월일").inputValue(), "1994-02-15");
   assert.notEqual(await carrierPage.getByLabel("생년월일").getAttribute("readonly"), null);
   assert.equal(
@@ -1188,7 +1182,7 @@ try {
     select headline,intro,profile_story from public.profiles where id='${female.id}'
   ) p`);
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   await femalePage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
@@ -1342,7 +1336,7 @@ try {
     "private draft retains edited job",
   );
   await femalePage.reload();
-  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(
     await femalePage.getByLabel("직업", { exact: true }).inputValue(),
     "서비스 기획자",
@@ -1635,7 +1629,7 @@ try {
     "published question identities stay unchanged by the input-only prompts",
   );
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
@@ -1677,7 +1671,7 @@ try {
     ))
     on conflict (user_id) do update set revision=1,data=excluded.data`);
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "당신을 알아가는 첫걸음" }).waitFor();
+  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
@@ -1937,6 +1931,11 @@ try {
   );
 } finally {
   sql(`update public.app_settings set payments_enabled=${originalPaymentsEnabled === "t"}`);
+  sql(
+    `update public.app_settings set ${Object.entries(originalAssistantFlags)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(",")}`,
+  );
   await browser?.close();
   server?.kill("SIGTERM");
   carrierServer?.kill("SIGTERM");

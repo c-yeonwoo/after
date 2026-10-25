@@ -30,7 +30,7 @@ function DeleteAccountPage() {
         </ol>
         <Link
           to="/login"
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary px-4 font-semibold text-primary-foreground"
+          className="app-primary-button inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary px-4 font-semibold text-primary-foreground"
         >
           로그인해서 삭제하기
         </Link>

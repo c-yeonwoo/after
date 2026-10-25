@@ -122,7 +122,7 @@ function ConsentPage() {
             type="button"
             onClick={() => void submit()}
             disabled={!terms || !privacy || busy}
-            className="mt-3 min-h-12 w-full rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            className="app-primary-button mt-3 min-h-12 w-full rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             동의하고 계속하기
           </button>
