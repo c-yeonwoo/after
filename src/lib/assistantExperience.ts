@@ -29,6 +29,19 @@ export type AssistantContext = {
   memory: boolean;
 };
 
+/** Keep navigation useful on the current surface, including empty replies. */
+export function visibleAssistantActions(
+  actions: AssistantAction[],
+  pathname: string,
+  counterpartId?: string | null,
+): AssistantAction[] {
+  const currentPath = pathname.replace(/\/+$/, "");
+  return actions.filter(
+    (action) =>
+      !(action === "home" && currentPath === "/home") && !(action === "prepare" && !counterpartId),
+  );
+}
+
 /** Routes to a bounded structured step; never executes a consequential action. */
 export function assistantReply(intent: AssistantIntent, context: AssistantContext): AssistantReply {
   const generic = (query: string, actions: AssistantAction[]): AssistantReply => ({
@@ -65,6 +78,16 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
     case "edit":
       return generic("프로필 수정", [context.complete ? "edit" : "account"]);
     case "intro":
+      if (context.complete && context.state === "waiting")
+        return {
+          text: "아직 새 소개가 없어요. 도착한 소개는 소개 탭에서 확인할 수 있어요.",
+          actions: [],
+        };
+      if (context.complete && context.state === "paused")
+        return {
+          text: "소개를 잠시 쉬고 있어요. 홈의 소개 설정에서 다시 받을 수 있어요.",
+          actions: ["home"],
+        };
       return generic("소개 보여줘", [context.complete ? "intro" : "account"]);
     case "interest":
       return context.gender === "female"
@@ -127,7 +150,7 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
       return generic("약속 취소", ["appointments", "support"]);
     case "unknown":
       return {
-        text: "어떤 도움이 필요하세요? 소개·프로필·일정·티켓을 안내해드려요. 자유 상담은 준비 중이에요.",
+        text: "소개·프로필·일정·티켓 이용 방법을 안내해드릴 수 있어요. 궁금한 항목을 골라주세요.",
         actions: [],
       };
   }

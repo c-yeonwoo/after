@@ -1,6 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
-import type { AssistantAction } from "@/lib/assistantExperience";
+import { visibleAssistantActions, type AssistantAction } from "@/lib/assistantExperience";
 
 const style =
   "assistant-suggestion inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold";
@@ -11,9 +11,13 @@ export function AssistantActions({
   actions: AssistantAction[];
   counterpartId?: string | null;
 }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const visibleActions = visibleAssistantActions(actions, pathname, counterpartId);
+  if (visibleActions.length === 0) return null;
+
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      {actions.map((action) => {
+      {visibleActions.map((action) => {
         const content = (label: string) => (
           <>
             {label}

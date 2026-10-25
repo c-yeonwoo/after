@@ -17,12 +17,14 @@ export function AssistantDock({
   state,
   hasMeeting,
   hasOpenIntro,
+  showIdentity = true,
 }: {
   status: string;
   counterpartId?: string | null;
   state?: string;
   hasMeeting?: boolean;
   hasOpenIntro?: boolean;
+  showIdentity?: boolean;
 }) {
   const { me } = useMe();
   const navigate = useNavigate();
@@ -46,17 +48,16 @@ export function AssistantDock({
     : null;
   return (
     <section className="assistant-dock" aria-label="비서에게 물어보기">
-      <div className="flex items-center gap-2.5">
-        <AssistantMark />
-        <div>
-          <h2 className="text-sm font-semibold">애프터 AI</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">무엇을 도와드릴까요?</p>
+      {showIdentity ? (
+        <div className="flex items-center gap-2.5">
+          <AssistantMark />
+          <h2 className="text-sm font-semibold">애프터 AI에게 물어보세요</h2>
         </div>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2" aria-label="빠른 도움">
+      ) : null}
+      <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
         {(
           [
-            ["status", "지금 내 상태"],
+            ["status", "내 상태"],
             ["intro", "소개 확인"],
             ["profile", "내 프로필"],
             ["prepare", "대화 팁"],
@@ -65,14 +66,18 @@ export function AssistantDock({
         ).map(([key, label]) => (
           <button
             key={key}
-            className="assistant-suggestion pressable"
+            type="button"
+            className="assistant-quick-chip pressable"
             aria-pressed={intent === key}
+            onFocus={(event) =>
+              event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" })
+            }
             onClick={() => {
               setSafety(null);
               setIntent(key);
             }}
           >
-            {label}
+            <span className="assistant-quick-chip-label">{label}</span>
           </button>
         ))}
       </div>
@@ -115,7 +120,7 @@ export function AssistantDock({
       >
         <input
           aria-label="비서에게 물어볼 내용"
-          placeholder="비서에게 말해보세요"
+          placeholder="궁금한 점을 편하게 물어보세요"
           value={input}
           maxLength={300}
           enterKeyHint="send"
@@ -131,7 +136,6 @@ export function AssistantDock({
           <ArrowUp className="size-5" />
         </button>
       </form>
-      <p className="mt-2 text-center text-xs text-muted-foreground">비서에게만 보여요</p>
     </section>
   );
 }

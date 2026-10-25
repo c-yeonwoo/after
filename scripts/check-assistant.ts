@@ -7,7 +7,11 @@ import {
   validPrivateAdvice,
 } from "../supabase/functions/_shared/assistant-private";
 import { seoulAppointment, scheduleKind, scheduleInputIssue } from "../src/lib/assistantSchedule";
-import { assistantReply, type AssistantContext } from "../src/lib/assistantExperience";
+import {
+  assistantReply,
+  visibleAssistantActions,
+  type AssistantContext,
+} from "../src/lib/assistantExperience";
 import {
   assistantServiceReply,
   assistantStatusText,
@@ -45,6 +49,18 @@ const routingCases = [
 ] as const;
 for (const [text, intent] of routingCases) assert.equal(assistantIntent(text), intent, text);
 const ctx: AssistantContext = { gender: "male", complete: true, schedule: false, memory: false };
+assert.deepEqual(visibleAssistantActions(["home", "profile"], "/home"), ["profile"]);
+assert.deepEqual(visibleAssistantActions(["home"], "/home/"), []);
+assert.deepEqual(visibleAssistantActions(["home"], "/assistant"), ["home"]);
+assert.deepEqual(visibleAssistantActions(["prepare"], "/home"), []);
+assert.deepEqual(visibleAssistantActions(["prepare"], "/home", "permitted"), ["prepare"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "waiting" }).actions, []);
+assert.match(assistantReply("intro", { ...ctx, state: "waiting" }).text, /아직 새 소개가 없어요/);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "paused" }).actions, ["home"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "intro_available" }).actions, ["intro"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, complete: false, state: "waiting" }).actions, [
+  "account",
+]);
 assert.deepEqual(
   assistantReply("schedule", { ...ctx, schedule: true, hasMeeting: false, hasOpenIntro: false })
     .actions,
