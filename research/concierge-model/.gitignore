@@ -1,0 +1,2 @@
+# Future manual run artifacts stay local; fixtures are authored synthetic examples.
+local/

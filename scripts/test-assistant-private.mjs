@@ -8,10 +8,22 @@ import { chromium, webkit } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 
 const env = JSON.parse(
-  execFileSync("npx", ["supabase", "status", "-o", "json"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  }),
+  execFileSync(
+    "npx",
+    [
+      "supabase",
+      "status",
+      "-o",
+      "json",
+      ...(process.env.AFTER_SUPABASE_WORKDIR
+        ? ["--workdir", process.env.AFTER_SUPABASE_WORKDIR]
+        : []),
+    ],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  ),
 );
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(env.API_URL) || !env.DB_URL.includes("@127.0.0.1:"))
   throw Error("Local synthetic tests only");

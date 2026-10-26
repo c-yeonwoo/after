@@ -4,43 +4,93 @@ export type AssistantIntent =
   | "signup"
   | "profile"
   | "edit"
+  | "edit_photo"
+  | "edit_facts"
+  | "edit_story"
+  | "clarify"
   | "intro"
   | "interest"
   | "payment"
   | "schedule"
+  | "feedback"
   | "prepare"
   | "memory"
   | "support"
   | "unknown";
 
+const editRequest =
+  /수정|변경|바꾸|바꿔|고치|고쳐|편집|삭제|지우|지워|다듬|다시\s*(?:써|작성)|원래대로/;
+const storyTarget = /소개\s*글|한\s*줄\s*소개|인터뷰|문장|문구|마지막\s*줄/;
+const storyStyle = /다정하게|자연스럽게|부드럽게|간결하게|따뜻하게|짧게|길게/;
+const factsTarget =
+  /기본\s*정보|(?:^|\s)(?:키|나이|직업|지역|거주지|학력|이름)(?:[을를은는이가도]|에서|로)?(?=\s|$)/;
+
+/** Only explicit exclusions of known workflow subjects; this is not a language parser. */
+function activeRequestText(text: string): string {
+  return text.replace(
+    /(?:사진|소개\s*글|한\s*줄\s*소개|기본\s*정보|프로필|약속\s*시간|약속|일정)(?:[은는을를])?\s*(?:말고|그대로\s*(?:두고|둬|두세요)|안\s*(?:바꾸|바꿔|고치|고쳐|수정하|변경하)(?:고|게|줘|주세요)?|(?:바꾸|고치|수정하|변경하)지\s*(?:말고|마|마세요|말아줘|않고))/g,
+    " ",
+  );
+}
+
 export function assistantIntent(raw: string): AssistantIntent {
-  const text = raw.normalize("NFKC").trim().replace(/\s+/g, " ");
-  if (/신고|차단|고객센터|고객 지원|환불|취소/.test(text)) return "support";
+  const normalized = raw.normalize("NFKC").trim().replace(/\s+/g, " ");
+  // Safety/support requests keep priority, including inside compound requests.
+  if (/신고|차단|고객센터|고객\s*지원|환불|취소/.test(normalized)) return "support";
+  const text = activeRequestText(normalized).trim().replace(/\s+/g, " ");
   const preparation =
     /대화\s*(주제|준비|팁|거리)|대화거리|무슨 (얘기|이야기)|할 (얘기|이야기)|맞춤.*(조언|질문)|만남.*(팁|조언)/.test(
       text,
     );
   if (preparation && /상대|이분|그분|만날 분/.test(text)) return "prepare";
   if (/가입|인증|로그인|비밀번호/.test(text)) return "signup";
-  // Specific subjects precede generic verbs such as 준비/고쳐줘.
-  if (/프로필|사진|소개글|인터뷰|한 줄 소개/.test(text))
-    return /수정|바꾸|바꿔|고치|고쳐|편집|다시/.test(text) ? "edit" : "profile";
   if (/기억.*(저장|수정|삭제|관리|지워)|기억해(?:\s*줘|\s*주세요|[.!?]*$)|메모리/.test(text))
     return "memory";
-  if (/결제|티켓|상점|구매|가격|얼마|이용료/.test(text)) return "payment";
+
+  const edits: AssistantIntent[] = [];
+  if (
+    /사진/.test(text) &&
+    (editRequest.test(text) ||
+      /등록|올리|올려|추가|검사|확인|점검|피드백|코칭|조언|팁|추천|분석|판독|평가|봐\s*줘|어때|괜찮|잘\s*나왔|밝기|해상도|비율/.test(
+        text,
+      ))
+  )
+    edits.push("edit_photo");
+  if (factsTarget.test(text) && editRequest.test(text)) edits.push("edit_facts");
+  if (
+    (storyTarget.test(text) && (editRequest.test(text) || storyStyle.test(text))) ||
+    /^(?:(?:좀|조금|더)\s*)*(?:다정하게|자연스럽게|부드럽게|간결하게|따뜻하게|짧게|길게)(?:\s*(?:해|만들어|다듬어)(?:줘|주세요))?[.!?]*$/.test(
+      text,
+    )
+  )
+    edits.push("edit_story");
+
+  const requests: AssistantIntent[] = [];
+  if (edits.length) requests.push(edits.length === 1 ? edits[0] : "edit");
+  else if (/프로필/.test(text) && editRequest.test(text)) requests.push("edit");
+  // A price/product subject is required. 얼마나/얼마 안 됐다 are ordinary advice.
+  if (/결제|티켓|상점|구매|가격|이용료|요금/.test(text)) requests.push("payment");
   if (
     /^(좋아요|호감|패스|관심 없어요)[.!?\s]*$|호감.*(보내|남기)|좋아요.*(보내|눌러|남겨)|소개.*(넘겨|거절)/.test(
       text,
     )
   )
-    return "interest";
-  if (preparation) return "prepare";
+    requests.push("interest");
   if (
-    /^(일정|약속|시간|장소)( 정리)?[.!?\s]*$|(?:일정|약속).*(잡아|잡고|조율|정리|변경|확인|예약|확정)|가능한 (시간|요일)|만남 요청|만나고 싶/.test(
+    /^(일정|약속|시간|장소)( 정리)?[.!?\s]*$|(?:일정|약속).*(잡아|잡고|조율|정리|변경|바꾸|바꿔|확인|예약|확정)|가능한\s*(시간|요일)|만남 요청|만나고 싶/.test(
       text,
     )
   )
-    return "schedule";
+    requests.push("schedule");
+  if (/(?:만남|데이트)\s*(?:후기|결과)|후기.*(?:남기|작성|기록|수정)/.test(text))
+    requests.push("feedback");
+  // Do not silently pick a target or launch the wrong workflow for compound requests.
+  if (requests.length > 1) return "clarify";
+  if (requests.length === 1) return requests[0];
+  if (/프로필|사진|소개\s*글|인터뷰|한\s*줄\s*소개/.test(text)) return "profile";
+  if (preparation) return "prepare";
+  if (/왜.*소개.*(?:없|안\s*와|안\s*오)|아직.*소개.*(?:없|안\s*와|안\s*오)/.test(text))
+    return "status";
   if (/소개.*(보여|보기|확인|도착|왔|시켜)|누굴 만나|상대.*보여/.test(text)) return "intro";
   if (/상태|진행|언제.*소개|소개.*언제|기다리는|지금.*할 일|다음 단계/.test(text)) return "status";
   return "unknown";
@@ -102,7 +152,15 @@ export function assistantServiceReply(
     case "profile":
       return "사진·기본 정보와 짧은 인터뷰로 프로필을 준비해요. 작성안을 직접 확인하고 저장해야 공개돼요. 내 프로필에서 이어갈 수 있어요.";
     case "edit":
-      return "내 프로필의 수정에서 사진과 소개글을 바꿀 수 있어요. 마지막 저장 전까지는 기존 공개 프로필이 유지돼요. 이 대화가 프로필을 바꾸지는 않아요.";
+      return "사진, 기본 정보, 소개글 중 어느 부분을 먼저 바꿀까요? 바꿀 대상을 확인한 뒤 해당 수정 화면에서 이어갈 수 있어요.";
+    case "edit_photo":
+      return "사진은 내 프로필의 사진 수정에서 바꿀 수 있어요. 현재 사진 도움은 기기 안에서 밝기·해상도·비율을 확인하고 구성을 안내하는 기능이에요. 사진 속 인물이나 성격을 판독하지 않으며, 선택한 사진은 직접 확인하고 저장해 주세요.";
+    case "edit_facts":
+      return "키·직업·지역 같은 기본 정보는 내 프로필의 수정 화면에서 직접 확인하고 저장해 주세요. 이 대화만으로 정보가 바뀌지 않아요.";
+    case "edit_story":
+      return "소개글이나 인터뷰 답변에서 바꿀 문장을 선택해 주세요. 수정안은 직접 확인하고 승인해야 반영되며, 사진과 기본 정보는 바꾸지 않아요.";
+    case "clarify":
+      return "요청하신 일 중 어떤 것부터 도와드릴까요? 먼저 처리할 한 가지를 알려주시면 해당 화면에서 확인할 수 있어요.";
     case "intro":
       return "소개 화면에서 현재 살펴볼 분을 확인해 주세요. 소개 자격과 같은 지역의 후보에 따라 준비하며, 상대의 속마음이나 소개 시점을 단정하지 않아요.";
     case "interest":
@@ -115,6 +173,8 @@ export function assistantServiceReply(
           : "현재 계정의 이용 조건을 먼저 확인해 주세요. 결제나 티켓 사용은 별도 확인이 필요하며, 이 대화가 결제하지 않아요.";
     case "schedule":
       return "일정은 상대와 현재 요청을 확인한 뒤 후보를 정리해요. 날짜·장소와 전송 내용을 직접 확인해야 반영돼요. 이 대화만으로 약속을 확정하지 않아요.";
+    case "feedback":
+      return "약속 상세에서 실제 만남 여부와 후기를 남길 수 있어요. 만나지 못했다면 사유를 직접 확인해 주세요. 이 대화가 신고나 후기를 자동으로 제출하지 않아요.";
     case "memory":
       return "기억 관리는 승인한 선호만 따로 저장하거나 지우는 기능이에요. 상담 문장이 자동으로 기억되지는 않아요. 기억 관리에서 내용을 확인해 주세요.";
     case "prepare":

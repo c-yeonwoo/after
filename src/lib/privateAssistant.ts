@@ -19,9 +19,11 @@ export type AssistantPrivateState = {
   flags: AssistantFlags;
   consented: boolean;
   revision: number;
+  session_id?: string | null;
   memories: AssistantMemory[];
   turns: {
     id: string;
+    session_id?: string | null;
     kind?: "conversation" | "profile_applied" | "schedule_applied";
     question: string;
     answer: string | null;

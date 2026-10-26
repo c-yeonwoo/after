@@ -6,7 +6,11 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
 import { assistantIntent } from "@/lib/assistant";
-import { assistantReply, type AssistantContext } from "@/lib/assistantExperience";
+import {
+  assistantReply,
+  historicalAssistantActions,
+  type AssistantContext,
+} from "@/lib/assistantExperience";
 import { privateAssistantSafety } from "../../../supabase/functions/_shared/assistant-private";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +84,7 @@ export function AssistantConversation({
   const data = !live.isError && !live.isPaused ? live.data : undefined;
   const [earlier, setEarlier] = useState<{
     revision: number;
+    sessionId: string | null;
     turns: AssistantPrivateState["turns"];
     exhausted: boolean;
   } | null>(null);
@@ -87,7 +92,12 @@ export function AssistantConversation({
   useEffect(() => {
     if (!data) return;
     setEarlier((previous) => {
-      if (!previous || previous.revision !== data.revision) return null;
+      if (
+        !previous ||
+        previous.revision !== data.revision ||
+        previous.sessionId !== (data.session_id ?? null)
+      )
+        return null;
       const turns = [
         ...new Map(
           [...previous.turns, ...data.turns].map((turn) => [turn.id, turn] as const),
@@ -105,10 +115,18 @@ export function AssistantConversation({
   }, [data, earlier]);
   const latestRevision = useRef<number | undefined>(undefined);
   latestRevision.current = data?.revision;
+  const latestSession = useRef<string | null>(null);
+  latestSession.current = data?.session_id ?? null;
   const visibleTurns = data
     ? [
         ...new Map(
-          [...(earlier?.revision === data.revision ? earlier.turns : []), ...data.turns]
+          [
+            ...(earlier?.revision === data.revision &&
+            earlier.sessionId === (data.session_id ?? null)
+              ? earlier.turns
+              : []),
+            ...data.turns,
+          ]
             .filter((turn) => Date.parse(turn.created_at) > Date.now() - 30 * 86400_000)
             .map((turn) => [turn.id, turn] as const),
         ).values(),
@@ -123,6 +141,16 @@ export function AssistantConversation({
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [guide, setGuide] = useState<string | null>(null);
+  const actionContext: AssistantContext = {
+    gender: me?.gender ?? null,
+    complete: Boolean(me && me.onboarding_step >= 7),
+    schedule: Boolean(data?.flags.schedule),
+    memory: Boolean(data?.flags.memory),
+    profileEdit: Boolean(data?.flags.profileEdit),
+    ...context,
+  };
+  const guideReply = guide ? assistantReply(assistantIntent(guide), actionContext) : null;
   const [memory, setMemory] = useState<{
     text: string;
     existing?: AssistantMemory;
@@ -133,7 +161,12 @@ export function AssistantConversation({
   const [erase, setErase] = useState<"history" | "all" | "consent" | string | null>(null);
   const sending = useRef(false);
   const alive = useRef(true);
-  const pendingRequest = useRef<{ id: string; text: string; revision: number } | null>(null);
+  const pendingRequest = useRef<{
+    id: string;
+    text: string;
+    revision: number;
+    sessionId: string | null;
+  } | null>(null);
   const conversationEnd = useRef<HTMLDivElement>(null);
   const memoryInput = useRef<HTMLInputElement>(null);
   const eraseConfirmation = useRef<HTMLElement>(null);
@@ -227,12 +260,14 @@ export function AssistantConversation({
       if (
         !pendingRequest.current ||
         pendingRequest.current.text !== text ||
-        pendingRequest.current.revision !== data.revision
+        pendingRequest.current.revision !== data.revision ||
+        pendingRequest.current.sessionId !== (data.session_id ?? null)
       )
         pendingRequest.current = {
           id: crypto.randomUUID(),
           text,
           revision: data.revision,
+          sessionId: data.session_id ?? null,
         };
       try {
         followTurn.current = pendingRequest.current.id;
@@ -265,21 +300,28 @@ export function AssistantConversation({
   const loadEarlier = async () => {
     if (!data || loadingEarlier || !visibleTurns.length) return;
     const revision = data.revision;
+    const sessionId = data.session_id ?? null;
     const first = visibleTurns[0];
     setLoadingEarlier(true);
     setError("");
     try {
-      const page = await assistantRpc<Pick<AssistantPrivateState, "revision" | "turns">>(
-        "assistant_history",
-        {
-          p_before: first.created_at,
-          p_before_id: first.id,
-        },
-      );
-      if (!alive.current || latestRevision.current !== revision || page.revision !== revision)
+      const page = await assistantRpc<
+        Pick<AssistantPrivateState, "revision" | "turns" | "session_id">
+      >("assistant_history", {
+        p_before: first.created_at,
+        p_before_id: first.id,
+      });
+      if (
+        !alive.current ||
+        latestRevision.current !== revision ||
+        page.revision !== revision ||
+        latestSession.current !== sessionId ||
+        (page.session_id ?? null) !== sessionId
+      )
         return;
       setEarlier(() => ({
         revision,
+        sessionId,
         exhausted: page.turns.length < 20,
         turns: [...page.turns, ...visibleTurns],
       }));
@@ -354,6 +396,34 @@ export function AssistantConversation({
           기억 관리
         </Link>
       </nav>
+      {panel === "chat" ? (
+        <>
+          <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
+            {["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리", "티켓 가격"].map(
+              (text) => (
+                <button
+                  type="button"
+                  key={text}
+                  className="assistant-quick-chip pressable"
+                  aria-pressed={guide === text}
+                  onClick={() => setGuide(text)}
+                >
+                  <span className="assistant-quick-chip-label">{text}</span>
+                </button>
+              ),
+            )}
+          </div>
+          {guideReply ? (
+            <div className="assistant-reply mb-5" role="status">
+              <p className="text-sm leading-relaxed">{guideReply.text}</p>
+              <AssistantActions
+                actions={guideReply.actions}
+                counterpartId={actionContext.counterpartId}
+              />
+            </div>
+          ) : null}
+        </>
+      ) : null}
       {!data ? (
         <div className="py-6">
           <p role="status">
@@ -424,19 +494,6 @@ export function AssistantConversation({
                   보관해요.
                 </p>
               ) : null}
-              <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
-                {["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리"].map((text) => (
-                  <button
-                    type="button"
-                    key={text}
-                    className="assistant-quick-chip pressable"
-                    disabled={busy || !data.flags.chat}
-                    onClick={() => setInput(text)}
-                  >
-                    <span className="assistant-quick-chip-label">{text}</span>
-                  </button>
-                ))}
-              </div>
               {!data.flags.chat ? (
                 <p role="status" className="assistant-reply mb-5">
                   새 상담은 잠시 쉬고 있어요. 기록 확인과 삭제는 계속 할 수 있어요.
@@ -509,20 +566,17 @@ export function AssistantConversation({
                         !privateAssistantSafety(turn.question, { execution: false }) ? (
                           <AssistantActions
                             draft={{ owner, text: turn.question }}
-                            counterpartId={context?.counterpartId}
                             actions={
                               turn.kind === "profile_applied"
                                 ? ["profile"]
                                 : turn.kind === "schedule_applied"
                                   ? ["appointments"]
-                                  : assistantReply(assistantIntent(turn.question), {
+                                  : historicalAssistantActions(assistantIntent(turn.question), {
                                       gender: me?.gender ?? null,
                                       complete: true,
-                                      schedule: data.flags.schedule,
                                       memory: data.flags.memory,
                                       profileEdit: data.flags.profileEdit,
-                                      ...context,
-                                    }).actions
+                                    })
                             }
                           />
                         ) : null}

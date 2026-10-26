@@ -13,18 +13,16 @@ import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { BRAND } from "@/lib/brand";
 import {
-  homeStateV2,
   markMet,
   meetPlacesForMe,
-  paymentsEnabled,
   setPaused,
   type Meeting,
   type PublicProfile,
   type HomeStateV2,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
-import { myMeetWindow, type MeetWindow } from "@/lib/meetWindow";
-import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
+import { type MeetWindow } from "@/lib/meetWindow";
+import { useMemberHome } from "@/lib/useMemberHome";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
@@ -102,26 +100,7 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
 function HomePage() {
   const { me, ready, refresh } = useMe();
   const navigate = useNavigate();
-  const live = useMemberLiveQuery(
-    "member-home",
-    me?.id,
-    async (signal) => {
-      const [stateResult, paymentResult, windowResult] = await Promise.allSettled([
-        homeStateV2(signal),
-        paymentsEnabled(),
-        myMeetWindow(),
-      ]);
-      if (stateResult.status === "rejected") throw stateResult.reason;
-      if (stateResult.value.me?.id && stateResult.value.me.id !== me?.id)
-        throw new Error("로그인한 계정이 바뀌었어요.");
-      return {
-        state: stateResult.value,
-        payments: paymentResult.status === "fulfilled" ? paymentResult.value : null,
-        window: windowResult.status === "fulfilled" ? windowResult.value : null,
-      };
-    },
-    ready && Boolean(me && me.onboarding_step >= 7),
-  );
+  const live = useMemberHome(me?.id, ready && Boolean(me && me.onboarding_step >= 7));
   const serverState = live.data?.state ?? null;
   const currentProfile = serverState?.me ?? me;
   const candidate = serverState?.candidate ?? null;
