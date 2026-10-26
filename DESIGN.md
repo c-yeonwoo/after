@@ -1,6 +1,6 @@
 ---
 name: "After — White & Pink Concierge"
-description: "흰 행동 표면과 핑크 테두리, 차분한 중성 발화로 준비하는 만남."
+description: "흰 행동 표면과 핑크 테두리, 따뜻한 로즈 발화로 준비하는 만남."
 colors:
   primary: "oklch(1 0 0)"
   primary-hover: "oklch(0.97244 0.0149 356.61)"
@@ -11,7 +11,7 @@ colors:
   brand-tint: "oklch(0.97244 0.0149 356.61)"
   selection: "oklch(0.97244 0.0149 356.61)"
   selection-foreground: "oklch(0.46351 0.02203 306.31)"
-  assistant-surface: "oklch(0.96667 0.00171 247.84)"
+  assistant-surface: "oklch(0.979 0.012 15)"
   assistant-ink: "oklch(0.35309 0.0124 273.05)"
   background: "oklch(1 0 0)"
   foreground: "oklch(0.35309 0.0124 273.05)"
@@ -20,7 +20,7 @@ colors:
   muted-foreground: "oklch(0.5387 0.01446 271.14)"
   border: "oklch(0.91211 0.00461 258.33)"
   input: "oklch(0.58946 0.01122 267.3)"
-  bubble-mine: "oklch(0.97244 0.0149 356.61)"
+  bubble-mine: "oklch(0.935 0.032 15)"
   bubble-mine-foreground: "oklch(0.46351 0.02203 306.31)"
   destructive: "oklch(0.493 0.1674 359)"
   destructive-foreground: "oklch(1 0 0)"
@@ -35,7 +35,7 @@ colors:
   dark-brand-tint: "oklch(0.32011 0.00982 260.71)"
   dark-selection: "oklch(0.29764 0.01585 312.95)"
   dark-selection-foreground: "oklch(0.92068 0.01606 310.1)"
-  dark-assistant-surface: "oklch(0.32011 0.00982 260.71)"
+  dark-assistant-surface: "oklch(0.285 0.019 350)"
   dark-assistant-ink: "oklch(0.96 0.002 260)"
   dark-background: "oklch(0.19595 0.00621 271.09)"
   dark-foreground: "oklch(0.96 0.002 260)"
@@ -215,14 +215,14 @@ components:
 
 **Creative North Star: "White & Pink Concierge"**
 
-After pairs white action surfaces and pink outlines with clear neutral reading surfaces and a detailed adult assistant character. A personal greeting leads into the member's actual progress; compact controls and comfortable conversational text keep the next action easy to find. Korean, Latin text, and numbers share the self-hosted Wanted Sans family.
+After pairs white action surfaces and pink outlines with warm rose conversation surfaces and a detailed adult assistant character. A personal greeting leads into the member's actual progress; compact controls and comfortable conversational text keep the next action easy to find. Korean, Latin text, and numbers share the self-hosted Wanted Sans family.
 
-White is the light canvas and neutral charcoal is the dark canvas. Pink remains the brand signature in both themes; action surfaces follow the theme and action ink stays neutral and readable. Small assistant avatars identify the speaker beside conversational content; human profile photography remains contextual to the person being introduced. The user confirmed this direction on 2026-10-25.
+White is the light canvas and neutral charcoal is the dark canvas. Pink remains the brand signature in both themes; action surfaces follow the theme and action ink stays neutral and readable. Small assistant avatars identify the speaker beside conversational content; human profile photography remains contextual to the person being introduced. The user confirmed this direction on 2026-10-25 and refined conversation warmth and filled tab selection on 2026-10-27.
 
 **Key Characteristics:**
 
 - White light-theme action surfaces, pink outlines, pale selections, and high-contrast neutral ink.
-- Neutral assistant speech, a white light canvas, and a charcoal dark canvas.
+- Warm rose assistant speech, a white light canvas, and a charcoal dark canvas.
 - Detailed adult character avatars beside assistant messages.
 - A mobile frame with stable chrome and an independently scrolling body.
 - Brief tactile feedback that respects reduced motion.
@@ -237,15 +237,16 @@ The frontmatter preserves resolved OKLCH values from `src/styles.css`; it is the
 
 - **Action Surface** (`primary`, `primary-hover`): white actions with a pale hover in light mode; charcoal actions with a muted-plum hover in dark mode.
 - **Pink Signature** (`brand-signature`): the approved pink for primary-action outlines and small brand punctuation.
-- **Soft Pink Point** (`brand-200`): the approved smaller pink accent, including active-tab outlines.
-- **Pale Pink** (`brand-tint`, `selection`, `bubble-mine`): light-theme hover, selected controls, and member bubbles. Dark selections and member bubbles use their actual muted-plum overrides.
+- **Soft Pink Point** (`brand-200`): the approved smaller pink accent.
+- **Pale Pink** (`brand-tint`, `selection`): light-theme hover and selected controls. Dark selections use their actual muted-plum override.
+- **Member Rose** (`bubble-mine`): a deeper light-theme rose for member bubbles and the entire selected tab segment. Dark member bubbles and tab selection retain their muted-plum override.
 - **Action Ink** (`primary-foreground`, `primary-strong`) and **Selection Ink** (`selection-foreground`, `bubble-mine-foreground`): neutral high-contrast lettering; small links, caret, and focus use the stronger ink.
 
 ### Neutral
 
 - **White Canvas** (`background`, `card`): the light app ground and surface; dark mode separates charcoal ground from a slightly lighter surface.
 - **Charcoal Ink** (`foreground`) and **Quiet Ink** (`muted-foreground`): primary and supporting text.
-- **Neutral Speech** (`assistant-surface`, `assistant-ink`): neutral gray with dark ink in light mode, charcoal with light ink in dark mode. Assistant replies remain distinct from pale member bubbles.
+- **Warm Speech** (`assistant-surface`, `assistant-ink`): pale rose with dark ink in light mode, dark rose with light ink in dark mode. Assistant replies remain distinct from the deeper member bubbles.
 - **Quiet Surface** (`muted`), **Soft Edge** (`border`), and **Field Edge** (`input`): quieter controls, structural edges, and visible field boundaries.
 - **Raspberry**, **Green**, and **Amber** (`destructive`, `success`, `warning`): error, success, and warning meaning.
 
@@ -275,11 +276,11 @@ The global tracking is the body token. The shared headline utility uses 700 weig
 
 ## Layout
 
-The customer app is a centered mobile column with a maximum width of 430px. Its frame height is `calc(100dvh - var(--keyboard-height))`; the document does not scroll. Headers, footers, and bottom navigation remain in flex flow while the main body owns scrolling. The full assistant conversation keeps its composer in the app footer while the body scrolls; member-chat screens may delegate scrolling to their message log. Admin layouts sit outside this mobile constraint.
+The customer app is a centered mobile column with a maximum width of 430px. Its frame height is `calc(100dvh - var(--keyboard-height))`; the document does not scroll. Headers, footers, and bottom navigation remain in flex flow while the main body owns scrolling. Home and the full assistant conversation keep their composer in the app footer while the body scrolls; member-chat screens may delegate scrolling to their message log. Admin layouts sit outside this mobile constraint.
 
-Align headers, body, and footers to the gutter token. Use compact/related steps within a thought and section/separation steps between thoughts. The home begins with a named greeting and brief time-aware invitation, then actual state and current-state content. The confirmed appointment is a compact neutral surface without an assistant portrait. The home dock reuses the greeting's assistant identity and follows with one horizontally scrolling row of suggestions, a compact view of the shared conversation, and composer.
+Align headers, body, and footers to the gutter token. Use compact/related steps within a thought and section/separation steps between thoughts. The home begins with a named greeting and brief time-aware invitation, then actual state and current-state content. The confirmed appointment is a compact warm speech surface without an assistant portrait. The assistant avatar identifies the conversation below the greeting; the shared conversation scrolls above the pinned composer. Introduction availability and meeting-time settings stay in account/preferences.
 
-Top safety space is `max(calc(env(safe-area-inset-top, 0px) + 0.5rem), 2.75rem)`; bottom safety space is `max(env(safe-area-inset-bottom, 0px), 2.125rem)`. At heights at or below 540px, conversation/form/onboarding screens relax these floors to the actual insets. Coarse-pointer fields retain at least 16px text. Onboarding hides its footer while the keyboard is open.
+Top safety space is `max(calc(env(safe-area-inset-top, 0px) + 0.5rem), 2.75rem)`; bottom safety space is `max(env(safe-area-inset-bottom, 0px), 2.125rem)`. At heights at or below 540px, conversation/form/onboarding screens relax these floors to the actual insets. When the keyboard-aware form container is at most 420px tall, composer recommendations hide and its textarea becomes 44px tall so the send action stays reachable. Coarse-pointer fields retain at least 16px text. Onboarding hides its footer while the keyboard is open.
 
 **The Stable Chrome Rule.** Put scrolling in the body and keep action areas in the app frame's flow; preserve the safe-area and keyboard calculations.
 
@@ -295,7 +296,7 @@ Tone carries most hierarchy. The card shadow token is `none`; the assistant dock
 - **Tab bar:** upward separation for stable navigation.
 - **Chat composer:** the existing local composer lift.
 
-Exact shadow and motion values live in the sidecar because the frontmatter schema does not support them. Shared press feedback uses 140ms and scales to 0.98. Assistant replies move 5px over 200ms; existing content arrival and active-tab motion use 260ms. Reduced motion suppresses the applicable arrival and press effects.
+Exact shadow and motion values live in the sidecar because the frontmatter schema does not support them. Shared press feedback uses 140ms and scales to 0.98. Assistant replies move 5px over 200ms; existing content arrival uses 260ms. Tab background and ink transition over 180ms. Reduced motion suppresses the applicable arrival, tab, and press effects.
 
 ## Shapes
 
@@ -317,7 +318,7 @@ Selected choices use pale pink with high-contrast selection ink in light mode, t
 
 ### Cards / Containers
 
-The confirmed appointment uses neutral speech colors, the surface radius, and gutter padding. It contains real appointment facts and a pink-outline follow-up action, without an AI portrait. Home status and cards derive from the real server state, including loading, error, and required-action states.
+The confirmed appointment uses warm speech colors, the surface radius, and gutter padding. It contains real appointment facts and a pink-outline follow-up action, without an AI portrait. Home status and cards derive from the real server state, including loading, error, and required-action states.
 
 Conversation-preparation topics use the card surface and elevated shadow. Their evidence stays an indented quotation rather than a second nested card. Profile answers use open body text without a shadow. The generic legacy Card still combines a border and framework shadow; it does not define assistant dock styling.
 
@@ -325,11 +326,11 @@ Conversation-preparation topics use the card surface and elevated shadow. Their 
 
 Shared inputs use a 48px height, field radius, card surface, and visible field border. Focus shifts the border to the focus color and adds the ring/offset treatment. Invalid input uses raspberry; disabled inputs retain their existing reduced opacity.
 
-The deterministic-help composer uses a bordered card-surface field with 6px outer padding and a transparent inline input. The shared conversation uses a muted two-row textarea and a 44px shared primary send button. Suggestions use quiet neutral fill and 44px minimum targets. Member bubbles use pale selection colors; assistant replies use neutral speech colors and an asymmetric corner.
+The deterministic-help composer uses a bordered card-surface field with 6px outer padding and a transparent inline input. The shared conversation uses a transparent two-row textarea in a bordered card-surface composer and a 44px shared primary send button. Question suggestions use warm speech fill and 44px minimum targets; composer suggestions scroll horizontally. Typing and choosing a suggestion only update the local draft; sending requires the explicit send action. Member bubbles use deeper rose and assistant replies use warm speech colors with an asymmetric corner.
 
 ### Navigation
 
-Two bottom destinations, 홈 and 소개, sit in a centered 18rem navigation row. Each tab has a 64px minimum height, 20px icon, and 12px label. The active icon occupies a 48 × 32px card-surface tile with a 1.5px soft-pink outline and neutral action ink; its stroke strengthens from 1.7 to 2.3. Preserve the bottom inset.
+Two bottom destinations, 홈 and 소개, share a full-width segmented row with gutter padding and an 8px gap. Each tab has a 48px minimum height, 20px icon beside a 14px label, and the control radius. The entire active segment uses member-bubble fill and ink with a bold label; its icon stroke strengthens from 1.7 to 2.3. Preserve the bottom inset and visible keyboard focus.
 
 On the home and introduction roots, 44px header controls expose account access and the shop for male members only, preserving the existing ticket restrictions. Direct member chat remains reachable through meeting detail and its existing opening conditions. Memory, scheduling, and assistant-chat production gates remain authoritative; visual navigation changes do not grant those capabilities.
 
@@ -343,7 +344,7 @@ The default signature is a 40px circular crop of the user-approved detailed adul
 
 Preserve the supplied detailed v2 character artwork. Cropping and sizing may serve the interface; do not redraw, simplify, stylize, or artistically transform the approved character. The profile-preparation welcome currently overrides the default mark to 56px; it is a local welcome treatment, not a larger appointment portrait.
 
-The home greeting supplies the assistant identity. Deterministic quick help and the shared private conversation reflect actual member state; home and full-page conversation reuse the same record and feature gates.
+The home greeting stays portrait-free; the assistant identity sits at the conversation start. Deterministic quick help and the shared private conversation reflect actual member state; home and full-page conversation reuse the same record and feature gates.
 
 ### Profile Question and Answer
 
@@ -362,7 +363,7 @@ Questions are compact neutral-ink prompts at supporting size, 700 weight, and ke
 
 ### Don't
 
-- Don't use pale pink as text, icon, or focus ink; preserve neutral readable ink and neutral assistant reading surfaces.
+- Don't use pale pink as text, icon, or focus ink; preserve neutral readable ink on warm assistant reading surfaces.
 - Don't redraw, artistically simplify, or transform the approved detailed v2 character assets.
 - Don't put an AI portrait into the compact appointment card or impersonate a counterpart's message.
 - Don't introduce decorative eyebrow labels above already clear titles.

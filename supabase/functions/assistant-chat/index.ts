@@ -8,6 +8,12 @@ import { sourceHash } from "../_shared/ai-grounding.ts";
 import { privateAssistantSafety, validPrivateAdvice } from "../_shared/assistant-private.ts";
 import { assistantIntent, assistantServiceReply } from "../_shared/assistant-workflow.ts";
 import {
+  profileCoachSources,
+  isProfileCoaching,
+  PROFILE_COACH_SYSTEM,
+  PROFILE_COACH_CHECK,
+} from "../_shared/profile-coach.ts";
+import {
   privateAssistantModelContext,
   PRIVATE_ASSISTANT_SYSTEM,
   PRIVATE_ASSISTANT_CHECK,
@@ -19,9 +25,12 @@ const Input = z.object({
   revision: z.number().int().positive(),
 });
 const Output = z.object({ reply: z.string().min(10).max(1000) });
-const Check = z.object({ pass: z.boolean() });
+const Check = z.object({
+  pass: z.boolean(),
+  reason: z.enum(["ok", "ungrounded", "unsafe", "false_execution", "insufficient_coaching"]),
+});
 const MODEL = Deno.env.get("ASSISTANT_COACH_MODEL") || DEFAULT_TEXT_MODEL;
-const VERSION = "assistant-private-v3-session-provenance";
+const VERSION = "assistant-private-v5-profile-coach";
 
 Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
@@ -128,8 +137,22 @@ Deno.serve(async (req) => {
         privateAssistantSafety(input.question);
     }
     if (!reply) {
-      const modelContext = privateAssistantModelContext(context);
-      if (!modelContext) throw Error("invalid private context");
+      const privateContext = privateAssistantModelContext(context);
+      if (!privateContext) throw Error("invalid private context");
+      const coaching = isProfileCoaching(input.question, privateContext.conversation_history);
+      const readOwnCopy = async () => {
+        const result = await caller
+          .from("profiles")
+          .select("headline,intro,profile_story")
+          .eq("id", user.id)
+          .single();
+        if (result.error) throw Error("profile unavailable");
+        return profileCoachSources(result.data);
+      };
+      const ownCopy = coaching ? await readOwnCopy() : null;
+      const modelContext = ownCopy
+        ? { ...privateContext, owner_public_profile: ownCopy }
+        : privateContext;
       const key = Deno.env.get("ANTHROPIC_API_KEY");
       if (!key) {
         await store(null);
@@ -151,9 +174,9 @@ Deno.serve(async (req) => {
       const ai = new Anthropic({ apiKey: key, timeout: 20000, maxRetries: 0 });
       const generated = await ai.messages.parse({
         model: MODEL,
-        max_tokens: 800,
+        max_tokens: coaching ? 1200 : 800,
         output_config: { effort: "low", format: zodOutputFormat(Output) },
-        system: PRIVATE_ASSISTANT_SYSTEM,
+        system: PRIVATE_ASSISTANT_SYSTEM + (coaching ? "\n" + PROFILE_COACH_SYSTEM : ""),
         messages: [{ role: "user", content: JSON.stringify(modelContext) }],
       });
       inputTokens += generated.usage.input_tokens;
@@ -161,13 +184,16 @@ Deno.serve(async (req) => {
       if (!validPrivateAdvice(generated.parsed_output)) {
         await store(null);
         await finish("invalid");
-        return json({ code: "quality_failed" }, 502);
+        return json({ code: "quality_failed", stage: "output_boundary" }, 502);
       }
       const verified = await ai.messages.parse({
         model: MODEL,
         max_tokens: 200,
         output_config: { effort: "low", format: zodOutputFormat(Check) },
-        system: PRIVATE_ASSISTANT_CHECK,
+        system:
+          PRIVATE_ASSISTANT_CHECK +
+          (coaching ? "\n" + PROFILE_COACH_CHECK : "") +
+          "\n검증 결과 reason은 통과 시 ok, 실패 시 ungrounded/unsafe/false_execution/insufficient_coaching 중 원인 하나로 답하세요.",
         messages: [
           {
             role: "user",
@@ -183,7 +209,19 @@ Deno.serve(async (req) => {
       if (!verified.parsed_output?.pass) {
         await store(null);
         await finish("invalid");
-        return json({ code: "quality_failed" }, 502);
+        return json(
+          {
+            code: "quality_failed",
+            stage: "verification",
+            reason: verified.parsed_output?.reason ?? "unavailable",
+          },
+          502,
+        );
+      }
+      if (coaching && JSON.stringify(await readOwnCopy()) !== JSON.stringify(ownCopy)) {
+        await store(null);
+        await finish("invalid");
+        return json({ code: "context_changed" }, 409);
       }
       reply = generated.parsed_output.reply;
     }

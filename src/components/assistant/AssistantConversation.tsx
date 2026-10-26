@@ -1,10 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BookmarkPlus, Send, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
+import { AssistantPrompts } from "@/components/assistant/AssistantPrompts";
 import { assistantIntent } from "@/lib/assistant";
 import {
   assistantReply,
@@ -34,10 +36,20 @@ function ConversationFrame({
   footer?: ReactNode;
   children: ReactNode;
 }) {
+  const [homeFooter, setHomeFooter] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setHomeFooter(compact ? document.getElementById("assistant-home-composer") : null);
+  }, [compact]);
   return compact ? (
     <section aria-label="나와 비서의 대화" className="assistant-dock">
       {children}
-      {footer ? <div className="mt-4">{footer}</div> : null}
+      {footer ? (
+        homeFooter ? (
+          createPortal(footer, homeFooter)
+        ) : (
+          <div className="mt-4">{footer}</div>
+        )
+      ) : null}
     </section>
   ) : (
     <AppScreen title="나와 비서" back="/home" hideTabs keyboardAware footer={footer}>
@@ -133,6 +145,8 @@ export function AssistantConversation({
       ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
     : [];
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [suggestionsHidden, setSuggestionsHidden] = useState(false);
   const inputEdited = useRef(false);
   useEffect(() => {
     const draft = takeAssistantDraft(owner);
@@ -175,12 +189,14 @@ export function AssistantConversation({
   const memoryOpen = memory !== null;
   const hasData = data !== undefined;
   useEffect(() => {
-    if (compact || panel !== "chat") {
+    if (panel !== "chat") {
       historyPositioned.current = false;
       return;
     }
     if (!data) return;
     const ownTurn = data.turns.find((turn) => turn.id === followTurn.current);
+    // Home initially shows the greeting; only a turn sent here follows to the reply.
+    if (compact && !ownTurn) return;
     if (historyPositioned.current && !ownTurn) return;
     let secondFrame = 0;
     // Run after the app shell's route scroll reset. Background polling must not
@@ -336,65 +352,110 @@ export function AssistantConversation({
       compact={compact}
       footer={
         panel === "chat" && data?.consented && data.flags.chat && !memory && !erase ? (
-          <form
-            className="flex items-end gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              // Submit the visible field, never a pre-handoff render's closure.
-              void send(String(new FormData(e.currentTarget).get("question") ?? ""));
-            }}
-          >
-            <label className="min-w-0 flex-1">
-              <span className="sr-only">비서에게 상담할 내용</span>
-              <textarea
-                name="question"
-                className="w-full resize-none rounded-control bg-muted p-3 text-base placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                rows={2}
-                maxLength={1000}
-                value={input}
-                onChange={(e) => {
-                  inputEdited.current = true;
-                  setInput(e.target.value);
-                }}
-                placeholder="이어서 이야기해 주세요"
+          <div className="assistant-input-area">
+            {assistantIntent(input) === "coach_profile" ? (
+              <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
+                보내면 현재 공개 프로필을 AI와 함께 읽어요. 수정은 따로 확인해요.
+              </p>
+            ) : null}
+            {!suggestionsHidden && input.trim() ? (
+              <AssistantPrompts
+                input={input}
                 disabled={busy || navigating}
+                onChoose={(text) => {
+                  inputEdited.current = true;
+                  setInput(text);
+                  setSuggestionsHidden(true);
+                  inputRef.current?.focus();
+                }}
               />
-            </label>
-            <Button
-              size="icon"
-              type="submit"
-              aria-label="상담 보내기"
-              disabled={
-                !input.trim() || busy || navigating || data.turns.some((t) => t.state === "pending")
-              }
-              className="mb-1 size-11"
+            ) : null}
+            <form
+              className="assistant-composer flex items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                // Submit the visible field, never a pre-handoff render's closure.
+                void send(String(new FormData(e.currentTarget).get("question") ?? ""));
+              }}
             >
-              <Send className="size-4" />
-            </Button>
-          </form>
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">비서에게 상담할 내용</span>
+                <textarea
+                  ref={inputRef}
+                  name="question"
+                  className="block w-full resize-none rounded-control bg-transparent p-3 text-base placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  rows={2}
+                  maxLength={1000}
+                  value={input}
+                  onChange={(e) => {
+                    inputEdited.current = true;
+                    setInput(e.target.value);
+                    setSuggestionsHidden(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setSuggestionsHidden(true);
+                  }}
+                  placeholder="이어서 이야기해 주세요"
+                  disabled={busy || navigating}
+                />
+              </label>
+              <Button
+                size="icon"
+                type="submit"
+                aria-label="상담 보내기"
+                disabled={
+                  !input.trim() ||
+                  busy ||
+                  navigating ||
+                  data.turns.some((t) => t.state === "pending")
+                }
+                className="mb-1 size-11"
+              >
+                <Send className="size-4" />
+              </Button>
+            </form>
+          </div>
         ) : undefined
       }
     >
-      <nav className="mb-4 flex items-center gap-2" aria-label="비서 메뉴">
+      {compact ? (
+        <div className="assistant-conversation-heading">
+          <AssistantMark />
+          <div>
+            <h2 className="text-base font-semibold">같이 이야기해요</h2>
+            <p className="mt-1 text-xs text-muted-foreground">애프터 AI · 이전 대화에 이어서</p>
+          </div>
+        </div>
+      ) : null}
+      <nav
+        className={compact ? "mb-2 flex items-center gap-2" : "mb-4 flex items-center gap-2"}
+        aria-label="비서 메뉴"
+      >
         <Link
           to="/assistant"
           search={{ panel: "chat" }}
           aria-current={panel === "chat" ? "page" : undefined}
-          className={`assistant-suggestion ${panel === "chat" ? "!bg-selection !text-selection-foreground" : ""}`}
+          className={
+            compact
+              ? "inline-flex min-h-11 items-center text-sm font-semibold text-primary-strong"
+              : `assistant-suggestion ${panel === "chat" ? "!bg-selection !text-selection-foreground" : ""}`
+          }
           onClick={() => {
             if (compact) setAssistantDraft(owner, input);
           }}
         >
           {compact ? "대화 전체 보기" : "대화"}
         </Link>
-        <Link
-          to="/assistant"
-          search={{ panel: "memory" }}
-          aria-current={panel === "memory" ? "page" : undefined}
-          className={`assistant-suggestion ${panel === "memory" ? "!bg-selection !text-selection-foreground" : ""}`}
-        >
-          기억 관리
-        </Link>
+        {!compact ? (
+          <Link
+            to="/assistant"
+            search={{ panel: "memory" }}
+            aria-current={panel === "memory" ? "page" : undefined}
+            className={`assistant-suggestion ${panel === "memory" ? "!bg-selection !text-selection-foreground" : ""}`}
+          >
+            기억 관리
+          </Link>
+        ) : null}
       </nav>
       {panel === "chat" ? (
         <>
@@ -458,9 +519,9 @@ export function AssistantConversation({
                       onChange={(e) => setAgree(e.target.checked)}
                     />
                     <span>
-                      상담 내용과 승인한 기억을 AI에 보내 조언을 받고, 상담 기록을 30일 보관하는 데
-                      동의해요. 연락처·건강 등 민감한 내용은 입력하지 마세요. 언제든 기록을 지우고
-                      동의를 철회할 수 있어요.
+                      상담 내용과 승인한 기억, 코칭 요청 시 내 공개 프로필을 AI에 보내 조언을 받고,
+                      상담 기록을 30일 보관하는 데 동의해요. 연락처·건강 등 민감한 내용은 입력하지
+                      마세요. 언제든 기록을 지우고 동의를 철회할 수 있어요.
                     </span>
                   </label>
                   <Link
@@ -512,11 +573,25 @@ export function AssistantConversation({
                 </Button>
               ) : null}
               {visibleTurns.length === 0 ? (
-                <div className="assistant-reply">
-                  <p className="text-lg font-semibold">첫 만남, 어떤 점이 신경 쓰이나요?</p>
-                  <p className="mt-2 text-sm leading-relaxed">
-                    말문을 여는 방법부터 편안한 만남 방식까지, 하나씩 이야기해요.
-                  </p>
+                <div>
+                  {!compact ? (
+                    <div className="assistant-reply">
+                      <p className="text-lg font-semibold">첫 만남, 어떤 점이 신경 쓰이나요?</p>
+                      <p className="mt-2 text-sm leading-relaxed">
+                        아래 질문을 골라도, 직접 물어봐도 좋아요.
+                      </p>
+                    </div>
+                  ) : null}
+                  <AssistantPrompts
+                    input=""
+                    disabled={busy || navigating || !data.flags.chat}
+                    onChoose={(text) => {
+                      inputEdited.current = true;
+                      setInput(text);
+                      setSuggestionsHidden(true);
+                      inputRef.current?.focus();
+                    }}
+                  />
                 </div>
               ) : (
                 <ol className="mt-4 space-y-5" aria-label="나만의 상담 기록">

@@ -189,7 +189,7 @@ export function AppScreen({
 
       {footer ? (
         <div
-          className="z-30 shrink-0 border-t border-border/70 bg-background px-5 pt-3"
+          className="app-footer z-30 shrink-0 border-t border-border/70 bg-background px-5 pt-3"
           /*
             탭바와의 간격. 0.75rem 이면 실측 12.3pt 라 대화 화면 입력창(15.3pt)
             보다 좁았다 — 티켓을 쓰는 자리라 더 후하게 둔다.
@@ -206,7 +206,7 @@ export function AppScreen({
           style={{ paddingBottom: "var(--safe-bottom)" }}
           aria-label="주요 메뉴"
         >
-          <ul className="mx-auto flex max-w-72 items-stretch gap-4 px-4">
+          <ul className="app-tab-segments mx-auto flex items-stretch gap-2">
             {TABS.map((t) => {
               const introActive = pathname === "/intro" || pathname.startsWith("/intro/");
               const active = t.to === "/intro" ? introActive : !introActive && !accountActive;
@@ -217,14 +217,14 @@ export function AppScreen({
                     to={t.to}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "app-tab pressable flex min-h-16 flex-col items-center justify-center gap-1 pt-2 text-2xs font-medium",
+                      "app-tab pressable flex min-h-12 items-center justify-center gap-2 text-sm font-medium",
                       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       active ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     <span
                       className={cn(
-                        "app-tab-icon flex h-8 w-12 items-center justify-center rounded-control transition-colors duration-150 motion-reduce:transition-none",
+                        "app-tab-icon flex size-6 items-center justify-center",
                         active && "text-primary-strong",
                       )}
                     >

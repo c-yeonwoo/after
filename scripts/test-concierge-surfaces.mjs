@@ -154,6 +154,13 @@ const draft = (stage) => ({
 });
 const allFixtures = [
   { name: "home", path: "/home", heading: "아직 새 소개가 없어요." },
+  {
+    name: "home-chat",
+    path: "/home",
+    heading: "아직 새 소개가 없어요.",
+    consented: true,
+    gender: "male",
+  },
   { name: "legacy-story", path: "/home", heading: "아직 새 소개가 없어요." },
   { name: "intro", path: "/intro", heading: "합성 도윤" },
   { name: "intro-pending", path: "/intro", heading: "합성 서연", gender: "male" },
@@ -243,6 +250,23 @@ async function verifyHome(page, width) {
   await page.getByRole("heading", { level: 1, name: "합성 지수님, 반가워요." }).waitFor();
   await page.getByRole("heading", { level: 2, name: "아직 새 소개가 없어요." }).waitFor();
   assert.equal(await page.getByText("비서에게만 보여요", { exact: true }).count(), 0);
+  assert.equal(await page.getByRole("switch").count(), 0, "home has no introduction settings");
+  assert.equal(await page.getByRole("link", { name: "만남 가능 시간" }).count(), 0);
+  assert.equal(
+    await page.locator(".home-greeting .assistant-mark").count(),
+    0,
+    "avatar belongs to conversation",
+  );
+  const input = page.getByLabel("비서에게 물어볼 내용");
+  await page
+    .getByRole("button", { name: "첫 만남에서 어색하면 어떻게 말문을 열까요?", exact: true })
+    .click();
+  assert.match(await input.inputValue(), /첫 만남/);
+  await input.fill("답장");
+  await page
+    .getByRole("button", { name: "답장이 늦을 때 부담 없이 어떻게 물어볼까요?", exact: true })
+    .waitFor();
+  await input.fill("");
   assert.equal(await page.locator('img[src*="after-first-conversation"]').count(), 0);
   const metrics = await page.locator(".assistant-quick-actions").evaluate((row) => {
     const buttons = [...row.querySelectorAll("button")];
@@ -293,7 +317,9 @@ async function verifyProfile(page, own) {
     .waitFor();
   assert.equal(await page.getByText(privateSentinel, { exact: false }).count(), 0);
   if (own) {
-    await page.getByRole("heading", { name: "나만 보는 프로필 코칭" }).waitFor();
+    await page.getByRole("heading", { name: "첫인상을 더 선명하게" }).waitFor();
+    await page.getByRole("heading", { name: "싫은 것 뒤에, 편한 방식도" }).waitFor();
+    assert.equal(await page.getByText("프로필에 담긴 요약", { exact: true }).count(), 0);
     assert.ok((await page.locator(".profile-answer").allTextContents()).includes(ownAnswer));
     return;
   }
@@ -507,12 +533,13 @@ try {
             gender: current.gender ?? member.gender,
             onboarding_step: current.stage ? 4 : 7,
           };
-          const assistant = current.name.startsWith("assistant-");
+          const assistant = current.name.startsWith("assistant-") || current.name === "home-chat";
           const candidate =
             current.name === "intro-pending"
               ? { ...other, name: "합성 서연", gender: "female" }
               : other;
-          const hasMeeting = assistant || current.name === "intro-pending";
+          const hasMeeting =
+            current.name.startsWith("assistant-") || current.name === "intro-pending";
           const flags = {
             chat: assistant,
             schedule: assistant,
@@ -561,7 +588,7 @@ try {
               revision: 1,
               session_id: "77777777-7777-4777-8777-777777777777",
               memories: [],
-              turns: current.consented ? assistantHistory : [],
+              turns: current.consented && current.name !== "home-chat" ? assistantHistory : [],
             });
           if (path.endsWith("/rpc/my_meet_window")) return fulfill(null);
           if (path.endsWith("/rpc/next_candidate")) return fulfill([other]);
@@ -646,6 +673,55 @@ try {
           if (fixture.name === "home") {
             await capture(page, name);
             await verifyHome(page, width);
+          }
+          if (fixture.name === "home-chat") {
+            await page.getByLabel("비서에게 상담할 내용").waitFor();
+            assert.equal(await page.getByRole("switch").count(), 0);
+            await capture(page, name);
+            const field = page.getByLabel("비서에게 상담할 내용");
+            await page
+              .getByRole("button", {
+                name: "내 프로필의 장점과 아쉬운 표현을 코칭해줘",
+                exact: true,
+              })
+              .click();
+            assert.match(await field.inputValue(), /프로필/);
+            assert.equal(
+              summary.backendRequests
+                .slice(backendStart)
+                .filter((r) => r.path.includes("/functions/v1/")).length,
+              0,
+              "sample is a draft, not a send",
+            );
+            await field.fill("답장");
+            await page.getByRole("group", { name: "입력에 맞는 추천 질문" }).waitFor();
+            await field.press("Escape");
+            assert.equal(
+              await page.getByRole("group", { name: "입력에 맞는 추천 질문" }).count(),
+              0,
+            );
+            if (width === 320) {
+              await page.setViewportSize({ width, height: 568 });
+              await page.evaluate(() =>
+                document.documentElement.style.setProperty("--keyboard-height", "300px"),
+              );
+              for (const value of ["소개글", "내 프로필의 장점을 코칭해줘"]) {
+                await field.fill(value);
+                const send = await page
+                  .getByRole("button", { name: "상담 보내기", exact: true })
+                  .boundingBox();
+                const input = await field.boundingBox();
+                assert.ok(
+                  send && input && send.y + send.height <= 268 && input.y + input.height <= 268,
+                  "small keyboard viewport keeps composer and send visible",
+                );
+              }
+              await page.evaluate(() =>
+                document.documentElement.style.removeProperty("--keyboard-height"),
+              );
+              await page.setViewportSize({ width, height: 844 });
+            }
+            await field.fill("");
           }
           if (["intro", "profile"].includes(fixture.name))
             await verifyProfile(page, fixture.name === "profile");

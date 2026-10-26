@@ -3,6 +3,7 @@ export type AssistantIntent =
   | "status"
   | "signup"
   | "profile"
+  | "coach_profile"
   | "edit"
   | "edit_photo"
   | "edit_facts"
@@ -86,7 +87,24 @@ export function assistantIntent(raw: string): AssistantIntent {
     requests.push("feedback");
   // Do not silently pick a target or launch the wrong workflow for compound requests.
   if (requests.length > 1) return "clarify";
+  const wantsCoaching =
+    /프로필|소개\s*글|한\s*줄\s*소개|인터뷰/.test(text) &&
+    /코칭|장점|아쉬|매력|어때|피드백|인상|조언/.test(text);
+  // Asking for a rewrite example is advice, not a request to open the editor.
+  if (
+    wantsCoaching &&
+    (requests.length === 0 ||
+      ((requests[0] === "edit" || requests[0] === "edit_story") &&
+        /수정\s*예시/.test(text) &&
+        !/수정해|변경해|바꿔|반영|적용|저장/.test(text)))
+  )
+    return "coach_profile";
   if (requests.length === 1) return requests[0];
+  if (
+    /프로필|소개\s*글|한\s*줄\s*소개|인터뷰/.test(text) &&
+    /코칭|장점|아쉬|매력|어때|피드백|인상|조언/.test(text)
+  )
+    return "coach_profile";
   if (/프로필|사진|소개\s*글|인터뷰|한\s*줄\s*소개/.test(text)) return "profile";
   if (preparation) return "prepare";
   if (/왜.*소개.*(?:없|안\s*와|안\s*오)|아직.*소개.*(?:없|안\s*와|안\s*오)/.test(text))
@@ -128,7 +146,7 @@ export function assistantStatusText(state: string | null | undefined): string {
     case "report_response_required":
       return "확인이 필요한 안전 안내가 있어요. 홈에서 확인해 주세요.";
     case "paused":
-      return "지금은 소개를 쉬고 있어요. 홈에서 다시 시작할 수 있어요.";
+      return "지금은 소개를 쉬고 있어요. 나 → 환경설정에서 다시 시작할 수 있어요.";
     case "account_unavailable":
       return "현재 이용 상태를 확인해 주세요. 고객센터에서 도와드릴게요.";
     case "waiting":
