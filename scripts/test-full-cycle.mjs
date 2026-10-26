@@ -222,6 +222,11 @@ const personas = [
 
 async function signup(person, i) {
   const page = await pageFor();
+  await page.route("**/functions/v1/signup-identity", (route) =>
+    route.request().postDataJSON()?.action === "dev-status"
+      ? route.fulfill({ json: { enabled: true } })
+      : route.fallback(),
+  );
   person.page = page;
   person.email = `cycle-${run}-${person.key}@verify.local`;
   await page.goto(`${base}/signup`);
@@ -252,7 +257,7 @@ async function signup(person, i) {
       return;
     }
     code = r.data;
-    await route.fulfill({ json: { sent: true, phone } });
+    await route.fulfill({ json: { sent: false, phone, devCode: code } });
   });
   const phoneInput = page.getByLabel("휴대폰 번호", { exact: true });
   assert.equal(await phoneInput.getAttribute("placeholder"), "01000000000");
@@ -263,10 +268,7 @@ async function signup(person, i) {
     (expected) => document.getElementById("phone")?.value === expected,
     `0100000008${i}`,
   );
-  await page.getByRole("button", { name: "인증번호 받기" }).click();
-  await page.getByLabel("인증번호", { exact: true }).waitFor();
-  await page.getByLabel("인증번호", { exact: true }).fill(code);
-  await page.getByRole("button", { name: "인증하고 계속" }).click();
+  await page.getByRole("button", { name: "인증 없이 계속" }).click();
   await page.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
   await page.getByRole("button", { name: "프로필 준비 시작", exact: true }).click();
   await page.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
@@ -475,6 +477,7 @@ try {
         VITE_SUPABASE_URL: api,
         VITE_SUPABASE_ANON_KEY: value("ANON_KEY"),
         VITE_CARRIER_IDENTITY_ENABLED: "false",
+        VITE_DEV_AUTH_BYPASS: "true",
         VITE_TOSS_CLIENT_KEY: "test_gck_cycle_fixture",
       },
       stdio: "ignore",

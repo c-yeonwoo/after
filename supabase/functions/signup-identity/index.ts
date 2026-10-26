@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { readVerifiedCarrierIdentity } from "../_shared/verified-carrier.ts";
+import { localAuthBypassAllowed } from "../_shared/local-auth.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -26,6 +27,16 @@ Deno.serve(async (req) => {
     body = parsed;
   } catch {
     return json({ error: "invalid json" }, 400);
+  }
+  if (body.action === "dev-status") {
+    const enabled = localAuthBypassAllowed(
+      Deno.env.get("DEV_AUTH_BYPASS"),
+      Deno.env.get("SUPABASE_URL"),
+    );
+    return json(
+      enabled ? { enabled: true } : { error: "dev bypass disabled" },
+      enabled ? 200 : 403,
+    );
   }
   if (
     typeof body.token !== "string" ||
@@ -58,22 +69,22 @@ Deno.serve(async (req) => {
     if (statusError || !status) throw new Error("signup expired");
     const { data: attempt, error: attemptError } = await db
       .from("signup_identity_attempts")
-      .select("session_id, created_at")
+      .select("session_id, created_at, consumed_at")
       .eq("id", id)
       .maybeSingle();
     const { data: ownedSession } = await db
       .from("signup_sessions")
-      .select("id")
+      .select("id, verification_id")
       .eq("token_hash", await sha256(body.token))
       .maybeSingle();
-    if (
-      attemptError ||
-      !attempt ||
-      attempt.session_id !== ownedSession?.id ||
-      Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000
-    ) {
+    if (attemptError || !attempt || attempt.session_id !== ownedSession?.id) {
       throw new Error("verification expired");
     }
+    // A lost successful response must not consume another paid provider lookup.
+    if (attempt.consumed_at && ownedSession?.verification_id === id && status.verified)
+      return json(status);
+    if (attempt.consumed_at || Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000)
+      throw new Error("verification expired");
     const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey });
     const { data, error } = await db.rpc("finish_signup_identity", {
       p_token: body.token,

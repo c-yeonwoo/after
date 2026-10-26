@@ -2,6 +2,7 @@
 // 서버가 PortOne API의 VERIFIED 결과와 검증된 생년월일/번호/DI를 직접 조회한다.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { readVerifiedCarrierIdentity } from "../_shared/verified-carrier.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -15,12 +16,6 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function normalizePhone(value: string): string | null {
-  const digits = value.replace(/[^0-9+]/g, "");
-  const local = digits.startsWith("+82") ? `0${digits.slice(3)}` : digits;
-  return /^01[016789][0-9]{7,8}$/.test(local) ? `+82${local.slice(1)}` : null;
 }
 
 Deno.serve(async (req) => {
@@ -49,6 +44,7 @@ Deno.serve(async (req) => {
   }
   const db = createClient(url, serviceKey);
 
+  if (!body || typeof body !== "object") return json({ error: "invalid json" }, 400);
   if (body.action === "start") {
     const { data: profile } = await db
       .from("profiles")
@@ -85,64 +81,49 @@ Deno.serve(async (req) => {
     .eq("id", id)
     .maybeSingle();
   if (attemptError) return json({ error: "verification unavailable" }, 503);
-  if (
-    !attempt ||
-    attempt.user_id !== user.id ||
-    attempt.consumed_at ||
-    Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000
-  ) {
+  if (!attempt || attempt.user_id !== user.id) {
     return json({ error: "verification expired" }, 409);
   }
 
-  let verification: {
-    id?: string;
-    status?: string;
-    channel?: { key?: string; type?: string };
-    verifiedCustomer?: { birthDate?: string; phoneNumber?: string; di?: string };
-  };
+  if (attempt.consumed_at) {
+    const { data: receipt, error } = await db
+      .from("profiles")
+      .select("birth, identity_verified_at")
+      .eq("id", user.id)
+      .eq("account_state", "active")
+      .eq("identity_verification_id", id)
+      .maybeSingle();
+    if (error) return json({ error: "verification unavailable" }, 503);
+    if (receipt?.identity_verified_at && receipt.birth)
+      return json({ verified: true, birth: receipt.birth });
+    return json({ error: "verification expired" }, 409);
+  }
+  if (Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000)
+    return json({ error: "verification expired" }, 409);
   try {
-    const response = await fetch(
-      `https://api.portone.io/identity-verifications/${encodeURIComponent(id)}`,
-      { headers: { Authorization: `PortOne ${apiSecret}` } },
-    );
-    if (!response.ok) return json({ error: "provider verification unavailable" }, 502);
-    verification = await response.json();
-  } catch {
-    return json({ error: "provider verification unavailable" }, 502);
-  }
-  const customer = verification.verifiedCustomer;
-  if (verification.status !== "VERIFIED" || !customer) {
-    return json({ error: "not verified" }, 409);
-  }
-  // A VERIFIED result from another channel (or a test channel) is not production proof.
-  if (
-    verification.id !== id ||
-    verification.channel?.key !== channelKey ||
-    verification.channel?.type !== "LIVE"
-  ) {
-    return json({ error: "verification channel mismatch" }, 409);
-  }
-  const birth = customer.birthDate;
-  const phone = normalizePhone(customer.phoneNumber ?? "");
-  if (!birth || !/^\d{4}-\d{2}-\d{2}$/.test(birth) || !phone || !customer.di) {
-    return json({ error: "incomplete verified identity" }, 409);
-  }
-
-  const { error } = await db.rpc("finish_carrier_identity", {
-    p_user: user.id,
-    p_id: id,
-    p_birth: birth,
-    p_phone: phone,
-    p_di: customer.di,
-  });
-  if (error) {
+    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey });
+    const { error } = await db.rpc("finish_carrier_identity", {
+      p_user: user.id,
+      p_id: id,
+      p_birth: verified.birth,
+      p_phone: verified.phone,
+      p_di: verified.di,
+      p_gender: verified.gender,
+    });
+    if (error) throw new Error(error.message);
+    return json({ verified: true, birth: verified.birth });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
     const known = [
       "adult only",
       "phone in use",
       "identity already in use",
       "verification attempt expired",
-    ].find((key) => error.message?.includes(key));
+      "identity gender mismatch",
+      "not verified",
+      "verification channel mismatch",
+      "incomplete verified identity",
+    ].find((key) => message.includes(key));
     return json({ error: known ?? "verification unavailable" }, known ? 409 : 503);
   }
-  return json({ verified: true, birth });
 });

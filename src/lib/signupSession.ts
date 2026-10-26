@@ -69,6 +69,18 @@ async function invoke<T>(body: Record<string, string>): Promise<T> {
 }
 
 export async function startSignupIdentity(): Promise<SignupSession> {
+  const current = await loadSignupSession();
+  if (current?.verified) return current;
+  const pending = pendingSignupIdentity();
+  if (pending) {
+    try {
+      return await finishSignupIdentity(pending);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "";
+      if (!["not verified", "verification expired"].includes(reason)) throw error;
+      sessionStorage.removeItem(PENDING_KEY);
+    }
+  }
   const started = await invoke<{
     identityVerificationId: string;
     storeId: string;
@@ -80,7 +92,10 @@ export async function startSignupIdentity(): Promise<SignupSession> {
     ...started,
     redirectUrl: `${window.location.origin}/signup`,
   });
-  if (!result || result.code) throw new Error("not verified");
+  if (!result || result.code) {
+    sessionStorage.removeItem(PENDING_KEY);
+    throw new Error("not verified");
+  }
   return finishSignupIdentity(started.identityVerificationId);
 }
 

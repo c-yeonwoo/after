@@ -241,6 +241,11 @@ async function checkBrandRole(page, selector, token) {
 }
 
 async function acceptSignupConsent(page) {
+  await page.route("**/functions/v1/signup-identity", (route) =>
+    route.request().postDataJSON()?.action === "dev-status"
+      ? route.fulfill({ json: { enabled: true } })
+      : route.fallback(),
+  );
   await page.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
   const start = page.getByRole("button", { name: "동의하고 시작하기" });
   assert.equal(await start.isEnabled(), false, "signup starts with explicit consent");
@@ -279,6 +284,7 @@ try {
         VITE_SUPABASE_URL: apiUrl,
         VITE_SUPABASE_ANON_KEY: anonKey,
         VITE_CARRIER_IDENTITY_ENABLED: "false",
+        VITE_DEV_AUTH_BYPASS: "true",
         VITE_TOSS_CLIENT_KEY: "test_gck_browser_fixture",
       },
       stdio: "ignore",
@@ -661,18 +667,11 @@ try {
     });
     assert.ifError(result.error);
     smsCode = result.data;
-    await route.fulfill({ json: { sent: true, phone: "+821000000074" } });
+    assert.equal(route.request().postDataJSON().bypass, true);
+    await route.fulfill({ json: { sent: false, phone: "+821000000074", devCode: smsCode } });
   });
   await freshPage.getByLabel("휴대폰 번호", { exact: true }).fill("01000000074");
-  await freshPage.getByRole("button", { name: "인증번호 받기", exact: true }).click();
-  const smsInput = freshPage.getByLabel("인증번호", { exact: true });
-  await smsInput.waitFor();
-  assert.equal(await smsInput.inputValue(), "", "beta production UI does not prefill SMS codes");
-  await smsInput.fill(smsCode === "000000" ? "111111" : "000000");
-  await freshPage.getByRole("button", { name: "인증하고 계속", exact: true }).click();
-  await freshPage.getByText("인증번호가 맞지 않아요.", { exact: true }).waitFor();
-  await smsInput.fill(smsCode);
-  await freshPage.getByRole("button", { name: "인증하고 계속", exact: true }).click();
+  await freshPage.getByRole("button", { name: "인증 없이 계속", exact: true }).click();
   await freshPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
   await freshPage.getByRole("button", { name: "나중에 내 비서에서 이어하기" }).click();
   await freshPage.getByRole("heading", { name: "반가워요. 어떤 분인지 들려주세요." }).waitFor();
@@ -798,6 +797,7 @@ try {
         VITE_SUPABASE_URL: apiUrl,
         VITE_SUPABASE_ANON_KEY: anonKey,
         VITE_CARRIER_IDENTITY_ENABLED: "true",
+        VITE_DEV_AUTH_BYPASS: "true",
       },
       stdio: "ignore",
     },
@@ -840,6 +840,7 @@ try {
   );
   await carrierPage.route("**/functions/v1/signup-identity", async (route) => {
     const body = route.request().postDataJSON();
+    if (body.action === "dev-status") return route.fallback();
     assert.equal(body.action, "complete");
     assert.equal(body.token, signupProof);
     assert.equal(body.identityVerificationId, verificationId);
