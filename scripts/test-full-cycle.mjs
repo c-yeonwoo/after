@@ -603,15 +603,27 @@ try {
   });
   await check("male pauses and resumes introductions without charging", async () => {
     await m1.page.goto(`${base}/home`);
-    await m1.page.getByRole("switch", { name: "소개 잠시 멈추기" }).click();
-    await m1.page.getByRole("switch", { name: "소개 다시 받기" }).waitFor();
+    await waitForHome(m1.page);
+    assert.equal(await m1.page.getByRole("switch").count(), 0);
+    await m1.page.getByRole("link", { name: "나", exact: true }).click();
+    await m1.page.getByRole("link", { name: /환경설정/ }).click();
+    const pause = m1.page.getByRole("switch", { name: "소개 받지 않기", exact: true });
+    await pause.click();
+    await m1.page
+      .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: true })
+      .waitFor();
     assert.equal(
       sql(`select (paused_at is not null)::text from profiles where id='${m1.id}'`),
       "true",
     );
-    await m1.page.getByRole("switch", { name: "소개 다시 받기" }).click();
-    await m1.page.getByRole("switch", { name: "소개 잠시 멈추기" }).waitFor();
+    await pause.click();
+    await m1.page
+      .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: false })
+      .waitFor();
+    assert.equal(sql(`select (paused_at is null)::text from profiles where id='${m1.id}'`), "true");
     assert.equal(sql(`select count(*) from tickets where user_id='${m1.id}'`), "0");
+    await m1.page.goto(`${base}/home`);
+    await waitForHome(m1.page);
   });
   await check("home background failure preserves state and retry recovers", async () => {
     const headline = await m1.page.locator(".home-greeting h1").innerText();
@@ -621,15 +633,20 @@ try {
         json: { message: "QA temporary outage" },
       }),
     );
-    await m1.page.evaluate(() => window.dispatchEvent(new Event("focus")));
-    await m1.page
-      .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
-        exact: true,
-      })
-      .waitFor();
-    assert.equal(await m1.page.locator(".home-greeting h1").innerText(), headline);
-    await m1.page.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).waitFor();
-    await m1.page.unroute("**/rest/v1/rpc/home_state_v2");
+    try {
+      await m1.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+      await m1.page
+        .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
+          exact: true,
+        })
+        .waitFor();
+      assert.equal(await m1.page.locator(".home-greeting h1").innerText(), headline);
+      await m1.page.getByLabel("비서에게 물어볼 내용").waitFor();
+      assert.equal(await m1.page.getByRole("switch").count(), 0);
+    } finally {
+      // An assertion failure must not leave every later cycle with a forced outage.
+      await m1.page.unroute("**/rest/v1/rpc/home_state_v2");
+    }
     await m1.page.getByRole("button", { name: "상태 다시 확인", exact: true }).click();
     await m1.page
       .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
