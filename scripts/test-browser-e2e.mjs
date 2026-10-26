@@ -459,20 +459,15 @@ try {
   await signupPage.getByText(existing.name, { exact: true }).waitFor();
   await signupPage.getByRole("link", { name: "뒤로", exact: true }).click();
   await waitForHome(signupPage);
-  // The assistant home keeps operational readiness and availability here.
-  // The former promotional photo no longer belongs to this surface.
-  const readiness = signupPage.getByRole("region", { name: "소개 설정", exact: true });
-  await readiness.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).waitFor();
+  // Home is for conversation; introduction controls remain in account settings.
+  assert.equal(await signupPage.getByRole("switch").count(), 0);
+  assert.equal(await signupPage.getByRole("link", { name: /만남 가능 시간/ }).count(), 0);
   await signupPage
     .locator("[data-sonner-toast]")
     .last()
     .waitFor({ state: "hidden", timeout: 10000 });
   for (const width of [320, 390, 430, 768, 1440]) {
     await signupPage.setViewportSize({ width, height: 900 });
-    const availabilityBox = await readiness
-      .getByRole("link", { name: /만남 가능 시간/ })
-      .boundingBox();
-    assert.ok(availabilityBox.width > 0 && availabilityBox.height >= 44);
     await checkPage(signupPage, `waiting home ${width}px`, width === 390);
     if (screenshotDir && [320, 390, 1440].includes(width)) {
       await signupPage.evaluate(() => {
@@ -483,9 +478,6 @@ try {
     }
   }
   await signupPage.setViewportSize({ width: 390, height: 844 });
-  const waitingSwitch = readiness.getByRole("switch");
-  const switchBox = await waitingSwitch.boundingBox();
-  assert.ok(switchBox.width >= 44 && switchBox.height >= 44, "switch has a 44px touch target");
   await signupPage.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
     await signupPage
@@ -494,6 +486,17 @@ try {
     "none",
     "selected tab respects reduced motion",
   );
+  await signupPage.getByRole("link", { name: "나", exact: true }).click();
+  const availability = signupPage.getByRole("link", { name: /만남 가능 시간/ });
+  await availability.waitFor();
+  const availabilityBox = await availability.boundingBox();
+  assert.ok(availabilityBox.width > 0 && availabilityBox.height >= 44);
+  await signupPage.getByRole("link", { name: /환경설정/ }).click();
+  const waitingSwitch = signupPage.getByRole("switch", { name: "소개 받지 않기", exact: true });
+  await waitingSwitch.waitFor();
+  await waitingSwitch.scrollIntoViewIfNeeded();
+  const switchBox = await waitingSwitch.boundingBox();
+  assert.ok(switchBox.width >= 44 && switchBox.height >= 44, "switch has a 44px touch target");
   assert.equal(
     await waitingSwitch.evaluate(
       (element) => getComputedStyle(element, "::before").transitionProperty,
@@ -502,15 +505,19 @@ try {
     "switch rail respects reduced motion",
   );
   await signupPage.emulateMedia({ reducedMotion: "no-preference" });
-  await readiness.getByRole("switch", { name: "소개 잠시 멈추기", exact: true }).click();
-  await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).waitFor();
+  await waitingSwitch.click();
+  await signupPage
+    .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: true })
+    .waitFor();
   assert.equal(
-    await readiness.getByRole("link", { name: /만남 가능 시간/ }).count(),
-    0,
-    "paused introductions hide the new-introduction availability action",
+    sql(`select paused_at is not null from public.profiles where id='${existing.id}'`),
+    "t",
   );
-  await readiness.getByRole("switch", { name: "소개 다시 받기", exact: true }).click();
-  await readiness.getByRole("link", { name: /만남 가능 시간/ }).waitFor();
+  await waitingSwitch.click();
+  await signupPage
+    .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: false })
+    .waitFor();
+  assert.equal(sql(`select paused_at is null from public.profiles where id='${existing.id}'`), "t");
   assert.equal(
     sql(
       `select count(*) from public.profiles where lower(company_email)=lower('${existing.email}')`,
