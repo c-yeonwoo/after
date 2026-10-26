@@ -3,7 +3,13 @@ import { AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { phoneErrorMessage, sendPhoneCode, verifyPhoneCode, type Profile } from "@/lib/api";
+import {
+  LOCAL_DEV_AUTH_BYPASS,
+  phoneErrorMessage,
+  sendPhoneCode,
+  verifyPhoneCode,
+  type Profile,
+} from "@/lib/api";
 import { phoneInputDigits } from "@/lib/phone-input";
 
 /**
@@ -12,7 +18,11 @@ import { phoneInputDigits } from "@/lib/phone-input";
  * 번호를 보내면 서버가 정규화한 번호(+82…)를 돌려주고, 확인은 그 번호로 한다 —
  * 사람이 하이픈을 넣었든 안 넣었든 서버가 본 번호와 같아야 코드가 맞는다.
  */
-export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => void }) {
+export function PhoneVerifyForm({
+  onVerified,
+}: {
+  onVerified: (p: Profile) => void | Promise<void>;
+}) {
   const [raw, setRaw] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -25,14 +35,13 @@ export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => vo
     setBusy(true);
     try {
       const r = await sendPhoneCode(raw);
-      setPhone(r.phone);
-      // 로컬 개발에서만 서버가 코드를 돌려준다(문자 키가 없을 때).
-      if (r.devCode) {
-        setCode(r.devCode);
-        setHint("로컬 개발 환경이라 인증번호를 자동으로 채웠어요.");
-      } else {
-        setHint("문자로 받은 6자리를 입력해 주세요. 3분 동안 쓸 수 있어요.");
+      if (LOCAL_DEV_AUTH_BYPASS) {
+        if (!r.devCode || r.sent) throw new Error("dev bypass disabled");
+        await onVerified(await verifyPhoneCode(r.phone, r.devCode));
+        return;
       }
+      setPhone(r.phone);
+      setHint("문자로 받은 6자리를 입력해 주세요. 3분 동안 쓸 수 있어요.");
     } catch (err) {
       setError(phoneErrorMessage(err instanceof Error ? err.message : undefined));
     } finally {
@@ -45,7 +54,7 @@ export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => vo
     setError(null);
     setBusy(true);
     try {
-      onVerified(await verifyPhoneCode(phone, code));
+      await onVerified(await verifyPhoneCode(phone, code));
     } catch (err) {
       setError(phoneErrorMessage(err instanceof Error ? err.message : undefined));
     } finally {
@@ -79,11 +88,13 @@ export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => vo
             disabled={raw.length < 10 || busy}
             onClick={send}
           >
-            {phone ? "다시 받기" : "인증번호 받기"}
+            {LOCAL_DEV_AUTH_BYPASS ? "인증 없이 계속" : phone ? "다시 받기" : "인증번호 받기"}
           </Button>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          번호는 상대에게 보이지 않아요. 한 번호로 한 계정만 만들 수 있어요.
+          {LOCAL_DEV_AUTH_BYPASS
+            ? "로컬 개발 모드 · 테스트 번호로 입력하세요. 문자를 보내지 않아요."
+            : "번호는 상대에게 보이지 않아요. 한 번호로 한 계정만 만들 수 있어요."}
         </p>
       </div>
 
@@ -113,14 +124,16 @@ export function PhoneVerifyForm({ onVerified }: { onVerified: (p: Profile) => vo
         </p>
       ) : null}
 
-      <Button
-        className="w-full"
-        size="lg"
-        disabled={!phone || code.length !== 6 || busy}
-        onClick={verify}
-      >
-        {busy ? "확인 중…" : "인증하고 계속"}
-      </Button>
+      {!LOCAL_DEV_AUTH_BYPASS && (
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!phone || code.length !== 6 || busy}
+          onClick={verify}
+        >
+          {busy ? "확인 중…" : "인증하고 계속"}
+        </Button>
+      )}
     </div>
   );
 }

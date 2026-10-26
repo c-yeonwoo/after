@@ -14,6 +14,7 @@ import { deleteMyPhotos } from "@/lib/photo";
 import { POLICY_VERSION } from "@/lib/policy";
 import { supabase } from "@/lib/supabase";
 import { paymentModeCache } from "@/lib/sharedConfigCache";
+import { localAuthBypassEnabled } from "@/lib/auth-mode";
 
 import type { Database, Json } from "./database.types";
 
@@ -50,14 +51,11 @@ export type MsgChannel = Database["public"]["Enums"]["msg_channel"];
 */
 export const LOCAL_DEV_AUTH_BYPASS =
   import.meta.env.DEV &&
-  (() => {
-    try {
-      const host = new URL(import.meta.env.VITE_SUPABASE_URL).hostname;
-      return host === "127.0.0.1" || host === "localhost";
-    } catch {
-      return false;
-    }
-  })();
+  localAuthBypassEnabled(
+    true,
+    import.meta.env.VITE_DEV_AUTH_BYPASS,
+    import.meta.env.VITE_SUPABASE_URL,
+  );
 
 const LOCAL_DEV_PASSWORD = "eclipse-local-dev-auth-only";
 
@@ -102,6 +100,13 @@ export async function devFetchLatestOtp(email: string): Promise<string | null> {
 export async function startLocalDevSignup(email: string): Promise<void> {
   if (!LOCAL_DEV_AUTH_BYPASS) {
     throw new Error("로컬 개발 환경에서만 사용할 수 있습니다.");
+  }
+
+  const { data: mode, error: modeError } = await supabase.functions.invoke("signup-identity", {
+    body: { action: "dev-status" },
+  });
+  if (modeError || mode?.enabled !== true) {
+    throw new Error("로컬 Edge의 DEV_AUTH_BYPASS=true 설정을 확인해 주세요.");
   }
 
   const normalized = email.trim().toLowerCase();
@@ -947,6 +952,8 @@ export function phoneErrorMessage(reason: string | undefined) {
       return "인증번호가 만료됐어요. 다시 받아 주세요.";
     case "not configured":
       return "지금은 문자를 보낼 수 없어요. 잠시 후 다시 시도해 주세요.";
+    case "dev bypass disabled":
+      return "로컬 Edge의 DEV_AUTH_BYPASS=true 설정을 확인해 주세요.";
     default:
       return "인증하지 못했어요. 잠시 후 다시 시도해 주세요.";
   }
@@ -955,7 +962,7 @@ export function phoneErrorMessage(reason: string | undefined) {
 /** 인증번호 문자를 보낸다(Edge Function phone-otp). 실패하면 사유 문자열로 throw. */
 export async function sendPhoneCode(phone: string): Promise<PhoneCodeResult> {
   const { data, error } = await supabase.functions.invoke<PhoneCodeResult>("phone-otp", {
-    body: { phone },
+    body: { phone, bypass: LOCAL_DEV_AUTH_BYPASS },
   });
   if (error) {
     // FunctionsHttpError 는 응답 본문을 context 에 들고 있다.

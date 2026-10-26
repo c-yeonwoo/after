@@ -23,11 +23,14 @@ async function invoke<T>(body: Record<string, string>): Promise<T> {
 export function carrierIdentityError(error: unknown): string {
   const reason = error instanceof Error ? error.message : "";
   if (reason.includes("adult only")) return "만 19세 이상만 이용할 수 있어요.";
+  if (reason.includes("identity gender mismatch"))
+    return "가입 정보와 본인확인 정보가 달라요. 고객센터에서 확인해 드릴게요.";
   if (reason.includes("phone in use") || reason.includes("identity already in use"))
     return "이미 다른 계정에서 확인된 신원입니다. 고객센터로 문의해 주세요.";
   if (reason.includes("daily limit"))
     return "오늘 인증 시도 횟수를 넘었어요. 내일 다시 시도해 주세요.";
-  if (reason.includes("verification expired")) return "인증 시간이 지났어요. 다시 시작해 주세요.";
+  if (reason.includes("verification expired") || reason.includes("verification attempt expired"))
+    return "인증 시간이 지났어요. 다시 시작해 주세요.";
   if (reason.includes("signup expired"))
     return "가입 확인 시간이 지났어요. 처음부터 다시 진행해 주세요.";
   if (reason.includes("policy_version_mismatch"))
@@ -41,6 +44,19 @@ export function carrierIdentityError(error: unknown): string {
 const PENDING_KEY = "after-carrier-identity-id";
 
 export async function startCarrierIdentity(): Promise<string> {
+  const pending = pendingCarrierIdentity();
+  if (pending) {
+    try {
+      return await finishCarrierIdentity(pending);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "";
+      if (
+        !["not verified", "verification expired", "verification attempt expired"].includes(reason)
+      )
+        throw error;
+      sessionStorage.removeItem(PENDING_KEY);
+    }
+  }
   const started = await invoke<StartResult>({ action: "start" });
   sessionStorage.setItem(PENDING_KEY, started.identityVerificationId);
   const PortOne = await import("@portone/browser-sdk/v2");
@@ -51,7 +67,10 @@ export async function startCarrierIdentity(): Promise<string> {
     redirectUrl: `${window.location.origin}/verify-phone`,
   });
   // 모바일은 리다이렉트되므로 이 지점에 돌아오지 않는다.
-  if (!result || result.code) throw new Error("not verified");
+  if (!result || result.code) {
+    sessionStorage.removeItem(PENDING_KEY);
+    throw new Error("not verified");
+  }
   return finishCarrierIdentity(started.identityVerificationId);
 }
 

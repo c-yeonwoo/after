@@ -11,11 +11,12 @@
 // 2026-10-10 기준 키가 아직 없다. 키 없이 운영에서 부르면 503 으로 끝난다.
 //
 // ── 로컬 ──
-// 로컬 Supabase(SUPABASE_URL 이 kong/127.0.0.1)에서 키가 없으면 문자를 보내지 않고
-// 코드를 응답에 싣는다. 운영 URL 은 이 조건에 걸리지 않는다.
+// 정확한 로컬 Supabase 호스트 + DEV_AUTH_BYPASS=true + 명시적 bypass 요청에서만
+// 문자를 보내지 않고 코드를 응답에 싣는다. 키 누락은 우회 조건이 아니다.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { localAuthBypassAllowed } from "../_shared/local-auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -23,7 +24,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SOLAPI_API_KEY = Deno.env.get("SOLAPI_API_KEY");
 const SOLAPI_API_SECRET = Deno.env.get("SOLAPI_API_SECRET");
 const SOLAPI_SENDER = Deno.env.get("SOLAPI_SENDER");
-const IS_LOCAL = /kong|127\.0\.0\.1|localhost/.test(SUPABASE_URL);
+const DEV_BYPASS = localAuthBypassAllowed(Deno.env.get("DEV_AUTH_BYPASS"), SUPABASE_URL);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -89,17 +90,22 @@ Deno.serve(async (req) => {
   if (userError || !user) return json({ error: "unauthenticated" }, 401);
 
   const smsReady = Boolean(SOLAPI_API_KEY && SOLAPI_API_SECRET && SOLAPI_SENDER);
-  if (!SERVICE_ROLE_KEY || (!smsReady && !IS_LOCAL)) {
+  if (!SERVICE_ROLE_KEY) {
     return json({ error: "not configured" }, 503);
   }
 
-  let body: { phone?: string };
+  let body: { phone?: string; bypass?: boolean };
   try {
     body = await req.json();
   } catch {
     return json({ error: "invalid json body" }, 400);
   }
-  const phone = normalizeKoreanMobile(body.phone ?? "");
+  if (!body || typeof body !== "object" || typeof body.phone !== "string")
+    return json({ error: "invalid phone" }, 400);
+  const bypass = body.bypass === true;
+  if (bypass && !DEV_BYPASS) return json({ error: "dev bypass disabled" }, 403);
+  if (!bypass && !smsReady) return json({ error: "not configured" }, 503);
+  const phone = normalizeKoreanMobile(body.phone);
   if (!phone) return json({ error: "invalid phone" }, 400);
 
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -115,7 +121,7 @@ Deno.serve(async (req) => {
   }
 
   const text = `[애프터] 인증번호 ${code}. 3분 안에 입력해 주세요.`;
-  if (!smsReady) return json({ sent: false, phone, devCode: code });
+  if (bypass) return json({ sent: false, phone, devCode: code });
 
   try {
     await sendSms(phone, text);
