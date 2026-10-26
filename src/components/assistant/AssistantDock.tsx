@@ -59,9 +59,11 @@ function LegacyAssistantDock({
   const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [safety, setSafety] = useState<string | null>(null);
   const inputIntent = assistantIntent(input.trim());
-  const awaitingCapabilities = flags.isPending && ["unknown", "edit"].includes(inputIntent);
+  const awaitingCapabilities =
+    flags.isPending && ["unknown", "edit", "edit_story"].includes(inputIntent);
   const reply = intent
     ? assistantReply(intent, {
         gender: me?.gender ?? null,
@@ -104,6 +106,7 @@ function LegacyAssistantDock({
             }
             onClick={() => {
               setSafety(null);
+              setLastQuestion(null);
               setIntent(key);
             }}
           >
@@ -115,7 +118,11 @@ function LegacyAssistantDock({
         <div className="assistant-reply mt-4" role="status">
           <p className="text-sm leading-relaxed">{safety ?? reply?.text}</p>
           {!safety && reply ? (
-            <AssistantActions actions={reply.actions} counterpartId={counterpartId} />
+            <AssistantActions
+              actions={reply.actions}
+              counterpartId={counterpartId}
+              draft={me && lastQuestion ? { owner: me.id, text: lastQuestion } : undefined}
+            />
           ) : null}
         </div>
       ) : null}
@@ -136,9 +143,9 @@ function LegacyAssistantDock({
               return;
             }
             const next = assistantIntent(text);
-            if (["unknown", "edit"].includes(next) && flags.isPending) return;
+            if (["unknown", "edit", "edit_story"].includes(next) && flags.isPending) return;
             if (
-              next === "edit" &&
+              next === "edit_story" &&
               me?.onboarding_step &&
               me.onboarding_step >= 7 &&
               flags.data?.profileEdit &&
@@ -158,6 +165,7 @@ function LegacyAssistantDock({
               void navigate({ to: "/assistant", search: { panel: "chat" } });
             } else {
               setSafety(null);
+              setLastQuestion(text);
               setIntent(next);
             }
             setInput("");

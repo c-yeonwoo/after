@@ -345,7 +345,7 @@ function IntroPage() {
   // 뷰가 이미 나이를 계산해서 준다 — 생일은 나가지 않는다(S8).
   const view = toProfileView(candidate);
 
-  const maleAnswered = isMale && Boolean(meeting);
+  const maleHasRequest = isMale && Boolean(meeting);
 
   /*
     소개 화면의 주요 행동. AppScreen 의 footer 슬롯으로 넘긴다.
@@ -355,7 +355,7 @@ function IntroPage() {
     '만남 티켓 쓰기' 를 누르려다 `대화` 탭으로 새는 일이 났다. 흐름 안의
     슬롯에 두면 간격이 계산이 아니라 배치가 된다.
   */
-  const actions = maleAnswered ? null : (
+  const actions = maleHasRequest ? null : (
     <div className="flex flex-col gap-2">
       {/* 그리드로 반씩 나눈다 — flex-1 은 글자 폭에 밀려 오른쪽 버튼이 카드 밖으로 8px 나갔다. */}
       <div className="grid grid-cols-2 gap-2">
@@ -465,20 +465,20 @@ function IntroPage() {
         ) : null
       }
     >
-      {maleAnswered || (isMale && reason) ? (
+      {isMale && reason && !maleHasRequest ? (
         <div className="mb-5">
-          {isMale && reason && !maleAnswered ? (
-            <IntroductionReason reason={reason} />
-          ) : (
-            <GuideNote>답을 받았어요. 다음 단계가 생기면 알려 드릴게요.</GuideNote>
-          )}
+          <IntroductionReason reason={reason} />
         </div>
       ) : null}
 
       <div className="mb-5">
         <GuideNote assistant>
-          {maleAnswered
-            ? "요청을 전달했어요. 약속 상태가 바뀌면 다음 단계를 확인해요."
+          {maleHasRequest
+            ? meeting?.confirmed_at
+              ? "약속이 정해졌어요. 상세에서 시간과 장소를 확인해 주세요."
+              : meeting?.prefs_submitted_at
+                ? "상대가 가능한 시간을 보냈어요. 약속할 시간을 골라주세요."
+                : "요청을 전달했어요. 아직 상대의 답변을 기다리고 있어요."
             : isMale
               ? "프로필을 읽어보세요. 마음이 가면 날짜와 장소를 함께 제안해요."
               : "어떤 분인지 천천히 읽어보세요. 좋아요를 남기면 소개와 만남 조율을 이어가요."}
@@ -502,7 +502,7 @@ function IntroPage() {
         </Link>
       ) : null}
 
-      {maleAnswered ? (
+      {maleHasRequest ? (
         <div className="app-elevated mt-8 rounded-surface bg-card px-5 py-5 text-sm">
           <p className="font-semibold text-foreground">
             {meeting?.confirmed_at

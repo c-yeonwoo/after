@@ -10,6 +10,7 @@ import { seoulAppointment, scheduleKind, scheduleInputIssue } from "../src/lib/a
 import {
   assistantReply,
   assistantWelcome,
+  historicalAssistantActions,
   visibleAssistantActions,
   type AssistantContext,
 } from "../src/lib/assistantExperience";
@@ -41,8 +42,9 @@ assert.equal(assistantIntent("오늘 우울해"), "unknown");
 const routingCases = [
   ["프로필 준비", "profile"],
   ["프로필 대화 준비 도와줘", "profile"],
-  ["소개글 수정해줘", "edit"],
-  ["사진 바꿔줘", "edit"],
+  ["소개글 수정해줘", "edit_story"],
+  ["사진 바꿔줘", "edit_photo"],
+  ["프로필 수정해줘", "edit"],
   ["가입하려면 어떻게 해?", "signup"],
   ["회사 메일 인증 코드가 안 와", "signup"],
   ["결제하고 싶어", "payment"],
@@ -65,6 +67,68 @@ const routingCases = [
   ["상대 프로필을 바탕으로 대화 주제를 추천해줘", "prepare"],
 ] as const;
 for (const [text, intent] of routingCases) assert.equal(assistantIntent(text), intent, text);
+
+// R01/R08 regressions: ordinary Korean advice must not open payment or a text generator.
+const routingRegressions = [
+  ["상대 답장을 얼마나 기다려야 할까요?", "unknown"],
+  ["만난 지 얼마 안 됐는데 다시 만나자고 해도 될까요?", "unknown"],
+  ["얼마나 자주 연락하면 좋을까", "unknown"],
+  ["얼마야?", "unknown"],
+  ["이용료가 얼마야?", "payment"],
+  ["티켓 가격 알려줘", "payment"],
+  ["사진은 안 바꾸고 약속 시간 변경해줘", "schedule"],
+  ["사진은 안바꾸고 약속시간변경해줘", "schedule"],
+  ["사진은 수정하지 말고 약속 시간을 바꿔줘", "schedule"],
+  ["사진 말고 소개글 수정해줘", "edit_story"],
+  ["소개글은 바꾸지 말고 사진을 바꿔줘", "edit_photo"],
+  ["프로필은 그대로 두고 티켓 가격 알려줘", "payment"],
+  ["사진 바꾸지 마세요", "unknown"],
+  ["소개글에서 마지막 문장만 삭제해줘", "edit_story"],
+  ["마지막 문장 삭제", "edit_story"],
+  ["마지막 문장 지워줘", "edit_story"],
+  ["두 번째 문장은 원래대로", "edit_story"],
+  ["더 다정하게", "edit_story"],
+  ["좀 더 다정하게 해줘", "edit_story"],
+  ["내 소개 글을 더 자연스럽게 해줘", "edit_story"],
+  ["소개글 수정해주세여", "edit_story"],
+  ["상대에게 더 다정하게 말하고 싶어요", "unknown"],
+  ["상대 답변을 어떻게 이해하면 될까", "unknown"],
+  ["내 키를 180으로 수정해줘", "edit_facts"],
+  ["기본정보 변경해줘", "edit_facts"],
+  ["직업 바꿔줘", "edit_facts"],
+  ["키가 작아서 자신이 없어", "unknown"],
+  ["사진 밝기와 해상도 확인해줘", "edit_photo"],
+  ["사진 좀 봐줘", "edit_photo"],
+  ["사진 속 인물 성격 분석해줘", "edit_photo"],
+  ["사진 바꿔주고 소개글도 수정해줘", "edit"],
+  ["사진 바꾸고 약속 시간도 변경해줘", "clarify"],
+  ["티켓 가격과 약속 시간 확인해줘", "clarify"],
+  ["사진 변경하고 상대를 신고하고 싶어", "support"],
+  ["왜 아직 소개가 없어?", "status"],
+  ["왜 소개가 안 와요?", "status"],
+  ["아직 소개가 안 오는데", "status"],
+  ["만남 후기 남기고 싶어", "feedback"],
+  ["만남 결과", "feedback"],
+  ["만나지 못했어요", "unknown"],
+] as const;
+for (const [text, intent] of routingRegressions) assert.equal(assistantIntent(text), intent, text);
+for (const text of [
+  "상대 답장을 얼마나 기다려야 할까요?",
+  "만난 지 얼마 안 됐는데 다시 만나자고 해도 될까요?",
+])
+  assert.equal(assistantServiceReply(text), null, "ordinary advice has no payment template");
+for (const text of ["사진 바꿔줘", "사진 밝기와 해상도 확인해줘", "사진 속 인물 성격 분석해줘"]) {
+  const reply = assistantServiceReply(text)!;
+  assert.match(reply, /기기 안에서 밝기·해상도·비율/);
+  assert.match(reply, /성격을 판독하지 않/);
+  assert.doesNotMatch(reply, /수정안|소개글을 바꿀/);
+}
+assert.match(assistantServiceReply("마지막 문장 삭제")!, /문장을 선택/);
+assert.match(assistantServiceReply("키를 수정해줘")!, /기본 정보/);
+assert.match(assistantServiceReply("프로필 수정")!, /어느 부분/);
+assert.match(assistantServiceReply("사진 바꾸고 약속 시간도 변경해줘")!, /어떤 것부터/);
+assert.match(assistantServiceReply("왜 아직 소개가 없어?", "waiting")!, /소개를 준비 중/);
+assert.match(assistantServiceReply("만남 후기 남기고 싶어")!, /자동으로 제출하지 않/);
 const ctx: AssistantContext = { gender: "male", complete: true, schedule: false, memory: false };
 assert.deepEqual(visibleAssistantActions(["home", "profile"], "/home"), ["profile"]);
 assert.deepEqual(visibleAssistantActions(["home"], "/home/"), []);
@@ -112,6 +176,46 @@ assert.deepEqual(assistantReply("prepare", { ...ctx, counterpartId: "permitted" 
   "prepare",
 ]);
 assert.deepEqual(assistantReply("prepare", ctx).actions, ["intro"]);
+const changedCounterpartContext: AssistantContext = {
+  ...ctx,
+  counterpartId: "new-current-counterpart",
+  state: "schedule_selection",
+  schedule: true,
+  hasMeeting: true,
+};
+for (const intent of ["prepare", "intro", "interest"] as const)
+  assert.deepEqual(
+    historicalAssistantActions(intent, changedCounterpartContext),
+    ["intro"],
+    "historical advice cannot bind to today's counterpart",
+  );
+for (const intent of ["status", "schedule", "feedback"] as const)
+  assert.deepEqual(
+    historicalAssistantActions(intent, changedCounterpartContext),
+    ["appointments"],
+    "historical work cannot select today's active meeting",
+  );
+assert.deepEqual(historicalAssistantActions("support", changedCounterpartContext), [
+  "appointments",
+  "support",
+]);
+assert.deepEqual(historicalAssistantActions("payment", changedCounterpartContext), ["store"]);
+assert.deepEqual(
+  historicalAssistantActions("payment", { ...changedCounterpartContext, gender: "female" }),
+  ["intro"],
+);
+assert.deepEqual(assistantReply("prepare", changedCounterpartContext).actions, ["prepare"]);
+for (const intent of ["edit_photo", "edit_facts"] as const)
+  assert.deepEqual(
+    assistantReply(intent, { ...ctx, profileEdit: true }).actions,
+    ["edit"],
+    "photo/fact requests must not open paid story generation",
+  );
+assert.deepEqual(assistantReply("edit_story", { ...ctx, profileEdit: true }).actions, [
+  "revise",
+  "edit",
+]);
+assert.deepEqual(assistantReply("clarify", changedCounterpartContext).actions, []);
 assert.match(assistantServiceReply("今", "waiting") ?? "unknown", /unknown/);
 assert.match(assistantServiceReply("진행 상태", "photos_pending")!, /사진을 확인 중/);
 assert.match(assistantStatusText("unrecognized"), /확인하지 못/);

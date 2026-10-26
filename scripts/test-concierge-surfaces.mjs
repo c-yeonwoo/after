@@ -6,12 +6,20 @@ import AxeBuilder from "@axe-core/playwright";
 
 // Existing dev server only. Every backend request is fulfilled in this isolated
 // browser context; no login, database, provider, or model request reaches a server.
-const base = "http://127.0.0.1:5191";
+const base = new URL(process.env.AFTER_CONCIERGE_BASE ?? "http://127.0.0.1:5191").origin;
+assert.ok(
+  ["127.0.0.1", "localhost", "[::1]"].includes(new URL(base).hostname),
+  "surface fixtures require an existing loopback dev server",
+);
 const output = process.env.AFTER_CONCIERGE_OUTPUT ?? "/tmp/after-concierge-surfaces";
-const widths = [320, 390, 1440];
-const schemes = ["light", "dark"];
+const widths = process.env.AFTER_CONCIERGE_WIDTHS?.split(",").map(Number) ?? [320, 390, 1440];
+const schemes = process.env.AFTER_CONCIERGE_SCHEMES?.split(",") ?? ["light", "dark"];
+assert.ok(widths.length && widths.every((width) => [320, 390, 1440].includes(width)));
+assert.ok(schemes.length && schemes.every((scheme) => ["light", "dark"].includes(scheme)));
 const id = "11111111-1111-4111-8111-111111111111";
 const otherId = "22222222-2222-4222-8222-222222222222";
+const introId = "33333333-3333-4333-8333-333333333333";
+const meetingId = "44444444-4444-4444-8444-444444444444";
 const now = new Date().toISOString();
 const privateSentinel = "비공개검증전용문장";
 const ownAnswer = "영화는 별로 좋아하지 않아요. 퇴근 후에는 음악을 들으며 쉬어요.";
@@ -82,6 +90,37 @@ const other = {
   drinking: "social",
   private_notes: privateSentinel,
 };
+const pendingMeeting = {
+  id: meetingId,
+  intro_id: introId,
+  male_id: id,
+  female_id: otherId,
+  created_at: now,
+  requested_at: now,
+  prefs_submitted_at: null,
+  confirmed_at: null,
+  scheduled_at: null,
+  closed_at: null,
+  cancelled_at: null,
+};
+const assistantHistory = [
+  {
+    id: "55555555-5555-4555-8555-555555555555",
+    kind: "conversation",
+    question: "예전에 소개받은 상대와 나눌 대화 주제를 알려줘",
+    answer: "이전 소개의 공개된 이야기를 살펴보고 대화를 준비해 주세요.",
+    state: "complete",
+    created_at: new Date(Date.now() - 3600_000).toISOString(),
+  },
+  {
+    id: "66666666-6666-4666-8666-666666666666",
+    kind: "conversation",
+    question: "약속 시간 변경해줘",
+    answer: "이전 약속의 시간은 상세에서 다시 확인해 주세요.",
+    state: "complete",
+    created_at: new Date(Date.now() - 1800_000).toISOString(),
+  },
+];
 const basics = {
   name: member.name,
   photos,
@@ -115,7 +154,11 @@ const draft = (stage) => ({
 });
 const allFixtures = [
   { name: "home", path: "/home", heading: "아직 새 소개가 없어요." },
+  { name: "legacy-story", path: "/home", heading: "아직 새 소개가 없어요." },
   { name: "intro", path: "/intro", heading: "합성 도윤" },
+  { name: "intro-pending", path: "/intro", heading: "합성 서연", gender: "male" },
+  { name: "assistant-no-consent", path: "/assistant", heading: "나와 비서" },
+  { name: "assistant-chat", path: "/assistant", heading: "나와 비서", consented: true },
   { name: "profile", path: "/profile", heading: "합성 지수" },
   { name: "photos", path: "/signup?edit=true", heading: "어떤 모습으로 소개할까요?" },
   { name: "interview", path: "/signup?prepare=true", stage: "story0", heading: null },
@@ -159,6 +202,8 @@ const summary = {
   mockedFontRequests: [],
   backendRequests: [],
   browserErrors: [],
+  assistantChecks: [],
+  legacyChecks: [],
   limitations: [
     "Synthetic profile-photo placeholders; no real member data.",
     "Chromium viewport emulation only; no physical iPhone or native keyboard QA.",
@@ -265,6 +310,126 @@ async function verifyProfile(page, own) {
   );
 }
 
+async function verifyAssistant(page, fixture, name, backendStart) {
+  await page.getByRole("group", { name: "빠른 도움" }).waitFor();
+  if (fixture.consented) {
+    const history = page.getByRole("list", { name: "나만의 상담 기록" });
+    await history.getByText(assistantHistory[0].answer, { exact: true }).waitFor();
+    assert.equal(await history.locator("li").count(), assistantHistory.length);
+    assert.equal(await history.locator('a[href*="conversation-prep"]').count(), 0);
+    assert.equal(await history.locator('a[href*="assistant-schedule"]').count(), 0);
+    assert.equal(await history.locator(`a[href*="${otherId}"]`).count(), 0);
+    assert.equal(await history.getByRole("link", { name: "소개 확인하기" }).count(), 1);
+    assert.equal(await history.getByRole("link", { name: "약속 상세 보기" }).count(), 1);
+    await history.locator("li").first().scrollIntoViewIfNeeded();
+    await capture(page, `${name}-history`);
+  } else {
+    await page.getByRole("button", { name: "동의하고 시작하기", exact: true }).waitFor();
+    assert.equal(await page.getByRole("checkbox").isChecked(), false);
+    assert.equal(await page.getByRole("button", { name: "동의하고 시작하기" }).isDisabled(), true);
+    assert.equal(await page.getByRole("textbox").count(), 0);
+  }
+
+  const guide = page.locator('.assistant-reply[role="status"]');
+  await page.getByRole("button", { name: "내 상태", exact: true }).click();
+  await guide.getByText("상대의 답을 기다리는 중이에요.", { exact: false }).waitFor();
+  assert.doesNotMatch(await guide.innerText(), /답을 받았|홈에서 실제 진행/);
+  await page.getByRole("button", { name: "티켓 가격", exact: true }).click();
+  await guide.getByText("여성 회원에게 티켓 구매를 요청하지 않아요.", { exact: false }).waitFor();
+  assert.equal(await guide.locator('a[href="/store"]').count(), 0);
+  await page.getByRole("button", { name: "내 프로필 수정", exact: true }).click();
+  await guide.getByText("어느 부분을 먼저 바꿀까요?", { exact: false }).waitFor();
+  await page.getByRole("button", { name: "대화 팁", exact: true }).click();
+  const preparation = guide.getByRole("link", { name: "대화 준비하기", exact: true });
+  await preparation.waitFor();
+  const preparationUrl = new URL(await preparation.getAttribute("href"), base);
+  assert.equal(preparationUrl.pathname, "/conversation-prep");
+  assert.equal(preparationUrl.searchParams.get("target"), otherId);
+
+  if (fixture.consented) {
+    const history = page.getByRole("list", { name: "나만의 상담 기록" });
+    assert.equal(await history.locator('a[href*="conversation-prep"]').count(), 0);
+    assert.equal(await history.locator("li").count(), assistantHistory.length);
+  } else {
+    assert.equal(await page.getByRole("checkbox").isChecked(), false);
+    assert.equal(await page.getByRole("button", { name: "동의하고 시작하기" }).isDisabled(), true);
+  }
+  const requests = summary.backendRequests.slice(backendStart);
+  const edge = requests.filter((request) => request.path.includes("/functions/v1/"));
+  const writes = requests.filter(
+    (request) =>
+      request.method !== "GET" &&
+      !/\/rpc\/(?:home_state_v2|my_meet_window|assistant_capabilities|my_assistant_state)$/.test(
+        request.path,
+      ),
+  );
+  assert.equal(edge.length, 0, "quick guidance must not invoke an Edge function");
+  assert.equal(writes.length, 0, "quick guidance must not save history, consent or an operation");
+  assert.ok(requests.some((request) => request.path.endsWith("/rpc/home_state_v2")));
+  summary.assistantChecks.push({
+    name,
+    consented: Boolean(fixture.consented),
+    edgeRequests: edge.length,
+    writeRequests: writes.length,
+    sharedHomeState: "request_waiting",
+    historicalTargetLinks: 0,
+    currentGuideTarget: otherId,
+  });
+}
+
+async function verifyLegacyStory(page, name, backendStart) {
+  const input = page.getByRole("textbox", { name: "비서에게 물어볼 내용", exact: true });
+  const send = page.getByRole("button", { name: "비서에게 질문하기", exact: true });
+  await input.fill("프로필 수정");
+  await send.click();
+  const guide = page.locator('.assistant-reply[role="status"]');
+  await guide.getByText("어느 부분을 먼저 바꿀까요?", { exact: false }).waitFor();
+  assert.equal(new URL(page.url()).pathname, "/home", "ambiguous edit stays at target selection");
+  assert.equal(await guide.getByRole("link", { name: "프로필 수정하기" }).count(), 1);
+  assert.equal(await guide.getByRole("link", { name: "비서와 프로필 다듬기" }).count(), 1);
+  await guide.scrollIntoViewIfNeeded();
+  await capture(page, `${name}-choose-target`);
+
+  const instruction = "소개글에서 마지막 문장만 삭제해줘";
+  await input.fill(instruction);
+  await send.click();
+  await page.waitForURL(`${base}/assistant-profile`);
+  const editor = page.getByRole("textbox", { name: "어떻게 바꿔볼까요?", exact: true });
+  await editor.waitFor();
+  assert.equal(
+    await editor.inputValue(),
+    instruction,
+    "the exact edit request survives navigation",
+  );
+  assert.equal(await page.getByRole("checkbox").isChecked(), false);
+  assert.equal(
+    await page.getByRole("button", { name: "비서와 다듬기", exact: true }).isDisabled(),
+    true,
+  );
+  const requests = summary.backendRequests.slice(backendStart);
+  assert.ok(requests.some((request) => request.path.endsWith("/rpc/my_profile_revision")));
+  assert.equal(requests.filter((request) => request.path.includes("/functions/v1/")).length, 0);
+  assert.equal(
+    requests.filter(
+      (request) =>
+        request.method !== "GET" &&
+        !/\/rpc\/(?:home_state_v2|my_meet_window|assistant_capabilities|my_profile_revision)$/.test(
+          request.path,
+        ),
+    ).length,
+    0,
+    "handoff cannot generate, approve or save a profile revision",
+  );
+  summary.legacyChecks.push({
+    name,
+    ambiguousEditStayedHome: true,
+    destination: "/assistant-profile",
+    instructionPreserved: true,
+    edgeRequests: 0,
+    writeRequests: 0,
+  });
+}
+
 async function checkPhotoHelper(page) {
   const results = await page.evaluate(async () => {
     const { inspectPhotoForCoaching, photoTips } = await import("/src/lib/photoCoaching.ts");
@@ -337,7 +502,24 @@ try {
           });
         if (backend) {
           summary.backendRequests.push({ fixture: current.name, path, method: request.method() });
-          const profile = { ...member, onboarding_step: current.stage ? 4 : 7 };
+          const profile = {
+            ...member,
+            gender: current.gender ?? member.gender,
+            onboarding_step: current.stage ? 4 : 7,
+          };
+          const assistant = current.name.startsWith("assistant-");
+          const candidate =
+            current.name === "intro-pending"
+              ? { ...other, name: "합성 서연", gender: "female" }
+              : other;
+          const hasMeeting = assistant || current.name === "intro-pending";
+          const flags = {
+            chat: assistant,
+            schedule: assistant,
+            memory: assistant,
+            profileEdit: assistant || current.name === "legacy-story",
+            introduction: false,
+          };
           if (path.endsWith("/auth/v1/user")) return fulfill(session.user);
           if (path.endsWith("/rest/v1/profiles") && request.method() === "GET")
             return fulfill(profile);
@@ -349,13 +531,17 @@ try {
             return fulfill({
               schema_version: 2,
               as_of: now,
-              primary_state: current.name === "intro" ? "intro_available" : "waiting",
+              primary_state: hasMeeting
+                ? "request_waiting"
+                : current.name === "intro"
+                  ? "intro_available"
+                  : "waiting",
               me: profile,
-              candidate: current.name === "intro" ? other : null,
-              meeting: null,
+              candidate: current.name === "intro" || hasMeeting ? candidate : null,
+              meeting: hasMeeting ? pendingMeeting : null,
               request_count: 0,
               pending_no_show: null,
-              has_open_intro: false,
+              has_open_intro: hasMeeting,
               queued_intros: 0,
               intro_tickets: 0,
               meeting_tickets: 0,
@@ -365,11 +551,38 @@ try {
               ticket_summary: { intro_available: 0, meeting_available: 0 },
               intro_progress: { has_likes: false },
             });
-          if (path.endsWith("/rpc/assistant_capabilities"))
-            return fulfill({ chat: false, schedule: false, memory: false });
+          if (path.endsWith("/rpc/assistant_capabilities")) return fulfill(flags);
+          if (path.endsWith("/rpc/my_profile_revision") && current.name === "legacy-story")
+            return fulfill({ enabled: true, draft: null });
+          if (path.endsWith("/rpc/my_assistant_state") && assistant)
+            return fulfill({
+              flags,
+              consented: Boolean(current.consented),
+              revision: 1,
+              session_id: "77777777-7777-4777-8777-777777777777",
+              memories: [],
+              turns: current.consented ? assistantHistory : [],
+            });
           if (path.endsWith("/rpc/my_meet_window")) return fulfill(null);
           if (path.endsWith("/rpc/next_candidate")) return fulfill([other]);
           if (path.endsWith("/rpc/remaining_candidates")) return fulfill(1);
+          if (current.name === "intro-pending") {
+            if (path.endsWith("/rest/v1/intros") && request.method() === "GET")
+              return fulfill({
+                id: introId,
+                male_id: id,
+                female_id: otherId,
+                reason: null,
+                opened_at: now,
+                closed_at: null,
+              });
+            if (path.endsWith("/rest/v1/meetings") && request.method() === "GET")
+              return fulfill(pendingMeeting);
+            if (path.endsWith("/rpc/get_public_profile")) {
+              assert.equal(request.postDataJSON().p_id, otherId);
+              return fulfill([candidate]);
+            }
+          }
           if (path.endsWith("/rpc/save_profile_interview_draft")) {
             currentDraft = request.postDataJSON().p_data;
             revision++;
@@ -387,7 +600,14 @@ try {
           summary.mockedFontRequests.push({ fixture: current.name, path });
           return route.fulfill({ status: 200, contentType: "text/css", body: "" });
         }
-        const allowedPage = ["/home", "/intro", "/profile", "/signup"].includes(path);
+        const allowedPage = [
+          "/home",
+          "/intro",
+          "/profile",
+          "/signup",
+          "/assistant",
+          "/assistant-profile",
+        ].includes(path);
         const allowedAsset =
           /^(?:\/src\/|\/supabase\/functions\/_shared\/|\/node_modules\/|\/@(?:vite|id|fs|tanstack-start)\/|\/@react-refresh$|\/fonts\/|\/brand\/|\/favicon\.)/.test(
             path,
@@ -412,13 +632,14 @@ try {
         currentDraft = fixture.stage ? draft(fixture.stage) : null;
         revision = 1;
         const name = `${fixture.name}-${scheme}-${width}`;
+        const backendStart = summary.backendRequests.length;
         try {
           await page.goto(base + fixture.path, { waitUntil: "domcontentloaded" });
           if (fixture.heading)
             await page
               .getByRole("heading", {
                 name: fixture.heading,
-                exact: fixture.name !== "intro" && fixture.name !== "profile",
+                exact: !["intro", "intro-pending", "profile"].includes(fixture.name),
               })
               .waitFor();
           else await page.getByRole("textbox", { name: "내 답변", exact: true }).waitFor();
@@ -428,6 +649,18 @@ try {
           }
           if (["intro", "profile"].includes(fixture.name))
             await verifyProfile(page, fixture.name === "profile");
+          if (fixture.name === "intro-pending") {
+            await page.getByText("요청을 전달했어요.", { exact: true }).waitFor();
+            await page.getByText("아직 상대의 답변을 기다리고 있어요.", { exact: true }).waitFor();
+            await page.getByText("상대의 답변을 기다리는 중입니다", { exact: true }).waitFor();
+            assert.doesNotMatch(
+              await page.locator("main").innerText(),
+              /답을 받았|가능한 시간을 보냈/,
+            );
+          }
+          if (fixture.name.startsWith("assistant-"))
+            await verifyAssistant(page, fixture, name, backendStart);
+          if (fixture.name === "legacy-story") await verifyLegacyStory(page, name, backendStart);
           if (fixture.name === "photos")
             await page.getByRole("heading", { name: "사진에도 나다운 모습이 담기게" }).waitFor();
           if (["understanding", "draft"].includes(fixture.name)) {

@@ -98,12 +98,25 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
           }
         : generic("프로필 준비", ["account"]);
     case "edit":
+      return generic(
+        "프로필 수정",
+        context.complete ? (context.profileEdit ? ["revise", "edit"] : ["edit"]) : ["account"],
+      );
+    case "edit_photo":
+      return generic("사진 바꿔줘", [context.complete ? "edit" : "account"]);
+    case "edit_facts":
+      return generic("기본정보 변경해줘", [context.complete ? "edit" : "account"]);
+    case "edit_story":
       return context.complete && context.profileEdit
         ? {
             text: "바꾸고 싶은 이야기를 들려주세요. 수정안을 함께 보고, 괜찮으면 프로필에 반영해요.",
             actions: ["revise", "edit"],
           }
-        : generic("프로필 수정", [context.complete ? "edit" : "account"]);
+        : generic("소개글 수정", [context.complete ? "edit" : "account"]);
+    case "clarify":
+      return { text: "한 가지씩 도와드릴게요. 어떤 것부터 할까요?", actions: [] };
+    case "feedback":
+      return generic("만남 후기 남기고 싶어", [context.complete ? "appointments" : "account"]);
     case "intro":
       if (context.complete && context.state === "waiting")
         return {
@@ -181,4 +194,16 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
         actions: [],
       };
   }
+}
+
+/** Historical text is not authority to choose today's counterpart or execute a task. */
+export function historicalAssistantActions(
+  intent: AssistantIntent,
+  context: Pick<AssistantContext, "gender" | "complete" | "memory" | "profileEdit">,
+): AssistantAction[] {
+  if (["status", "schedule", "feedback", "support"].includes(intent))
+    return intent === "support" ? ["appointments", "support"] : ["appointments"];
+  if (["prepare", "intro", "interest"].includes(intent)) return ["intro"];
+  if (intent === "payment") return context.gender === "male" ? ["store"] : ["intro"];
+  return assistantReply(intent, { ...context, schedule: false }).actions;
 }

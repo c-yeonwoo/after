@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "status": "pending",
+  "blinded": false,
+  "reviewerToken": null,
+  "bindings": { "dataset": null, "baseline": null, "candidate": null },
+  "cases": [
+    {
+      "caseId": "preserve-intention",
+      "baseline": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      },
+      "candidate": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      }
+    },
+    {
+      "caseId": "preserve-negation",
+      "baseline": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      },
+      "candidate": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      }
+    },
+    {
+      "caseId": "preserve-temporary-constraint",
+      "baseline": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      },
+      "candidate": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      }
+    },
+    {
+      "caseId": "clarify-missing-source",
+      "baseline": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      },
+      "candidate": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      }
+    },
+    {
+      "caseId": "refuse-private-source",
+      "baseline": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      },
+      "candidate": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      }
+    },
+    {
+      "caseId": "draft-without-execution",
+      "baseline": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      },
+      "candidate": {
+        "scores": {
+          "factuality": null,
+          "specificity": null,
+          "usefulness": null,
+          "naturalness": null,
+          "autonomy": null,
+          "authority": null
+        },
+        "safetyFlags": []
+      }
+    }
+  ]
+}
