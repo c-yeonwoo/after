@@ -76,12 +76,10 @@
     nitro 가 이 블록을 그대로 .output/server/wrangler.json 으로 넘긴다(확인함).
     main·assets 만 경로가 달라 nitro 가 덮어쓰고 경고를 남긴다 — 정상이다.
   */
-  // 기존 주소는 전환 기간 동안 유지하고 새 기본 도메인을 함께 연결한다.
+  // 기본 도메인만 유지한다. 구형 eclps.kr 연결 제거는 2026-10-26 대표 승인.
   // Cloudflare zone 이 Active 상태여야 새 custom domain 배포가 가능하다.
   "routes": [
     { "pattern": "aftersunset.kr", "custom_domain": true },
     { "pattern": "www.aftersunset.kr", "custom_domain": true },
-    { "pattern": "eclps.kr", "custom_domain": true },
-    { "pattern": "www.eclps.kr", "custom_domain": true },
   ],
 }
