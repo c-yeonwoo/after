@@ -39,7 +39,7 @@
     "test:pair-ai-live": "node scripts/test-pair-ai-live.mjs",
     "format": "prettier --write .",
     "check:contrast": "bun scripts/check-contrast.mjs",
-    "check:ai": "bun scripts/check-ai-quality.ts && bun scripts/check-assistant.ts && bun scripts/check-assistant-context.ts && bun scripts/check-shared-cache.ts && bun scripts/check-profile-concierge.ts && bun scripts/check-profile-coaching.ts && bun scripts/check-photo-coaching.ts && bun scripts/check-member-introduction.ts && bun scripts/check-profile-revision.ts && node --test scripts/check-concierge-generation-receipts.mjs",
+    "check:ai": "bun scripts/check-ai-quality.ts && bun scripts/check-assistant.ts && bun scripts/check-assistant-context.ts && bun scripts/check-shared-cache.ts && bun scripts/check-profile-concierge.ts && bun scripts/check-profile-coach.ts && bun scripts/check-profile-coach-handler.ts && bun scripts/check-profile-coaching.ts && bun scripts/check-photo-coaching.ts && bun scripts/check-member-introduction.ts && bun scripts/check-profile-revision.ts && node --test scripts/check-concierge-generation-receipts.mjs",
     "check:research": "node --test research/concierge-model/evaluate.test.mjs",
     "check:identity": "bun scripts/check-carrier-identity.ts && bun scripts/check-auth-mode.ts && bun scripts/check-identity-handlers.ts",
     "check:age": "bun scripts/check-age.ts",

@@ -7,7 +7,6 @@ import { MeetingSummary } from "@/components/app/MeetingSummary";
 import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { GuideNote } from "@/components/app/GuideNote";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
@@ -15,16 +14,13 @@ import { BRAND } from "@/lib/brand";
 import {
   markMet,
   meetPlacesForMe,
-  setPaused,
   type Meeting,
   type PublicProfile,
   type HomeStateV2,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
-import { type MeetWindow } from "@/lib/meetWindow";
 import { useMemberHome } from "@/lib/useMemberHome";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
-import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
 import { assistantWelcome } from "@/lib/assistantExperience";
 
@@ -98,7 +94,7 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
 }
 
 function HomePage() {
-  const { me, ready, refresh } = useMe();
+  const { me, ready } = useMe();
   const navigate = useNavigate();
   const live = useMemberHome(me?.id, ready && Boolean(me && me.onboarding_step >= 7));
   const serverState = live.data?.state ?? null;
@@ -111,7 +107,6 @@ function HomePage() {
   const queued = serverState?.queued_intros ?? 0;
   const introTickets = serverState?.ticket_summary?.intro_available ?? 0;
   const introPaymentsEnabled = live.data?.payments ?? null;
-  const meetWindow = live.data?.window ?? null;
   const requestCount = serverState?.request_count ?? 0;
   const loading = live.isPending && !live.isPaused;
   const loadError = (live.isError || live.isPaused) && !live.data;
@@ -199,9 +194,8 @@ function HomePage() {
   }
 
   return (
-    <AppScreen keyboardAware>
+    <AppScreen keyboardAware footer={<div id="assistant-home-composer" />}>
       <div className="home-greeting assistant-home-greeting" aria-label="애프터 AI 안내">
-        <AssistantMark className="size-12 shrink-0" />
         <div className="assistant-home-status min-w-0">
           <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
             <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
@@ -212,7 +206,7 @@ function HomePage() {
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="home-progress mt-5">
         <h2 className="break-keep text-base font-semibold leading-relaxed">{headline}</h2>
         {!live.isError &&
         !live.isPaused &&
@@ -428,7 +422,7 @@ function HomePage() {
 
       <AssistantDock
         key={me.id}
-        showIdentity={false}
+        showIdentity
         hasMeeting={
           loading || loadError || live.isError || live.isPaused ? undefined : Boolean(meeting)
         }
@@ -445,159 +439,7 @@ function HomePage() {
         }
         counterpartId={candidate?.id}
       />
-      {/*
-        진행 중인 만남이 없을 때만 띄운다. 약속이 잡혀 있으면 화면에 이미 할 일이
-        있고, 그때 "소개 받기" 스위치는 지금 하는 일과 무관한 잡음이다.
-      */}
-      {/*
-        소개가 도착한 상태에서는 띄우지 않는다. 같은 화면에서 "도착했어요" 와 "준비되면
-        알려드릴게요" 가 함께 보였다 — 도착했으면 할 일은 위 카드 하나다.
-      */}
-      {!loading &&
-      !loadError &&
-      (serverState?.readiness.ready || primaryState === "paused") &&
-      !needsPhone &&
-      !needsPhotos &&
-      !meeting &&
-      !noShow &&
-      !candidate &&
-      !(isMale && queued > 0) ? (
-        <ReadinessPanel
-          isMale={isMale}
-          paused={currentProfile?.paused_at !== null && currentProfile?.paused_at !== undefined}
-          introTickets={introTickets}
-          introPaymentsEnabled={introPaymentsEnabled}
-          meetWindow={meetWindow}
-          onToggle={async (next) => {
-            const release = live.beginInteraction();
-            try {
-              await setPaused(next);
-              await refresh();
-              toast.success(next ? "새 소개를 멈췄습니다." : "다시 소개를 받습니다.");
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
-            } finally {
-              release();
-            }
-          }}
-        />
-      ) : null}
     </AppScreen>
-  );
-}
-
-/**
- * 소개 받기 스위치 + 준비 상태.
- *
- * ── 왜 홈에 두는가 ──
- * 기다리는 화면에는 읽을 것 하나뿐이고 **누를 것이 없었다.** 남성이 로그인해서
- * 소개가 아직 없으면 할 수 있는 일이 0개다. 그 화면을 며칠 동안 다시 열게 하는
- * 것은 무리다.
- *
- * 없던 기능을 만들지는 않는다. `set_paused` 는 이미 있고 환경설정 안에 묻혀
- * 있었다. 지금 상태를 말하는 자리와 그 상태를 바꾸는 자리는 같아야 한다.
- *
- * ── 기다리는 기간을 말하지 않는 이유 ──
- * 예전에 "보통 2~3일 안에 보내드립니다" 가 있었고 근거가 코드에 없어서 지웠다.
- * 지금도 소개는 운영자가 큐를 세워야 나가므로 기간을 약속할 수 없다. 대신
- * **말할 수 있는 사실**을 적는다: 지금 받는 중인지, 열 준비가 됐는지.
- */
-function ReadinessPanel({
-  isMale,
-  paused,
-  introTickets,
-  introPaymentsEnabled,
-  meetWindow,
-  onToggle,
-}: {
-  isMale: boolean;
-  paused: boolean;
-  introTickets: number;
-  introPaymentsEnabled: boolean | null;
-  meetWindow: MeetWindow | null;
-  onToggle: (next: boolean) => Promise<void>;
-}) {
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <section className="mt-7 border-t border-border pt-2" aria-label="소개 설정">
-      <div className="home-readiness">
-        <div className="flex min-h-16 items-center gap-3.5 py-3">
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold">새 소개 받기</span>
-            {paused ? (
-              <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                쉬는 동안에도 진행 중인 약속은 유지돼요.
-              </span>
-            ) : null}
-          </span>
-          {/*
-            체크박스가 아니라 스위치다. 왼쪽 체크박스는 "동의합니다" 처럼 읽히고,
-            이건 동의가 아니라 켜고 끄는 값이다. 켜짐이 곧 "받는 중" 이라
-            체크 표시보다 손잡이가 움직이는 편이 상태를 잘 말한다.
-          */}
-          <Switch
-            aria-label={paused ? "소개 다시 받기" : "소개 잠시 멈추기"}
-            checked={!paused}
-            disabled={busy}
-            onCheckedChange={async (on) => {
-              setBusy(true);
-              try {
-                await onToggle(!on);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          />
-        </div>
-
-        {/*
-          남성에게만 붙는 줄. 소개가 도착해도 티켓이 없으면 열지 못하므로,
-          "지금 열 수 있는가" 가 기다리는 동안 알아 둘 값이다. 여성은 티켓을
-          쓰지 않으므로 이 줄이 없다.
-        */}
-        {isMale && !paused ? (
-          <div className="flex min-h-14 items-center gap-3.5 border-t border-border py-2">
-            <span className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
-              {introPaymentsEnabled === false
-                ? "베타 기간에는 무료로 열 수 있어요."
-                : introTickets > 0
-                  ? `소개 티켓 ${introTickets}장 보유`
-                  : introPaymentsEnabled === null
-                    ? "티켓 안내를 확인할 수 없습니다."
-                    : introPaymentsEnabled
-                      ? "소개를 열려면 소개 티켓 1장이 필요합니다."
-                      : "소개가 오면 무료 티켓을 신청할 수 있습니다."}
-            </span>
-            {introTickets === 0 && introPaymentsEnabled !== false ? (
-              <Link
-                to="/store"
-                search={{ kind: "intro" as const }}
-                className="flex min-h-11 shrink-0 items-center text-xs font-semibold text-foreground underline underline-offset-4"
-              >
-                {introPaymentsEnabled === null
-                  ? "티켓 보기"
-                  : introPaymentsEnabled
-                    ? "티켓 보기"
-                    : "무료로 신청"}
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-        {!paused ? (
-          <Link
-            to="/availability"
-            className="pressable flex min-h-14 items-center justify-between gap-3 border-t border-border text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <span className="font-medium">만남 가능 시간</span>
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {meetWindow?.fresh ? "설정됨" : meetWindow ? "다시 확인" : "요일 설정"}
-              <ArrowRight className="size-3.5" aria-hidden="true" />
-            </span>
-          </Link>
-        ) : null}
-      </div>
-    </section>
   );
 }
 

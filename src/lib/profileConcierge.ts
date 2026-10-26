@@ -197,6 +197,50 @@ const writingPrompts: Record<StorySectionId, string> = {
   conversation: "요즘 누군가에게 들려주고 싶은 이야기 하나가 있다면 무엇인가요?",
 };
 
+/** Immediate, evidence-bound writing review. This is not a personality assessment or an LLM result. */
+export function profileWritingCoaching(profile: ConciergeProfile) {
+  const sources = publicSources(profile);
+  const substantive = sources.find((s) => s.text.length >= 25) ?? sources[0];
+  const negative = sources.find((s) => /싫|별로|귀찮|못|낯.{0,4}가|안\s*좋아/.test(s.text));
+  const sparse = sources.find((s) => s.text.replace(/\s/gu, "").length < 20);
+  const topic = sources.find((s) => /영화|산책|음악|요리|여행|커피|책|러닝|운동|전시/.test(s.text));
+  return {
+    strength: substantive
+      ? {
+          quote: (topic ?? substantive).text,
+          title: topic ? "이 소재는 앞에 두세요" : "이 문장은 남겨두세요",
+          advice: topic
+            ? "상대가 첫 질문을 꺼내기 좋은 소재예요. 여러 취미를 나열하기보다 이 이야기 하나를 먼저 보여주세요."
+            : "구체적으로 적은 내 이야기는 짧은 자기평가보다 대화를 시작하기 좋아요. 이 장면을 중심에 두고 설명을 덜어보세요.",
+        }
+      : null,
+    improvement: negative
+      ? {
+          quote: negative.text,
+          title: "싫은 것 뒤에, 편한 방식도",
+          advice:
+            "이 기준을 지울 필요는 없어요. 상대가 피해야 할 것만 읽지 않도록, 대신 어떤 방식이 편한지 한 문장을 더해보세요.",
+          question: "이 상황에서 어떤 만남이나 대화라면 편할까요?",
+        }
+      : sparse
+        ? {
+            quote: sparse.text,
+            title: "한 장면만 더 들려주세요",
+            advice:
+              "지금은 소재만 보여서 상대가 무엇을 물어볼지 망설일 수 있어요. 최근 경험이나 좋아하는 이유 중 실제인 것 하나만 보태보세요.",
+            question: "가장 최근에 기억에 남은 순간은 언제였나요?",
+          }
+        : {
+            quote: "",
+            title: substantive ? "상대가 답할 여지를 남겨보세요" : "소개 문장부터 시작해요",
+            advice: substantive
+              ? "억지로 단점을 고칠 필요는 없어요. 지금 이야기 중 함께 나누고 싶은 소재 하나로 마무리하면 첫 대화를 이어가기 좋아요."
+              : "아직 코칭할 소개 문장이 없어요. 퇴근 후 기억에 남은 장면 하나를 알려주세요.",
+            question: "이 이야기에서 상대에게도 물어보고 싶은 것은 무엇인가요?",
+          },
+  };
+}
+
 export function profileReading(profile: ConciergeProfile) {
   const sources = publicSources(profile);
   const summary = clean(profile.story?.summary);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   comparePublicProfiles,
   profileReading,
+  profileWritingCoaching,
   type ConciergeProfile,
 } from "../src/lib/profileConcierge";
 import { storyFromAnswers } from "../src/lib/profileStory";
@@ -89,3 +90,13 @@ assert.match(profileReading(rich).nextPrompt, /어색함이 풀렸던/);
 console.log(
   "profile concierge: public evidence, negation, missing data, privacy and writing guidance passed",
 );
+const coached = profileWritingCoaching(viewer);
+assert.equal(coached.strength?.quote, viewer.story!.sections[0].answer);
+assert.match(
+  profileWritingCoaching(profile("술은 싫어요")).improvement.advice,
+  /기준을 지울 필요는 없어요/,
+);
+assert.match(profileWritingCoaching(profile("산책을 해요")).improvement.advice, /소재만/);
+assert.equal(profileWritingCoaching(blank()).strength, null);
+assert.doesNotMatch(JSON.stringify(profileWritingCoaching(extra)), /ENFP|개발자|PRIVATE/);
+assert.doesNotMatch(JSON.stringify(profileWritingCoaching(fresh)), /영화를 좋아해요/);

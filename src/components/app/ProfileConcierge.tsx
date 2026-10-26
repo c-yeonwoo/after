@@ -1,7 +1,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/lib/me";
+import { useAssistantFlags } from "@/lib/useAssistantFlags";
+import { setAssistantDraft } from "@/lib/assistantDraft";
 import { getAssistantFlags } from "@/lib/privateAssistant";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import {
@@ -15,6 +18,7 @@ import {
 import {
   comparePublicProfiles,
   profileReading,
+  profileWritingCoaching,
   type ConciergeProfile,
   type ProfileConnection,
 } from "@/lib/profileConcierge";
@@ -32,6 +36,7 @@ export function ProfileConcierge({
   signature?: ReactNode;
   targetId?: string;
 }) {
+  if (own) return <OwnProfileCoaching profile={profile} signature={signature} />;
   const fallback = (
     <RuleProfileConcierge profile={profile} viewer={viewer} own={own} signature={signature} />
   );
@@ -39,6 +44,68 @@ export function ProfileConcierge({
     <MemberManagerIntroduction targetId={targetId} signature={signature} fallback={fallback} />
   ) : (
     fallback
+  );
+}
+
+function OwnProfileCoaching({
+  profile,
+  signature,
+}: {
+  profile: ConciergeProfile;
+  signature?: ReactNode;
+}) {
+  const { me } = useMe();
+  const flags = useAssistantFlags(me?.id);
+  const coaching = profileWritingCoaching(profile);
+  const canAsk = Boolean(flags.data?.chat && !flags.isError && !flags.isPaused);
+  const ask =
+    "내 프로필의 장점과 아쉬운 표현을 코칭해줘. 상대가 읽기 편하도록 원문에 근거한 수정 예시도 알려줘.";
+  return (
+    <aside className="profile-coaching space-y-5" aria-label="내 프로필 표현 점검">
+      <div className="flex items-center gap-3">
+        {signature}
+        <div>
+          <h3 className="text-lg font-semibold">첫인상을 더 선명하게</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            내 문장을 바탕으로 한 표현 점검 · 나만 보기
+          </p>
+        </div>
+      </div>
+      {[coaching.strength, coaching.improvement]
+        .filter((item) => item !== null)
+        .map((item) => (
+          <section key={item.title}>
+            <h4 className="text-base font-semibold">{item.title}</h4>
+            {item.quote ? (
+              <blockquote className="profile-coaching-quote">“{item.quote}”</blockquote>
+            ) : null}
+            <p className="mt-2 break-keep text-sm leading-relaxed">{item.advice}</p>
+          </section>
+        ))}
+      {canAsk && me ? (
+        <Link
+          to="/assistant"
+          search={{ panel: "chat" }}
+          className="assistant-suggestion inline-flex items-center"
+          onClick={() => setAssistantDraft(me.id, ask)}
+        >
+          비서에게 코칭받기
+        </Link>
+      ) : (
+        <Link
+          to="/signup"
+          search={{ edit: true }}
+          className="assistant-suggestion inline-flex items-center"
+        >
+          프로필 직접 다듬기
+        </Link>
+      )}
+      {canAsk ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          현재 공개 글로 AI 조언을 받아요. 대화에서 직접 보내면 시작해요.
+        </p>
+      ) : null}
+    </aside>
   );
 }
 

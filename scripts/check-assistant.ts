@@ -137,7 +137,7 @@ assert.deepEqual(visibleAssistantActions(["prepare"], "/home"), []);
 assert.deepEqual(visibleAssistantActions(["prepare"], "/home", "permitted"), ["prepare"]);
 assert.deepEqual(assistantReply("intro", { ...ctx, state: "waiting" }).actions, []);
 assert.match(assistantReply("intro", { ...ctx, state: "waiting" }).text, /아직 새 소개가 없어요/);
-assert.deepEqual(assistantReply("intro", { ...ctx, state: "paused" }).actions, ["home"]);
+assert.deepEqual(assistantReply("intro", { ...ctx, state: "paused" }).actions, ["settings"]);
 assert.deepEqual(assistantReply("intro", { ...ctx, state: "intro_available" }).actions, ["intro"]);
 assert.deepEqual(assistantReply("intro", { ...ctx, complete: false, state: "waiting" }).actions, [
   "account",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-25T13:31:53.852Z",
+  "generatedAt": "2026-10-26T17:14:18.145Z",
   "title": "Design System: After",
   "extensions": {
     "colorMeta": {
@@ -141,16 +141,16 @@
       },
       "assistant-surface": {
         "role": "neutral",
-        "displayName": "Neutral Speech",
+        "displayName": "Warm Speech",
         "tonalRamp": [
-          "oklch(0.15 0.00171 247.84)",
-          "oklch(0.26 0.00171 247.84)",
-          "oklch(0.38 0.00171 247.84)",
-          "oklch(0.49 0.00171 247.84)",
-          "oklch(0.61 0.00171 247.84)",
-          "oklch(0.72 0.00171 247.84)",
-          "oklch(0.84 0.00171 247.84)",
-          "oklch(0.95 0.00171 247.84)"
+          "oklch(0.15 .012 15)",
+          "oklch(0.26 .012 15)",
+          "oklch(0.38 .012 15)",
+          "oklch(0.49 .012 15)",
+          "oklch(0.61 .012 15)",
+          "oklch(0.72 .012 15)",
+          "oklch(0.84 .012 15)",
+          "oklch(0.95 .012 15)"
         ],
         "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
@@ -276,16 +276,16 @@
       },
       "bubble-mine": {
         "role": "neutral",
-        "displayName": "Member Bubble",
+        "displayName": "Member Rose",
         "tonalRamp": [
-          "oklch(0.15 0.0149 356.61)",
-          "oklch(0.26 0.0149 356.61)",
-          "oklch(0.38 0.0149 356.61)",
-          "oklch(0.49 0.0149 356.61)",
-          "oklch(0.61 0.0149 356.61)",
-          "oklch(0.72 0.0149 356.61)",
-          "oklch(0.84 0.0149 356.61)",
-          "oklch(0.95 0.0149 356.61)"
+          "oklch(0.15 .032 15)",
+          "oklch(0.26 .032 15)",
+          "oklch(0.38 .032 15)",
+          "oklch(0.49 .032 15)",
+          "oklch(0.61 .032 15)",
+          "oklch(0.72 .032 15)",
+          "oklch(0.84 .032 15)",
+          "oklch(0.95 .032 15)"
         ],
         "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
@@ -501,16 +501,16 @@
       },
       "dark-assistant-surface": {
         "role": "neutral",
-        "displayName": "Dark Neutral Speech",
+        "displayName": "Dark Warm Speech",
         "tonalRamp": [
-          "oklch(0.15 0.00982 260.71)",
-          "oklch(0.26 0.00982 260.71)",
-          "oklch(0.38 0.00982 260.71)",
-          "oklch(0.49 0.00982 260.71)",
-          "oklch(0.61 0.00982 260.71)",
-          "oklch(0.72 0.00982 260.71)",
-          "oklch(0.84 0.00982 260.71)",
-          "oklch(0.95 0.00982 260.71)"
+          "oklch(0.15 .019 350)",
+          "oklch(0.26 .019 350)",
+          "oklch(0.38 .019 350)",
+          "oklch(0.49 .019 350)",
+          "oklch(0.61 .019 350)",
+          "oklch(0.72 .019 350)",
+          "oklch(0.84 .019 350)",
+          "oklch(0.95 .019 350)"
         ],
         "rampPurpose": "Synthesized panel visualization only; runtime colors remain the frontmatter/source values."
       },
@@ -848,12 +848,17 @@
       {
         "name": "content-arrival",
         "value": "260ms",
-        "purpose": "Existing content and active-tab arrival."
+        "purpose": "Existing content arrival."
       },
       {
         "name": "landing-photo",
         "value": "420ms",
         "purpose": "Existing landing photo reveal; not a general UI duration."
+      },
+      {
+        "name": "tab-selection",
+        "value": "180ms ease-out",
+        "purpose": "Selected segment background and ink; disabled with reduced motion."
       }
     ],
     "breakpoints": [
@@ -866,6 +871,11 @@
         "name": "app-max-width",
         "value": "430px",
         "purpose": "Centered customer-app frame width, not a desktop breakpoint."
+      },
+      {
+        "name": "short-assistant-container",
+        "value": "420px",
+        "purpose": "Maximum form-container height: hide composer recommendations and reduce textarea to 44px to preserve send access."
       }
     ],
     "assistantArtwork": {
@@ -946,9 +956,9 @@
       "name": "App navigation",
       "kind": "nav",
       "refersTo": "navigation",
-      "description": "Two bottom destinations with a soft-pink active outline and neutral icon ink; account and male-only shop remain header utilities.",
+      "description": "Two 48px bottom segments with the entire selection filled in member-bubble color; account and male-only shop remain header utilities.",
       "html": "<nav class=\"ds-nav\" aria-label=\"주요 메뉴\"><div class=\"ds-nav-row\"><a class=\"ds-tab\" href=\"/home\" aria-current=\"page\"><span class=\"ds-tab-icon\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/></svg></span>홈</a><a class=\"ds-tab\" href=\"/intro\"><span class=\"ds-tab-icon\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z\"/></svg></span>소개</a></div></nav>",
-      "css": ".ds-nav{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);padding-bottom:var(--safe-bottom,2.125rem);border-radius:1rem 1rem 0 0;background:var(--card);box-shadow:0 -6px 24px -14px oklch(.2955 .0198 169.4 / 28%)}.ds-nav-row{display:flex;gap:1rem;max-width:18rem;margin:0 auto;padding:0 1rem}.ds-tab{flex:1;display:flex;min-height:64px;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding-top:.5rem;color:var(--muted-foreground);text-decoration:none;font-size:.75rem;font-weight:500;line-height:1.5;transition:transform 140ms var(--ease-out)}.ds-tab-icon{display:flex;width:48px;height:32px;align-items:center;justify-content:center;border-radius:12px;transition:background-color 150ms}.ds-tab[aria-current=page]{color:var(--foreground)}.ds-tab[aria-current=page] .ds-tab-icon{border:1.5px solid var(--brand-200);background:var(--card);color:var(--primary-strong);animation:ds-tab-select 260ms var(--ease-out)}.ds-tab:focus-visible{outline:2px solid var(--ring)}.ds-tab:active{transform:scale(.98)}@keyframes ds-tab-select{from{transform:scale(.86)}to{transform:scale(1)}}@media(prefers-reduced-motion:reduce){.ds-tab,.ds-tab-icon{transition:none;animation:none!important}.ds-tab:active{transform:none}}"
+      "css": ".ds-nav{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);padding-bottom:var(--safe-bottom,2.125rem);border-radius:1rem 1rem 0 0;background:var(--card);box-shadow:0 -6px 24px -14px oklch(.2955 .0198 169.4 / 28%)}.ds-nav-row{display:flex;align-items:stretch;gap:.5rem;margin:0 auto;padding:.5rem 1.25rem}.ds-tab{flex:1;display:flex;min-height:48px;align-items:center;justify-content:center;gap:.5rem;border-radius:var(--radius-control,12px);color:var(--muted-foreground);text-decoration:none;font-size:.875rem;font-weight:500;line-height:1.4286;transition:background-color 180ms ease-out,color 180ms ease-out}.ds-tab-icon{display:flex;width:24px;height:24px;align-items:center;justify-content:center}.ds-tab[aria-current=page]{background:var(--bubble-mine);color:var(--bubble-mine-foreground);font-weight:700}.ds-tab:focus-visible{outline:2px solid var(--ring)}.ds-tab:active{transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-tab{transition:none}.ds-tab:active{transform:none}}"
     },
     {
       "name": "Choice chip",
@@ -962,7 +972,7 @@
       "name": "Compact appointment",
       "kind": "card",
       "refersTo": "home-appointment",
-      "description": "Neutral confirmed appointment with a pink-outline action and no assistant portrait.",
+      "description": "Warm speech-surface confirmed appointment with a pink-outline action and no assistant portrait.",
       "html": "<section class=\"ds-appointment\" aria-label=\"다음 약속\"><div class=\"ds-appointment-heading\"><h2>다음 약속</h2><span>확정</span></div><p>약속의 날짜와 장소</p><a class=\"ds-appointment-action\" href=\"/home\">약속 확인하기<span aria-hidden=\"true\">→</span></a></section>",
       "css": ".ds-appointment{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);padding:1.25rem;border-radius:16px;background:var(--assistant-surface);color:var(--foreground)}.ds-appointment-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}.ds-appointment h2{margin:0;font-size:1rem;font-weight:600;word-break:keep-all}.ds-appointment-heading span{font-size:.75rem;font-weight:600}.ds-appointment p{margin:0;font-size:1rem;line-height:1.5}.ds-appointment-action{display:flex;min-height:48px;align-items:center;justify-content:space-between;margin-top:1rem;padding:.75rem 1rem;border-radius:12px;border:1.5px solid var(--brand-signature);background:var(--primary);color:var(--primary-foreground);font-size:.875rem;font-weight:700;text-decoration:none;transition:transform 140ms var(--ease-out)}.ds-appointment-action:focus-visible{outline:2px solid currentColor;outline-offset:3px}.ds-appointment-action:active{transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-appointment-action{transition:none}.ds-appointment-action:active{transform:none}}"
     },
@@ -970,9 +980,9 @@
       "name": "Shared assistant conversation",
       "kind": "custom",
       "refersTo": "assistant-dock",
-      "description": "Compact shared conversation with member and assistant turns, neutral quick help, and a primary outlined send button. Home shows the latest three records; the full page reads the same record. Approved character artwork is preserved in production, not redrawn in this preview.",
-      "html": "<section class=\"ds-conversation\" aria-label=\"나와 비서의 대화\"><div class=\"ds-quick-actions\"><button type=\"button\" class=\"ds-quick-chip\"><span>내 상태</span></button><button type=\"button\" class=\"ds-quick-chip\"><span>일정 정리</span></button></div><p class=\"ds-member\">현재 어떤 단계를 확인하면 되나요?</p><p class=\"ds-reply\">홈에서 실제 진행 상황과 다음 단계를 확인해 주세요.</p><form class=\"ds-composer\"><textarea class=\"ds-question\" rows=\"2\" aria-label=\"비서에게 상담할 내용\" placeholder=\"이어서 이야기해 주세요\"></textarea><button class=\"ds-send\" type=\"button\" aria-label=\"상담 보내기\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m22 2-7 20-4-9-9-4Z\"/><path d=\"M22 2 11 13\"/></svg></button></form></section>",
-      "css": ".ds-conversation{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);margin-top:1.5rem;padding:.25rem 0;color:var(--foreground)}.ds-quick-actions{display:flex;flex-wrap:nowrap;gap:.375rem;margin-inline:-.25rem;padding:.25rem;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity}.ds-quick-chip{display:inline-flex;min-height:44px;flex-shrink:0;align-items:center;padding:6px 0;border:0;border-radius:999px;background:transparent;white-space:nowrap;scroll-snap-align:start;cursor:pointer;touch-action:manipulation}.ds-quick-chip span{display:inline-flex;min-height:32px;align-items:center;padding:.375rem .75rem;border-radius:999px;background:var(--muted);color:var(--foreground);font-size:.8125rem;line-height:1.35;font-weight:600}.ds-quick-chip[aria-pressed=true] span{background:var(--selection);color:var(--selection-foreground)}.ds-quick-chip:focus-visible{outline:2px solid var(--ring);outline-offset:1px}.ds-member{margin:1rem 0 0 2rem;padding:1rem;border-radius:16px 4px 16px 16px;background:var(--bubble-mine);color:var(--bubble-mine-foreground);font-size:1rem;line-height:1.625;white-space:pre-wrap;overflow-wrap:anywhere}.ds-reply{margin:.75rem 1rem 0 0;padding:1rem;border-radius:4px 16px 16px;background:var(--assistant-surface);color:var(--assistant-ink);font-size:.875rem;line-height:1.625}.ds-composer{display:flex;align-items:flex-end;gap:.5rem;margin-top:1rem}.ds-question{font-family:inherit;min-width:0;flex:1;resize:none;border:0;border-radius:12px;background:var(--muted);padding:.75rem;font-size:1rem;color:var(--foreground)}.ds-question::placeholder{color:var(--muted-foreground)}.ds-question:focus-visible{outline:2px solid var(--ring)}.ds-send{display:flex;width:44px;height:44px;flex-shrink:0;align-items:center;justify-content:center;margin-bottom:.25rem;border:1.5px solid var(--brand-signature);border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:none;cursor:pointer}.ds-send:hover:not(:disabled){background:var(--primary-hover)}.ds-send:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-send:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);border-color:transparent}.ds-quick-chip,.ds-send{transition:transform 140ms var(--ease-out)}.ds-quick-chip:active:not(:disabled),.ds-send:active:not(:disabled){transform:scale(.98)}@media(prefers-reduced-motion:no-preference){.ds-reply{animation:ds-reply-arrive 200ms var(--ease-out)}@keyframes ds-reply-arrive{from{transform:translateY(5px)}to{transform:translateY(0)}}}@media(prefers-reduced-motion:reduce){.ds-quick-chip,.ds-send{transition:none}.ds-quick-chip:active,.ds-send:active{transform:none}}"
+      "description": "Warm assistant and deeper member bubbles share one record. The home avatar identifies the conversation, and its composer stays in the app footer. Local question suggestions only fill a draft; explicit send starts the request. Preview omits approved artwork and does not implement submission or app-shell behavior.",
+      "html": "<section class=\"ds-conversation\" aria-label=\"나와 비서의 대화\"><h2 class=\"ds-conversation-title\">같이 이야기해요</h2><p class=\"ds-member\">현재 어떤 단계를 확인하면 되나요?</p><p class=\"ds-reply\">홈에서 실제 진행 상황과 다음 단계를 확인해 주세요.</p><div class=\"ds-input-area\"><div class=\"ds-prompts\" role=\"group\" aria-label=\"입력에 맞는 추천 질문\"><button type=\"button\" class=\"ds-prompt\">내 프로필 표현을 코칭해줘<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 17V7h10M7 7l10 10\"/></svg></button></div><form class=\"ds-composer\"><textarea class=\"ds-question\" rows=\"2\" aria-label=\"비서에게 상담할 내용\" placeholder=\"이어서 이야기해 주세요\"></textarea><button class=\"ds-send\" type=\"button\" aria-label=\"상담 보내기\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m22 2-7 20-4-9-9-4Z\"/><path d=\"M22 2 11 13\"/></svg></button></form></div></section>",
+      "css": ".ds-conversation{font-family:var(--font-sans,\"Wanted Sans Variable\",ui-sans-serif,system-ui,sans-serif);margin-top:1.5rem;padding:.25rem 0;color:var(--foreground)}.ds-conversation-title{font-size:1rem;font-weight:600}.ds-member{margin:1rem 0 0 2rem;padding:1rem;border-radius:16px 4px 16px 16px;background:var(--bubble-mine);color:var(--bubble-mine-foreground);font-size:1rem;line-height:1.625;white-space:pre-wrap;overflow-wrap:anywhere}.ds-reply{margin:.75rem 1rem 0 0;padding:1rem;border-radius:4px 16px 16px;background:var(--assistant-surface);color:var(--assistant-ink);font-size:.875rem;line-height:1.625}.ds-input-area{margin-top:1rem;background:var(--background)}.ds-prompts{display:flex;gap:.375rem;overflow-x:auto;scrollbar-width:none;margin:0 0 .5rem;padding:2px}.ds-prompt{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:.75rem;min-height:44px;max-width:18rem;padding:.5rem .875rem;border:0;border-radius:var(--radius-control,12px);background:var(--assistant-surface);color:var(--assistant-ink);font-family:inherit;font-size:.875rem;line-height:1.5;text-align:left;word-break:keep-all;overflow-wrap:anywhere;cursor:pointer}.ds-prompt svg{flex-shrink:0}.ds-prompt:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-prompt:disabled{opacity:.5}.ds-composer{display:flex;align-items:flex-end;gap:.5rem;padding:.375rem;border:1px solid var(--input);border-radius:var(--radius-surface,16px);background:var(--card)}.ds-question{font-family:inherit;min-width:0;flex:1;resize:none;border:0;border-radius:12px;background:transparent;padding:.75rem;font-size:1rem;color:var(--foreground)}.ds-question::placeholder{color:var(--muted-foreground)}.ds-question:focus-visible{outline:2px solid var(--ring)}.ds-send{display:flex;width:44px;height:44px;flex-shrink:0;align-items:center;justify-content:center;margin-bottom:.25rem;border:1.5px solid var(--brand-signature);border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:none;cursor:pointer}.ds-send:hover:not(:disabled){background:var(--primary-hover)}.ds-send:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.ds-send:disabled{pointer-events:none;cursor:not-allowed;background:var(--muted);color:var(--muted-foreground);border-color:transparent}.ds-prompt,.ds-send{transition:transform 140ms var(--ease-out)}.ds-prompt:active:not(:disabled),.ds-send:active:not(:disabled){transform:scale(.98)}@container assistant-viewport (max-height:420px){.ds-input-area .ds-prompts{display:none}.ds-input-area textarea{height:44px}}@media(prefers-reduced-motion:no-preference){.ds-reply{animation:ds-reply-arrive 200ms var(--ease-out)}@keyframes ds-reply-arrive{from{transform:translateY(5px)}to{transform:translateY(0)}}}@media(prefers-reduced-motion:reduce){.ds-prompt,.ds-send{transition:none}.ds-prompt:active,.ds-send:active{transform:none}}"
     },
     {
       "name": "Switch",
@@ -984,10 +994,10 @@
   ],
   "narrative": {
     "northStar": "White & Pink Concierge",
-    "overview": "After pairs white action surfaces and pink outlines with clear neutral reading surfaces and a detailed adult assistant character. A personal greeting leads into the member's actual progress; compact controls and comfortable conversational text keep the next action easy to find. Korean, Latin text, and numbers share the self-hosted Wanted Sans family.\n\nWhite is the light canvas and neutral charcoal is the dark canvas. Pink remains the brand signature in both themes; action surfaces follow the theme and action ink stays neutral and readable. Small assistant avatars identify the speaker beside conversational content; human profile photography remains contextual to the person being introduced. The user confirmed this direction on 2026-10-25.",
+    "overview": "After pairs white action surfaces and pink outlines with warm rose conversation surfaces and a detailed adult assistant character. A personal greeting leads into the member's actual progress; compact controls and comfortable conversational text keep the next action easy to find. Korean, Latin text, and numbers share the self-hosted Wanted Sans family.\n\nWhite is the light canvas and neutral charcoal is the dark canvas. Pink remains the brand signature in both themes; action surfaces follow the theme and action ink stays neutral and readable. Small assistant avatars identify the speaker beside conversational content; human profile photography remains contextual to the person being introduced. The user confirmed this direction on 2026-10-25 and refined conversation warmth and filled tab selection on 2026-10-27.",
     "keyCharacteristics": [
       "White light-theme action surfaces, pink outlines, pale selections, and high-contrast neutral ink.",
-      "Neutral assistant speech, a white light canvas, and a charcoal dark canvas.",
+      "Warm rose assistant speech, a white light canvas, and a charcoal dark canvas.",
       "Detailed adult character avatars beside assistant messages.",
       "A mobile frame with stable chrome and an independently scrolling body.",
       "Brief tactile feedback that respects reduced motion."
@@ -1018,7 +1028,7 @@
       "Do derive status titles and appointment facts from real state and retain existing capability gates."
     ],
     "donts": [
-      "Don't use pale pink as text, icon, or focus ink; preserve neutral readable ink and neutral assistant reading surfaces.",
+      "Don't use pale pink as text, icon, or focus ink; preserve neutral readable ink on warm assistant reading surfaces.",
       "Don't redraw, artistically simplify, or transform the approved detailed v2 character assets.",
       "Don't put an AI portrait into the compact appointment card or impersonate a counterpart's message.",
       "Don't introduce decorative eyebrow labels above already clear titles.",

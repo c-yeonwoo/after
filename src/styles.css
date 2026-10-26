@@ -192,7 +192,7 @@
   --motion-feedback: 140ms;
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
-  --assistant-surface: oklch(0.96667 0.00171 247.84);
+  --assistant-surface: oklch(0.979 0.012 15);
   --assistant-ink: oklch(0.35309 0.0124 273.05);
   --assistant-soft: oklch(0.98 0.001 250);
 
@@ -249,7 +249,7 @@
   --selection: var(--brand-50);
   --selection-foreground: oklch(0.46351 0.02203 306.31); /* #5C5663 */
 
-  --bubble-mine: var(--brand-50);
+  --bubble-mine: oklch(0.935 0.032 15);
   --bubble-mine-foreground: var(--selection-foreground);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -281,7 +281,7 @@
 }
 
 .dark {
-  --assistant-surface: oklch(0.32011 0.00982 260.71);
+  --assistant-surface: oklch(0.285 0.019 350);
   --assistant-ink: oklch(0.96 0.002 260);
   --assistant-soft: oklch(0.26406 0.008 264.43);
   --scrim: oklch(0.12 0.012 169 / 64%);
@@ -440,6 +440,79 @@
 .assistant-home-status {
   min-width: 0;
 }
+.home-progress {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-surface);
+  background: var(--assistant-surface);
+}
+.assistant-conversation-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.assistant-prompts {
+  display: grid;
+  gap: 0.375rem;
+  margin-block: 0.75rem;
+}
+.assistant-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--radius-control);
+  background: var(--assistant-surface);
+  color: var(--assistant-ink);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: left;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.assistant-prompt:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.assistant-prompt:disabled {
+  opacity: 0.5;
+}
+.assistant-input-area {
+  background: var(--background);
+}
+.assistant-input-area .assistant-prompts {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-block: 0 0.5rem;
+  padding: 2px;
+}
+.assistant-input-area .assistant-prompt {
+  flex: 0 0 auto;
+  max-width: 18rem;
+  padding-block: 0.5rem;
+}
+.app-form-screen {
+  container: assistant-viewport / size;
+}
+@container assistant-viewport (max-height: 420px) {
+  .assistant-input-area .assistant-prompts {
+    display: none;
+  }
+  .assistant-input-area textarea {
+    height: 44px;
+  }
+}
+.app-footer:has(> #assistant-home-composer:empty) {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-tab {
+    transition: none;
+  }
+}
 .assistant-home-status h1 {
   font-size: 1.5rem;
   line-height: 1.4;
@@ -523,6 +596,18 @@
   border-radius: 4px 16px 16px;
   background: var(--assistant-surface);
   color: var(--assistant-ink);
+}
+.profile-coaching {
+  border-radius: var(--radius-surface);
+  padding: 1.25rem;
+  background: var(--assistant-surface);
+}
+.profile-coaching-quote {
+  margin-block: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
 }
 .assistant-checklist {
   display: grid;
@@ -805,10 +890,22 @@
   border-radius: 1rem 1rem 0 0;
 }
 
+.app-tab-segments {
+  padding: 0.5rem 1.25rem;
+}
+.app-tab {
+  border-radius: var(--radius-control);
+  transition:
+    background-color 180ms ease-out,
+    color 180ms ease-out;
+}
+.app-tab[aria-current="page"] {
+  background: var(--bubble-mine);
+  color: var(--bubble-mine-foreground);
+  font-weight: 700;
+}
 .app-tab[aria-current="page"] .app-tab-icon {
-  border: 1.5px solid var(--brand-200);
-  background: var(--card);
-  animation: after-tab-select 260ms var(--ease-out);
+  color: inherit;
 }
 
 .readiness-status {

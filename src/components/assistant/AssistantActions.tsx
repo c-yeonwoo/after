@@ -28,6 +28,12 @@ export function AssistantActions({
           </>
         );
         switch (action) {
+          case "settings":
+            return (
+              <Link key={action} className={style} to="/settings">
+                {content("소개 설정")}
+              </Link>
+            );
           case "account":
             return (
               <Link key={action} className={style} to="/signup" search={{ prepare: true }}>

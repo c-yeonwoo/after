@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from "react";
+import { useRef, useState, type ComponentProps } from "react";
 import { AssistantConversation } from "./AssistantConversation";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUp } from "lucide-react";
@@ -10,6 +10,7 @@ import { privateAssistantSafety } from "../../../supabase/functions/_shared/assi
 import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { useMe } from "@/lib/me";
 import { setAssistantDraft } from "@/lib/assistantDraft";
+import { AssistantPrompts } from "./AssistantPrompts";
 
 export function AssistantDock(props: Omit<ComponentProps<typeof LegacyAssistantDock>, "flags">) {
   const { me } = useMe();
@@ -58,12 +59,13 @@ function LegacyAssistantDock({
   const { me } = useMe();
   const navigate = useNavigate();
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [safety, setSafety] = useState<string | null>(null);
   const inputIntent = assistantIntent(input.trim());
   const awaitingCapabilities =
-    flags.isPending && ["unknown", "edit", "edit_story"].includes(inputIntent);
+    flags.isPending && ["unknown", "edit", "edit_story", "coach_profile"].includes(inputIntent);
   const reply = intent
     ? assistantReply(intent, {
         gender: me?.gender ?? null,
@@ -83,7 +85,10 @@ function LegacyAssistantDock({
       {showIdentity ? (
         <div className="flex items-center gap-2.5">
           <AssistantMark />
-          <h2 className="text-sm font-semibold">애프터 AI에게 물어보세요</h2>
+          <div>
+            <h2 className="text-base font-semibold">같이 이야기해요</h2>
+            <p className="mt-1 text-xs text-muted-foreground">애프터 AI · 소개부터 만남 준비까지</p>
+          </div>
         </div>
       ) : null}
       <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
@@ -126,6 +131,25 @@ function LegacyAssistantDock({
           ) : null}
         </div>
       ) : null}
+      {!reply && !safety ? (
+        <AssistantPrompts
+          input={input}
+          canCoach={false}
+          onChoose={(text) => {
+            setInput(text);
+            inputRef.current?.focus();
+          }}
+        />
+      ) : input ? (
+        <AssistantPrompts
+          input={input}
+          canCoach={false}
+          onChoose={(text) => {
+            setInput(text);
+            inputRef.current?.focus();
+          }}
+        />
+      ) : null}
       <form
         className="assistant-composer mt-4 flex items-center gap-2"
         aria-busy={awaitingCapabilities}
@@ -143,7 +167,11 @@ function LegacyAssistantDock({
               return;
             }
             const next = assistantIntent(text);
-            if (["unknown", "edit", "edit_story"].includes(next) && flags.isPending) return;
+            if (
+              ["unknown", "coach_profile", "edit", "edit_story"].includes(next) &&
+              flags.isPending
+            )
+              return;
             if (
               next === "edit_story" &&
               me?.onboarding_step &&
@@ -155,7 +183,7 @@ function LegacyAssistantDock({
               setAssistantDraft(me.id, text);
               void navigate({ to: "/assistant-profile" });
             } else if (
-              next === "unknown" &&
+              (next === "unknown" || next === "coach_profile") &&
               me &&
               flags.data?.chat &&
               !flags.isError &&
@@ -173,6 +201,7 @@ function LegacyAssistantDock({
         }}
       >
         <input
+          ref={inputRef}
           aria-label="비서에게 물어볼 내용"
           placeholder="궁금한 점을 편하게 물어보세요"
           value={input}

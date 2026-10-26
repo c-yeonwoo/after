@@ -15,6 +15,7 @@ export type AssistantAction =
   | "appointments"
   | "memory"
   | "support"
+  | "settings"
   | "prepare"
   | "home";
 export type AssistantReply = { text: string; actions: AssistantAction[] };
@@ -102,6 +103,12 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
         "프로필 수정",
         context.complete ? (context.profileEdit ? ["revise", "edit"] : ["edit"]) : ["account"],
       );
+    case "coach_profile":
+      return {
+        text: "내 프로필에서 표현을 점검할 수 있어요. AI 상담이 열리면 원문을 함께 읽고 코칭해요.",
+        actions: [context.complete ? "profile" : "account"],
+      };
+    /* General edit preserves the existing confirmation flow. */
     case "edit_photo":
       return generic("사진 바꿔줘", [context.complete ? "edit" : "account"]);
     case "edit_facts":
@@ -125,8 +132,8 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
         };
       if (context.complete && context.state === "paused")
         return {
-          text: "소개를 잠시 쉬고 있어요. 홈의 소개 설정에서 다시 받을 수 있어요.",
-          actions: ["home"],
+          text: "소개를 잠시 쉬고 있어요. 나 → 환경설정에서 다시 받을 수 있어요.",
+          actions: ["settings"],
         };
       return generic("소개 보여줘", [context.complete ? "intro" : "account"]);
     case "interest":
