@@ -5,7 +5,7 @@
 --   1) **비로그인은 티켓을 만들 수 없다.** issue_ticket 이 PUBLIC 에 열려 있던
 --      기간이 있었다 — s19 가 인자를 늘리며 새 함수를 만들고 revoke 를 잊었다.
 --      한 함수만 보지 않고 "anon 이 실행 가능한 SECURITY DEFINER 함수" 전체를
---      가입 전 capability 두 함수 외에는 0건으로 고정한다.
+--      가입 전 capability 함수 외에는 0건으로 고정한다.
 --   2) **배제는 세 지점에서 성립한다.** 큐 · 개시 · 열람. 한 곳만 막으면
 --      "차단했는데 또 나왔다" 가 다시 생긴다.
 --   3) **여성은 거절할 수 있고, 거절은 상대의 돈을 즉시 푼다.**
@@ -44,7 +44,7 @@ values
 -- ─────────────── ① 발급 권한 ───────────────
 
 /*
-  가입 전 capability 두 함수만 정확한 시그니처로 허용한다. 나머지 표면 전체와
+  가입 전 capability 함수만 정확한 시그니처로 허용한다. 나머지 표면 전체와
   트리거 함수에는 비로그인 실행 권한이 없어야 한다.
 */
 select is_empty(
@@ -53,6 +53,7 @@ select is_empty(
       where n.nspname = 'public' and p.prokind = 'f' and p.prosecdef
         and has_function_privilege('anon', p.oid, 'EXECUTE')
         and p.oid not in ('public.begin_signup(text,text)'::regprocedure,
+                          'public.begin_signup_with_manager(text,text,text)'::regprocedure,
                           'public.signup_session_status(text)'::regprocedure) $$,
   'T1 사전 가입 세션 외에는 anon이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
 );

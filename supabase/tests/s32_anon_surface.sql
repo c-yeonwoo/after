@@ -1,4 +1,4 @@
--- S32 — 비로그인 표면은 가입 전 capability 두 함수로 제한한다
+-- S32 — 비로그인 표면은 가입 전 capability 함수로 제한한다
 --
 -- 이 검사가 있는 이유는 s28 의 함수 검사와 같다. 한 자리를 고치는 것으로는
 -- 부족하고, **표면 전체를 0으로 고정해야** 다음에 누가 잊어도 여기서 걸린다.
@@ -33,10 +33,12 @@ select is_empty(
       where n.nspname = 'public' and p.prokind = 'f' and p.prosecdef
         and has_function_privilege('anon', p.oid, 'EXECUTE')
         and p.oid not in ('public.begin_signup(text,text)'::regprocedure,
+                          'public.begin_signup_with_manager(text,text,text)'::regprocedure,
                           'public.signup_session_status(text)'::regprocedure) $$,
   'T2 사전 가입 세션 외에는 anon이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
 );
 select ok(has_function_privilege('anon','public.begin_signup(text,text)','EXECUTE')
+  and has_function_privilege('anon','public.begin_signup_with_manager(text,text,text)','EXECUTE')
   and has_function_privilege('anon','public.signup_session_status(text)','EXECUTE'),
   'T3 동의 생성과 비밀 토큰을 가진 본인의 상태 확인만 가입 전에 허용한다');
 

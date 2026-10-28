@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 
 // Existing dev server only. Every backend request is fulfilled in this isolated
@@ -233,7 +233,9 @@ const summary = {
   ],
 };
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch();
+const engine = process.env.AFTER_TEST_BROWSER ?? "chromium";
+assert.ok(["chromium", "webkit"].includes(engine));
+const browser = await (engine === "webkit" ? webkit : chromium).launch();
 
 async function capture(page, name) {
   const path = join(output, `${name}.png`);
@@ -363,6 +365,13 @@ async function verifyAssistant(page, fixture, name, backendStart) {
     assert.equal(await history.getByRole("link", { name: "약속 상세 보기" }).count(), 1);
     await history.locator("li").first().scrollIntoViewIfNeeded();
     await capture(page, `${name}-history`);
+    const field = page.getByLabel("매니저에게 상담할 내용");
+    const initialHeight = (await field.boundingBox()).height;
+    assert.ok(initialHeight >= 44 && initialHeight <= 46);
+    await field.fill("첫 줄\n두 번째 줄\n세 번째 줄");
+    assert.ok((await field.boundingBox()).height > initialHeight + 40);
+    await field.fill("");
+    assert.equal((await field.boundingBox()).height, initialHeight);
   } else {
     await page.getByRole("link", { name: "맞춤 상담 시작", exact: true }).waitFor();
     assert.equal(await page.getByRole("checkbox").count(), 0);
@@ -1011,6 +1020,20 @@ try {
             assert.equal(await page.getByRole("switch").count(), 0);
             await capture(page, name);
             const field = page.getByLabel("매니저에게 상담할 내용");
+            const emptyHeight = (await field.boundingBox()).height;
+            assert.ok(emptyHeight >= 44 && emptyHeight <= 46, "composer starts at one line");
+            await field.fill("첫 줄\n두 번째 줄\n세 번째 줄");
+            assert.ok((await field.boundingBox()).height > emptyHeight + 40, "newline grows input");
+            await field.fill("길게 쓰는 상담 내용이 자연스럽게 줄바꿈되어야 해요. ".repeat(25));
+            const longHeight = (await field.boundingBox()).height;
+            assert.ok(longHeight <= 140 && longHeight > emptyHeight, "long input has a height cap");
+            assert.ok(
+              await field.evaluate((el) => el.scrollHeight > el.clientHeight),
+              "long input scrolls internally",
+            );
+            await capture(page, `${name}-expanded`);
+            await field.fill("");
+            assert.equal((await field.boundingBox()).height, emptyHeight, "clearing shrinks input");
             await page
               .getByRole("button", {
                 name: "내 프로필의 장점과 아쉬운 표현을 코칭해줘",
@@ -1037,12 +1060,18 @@ try {
               await page.evaluate(() =>
                 document.documentElement.style.setProperty("--keyboard-height", "300px"),
               );
-              for (const value of ["소개글", "내 프로필의 장점을 코칭해줘"]) {
+              for (const value of [
+                "소개글",
+                "내 프로필의 장점을 코칭해줘",
+                "긴 상담 내용이에요. ".repeat(50),
+                "내 프로필을 코칭해줘 ".repeat(50),
+              ]) {
                 await field.fill(value);
                 const send = await page
                   .getByRole("button", { name: "상담 보내기", exact: true })
                   .boundingBox();
                 const input = await field.boundingBox();
+                assert.ok(input && input.height <= 92, "keyboard caps growth at three lines");
                 assert.ok(
                   send && input && send.y + send.height <= 268 && input.y + input.height <= 268,
                   "small keyboard viewport keeps composer and send visible",
