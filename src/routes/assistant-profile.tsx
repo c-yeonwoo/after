@@ -18,7 +18,13 @@ function AssistantProfilePage() {
     if (ready && !me) void navigate({ to: "/login" });
   }, [me, ready, navigate]);
   return (
-    <AppScreen title="프로필 다듬기" back="/home" hideTabs keyboardAware>
+    <AppScreen
+      title="프로필 다듬기"
+      back="/home"
+      hideTabs
+      keyboardAware
+      footer={<div id="profile-revision-footer" />}
+    >
       {me?.onboarding_step && me.onboarding_step >= 7 ? (
         <ProfileRevisionEditor key={me.id} owner={me.id} />
       ) : ready ? (
