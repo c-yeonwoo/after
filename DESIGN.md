@@ -318,7 +318,7 @@ Selected choices use pale pink with high-contrast selection ink in light mode, t
 
 ### Cards / Containers
 
-The confirmed appointment uses warm speech colors, the surface radius, and gutter padding. It contains real appointment facts and a pink-outline follow-up action, without an AI portrait. Home status and cards derive from the real server state, including loading, error, and required-action states.
+The confirmed appointment uses warm speech colors, the surface radius, and gutter padding. It contains real appointment facts and a pink-outline follow-up action, without an AI portrait. Home status and cards derive from the real server state, including loading, error, and required-action states. A short progress heading stays on the page surface instead of repeating a filled card above the appointment.
 
 Conversation-preparation topics use the card surface and elevated shadow. Their evidence stays an indented quotation rather than a second nested card. Profile answers use open body text without a shadow. The generic legacy Card still combines a border and framework shadow; it does not define assistant dock styling.
 
@@ -326,7 +326,9 @@ Conversation-preparation topics use the card surface and elevated shadow. Their 
 
 Shared inputs use a 48px height, field radius, card surface, and visible field border. Focus shifts the border to the focus color and adds the ring/offset treatment. Invalid input uses raspberry; disabled inputs retain their existing reduced opacity.
 
-The deterministic-help composer uses a bordered card-surface field with 6px outer padding and a transparent inline input. The shared conversation uses a transparent two-row textarea in a bordered card-surface composer and a 44px shared primary send button. Question suggestions use warm speech fill and 44px minimum targets; composer suggestions scroll horizontally. Typing and choosing a suggestion only update the local draft; sending requires the explicit send action. Member bubbles use deeper rose and assistant replies use warm speech colors with an asymmetric corner.
+The deterministic-help composer uses a bordered card-surface field with 6px outer padding and a transparent inline input. The shared conversation uses a transparent two-row textarea in a bordered card-surface composer and a 44px shared primary send button. Question suggestions use the card surface, a soft outline, and 44px minimum targets; composer suggestions scroll horizontally. Typing and choosing a suggestion only update the local draft; sending requires the explicit send action. Member bubbles use deeper rose. Saved assistant answers use open text on the page surface, with a compact speaker label; temporary guidance may use the warm speech surface.
+
+Profile revision keeps the current public text in an expandable source preview, followed by the request field and two draft-only examples. Explicit AI consent stays inside the scrolling form. Only the submit button occupies the footer so the keyboard leaves room for the field on short screens. The footer disappears while a draft is pending or under review; no fixed height is reserved for an empty slot.
 
 ### Navigation
 
@@ -344,7 +346,7 @@ The default signature is a 40px circular crop of the user-approved detailed adul
 
 Preserve the supplied detailed v2 character artwork. Cropping and sizing may serve the interface; do not redraw, simplify, stylize, or artistically transform the approved character. The profile-preparation welcome currently overrides the default mark to 56px; it is a local welcome treatment, not a larger appointment portrait.
 
-The home greeting stays portrait-free; the assistant identity sits at the conversation start. Deterministic quick help and the shared private conversation reflect actual member state; home and full-page conversation reuse the same record and feature gates.
+The home greeting stays portrait-free; the assistant identity sits at the conversation start. The compact identity row includes the single full-conversation link. Home exposes three quick actions after consent; the full conversation retains the complete action set and memory navigation. Deterministic quick help and the shared private conversation reflect actual member state; home and full-page conversation reuse the same record and feature gates. The counterpart chat offers a separate personal-assistant link only when enabled; private answers never become shared chat messages.
 
 ### Profile Question and Answer
 

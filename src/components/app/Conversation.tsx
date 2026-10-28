@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Lock, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ import {
   type MsgChannel,
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
+import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { cn } from "@/lib/utils";
 
 /**
@@ -87,6 +88,7 @@ export function Conversation({
   onMeetingChange?: (m: Meeting) => void;
 }) {
   const { me } = useMe();
+  const assistantFlags = useAssistantFlags(me?.id);
   const navigate = useNavigate();
 
   const [channel, setChannel] = useState<MsgChannel>("coord");
@@ -365,6 +367,16 @@ export function Conversation({
         >
           최근 메시지 보기
         </Button>
+      ) : null}
+      {assistantFlags.data?.chat && !assistantFlags.isError && !assistantFlags.isPaused ? (
+        <Link
+          to="/assistant"
+          search={{ panel: "chat" }}
+          className="inline-flex min-h-11 shrink-0 items-center justify-between gap-3 text-sm font-medium"
+        >
+          <span>내 비서에게 물어보기</span>
+          <span className="text-xs font-normal text-muted-foreground">상대에게는 안 보여요</span>
+        </Link>
       ) : null}
       {/* 입력 — fixed 가 아니라 플렉스 흐름의 마지막. 탭바 계산이 필요 없다. */}
       <form

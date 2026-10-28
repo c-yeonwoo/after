@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { BookmarkPlus, Send, Trash2 } from "lucide-react";
+import { ArrowUpRight, BookmarkPlus, Send, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
@@ -421,32 +421,32 @@ export function AssistantConversation({
       {compact ? (
         <div className="assistant-conversation-heading">
           <AssistantMark />
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold">같이 이야기해요</h2>
-            <p className="mt-1 text-xs text-muted-foreground">애프터 AI · 이전 대화에 이어서</p>
+            <p className="mt-1 text-xs text-muted-foreground">애프터 AI</p>
           </div>
+          {data?.consented ? (
+            <Link
+              to="/assistant"
+              search={{ panel: "chat" }}
+              className="inline-flex min-h-11 items-center gap-1 text-sm font-medium"
+              onClick={() => setAssistantDraft(owner, input)}
+            >
+              대화 전체 보기 <ArrowUpRight className="size-4" aria-hidden="true" />
+            </Link>
+          ) : null}
         </div>
       ) : null}
-      <nav
-        className={compact ? "mb-2 flex items-center gap-2" : "mb-4 flex items-center gap-2"}
-        aria-label="비서 메뉴"
-      >
-        <Link
-          to="/assistant"
-          search={{ panel: "chat" }}
-          aria-current={panel === "chat" ? "page" : undefined}
-          className={
-            compact
-              ? "inline-flex min-h-11 items-center text-sm font-semibold text-primary-strong"
-              : `assistant-suggestion ${panel === "chat" ? "!bg-selection !text-selection-foreground" : ""}`
-          }
-          onClick={() => {
-            if (compact) setAssistantDraft(owner, input);
-          }}
-        >
-          {compact ? "대화 전체 보기" : "대화"}
-        </Link>
-        {!compact ? (
+      {!compact ? (
+        <nav className="mb-4 flex items-center gap-2" aria-label="비서 메뉴">
+          <Link
+            to="/assistant"
+            search={{ panel: "chat" }}
+            aria-current={panel === "chat" ? "page" : undefined}
+            className={`assistant-suggestion ${panel === "chat" ? "!bg-selection !text-selection-foreground" : ""}`}
+          >
+            대화
+          </Link>
           <Link
             to="/assistant"
             search={{ panel: "memory" }}
@@ -455,24 +455,25 @@ export function AssistantConversation({
           >
             기억 관리
           </Link>
-        ) : null}
-      </nav>
-      {panel === "chat" ? (
+        </nav>
+      ) : null}
+      {panel === "chat" && (!compact || data?.consented) ? (
         <>
           <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
-            {["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리", "티켓 가격"].map(
-              (text) => (
-                <button
-                  type="button"
-                  key={text}
-                  className="assistant-quick-chip pressable"
-                  aria-pressed={guide === text}
-                  onClick={() => setGuide(text)}
-                >
-                  <span className="assistant-quick-chip-label">{text}</span>
-                </button>
-              ),
-            )}
+            {(compact
+              ? ["소개 확인", "내 프로필 수정", "일정 정리"]
+              : ["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리", "티켓 가격"]
+            ).map((text) => (
+              <button
+                type="button"
+                key={text}
+                className="assistant-quick-chip pressable"
+                aria-pressed={guide === text}
+                onClick={() => setGuide(text)}
+              >
+                <span className="assistant-quick-chip-label">{text}</span>
+              </button>
+            ))}
           </div>
           {guideReply ? (
             <div className="assistant-reply mb-5" role="status">
@@ -499,13 +500,9 @@ export function AssistantConversation({
       ) : (
         <>
           {!data.consented ? (
-            <section className="assistant-status">
-              <AssistantMark />
-              <h2 className="mt-4 text-2xl font-bold break-keep">
-                나에게 맞는 만남을,
-                <br />
-                같이 준비해요.
-              </h2>
+            <section className="assistant-consent">
+              {!compact ? <AssistantMark /> : null}
+              <h2 className="mt-3 text-lg font-semibold break-keep">편하게 물어보세요.</h2>
               <p className="mt-3 text-sm leading-relaxed">
                 상담은 상대에게 전송되지 않아요. 공개 프로필과도 분리해서 다뤄요.
               </p>
@@ -594,7 +591,7 @@ export function AssistantConversation({
                   />
                 </div>
               ) : (
-                <ol className="mt-4 space-y-5" aria-label="나만의 상담 기록">
+                <ol className="assistant-transcript mt-4 space-y-5" aria-label="나만의 상담 기록">
                   {(compact ? visibleTurns.slice(-3) : visibleTurns).map((turn) => (
                     <li key={turn.id}>
                       {!turn.kind || turn.kind === "conversation" ? (

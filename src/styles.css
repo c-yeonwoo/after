@@ -441,15 +441,13 @@
   min-width: 0;
 }
 .home-progress {
-  padding: 0.875rem 1rem;
-  border-radius: var(--radius-surface);
-  background: var(--assistant-surface);
+  padding-block: 0.25rem;
 }
 .assistant-conversation-heading {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 .assistant-prompts {
   display: grid;
@@ -464,8 +462,9 @@
   min-height: 44px;
   padding: 0.75rem 0.875rem;
   border-radius: var(--radius-control);
-  background: var(--assistant-surface);
-  color: var(--assistant-ink);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
   font-size: 0.875rem;
   line-height: 1.5;
   text-align: left;
@@ -596,6 +595,28 @@
   border-radius: 4px 16px 16px;
   background: var(--assistant-surface);
   color: var(--assistant-ink);
+}
+.assistant-transcript .assistant-reply {
+  padding: 0.5rem 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--foreground);
+}
+.assistant-consent {
+  padding-block: 0.25rem 1rem;
+}
+.app-footer:has(> #profile-revision-footer:empty) {
+  display: none;
+}
+.profile-revision-context {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-surface);
+  background: var(--card);
+}
+.profile-revision-footer {
+  display: grid;
+  gap: 0.5rem;
 }
 .profile-coaching {
   border-radius: var(--radius-surface);

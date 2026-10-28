@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, RefreshCw, Send } from "lucide-react";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ function revisionError(code: string): string {
 }
 
 export function ProfileRevisionEditor({ owner }: { owner: string }) {
-  const { refresh } = useMe();
+  const { me, refresh } = useMe();
   const client = useQueryClient();
   const live = useMemberLiveQuery("profile-revision", owner, getProfileRevision);
   const state = live.isError || live.isPaused ? undefined : live.data;
@@ -51,11 +52,14 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recovery, setRecovery] = useState(false);
+  const [footer, setFooter] = useState<HTMLElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const sending = useRef(false);
   const alive = useRef(true);
   const request = useRef<{ id: string; text: string } | null>(null);
   useEffect(() => {
     alive.current = true;
+    setFooter(document.getElementById("profile-revision-footer"));
     const text = takeAssistantDraft(owner);
     if (text) setInstruction(text);
     return () => {
@@ -170,14 +174,27 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
       }
     });
 
+  const submitControls = (
+    <div className="profile-revision-footer">
+      <Button
+        className="w-full"
+        type="submit"
+        form="profile-revision-form"
+        disabled={busy || !consent || instruction.trim().length < 3 || recovery}
+      >
+        <Send aria-hidden="true" />
+        {busy ? "다듬는 중…" : "비서와 다듬기"}
+      </Button>
+    </div>
+  );
   return (
     <div className="space-y-6 pb-6">
       <div className="flex items-start gap-3">
         <AssistantMark className="size-10 shrink-0" />
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold leading-snug">조금 더 나답게 다듬어볼까요?</h2>
+          <h2 className="text-lg font-semibold leading-snug">내 매력이 더 잘 전해지게.</h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            바꾸고 싶은 점을 말해주세요. 글을 함께 보고 반영해요.
+            바꾸고 싶은 점을 알려주세요. 반영 전 함께 확인해요.
           </p>
         </div>
       </div>
@@ -225,25 +242,62 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
             <RevisionReview draft={review} busy={busy} onDecide={decide} />
           ) : (
             <form
-              className="space-y-3"
+              id="profile-revision-form"
+              className="space-y-4"
               onSubmit={(event) => {
                 event.preventDefault();
                 void generate();
               }}
             >
+              {me?.headline || me?.intro ? (
+                <details className="profile-revision-context">
+                  <summary className="min-h-11 cursor-pointer text-sm font-semibold">
+                    현재 소개글 확인
+                    {me.headline ? (
+                      <span className="mt-2 block text-base font-medium leading-relaxed">
+                        {me.headline}
+                      </span>
+                    ) : null}
+                  </summary>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                    {me.intro || "소개글을 아직 작성하지 않았어요."}
+                  </p>
+                </details>
+              ) : null}
               <label className="block text-sm font-semibold" htmlFor="profile-revision-instruction">
                 어떻게 바꿔볼까요?
               </label>
               <Textarea
+                ref={inputRef}
                 id="profile-revision-instruction"
                 value={instruction}
                 onChange={(event) => setInstruction(event.target.value)}
                 maxLength={1000}
                 rows={4}
                 disabled={busy}
-                placeholder="산책은 가끔 하는 정도예요. 대신 요즘 배우는 도예 이야기를 넣어주세요."
+                placeholder="예: 낯을 가린다는 표현을 조금 더 부드럽게 바꿔줘."
                 aria-describedby="profile-revision-hint"
               />
+              <div className="flex flex-wrap gap-2" role="group" aria-label="다듬기 요청 예시">
+                {[
+                  ["말투 부드럽게", "내 말투를 유지하면서 문장을 부드럽게 다듬어줘"],
+                  ["반복 줄이기", "반복되는 표현을 줄이고 읽기 쉽게 정리해줘"],
+                ].map(([label, text]) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => {
+                      setInstruction(text);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
               <p
                 id="profile-revision-hint"
                 className="text-xs leading-relaxed text-muted-foreground"
@@ -260,14 +314,7 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
                 />
                 <span>현재 공개 글과 이 요청을 AI에 보내 다듬는 데 동의해요.</span>
               </label>
-              <Button
-                className="w-full"
-                type="submit"
-                disabled={busy || !consent || instruction.trim().length < 3 || recovery}
-              >
-                <Send aria-hidden="true" />
-                {busy ? "다듬는 중…" : "비서와 다듬기"}
-              </Button>
+              {footer ? createPortal(submitControls, footer) : submitControls}
               {instruction.trim().length > 0 && instruction.trim().length < 3 && (
                 <p className="text-xs text-muted-foreground">
                   바꾸고 싶은 점을 세 글자 이상 알려주세요.
