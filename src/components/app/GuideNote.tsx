@@ -69,7 +69,7 @@ export function GuideNote({
     /*
       안내 문장은 바탕에 직접 두고, 행동만 별도 버튼으로 구분한다.
     */
-    <div className="space-y-4" aria-label={assistant ? "비서 안내" : undefined}>
+    <div className="space-y-4" aria-label={assistant ? "매니저 안내" : undefined}>
       <div className={assistant ? "flex items-start gap-3" : undefined}>
         {assistant ? <AssistantMark className="shrink-0" /> : null}
         <div className="min-w-0">

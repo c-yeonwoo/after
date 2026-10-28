@@ -62,7 +62,7 @@ export function AssistantActions({
                   if (draft) setAssistantDraft(draft.owner, draft.text);
                 }}
               >
-                {content("비서와 프로필 다듬기")}
+                {content("매니저와 프로필 다듬기")}
               </Link>
             );
           case "intro":
@@ -86,7 +86,7 @@ export function AssistantActions({
           case "schedule":
             return (
               <Link key={action} className={style} to="/assistant-schedule">
-                {content("비서와 일정 정리")}
+                {content("매니저와 일정 정리")}
               </Link>
             );
           case "availability":

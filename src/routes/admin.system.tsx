@@ -116,7 +116,7 @@ function SystemTab() {
       if (assistantStatus.status === "fulfilled") setAssistant(assistantStatus.value);
       else {
         setAssistant(null);
-        failed.push("비서 운영 현황");
+        failed.push("매니저 운영 현황");
       }
       setErrors(failed);
       setCheckedAt(new Date());
@@ -177,7 +177,7 @@ function SystemTab() {
 
       {assistant ? (
         <Section
-          title="개인 비서 · 최근 24시간"
+          title="개인 매니저 · 최근 24시간"
           hint="상담·기억 원문은 운영자에게 표시하지 않습니다. 초안 만료는 자동 실행 실패가 아닙니다."
         >
           <div className="mb-4 flex flex-wrap gap-2">

@@ -81,13 +81,13 @@ function LegacyAssistantDock({
       })
     : null;
   return (
-    <section className="assistant-dock" aria-label="비서에게 물어보기">
+    <section className="assistant-dock" aria-label="매니저에게 물어보기">
       {showIdentity ? (
         <div className="flex items-center gap-2.5">
           <AssistantMark />
           <div>
             <h2 className="text-base font-semibold">같이 이야기해요</h2>
-            <p className="mt-1 text-xs text-muted-foreground">애프터 AI · 소개부터 만남 준비까지</p>
+            <p className="mt-1 text-xs text-muted-foreground">애프터 매니저 · 나를 알아가는 AI</p>
           </div>
         </div>
       ) : null}
@@ -202,7 +202,7 @@ function LegacyAssistantDock({
       >
         <input
           ref={inputRef}
-          aria-label="비서에게 물어볼 내용"
+          aria-label="매니저에게 물어볼 내용"
           placeholder="궁금한 점을 편하게 물어보세요"
           value={input}
           maxLength={300}
@@ -213,7 +213,7 @@ function LegacyAssistantDock({
         <button
           type="submit"
           disabled={!input.trim() || awaitingCapabilities}
-          aria-label="비서에게 질문하기"
+          aria-label="매니저에게 질문하기"
           className="app-primary-button pressable flex size-11 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:bg-muted disabled:text-muted-foreground"
         >
           <ArrowUp className="size-5" />

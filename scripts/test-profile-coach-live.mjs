@@ -61,7 +61,10 @@ try {
     const client = createClient(env.API_URL, env.ANON_KEY, { auth: { persistSession: false } });
     const login = await client.auth.signInWithPassword({ email, password });
     assert.ifError(login.error);
-    const consent = await client.rpc("assistant_consent", { p_agree: true });
+    const consent = await client.rpc("assistant_manager_consent", {
+      p_agree: true,
+      p_policy_version: "manager-continuity-v2",
+    });
     assert.ifError(consent.error);
     const before = await client.rpc("my_assistant_state");
     assert.ifError(before.error);

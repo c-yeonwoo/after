@@ -269,7 +269,7 @@ async function signup(person, i) {
     `0100000008${i}`,
   );
   await page.getByRole("button", { name: "인증 없이 계속" }).click();
-  await page.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
+  await page.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
   await page.getByRole("button", { name: "프로필 준비 시작", exact: true }).click();
   await page.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   const image = await page.evaluate((name) => {
@@ -392,8 +392,8 @@ async function openAndRequest(male, beta = false, expectedReason) {
   const page = male.page;
   await page.goto(`${base}/home`);
   await waitForHome(page);
-  await page.getByLabel("비서에게 물어볼 내용").fill("소개 보여줘");
-  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page.getByLabel("매니저에게 물어볼 내용").fill("소개 보여줘");
+  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   await page
     .locator(".assistant-reply")
     .getByRole("link", { name: "소개 확인하기", exact: true })
@@ -641,7 +641,7 @@ try {
         })
         .waitFor();
       assert.equal(await m1.page.locator(".home-greeting h1").innerText(), headline);
-      await m1.page.getByLabel("비서에게 물어볼 내용").waitFor();
+      await m1.page.getByLabel("매니저에게 물어볼 내용").waitFor();
       assert.equal(await m1.page.getByRole("switch").count(), 0);
     } finally {
       // An assertion failure must not leave every later cycle with a forced outage.
@@ -662,8 +662,8 @@ try {
     await check(`${f.key} evaluates both men with explicit like/pass`, async () => {
       await f.page.goto(`${base}/home`);
       await waitForHome(f.page);
-      await f.page.getByLabel("비서에게 물어볼 내용").fill("티켓 구매하고 싶어");
-      await f.page.getByRole("button", { name: "비서에게 질문하기" }).click();
+      await f.page.getByLabel("매니저에게 물어볼 내용").fill("티켓 구매하고 싶어");
+      await f.page.getByRole("button", { name: "매니저에게 질문하기" }).click();
       await f.page
         .getByText("현재 여성 회원에게 티켓 구매를 요청하지 않아요.", { exact: false })
         .waitFor();
@@ -674,13 +674,13 @@ try {
           .count(),
         0,
       );
-      await f.page.getByLabel("비서에게 물어볼 내용").fill("호감 보내줘");
-      await f.page.getByRole("button", { name: "비서에게 질문하기" }).click();
+      await f.page.getByLabel("매니저에게 물어볼 내용").fill("호감 보내줘");
+      await f.page.getByRole("button", { name: "매니저에게 질문하기" }).click();
       await f.page
         .locator(".assistant-reply")
         .getByRole("link", { name: "소개 확인하기", exact: true })
         .click();
-      await f.page.getByLabel("비서 안내", { exact: true }).waitFor();
+      await f.page.getByLabel("매니저 안내", { exact: true }).waitFor();
       for (let n = 0; n < 2; n++) {
         await f.page.getByRole("button", { name: "좋아요", exact: true }).waitFor();
         const current = (await f.page.getByRole("main").innerText()).includes(m1.name) ? m1 : m2;

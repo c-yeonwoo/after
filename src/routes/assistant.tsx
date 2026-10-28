@@ -10,7 +10,9 @@ export const Route = createFileRoute("/assistant")({
   validateSearch: (s: Record<string, unknown>) => ({
     panel: s.panel === "memory" ? ("memory" as const) : ("chat" as const),
   }),
-  head: () => ({ meta: [{ title: "나와 비서 — 애프터" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "나와 매니저 — 애프터" }, { name: "robots", content: "noindex" }],
+  }),
   component: AssistantPage,
 });
 
@@ -39,8 +41,8 @@ function AssistantPage() {
       }}
     />
   ) : (
-    <AppScreen title="나와 비서" back="/home" hideTabs>
-      <p className="py-8">프로필을 준비하면 비서와 이야기를 나눌 수 있어요.</p>
+    <AppScreen title="나와 매니저" back="/home" hideTabs>
+      <p className="py-8">프로필을 준비하면 매니저와 이야기를 나눌 수 있어요.</p>
     </AppScreen>
   );
 }

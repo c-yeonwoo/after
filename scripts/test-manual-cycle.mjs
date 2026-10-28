@@ -97,8 +97,8 @@ async function login(role) {
 }
 async function ask(page, text, action) {
   await go(page, "/home");
-  await page.getByLabel("비서에게 물어볼 내용").fill(text);
-  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page.getByLabel("매니저에게 물어볼 내용").fill(text);
+  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   const link = page.locator(".assistant-reply").getByRole("link", { name: action, exact: true });
   await link.waitFor();
   return link;
@@ -298,7 +298,7 @@ try {
   await male.getByRole("button", { name: /후보 1개로 요청하기/ }).click();
   await male.getByText("답변을 기다리는 중입니다", { exact: true }).waitFor();
   assert.equal(cycleStatus(env, manifest).meetings, 1);
-  await (await ask(female, "약속 잡아줘", "비서와 일정 정리")).click();
+  await (await ask(female, "약속 잡아줘", "매니저와 일정 정리")).click();
   await female.getByRole("radio").first().check();
   await female.getByRole("button", { name: "전달 전 초안 보기", exact: true }).click();
   await female.getByRole("region", { name: "일정 초안", exact: true }).waitFor();

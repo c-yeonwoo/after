@@ -163,7 +163,7 @@ function SettingsPage() {
           search={{ panel: "memory" }}
           className="mb-4 flex min-h-12 items-center rounded-control bg-card px-4 text-sm font-semibold"
         >
-          비서의 기억·상담 기록 관리
+          매니저의 기억·상담 기록 관리
         </Link>
       ) : null}
       <section className="mt-3 border-b border-border pb-6">

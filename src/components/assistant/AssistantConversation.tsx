@@ -2,18 +2,18 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowUpRight, BookmarkPlus, Send, Trash2 } from "lucide-react";
+import { ArrowUpRight, Send, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
 import { AssistantPrompts } from "@/components/assistant/AssistantPrompts";
+import { privateAssistantSafety } from "../../../supabase/functions/_shared/assistant-private";
 import { assistantIntent } from "@/lib/assistant";
 import {
   assistantReply,
   historicalAssistantActions,
   type AssistantContext,
 } from "@/lib/assistantExperience";
-import { privateAssistantSafety } from "../../../supabase/functions/_shared/assistant-private";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMe } from "@/lib/me";
@@ -41,7 +41,7 @@ function ConversationFrame({
     setHomeFooter(compact ? document.getElementById("assistant-home-composer") : null);
   }, [compact]);
   return compact ? (
-    <section aria-label="나와 비서의 대화" className="assistant-dock">
+    <section aria-label="나와 매니저의 대화" className="assistant-dock">
       {children}
       {footer ? (
         homeFooter ? (
@@ -52,7 +52,7 @@ function ConversationFrame({
       ) : null}
     </section>
   ) : (
-    <AppScreen title="나와 비서" back="/home" hideTabs keyboardAware footer={footer}>
+    <AppScreen title="나와 매니저" back="/home" hideTabs keyboardAware footer={footer}>
       {children}
     </AppScreen>
   );
@@ -114,9 +114,7 @@ export function AssistantConversation({
         ...new Map(
           [...previous.turns, ...data.turns].map((turn) => [turn.id, turn] as const),
         ).values(),
-      ]
-        .filter((turn) => Date.parse(turn.created_at) > Date.now() - 30 * 86400_000)
-        .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+      ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
       if (
         turns.length === previous.turns.length &&
         turns.every((turn, index) => turn === previous.turns[index])
@@ -138,9 +136,7 @@ export function AssistantConversation({
               ? earlier.turns
               : []),
             ...data.turns,
-          ]
-            .filter((turn) => Date.parse(turn.created_at) > Date.now() - 30 * 86400_000)
-            .map((turn) => [turn.id, turn] as const),
+          ].map((turn) => [turn.id, turn] as const),
         ).values(),
       ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
     : [];
@@ -379,7 +375,7 @@ export function AssistantConversation({
               }}
             >
               <label className="min-w-0 flex-1">
-                <span className="sr-only">비서에게 상담할 내용</span>
+                <span className="sr-only">매니저에게 상담할 내용</span>
                 <textarea
                   ref={inputRef}
                   name="question"
@@ -423,7 +419,7 @@ export function AssistantConversation({
           <AssistantMark />
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold">같이 이야기해요</h2>
-            <p className="mt-1 text-xs text-muted-foreground">애프터 AI</p>
+            <p className="mt-1 text-xs text-muted-foreground">애프터 매니저</p>
           </div>
           {data?.consented ? (
             <Link
@@ -438,7 +434,7 @@ export function AssistantConversation({
         </div>
       ) : null}
       {!compact ? (
-        <nav className="mb-4 flex items-center gap-2" aria-label="비서 메뉴">
+        <nav className="mb-4 flex items-center gap-2" aria-label="매니저 메뉴">
           <Link
             to="/assistant"
             search={{ panel: "chat" }}
@@ -453,7 +449,7 @@ export function AssistantConversation({
             aria-current={panel === "memory" ? "page" : undefined}
             className={`assistant-suggestion ${panel === "memory" ? "!bg-selection !text-selection-foreground" : ""}`}
           >
-            기억 관리
+            대화 설정
           </Link>
         </nav>
       ) : null}
@@ -491,7 +487,7 @@ export function AssistantConversation({
           <p role="status">
             {live.isError || live.isPaused
               ? "연결을 확인하고 다시 불러와 주세요."
-              : "내 비서를 불러오고 있어요…"}
+              : "내 매니저를 불러오고 있어요…"}
           </p>
           <Button variant="outline" className="mt-4" onClick={() => void live.refetch()}>
             상태 다시 확인
@@ -516,9 +512,9 @@ export function AssistantConversation({
                       onChange={(e) => setAgree(e.target.checked)}
                     />
                     <span>
-                      상담 내용과 승인한 기억, 코칭 요청 시 내 공개 프로필을 AI에 보내 조언을 받고,
-                      상담 기록을 30일 보관하는 데 동의해요. 연락처·건강 등 민감한 내용은 입력하지
-                      마세요. 언제든 기록을 지우고 동의를 철회할 수 있어요.
+                      내 공개 프로필(나이·직업·활동 지역·MBTI·소개글), 상담과 관련 이전 대화를
+                      Anthropic AI에 보내 맞춤 조언을 받아요. 대화는 초기화·동의 철회·탈퇴 전까지
+                      보관해요. 연락처·건강 등 민감한 내용은 입력하지 마세요.
                     </span>
                   </label>
                   <Link
@@ -531,7 +527,12 @@ export function AssistantConversation({
                     className="mt-3 w-full"
                     disabled={!agree || busy}
                     onClick={() =>
-                      void run(() => assistantRpc("assistant_consent", { p_agree: true }))
+                      void run(() =>
+                        assistantRpc("assistant_manager_consent", {
+                          p_agree: true,
+                          p_policy_version: "manager-continuity-v2",
+                        }),
+                      )
                     }
                   >
                     동의하고 시작하기
@@ -543,13 +544,53 @@ export function AssistantConversation({
                   있어요.
                 </p>
               )}
+              {data.session_id ? (
+                <>
+                  <details className="mt-4">
+                    <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">
+                      기존 대화와 선호 보기
+                    </summary>
+                    <ol className="space-y-4">
+                      {visibleTurns.map((turn) => (
+                        <li key={turn.id} className="text-sm leading-relaxed whitespace-pre-wrap">
+                          <p>{turn.question}</p>
+                          <p className="mt-2 text-muted-foreground">
+                            {turn.answer ?? "답변을 완료하지 못했어요."}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                    {visibleTurns.length >= 20 && !earlier?.exhausted ? (
+                      <Button
+                        variant="ghost"
+                        disabled={loadingEarlier}
+                        onClick={() => void loadEarlier()}
+                      >
+                        이전 대화 보기
+                      </Button>
+                    ) : null}
+                    {data.memories.map((item) => (
+                      <p key={item.id} className="mt-3 text-sm">
+                        저장한 선호: {item.content}
+                      </p>
+                    ))}
+                  </details>
+                  <Button
+                    variant="ghost"
+                    className="mt-3 w-full"
+                    disabled={busy}
+                    onClick={() => setErase("consent")}
+                  >
+                    동의하지 않고 기존 기록 삭제
+                  </Button>
+                </>
+              ) : null}
             </section>
           ) : panel === "chat" ? (
             <>
               {!compact ? (
                 <p className="mb-5 text-xs text-muted-foreground leading-relaxed">
-                  AI 조언은 참고용이에요. 기억은 따로 승인해야 저장돼요. 상담 원문은 최대 30일
-                  보관해요.
+                  내 프로필과 대화를 바탕으로 이어가요. 중요한 내용은 언제든 바로잡아 주세요.
                 </p>
               ) : null}
               {!data.flags.chat ? (
@@ -599,25 +640,6 @@ export function AssistantConversation({
                           <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
                             {turn.question}
                           </p>
-                          {data.flags.memory &&
-                          turn.question.length <= 240 &&
-                          assistantIntent(turn.question) === "unknown" &&
-                          !privateAssistantSafety(turn.question, { execution: false }) ? (
-                            <button
-                              className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold"
-                              onClick={() => {
-                                setMemory({
-                                  text: turn.question,
-                                  source: turn.id,
-                                  revision: data.revision,
-                                });
-                                setApproved(false);
-                              }}
-                              disabled={busy}
-                            >
-                              <BookmarkPlus className="size-4" />이 내용 기억하기
-                            </button>
-                          ) : null}
                         </div>
                       ) : null}
                       <div className="assistant-reply mt-3 mr-4">
@@ -626,7 +648,7 @@ export function AssistantConversation({
                             ? "프로필 반영 완료"
                             : turn.kind === "schedule_applied"
                               ? "일정 처리 완료"
-                              : "내 비서"}
+                              : "내 매니저"}
                         </p>
                         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
                           {turn.answer ??
@@ -683,13 +705,16 @@ export function AssistantConversation({
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold">비서가 기억하는 나</h2>
+              <h2 className="text-2xl font-bold">대화와 내 정보</h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                내가 승인한 만남 선호만 상담에 활용해요. 상대에게 공개하지 않으며, 90일 뒤에는
-                자동으로 지워요.
+                프로필과 관련 대화를 참고해 답해요. 대화는 초기화 전까지 이어지고 상대에게 공개되지
+                않아요. 예전에 따로 저장한 선호는 아래에서 관리할 수 있으며, 저장일부터 90일 뒤
+                지워져요.
               </p>
               {!data.memories.length ? (
-                <p className="mt-6 text-sm">아직 승인한 기억이 없어요.</p>
+                <p className="mt-6 text-sm">
+                  따로 저장한 선호가 없어요. 대화할 때마다 저장할 필요는 없어요.
+                </p>
               ) : (
                 <ul className="mt-6 space-y-5">
                   {data.memories.map((item) => (
@@ -724,23 +749,6 @@ export function AssistantConversation({
                   ))}
                 </ul>
               )}
-              {data.flags.memory ? (
-                <Button
-                  variant="outline"
-                  className="mt-5 w-full"
-                  disabled={busy}
-                  onClick={() => {
-                    setMemory({ text: "", revision: data.revision });
-                    setApproved(false);
-                  }}
-                >
-                  기억할 선호 추가
-                </Button>
-              ) : (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  새 기억 저장은 아직 켜져 있지 않아요.
-                </p>
-              )}
               <Button
                 variant="ghost"
                 className="mt-5"
@@ -753,7 +761,7 @@ export function AssistantConversation({
           )}
           {memory ? (
             <section className="mt-6 rounded-surface bg-muted p-4" aria-label="기억 저장 확인">
-              <h2 className="text-lg font-bold">이대로 기억할까요?</h2>
+              <h2 className="text-lg font-bold">저장한 선호 수정</h2>
               <label className="mt-3 block">
                 <span className="sr-only">기억할 선호</span>
                 <Input
@@ -798,7 +806,7 @@ export function AssistantConversation({
                     )
                   }
                 >
-                  승인하고 기억하기
+                  수정 저장
                 </Button>
                 {memory.revision !== data.revision ? (
                   <p role="alert" className="mt-2 text-sm">

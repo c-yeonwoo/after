@@ -195,7 +195,7 @@ function HomePage() {
 
   return (
     <AppScreen keyboardAware footer={<div id="assistant-home-composer" />}>
-      <div className="home-greeting assistant-home-greeting" aria-label="애프터 AI 안내">
+      <div className="home-greeting assistant-home-greeting" aria-label="애프터 매니저 안내">
         <div className="assistant-home-status min-w-0">
           <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
             <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
@@ -446,7 +446,7 @@ function HomePage() {
 /** 소개가 도착한 상태 — 상세는 /intro 가 담당하므로 여기선 최소한만 보여준다. */
 function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isMale: boolean }) {
   return (
-    <div className="app-elevated overflow-hidden rounded-surface bg-card">
+    <div className="introduction-arrival overflow-hidden rounded-surface">
       <div className="px-5 pt-5 pb-6">
         <p className="text-2xl leading-[1.3] font-semibold">
           {candidate.name}

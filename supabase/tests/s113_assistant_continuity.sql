@@ -6,7 +6,7 @@ insert into profiles(id,gender,hub_id,company_email,name,onboarding_step)
 select id,case when email like '%1@%' then 'male'::gender else 'female'::gender end,'gangnam',email,'가상연속대화',7 from auth.users where email like 'continuity113-%@verify.local';
 update app_settings set assistant_chat_enabled=true,assistant_profile_edit_enabled=true;
 select set_config('request.jwt.claim.sub','a1130000-0000-0000-0000-000000000001',true);
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 insert into assistant_turns(id,owner_id,privacy_revision,question,answer,state,created_at)
 select ('a1130000-0000-0000-0001-'||lpad(n::text,12,'0'))::uuid,auth.uid(),2,'질문 '||n,'답변 '||n,'complete',now()-interval '1 hour'
 from generate_series(1,45) n;
@@ -41,7 +41,7 @@ insert into profile_revision_drafts(id,owner_id,instruction,source_document,sour
 values('a1130000-0000-0000-0002-000000000002',auth.uid(),'가상 요청','{}',now(),'synthetic');
 update profile_revision_drafts set state='approved' where id='a1130000-0000-0000-0002-000000000002';
 select is((select count(*)::int from assistant_turns where owner_id=auth.uid()),0,'no private timeline without consent');
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 update app_settings set assistant_chat_enabled=false;
 insert into profile_revision_drafts(id,owner_id,instruction,source_document,source_revision,source_fingerprint)
 values('a1130000-0000-0000-0002-000000000003',auth.uid(),'가상 요청','{}',now(),'synthetic');

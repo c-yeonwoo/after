@@ -374,7 +374,7 @@ export function Conversation({
           search={{ panel: "chat" }}
           className="inline-flex min-h-11 shrink-0 items-center justify-between gap-3 text-sm font-medium"
         >
-          <span>내 비서에게 물어보기</span>
+          <span>내 매니저에게 물어보기</span>
           <span className="text-xs font-normal text-muted-foreground">상대에게는 안 보여요</span>
         </Link>
       ) : null}

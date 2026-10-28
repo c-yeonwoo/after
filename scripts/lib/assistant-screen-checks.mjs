@@ -43,7 +43,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
       },
     });
   });
-  await page.getByRole("link", { name: "내 비서와 대화 준비하기" }).click();
+  await page.getByRole("link", { name: "내 매니저와 대화 준비하기" }).click();
   const generate = page.getByRole("button", { name: "공개 프로필로 준비하기" });
   await generate.waitFor();
   assert.equal(await generate.isEnabled(), false, "no AI request before explicit consent");
@@ -99,10 +99,10 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     ["소개 보여줘", "소개 확인하기"],
     ["호감 보내줘", "소개 확인하기"],
     ["결제 방법", "티켓·가격 확인"],
-    ["약속 잡아줘", /만남 요청 확인|비서와 일정 정리|소개 확인하기/],
+    ["약속 잡아줘", /만남 요청 확인|매니저와 일정 정리|소개 확인하기/],
   ]) {
-    await page.getByLabel("비서에게 물어볼 내용").fill(query);
-    await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+    await page.getByLabel("매니저에게 물어볼 내용").fill(query);
+    await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
     await page.locator(".assistant-reply").getByRole("link", { name: link, exact: true }).waitFor();
     assert.equal(
       new URL(page.url()).pathname,
@@ -112,17 +112,17 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
   }
   assert.equal(privateCalls, 0, "service workflow navigation never invokes LLM");
   page.off("request", countPrivateCalls);
-  await page.getByLabel("비서에게 물어볼 내용").fill("약속 취소해줘");
-  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page.getByLabel("매니저에게 물어볼 내용").fill("약속 취소해줘");
+  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   await page.getByText("결제·취소·신고는 제가 자동 처리하지 않아요.", { exact: false }).waitFor();
   await checkPage(page, "assistant no automatic consequential action");
   // Model a native keyboard reducing the app frame, without claiming hardware QA.
   await page.evaluate(() => {
     document.documentElement.style.setProperty("--keyboard-height", "300px");
-    document.querySelector('input[aria-label="비서에게 물어볼 내용"]').focus();
+    document.querySelector('input[aria-label="매니저에게 물어볼 내용"]').focus();
   });
   await page.waitForFunction(() => {
-    const field = document.querySelector('input[aria-label="비서에게 물어볼 내용"]');
+    const field = document.querySelector('input[aria-label="매니저에게 물어볼 내용"]');
     const bounds = field.getBoundingClientRect();
     const main = field.closest("main").getBoundingClientRect();
     return bounds.top >= main.top && bounds.bottom <= main.bottom;
@@ -142,5 +142,5 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     await page.waitForTimeout(300);
   }
   await page.goto(`${baseUrl}/intro`);
-  await page.getByRole("link", { name: "내 비서와 대화 준비하기" }).waitFor();
+  await page.getByRole("link", { name: "내 매니저와 대화 준비하기" }).waitFor();
 }

@@ -429,7 +429,33 @@
 }
 .assistant-dock {
   margin-top: 1.5rem;
-  padding: 0.25rem 0;
+  padding: 1.25rem 0 0.25rem;
+  border-top: 1px solid var(--border);
+}
+.introduction-arrival {
+  border: 1px solid var(--brand-200);
+  background: var(--assistant-surface);
+}
+.profile-sheet {
+  padding: clamp(1rem, 4vw, 1.5rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-surface);
+  background: var(--card);
+}
+.manager-reading {
+  padding-block: 1.25rem;
+  border-block: 1px solid var(--border);
+}
+.profile-highlight {
+  padding-inline: 0.125rem;
+  color: var(--foreground);
+  background: var(--brand-tint);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  text-decoration: underline;
+  text-decoration-color: var(--brand-signature);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 .assistant-home-greeting {
   display: flex;

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   privateAssistantModelContext,
+  ownerAssistantProfile,
   PRIVATE_ASSISTANT_SYSTEM,
   PRIVATE_ASSISTANT_CHECK,
 } from "../supabase/functions/_shared/assistant-context";
@@ -45,3 +46,29 @@ assert.deepEqual(privateAssistantModelContext({ question: "첫 질문", history:
   user_confirmed_memories: [],
 });
 console.log("Assistant context provenance checks passed.");
+const personal = privateAssistantModelContext({
+  question: "나에게 맞게 알려줘",
+  history: [],
+  memories: [],
+  owner_profile: {
+    age: 29,
+    job: "디자이너",
+    introduction_area: "종로",
+    mbti: "INFJ",
+    intro: "주말에는 전시를 봐요.",
+    phone: "PRIVATE_PHONE",
+    birth: "PRIVATE_BIRTH",
+    name: "PRIVATE_NAME",
+    saju: "UNVERIFIED_SAJU",
+  },
+  related_history: [
+    { question: "산책이 편해요", created_at: "2026-09-01", answer: "AI_INFERENCE_NOT_A_USER_FACT" },
+  ],
+});
+assert.equal(personal?.owner_profile?.age, 29);
+assert.equal(personal?.owner_profile?.introduction_area, "종로");
+assert.match(JSON.stringify(personal), /주말에는 전시/);
+assert.doesNotMatch(JSON.stringify(personal), /PRIVATE_|UNVERIFIED|AI_INFERENCE/);
+assert.equal(ownerAssistantProfile({ job: "문의 private@example.test" }).job, null);
+assert.equal(ownerAssistantProfile({ introduction_area: "010-1234-5678" }).introduction_area, null);
+assert.equal(personal?.earlier_user_statements?.length, 1);

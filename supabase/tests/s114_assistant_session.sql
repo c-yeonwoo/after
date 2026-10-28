@@ -8,7 +8,7 @@ update app_settings set assistant_chat_enabled=true,assistant_memory_enabled=tru
 create temporary table session_probe(label text primary key,session_id uuid,revision bigint);
 select set_config('request.jwt.claim.sub','a1140000-0000-0000-0000-000000000001',true);
 select ok(my_assistant_state()->>'session_id' is null,'no private session before consent');
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 insert into session_probe select 'original',session_id,revision from assistant_preferences where owner_id=auth.uid();
 select ok(my_assistant_state()->>'session_id' is not null,'explicit consent starts a private session');
 select is(assistant_history()->>'session_id',my_assistant_state()->>'session_id','home and history share session');
@@ -24,7 +24,7 @@ select is(assistant_turn_context('a1140000-0000-0000-0001-000000000002')->'histo
 select is(assistant_turn_context('a1140000-0000-0000-0001-000000000002')->'memories','["주말 오후가 편해요"]'::jsonb,'only explicit approved memory enters memory context');
 select is((select count(distinct session_id)::int from assistant_turns where owner_id=auth.uid()),1,'successive turns keep one session across revision changes');
 select set_config('request.jwt.claim.sub','a1140000-0000-0000-0000-000000000002',true);
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 select isnt(my_assistant_state()->>'session_id',(select session_id::text from session_probe where label='original'),'different account has a different session');
 select is(jsonb_array_length(assistant_history()->'turns'),0,'second account cannot read first account history');
 select throws_ok($$select assistant_turn_context('a1140000-0000-0000-0001-000000000002')$$,'PT409','context unavailable','knowing turn ID does not grant context access');
@@ -52,7 +52,7 @@ select assistant_begin_turn('a1140000-0000-0000-0001-000000000004','만료 전 �
 insert into session_probe select 'before-expiry',session_id,revision from assistant_preferences where owner_id=auth.uid();
 update assistant_memories set expires_at=now()-interval '1 second' where owner_id=auth.uid();
 select expire_private_assistant();
-select isnt(my_assistant_state()->>'session_id',(select session_id::text from session_probe where label='before-expiry'),'memory TTL invalidates derived conversation session');
+select is(my_assistant_state()->>'session_id',(select session_id::text from session_probe where label='before-expiry'),'expired legacy preference preserves renewed conversation archive');
 select ok(not assistant_finish_turn(auth.uid(),'a1140000-0000-0000-0001-000000000004',(select revision from session_probe where label='before-expiry'),'만료된 기억의 답변'),'memory TTL rejects late result');
 select is(jsonb_array_length(my_assistant_state()->'memories'),0,'expired memory not returned');
 select assistant_begin_turn('a1140000-0000-0000-0001-000000000005','대화 보관 기한 검사',(my_assistant_state()->>'revision')::bigint);
@@ -65,7 +65,7 @@ select is((select session_id::text from assistant_turns where id='a1140000-0000-
 insert into session_probe select 'before-turn-ttl',session_id,revision from assistant_preferences where owner_id=auth.uid();
 select expire_private_assistant();
 select is(my_assistant_state()->>'session_id',(select session_id::text from session_probe where label='before-turn-ttl'),'ordinary transcript TTL preserves stable session');
-select is(jsonb_array_length(assistant_history()->'turns'),1,'expiring one turn preserves unexpired transcript');
+select is(jsonb_array_length(assistant_history()->'turns'),2,'expiring one turn preserves archive including failed earlier turn');
 insert into profile_revision_drafts(id,owner_id,instruction,source_document,source_revision,source_fingerprint)
 values('a1140000-0000-0000-0002-000000000001',auth.uid(),'가상 요청','{}',now(),'synthetic');
 update profile_revision_drafts set state='approved',approved_at=now() where id='a1140000-0000-0000-0002-000000000001';
@@ -78,10 +78,10 @@ select assistant_consent(false);
 select ok(my_assistant_state()->>'session_id' is null,'revoke clears active session identity');
 select is(jsonb_array_length(assistant_history()->'turns'),0,'revoke erases transcript and completion receipts');
 select ok(not assistant_finish_turn(auth.uid(),'a1140000-0000-0000-0001-000000000007',(select revision from session_probe where label='before-revoke'),'철회 후 답변'),'revoke fences late result');
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 select isnt(my_assistant_state()->>'session_id',(select session_id::text from session_probe where label='before-revoke'),'renewed consent creates a fresh session');
 insert into session_probe select 'before-repeat-consent',session_id,revision from assistant_preferences where owner_id=auth.uid();
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 select is(my_assistant_state()->>'session_id',(select session_id::text from session_probe where label='before-repeat-consent'),'repeated consent does not fork active session');
 select assistant_begin_turn('a1140000-0000-0000-0001-000000000008','비활성화 전 질문',(my_assistant_state()->>'revision')::bigint);
 insert into session_probe select 'before-inactive',session_id,revision from assistant_preferences where owner_id=auth.uid();

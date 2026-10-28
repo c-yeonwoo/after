@@ -153,6 +153,10 @@ const draft = (stage) => ({
   storySourceRevision: 1,
 });
 const allFixtures = [
+  { name: "home-arrival", path: "/home", heading: "합성 지수님, 반가워요." },
+  { name: "intro-ai", path: "/intro", heading: "합성 도윤" },
+  { name: "intro-ai-failure", path: "/intro", heading: "합성 도윤" },
+  { name: "legacy-off", path: "/assistant", heading: "나와 매니저" },
   { name: "home", path: "/home", heading: "아직 새 소개가 없어요." },
   {
     name: "home-chat",
@@ -164,8 +168,8 @@ const allFixtures = [
   { name: "legacy-story", path: "/home", heading: "아직 새 소개가 없어요." },
   { name: "intro", path: "/intro", heading: "합성 도윤" },
   { name: "intro-pending", path: "/intro", heading: "합성 서연", gender: "male" },
-  { name: "assistant-no-consent", path: "/assistant", heading: "나와 비서" },
-  { name: "assistant-chat", path: "/assistant", heading: "나와 비서", consented: true },
+  { name: "assistant-no-consent", path: "/assistant", heading: "나와 매니저" },
+  { name: "assistant-chat", path: "/assistant", heading: "나와 매니저", consented: true },
   { name: "profile", path: "/profile", heading: "합성 지수" },
   { name: "photos", path: "/signup?edit=true", heading: "어떤 모습으로 소개할까요?" },
   { name: "interview", path: "/signup?prepare=true", stage: "story0", heading: null },
@@ -249,7 +253,7 @@ async function audit(page, name) {
 async function verifyHome(page, width) {
   await page.getByRole("heading", { level: 1, name: "합성 지수님, 반가워요." }).waitFor();
   await page.getByRole("heading", { level: 2, name: "아직 새 소개가 없어요." }).waitFor();
-  assert.equal(await page.getByText("비서에게만 보여요", { exact: true }).count(), 0);
+  assert.equal(await page.getByText("매니저에게만 보여요", { exact: true }).count(), 0);
   assert.equal(await page.getByRole("switch").count(), 0, "home has no introduction settings");
   assert.equal(await page.getByRole("link", { name: "만남 가능 시간" }).count(), 0);
   assert.equal(
@@ -257,7 +261,7 @@ async function verifyHome(page, width) {
     0,
     "avatar belongs to conversation",
   );
-  const input = page.getByLabel("비서에게 물어볼 내용");
+  const input = page.getByLabel("매니저에게 물어볼 내용");
   await page
     .getByRole("button", { name: "첫 만남에서 어색하면 어떻게 말문을 열까요?", exact: true })
     .click();
@@ -404,15 +408,15 @@ async function verifyAssistant(page, fixture, name, backendStart) {
 }
 
 async function verifyLegacyStory(page, name, backendStart) {
-  const input = page.getByRole("textbox", { name: "비서에게 물어볼 내용", exact: true });
-  const send = page.getByRole("button", { name: "비서에게 질문하기", exact: true });
+  const input = page.getByRole("textbox", { name: "매니저에게 물어볼 내용", exact: true });
+  const send = page.getByRole("button", { name: "매니저에게 질문하기", exact: true });
   await input.fill("프로필 수정");
   await send.click();
   const guide = page.locator('.assistant-reply[role="status"]');
   await guide.getByText("어느 부분을 먼저 바꿀까요?", { exact: false }).waitFor();
   assert.equal(new URL(page.url()).pathname, "/home", "ambiguous edit stays at target selection");
   assert.equal(await guide.getByRole("link", { name: "프로필 수정하기" }).count(), 1);
-  assert.equal(await guide.getByRole("link", { name: "비서와 프로필 다듬기" }).count(), 1);
+  assert.equal(await guide.getByRole("link", { name: "매니저와 프로필 다듬기" }).count(), 1);
   await guide.scrollIntoViewIfNeeded();
   await capture(page, `${name}-choose-target`);
 
@@ -429,7 +433,7 @@ async function verifyLegacyStory(page, name, backendStart) {
   );
   assert.equal(await page.getByRole("checkbox").isChecked(), false);
   assert.equal(
-    await page.getByRole("button", { name: "비서와 다듬기", exact: true }).isDisabled(),
+    await page.getByRole("button", { name: "매니저와 다듬기", exact: true }).isDisabled(),
     true,
   );
   const requests = summary.backendRequests.slice(backendStart);
@@ -533,7 +537,10 @@ try {
             gender: current.gender ?? member.gender,
             onboarding_step: current.stage ? 4 : 7,
           };
-          const assistant = current.name.startsWith("assistant-") || current.name === "home-chat";
+          const assistant =
+            current.name.startsWith("assistant-") ||
+            current.name === "home-chat" ||
+            current.name === "legacy-off";
           const candidate =
             current.name === "intro-pending"
               ? { ...other, name: "합성 서연", gender: "female" }
@@ -541,11 +548,11 @@ try {
           const hasMeeting =
             current.name.startsWith("assistant-") || current.name === "intro-pending";
           const flags = {
-            chat: assistant,
+            chat: assistant && current.name !== "legacy-off",
             schedule: assistant,
             memory: assistant,
             profileEdit: assistant || current.name === "legacy-story",
-            introduction: false,
+            introduction: current.name.startsWith("intro-ai"),
           };
           if (path.endsWith("/auth/v1/user")) return fulfill(session.user);
           if (path.endsWith("/rest/v1/profiles") && request.method() === "GET")
@@ -560,11 +567,15 @@ try {
               as_of: now,
               primary_state: hasMeeting
                 ? "request_waiting"
-                : current.name === "intro"
+                : ["intro", "home-arrival", "intro-ai", "intro-ai-failure"].includes(current.name)
                   ? "intro_available"
                   : "waiting",
               me: profile,
-              candidate: current.name === "intro" || hasMeeting ? candidate : null,
+              candidate:
+                ["intro", "home-arrival", "intro-ai", "intro-ai-failure"].includes(current.name) ||
+                hasMeeting
+                  ? candidate
+                  : null,
               meeting: hasMeeting ? pendingMeeting : null,
               request_count: 0,
               pending_no_show: null,
@@ -588,8 +599,49 @@ try {
               revision: 1,
               session_id: "77777777-7777-4777-8777-777777777777",
               memories: [],
-              turns: current.consented && current.name !== "home-chat" ? assistantHistory : [],
+              turns:
+                (current.consented && current.name !== "home-chat") || current.name === "legacy-off"
+                  ? assistantHistory
+                  : [],
             });
+          if (current.name.startsWith("intro-ai") && path.endsWith("/rpc/get_public_profile"))
+            return fulfill([request.postDataJSON().p_id === id ? profile : other]);
+          if (
+            current.name.startsWith("intro-ai") &&
+            path.endsWith("/functions/v1/introduce-member")
+          ) {
+            assert.equal(request.postDataJSON().consent, true);
+            if (current.name === "intro-ai-failure")
+              return route.fulfill({
+                status: 502,
+                contentType: "application/json",
+                body: JSON.stringify({ code: "quality_failed" }),
+              });
+            return fulfill({
+              viewerId: id,
+              targetId: otherId,
+              sourceFingerprint: "synthetic",
+              promptVersion: "fixture",
+              expiresAt: new Date(Date.now() + 3600000).toISOString(),
+              cached: false,
+              portrait: [
+                {
+                  text: "퇴근 후 본 영화에서 좋아하는 장면을 메모한다고 해요. 최근 어떤 장면이 남았는지 물어보면 어떨까요?",
+                  sources: [{ person: "other", field: "story_daily_life", quote: otherAnswer }],
+                },
+              ],
+              connections: [
+                {
+                  text: "한 분은 음악으로 쉬고, 한 분은 영화 장면을 기록해요. 쉬는 시간을 각자 어떻게 보내는지 나눠볼 수 있겠어요.",
+                  selfSources: [{ person: "self", field: "story_daily_life", quote: ownAnswer }],
+                  otherSources: [
+                    { person: "other", field: "story_daily_life", quote: otherAnswer },
+                  ],
+                },
+              ],
+              questions: [],
+            });
+          }
           if (path.endsWith("/rpc/my_meet_window")) return fulfill(null);
           if (path.endsWith("/rpc/next_candidate")) return fulfill([other]);
           if (path.endsWith("/rpc/remaining_candidates")) return fulfill(1);
@@ -666,19 +718,74 @@ try {
             await page
               .getByRole("heading", {
                 name: fixture.heading,
-                exact: !["intro", "intro-pending", "profile"].includes(fixture.name),
+                exact: ![
+                  "intro",
+                  "intro-ai",
+                  "intro-ai-failure",
+                  "intro-pending",
+                  "profile",
+                ].includes(fixture.name),
               })
               .waitFor();
           else await page.getByRole("textbox", { name: "내 답변", exact: true }).waitFor();
+          if (fixture.name === "home-arrival") {
+            await page.locator(".introduction-arrival").waitFor();
+            assert.equal(
+              await page
+                .locator(".introduction-arrival")
+                .evaluate((el) => getComputedStyle(el).borderTopStyle),
+              "solid",
+            );
+          }
+          if (fixture.name === "legacy-off") {
+            assert.equal(await page.getByRole("button", { name: "동의하고 시작하기" }).count(), 0);
+            await page.getByRole("button", { name: "동의하지 않고 기존 기록 삭제" }).waitFor();
+            await page.getByText("기존 대화와 선호 보기", { exact: true }).click();
+            await page.getByText(assistantHistory[0].answer, { exact: true }).waitFor();
+          }
+          if (fixture.name === "intro-ai") {
+            const button = page.getByRole("button", { name: "매니저와 함께 읽기" });
+            await button.waitFor();
+            assert.equal(
+              summary.backendRequests
+                .slice(backendStart)
+                .filter((r) => r.path.endsWith("/functions/v1/introduce-member")).length,
+              0,
+            );
+            assert.equal(await page.getByRole("checkbox").count(), 0);
+            await button.click();
+            await page.locator(".profile-highlight").first().waitFor();
+            assert.equal(await page.locator(".profile-highlight").count(), 3);
+            assert.ok(
+              (await page.locator(".profile-highlight").allTextContents()).includes(ownAnswer),
+            );
+            await page.locator(".manager-reading").scrollIntoViewIfNeeded();
+            await capture(page, `${name}-reading`);
+          }
+          if (fixture.name === "intro-ai-failure") {
+            await page.getByRole("button", { name: "매니저와 함께 읽기" }).click();
+            await page
+              .getByRole("alert")
+              .filter({ hasText: "AI 설명이 아닌 공개 프로필" })
+              .waitFor();
+            await page.getByRole("heading", { name: "말문을 열어 줄 접점", exact: true }).waitFor();
+            assert.equal(await page.getByRole("button", { name: "매니저와 함께 읽기" }).count(), 0);
+            assert.equal(
+              summary.backendRequests
+                .slice(backendStart)
+                .filter((r) => r.path.endsWith("/functions/v1/introduce-member")).length,
+              1,
+            );
+          }
           if (fixture.name === "home") {
             await capture(page, name);
             await verifyHome(page, width);
           }
           if (fixture.name === "home-chat") {
-            await page.getByLabel("비서에게 상담할 내용").waitFor();
+            await page.getByLabel("매니저에게 상담할 내용").waitFor();
             assert.equal(await page.getByRole("switch").count(), 0);
             await capture(page, name);
-            const field = page.getByLabel("비서에게 상담할 내용");
+            const field = page.getByLabel("매니저에게 상담할 내용");
             await page
               .getByRole("button", {
                 name: "내 프로필의 장점과 아쉬운 표현을 코칭해줘",

@@ -230,8 +230,8 @@ async function login(role) {
 }
 async function ask(page, text, name) {
   await go(page, "/home");
-  await page.getByLabel("비서에게 물어볼 내용").fill(text);
-  await page.getByRole("button", { name: "비서에게 질문하기" }).click();
+  await page.getByLabel("매니저에게 물어볼 내용").fill(text);
+  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   const action = page.locator(".assistant-reply").getByRole("link", { name, exact: true });
   await action.waitFor();
   return action;
@@ -294,10 +294,7 @@ async function showIntroduction(page, result, name) {
   browserIntroductionReceipt = result;
   try {
     await go(page, "/intro");
-    await page
-      .getByLabel("두 사람의 공개 답변을 AI에 보내 소개 설명을 준비하는 데 동의해요.")
-      .check();
-    await page.getByRole("button", { name: "비서 설명 듣기", exact: true }).click();
+    await page.getByRole("button", { name: "매니저와 함께 읽기", exact: true }).click();
     await page.getByText(result.portrait[0].text, { exact: true }).waitFor();
     await screenModes(page, name);
   } finally {
@@ -643,7 +640,7 @@ try {
     await male.getByLabel("만날 곳", { exact: true }).fill("합성 QA 카페 · 실제 예약 없음");
     await male.getByRole("button", { name: /후보 1개로 요청하기/ }).click();
     await male.getByText("답변을 기다리는 중입니다", { exact: true }).waitFor();
-    await (await ask(female, "약속 잡아줘", "비서와 일정 정리")).click();
+    await (await ask(female, "약속 잡아줘", "매니저와 일정 정리")).click();
     await female.getByRole("radio").first().check();
     await female.getByRole("button", { name: "전달 전 초안 보기", exact: true }).click();
     await female.getByRole("region", { name: "일정 초안", exact: true }).waitFor();

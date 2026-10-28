@@ -6,7 +6,7 @@ import { useMe } from "@/lib/me";
 
 export const Route = createFileRoute("/assistant-profile")({
   head: () => ({
-    meta: [{ title: "비서와 프로필 다듬기 — 애프터" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "매니저와 프로필 다듬기 — 애프터" }, { name: "robots", content: "noindex" }],
   }),
   component: AssistantProfilePage,
 });

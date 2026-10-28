@@ -16,7 +16,7 @@ select ok(not has_function_privilege('authenticated','assistant_check_schedule(u
 select set_config('request.jwt.claim.sub','97000000-0000-0000-0000-000000000002',true);
 select throws_ok($$select assistant_draft_schedule(gen_random_uuid(),'97000000-0000-0000-0000-000000000012','preferences',jsonb_build_object('dates',jsonb_build_array((select d from dates)),'stations','[]'::jsonb,'anywhere',true))$$,'PT403','feature disabled','schedule flag enforced');
 update app_settings set assistant_schedule_enabled=true,assistant_chat_enabled=true;
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 create temp table initial_notifications as select count(*)::int as n from notifications where meeting_id='97000000-0000-0000-0000-000000000012';
 select lives_ok($$select assistant_draft_schedule('97000000-0000-0000-0000-000000000020','97000000-0000-0000-0000-000000000012','preferences',jsonb_build_object('dates',jsonb_build_array((select d from dates)),'stations','[]'::jsonb,'anywhere',true))$$,'female makes preferences draft');
 select ok((select prefs_submitted_at is null from meetings where id='97000000-0000-0000-0000-000000000012'),'draft has no effect on meeting');

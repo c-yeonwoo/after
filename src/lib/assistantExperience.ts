@@ -170,7 +170,7 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
         : context.schedule
           ? generic("일정", ["schedule", "availability"])
           : {
-              text: "일정 실행 비서는 아직 준비 중이에요. 기존 약속 화면에서 직접 확인·조율할 수 있어요.",
+              text: "매니저의 일정 조율은 준비 중이에요. 약속 화면에서 직접 조율할 수 있어요.",
               actions:
                 context.gender === "female"
                   ? ["requests", "appointments", "availability"]

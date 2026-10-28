@@ -23,7 +23,7 @@ import {
 
 export const Route = createFileRoute("/assistant-schedule")({
   head: () => ({
-    meta: [{ title: "비서와 약속 준비 — 애프터" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "매니저와 약속 준비 — 애프터" }, { name: "robots", content: "noindex" }],
   }),
   component: SchedulePage,
 });
@@ -31,7 +31,7 @@ const readSchedule = () => assistantRpc<ScheduleState>("my_assistant_schedule");
 function SchedulePage() {
   const { me } = useMe();
   return (
-    <AppScreen title="비서와 약속 준비" back="/home" hideTabs keyboardAware>
+    <AppScreen title="매니저와 약속 준비" back="/home" hideTabs keyboardAware>
       {me && me.onboarding_step >= 7 ? (
         <Schedule key={me.id} owner={me.id} />
       ) : (
@@ -114,7 +114,7 @@ function Schedule({ owner }: { owner: string }) {
         <>
           {!data.enabled ? (
             <p className="mt-6 text-sm leading-relaxed">
-              일정 비서는 아직 준비 중이에요. 기존 약속 화면은 그대로 이용할 수 있어요.
+              일정 매니저는 아직 준비 중이에요. 기존 약속 화면은 그대로 이용할 수 있어요.
             </p>
           ) : !meeting ? (
             <p className="mt-6 text-sm">함께 조율할 약속이 생기면 여기서 준비해 드릴게요.</p>

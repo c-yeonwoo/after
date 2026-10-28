@@ -134,8 +134,8 @@ function FeedbackPage() {
             <div className="assistant-reply mt-6 text-left">
               <h2 className="font-semibold">다음 만남에 기억하고 싶은 점은?</h2>
               <p className="mt-2 text-sm leading-relaxed">
-                편했던 대화 속도나 장소처럼, 내 선호만 따로 남길 수 있어요. 방금 쓴 후기는 비서에게
-                자동으로 보내지 않아요.
+                편했던 대화 속도나 장소처럼, 내 선호만 따로 남길 수 있어요. 방금 쓴 후기는
+                매니저에게 자동으로 보내지 않아요.
               </p>
               <Link
                 to="/assistant"
