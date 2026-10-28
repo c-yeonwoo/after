@@ -680,7 +680,7 @@ try {
   await freshPage.getByLabel("휴대폰 번호", { exact: true }).fill("01000000074");
   await freshPage.getByRole("button", { name: "인증 없이 계속", exact: true }).click();
   await freshPage.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
-  await freshPage.getByRole("button", { name: "나중에 내 비서에서 이어하기" }).click();
+  await freshPage.getByRole("button", { name: "나중에 내 매니저에서 이어하기" }).click();
   await freshPage.getByRole("heading", { name: "반가워요. 어떤 분인지 들려주세요." }).waitFor();
   assert.equal(
     await freshPage.getByRole("link", { name: "소개", exact: true }).count(),
@@ -696,7 +696,7 @@ try {
       .waitFor({ state: "detached", timeout: 10000 });
     await freshPage.screenshot({ path: join(screenshotDir, "assistant-profile-setup.png") });
   }
-  await freshPage.getByRole("link", { name: "내 비서와 프로필 만들기" }).click();
+  await freshPage.getByRole("link", { name: "내 매니저와 프로필 만들기" }).click();
   await freshPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(await freshPage.getByLabel("생년월일", { exact: true }).inputValue(), "");
   assert.equal(

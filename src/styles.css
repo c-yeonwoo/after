@@ -526,8 +526,11 @@
   .assistant-input-area .assistant-prompts {
     display: none;
   }
-  .assistant-input-area textarea {
-    height: 44px;
+  .assistant-input-area .assistant-textarea {
+    max-height: 92px;
+  }
+  .assistant-input-area:has(> p) .assistant-textarea {
+    max-height: 44px;
   }
 }
 .app-footer:has(> #assistant-home-composer:empty) {
@@ -601,6 +604,11 @@
   border: 1px solid var(--input);
   border-radius: var(--radius-surface);
   background: var(--card);
+}
+.assistant-textarea {
+  min-height: 44px;
+  max-height: 140px;
+  overflow-y: auto;
 }
 .assistant-suggestion {
   min-height: 44px;

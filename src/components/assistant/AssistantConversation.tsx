@@ -7,6 +7,7 @@ import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
 import { AssistantPrompts } from "@/components/assistant/AssistantPrompts";
+import { AssistantTextarea } from "@/components/assistant/AssistantTextarea";
 import { privateAssistantSafety } from "../../../supabase/functions/_shared/assistant-private";
 import { assistantIntent } from "@/lib/assistant";
 import {
@@ -378,11 +379,10 @@ export function AssistantConversation({
             >
               <label className="min-w-0 flex-1">
                 <span className="sr-only">매니저에게 상담할 내용</span>
-                <textarea
-                  ref={inputRef}
+                <AssistantTextarea
+                  inputRef={inputRef}
                   name="question"
-                  className="block w-full resize-none rounded-control bg-transparent p-3 text-base placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  rows={2}
+                  className="assistant-textarea block w-full resize-none rounded-control bg-transparent px-3 py-2.5 text-base leading-6 placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   maxLength={1000}
                   value={input}
                   onChange={(e) => {
@@ -407,7 +407,7 @@ export function AssistantConversation({
                   navigating ||
                   data.turns.some((t) => t.state === "pending")
                 }
-                className="mb-1 size-11"
+                className="size-11 shrink-0"
               >
                 <Send className="size-4" />
               </Button>
