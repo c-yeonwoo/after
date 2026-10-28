@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
@@ -7,11 +7,92 @@ import { myPolicyStatus, recordConsent, type MyPolicyStatus } from "@/lib/api";
 import { BRAND } from "@/lib/brand";
 import { useMe } from "@/lib/me";
 import { POLICY_VERSION } from "@/lib/policy";
+import { ManagerConsentNotice } from "@/components/assistant/ManagerConsentNotice";
+import { assistantRpc } from "@/lib/privateAssistant";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/consent")({
+  validateSearch: (search: Record<string, unknown>): { manager?: true } => ({
+    ...(search.manager === true || search.manager === "true" ? { manager: true } : {}),
+  }),
   head: () => ({ meta: [{ title: `약관 동의 — ${BRAND.name}` }] }),
-  component: ConsentPage,
+  component: ConsentRoute,
 });
+
+function ConsentRoute() {
+  const { me, ready } = useMe();
+  const { manager } = Route.useSearch();
+  if (!ready)
+    return (
+      <AppScreen title="약관 확인" back="/home">
+        <p role="status" className="py-8 text-sm">
+          불러오는 중…
+        </p>
+      </AppScreen>
+    );
+  return manager ? (
+    <ManagerConsentPage key={me?.id ?? "anonymous"} />
+  ) : (
+    <ConsentPage key={me?.id ?? "anonymous"} />
+  );
+}
+
+function ManagerConsentPage() {
+  const { me, ready } = useMe();
+  const navigate = useNavigate();
+  const [agree, setAgree] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (ready && !me) void navigate({ to: "/login" });
+  }, [ready, me, navigate]);
+  return (
+    <AppScreen title="맞춤 상담 시작" back="/home">
+      <h1 className="mt-6 text-2xl font-semibold break-keep">나를 알아가는 매니저</h1>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        첫 상담 전에 한 번만 확인해 주세요. 상담 내용은 상대에게 보이지 않아요.
+      </p>
+      <ManagerConsentNotice checked={agree} onChange={setAgree} />
+      <Button
+        className="mt-4 w-full"
+        disabled={!agree || !me || busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await assistantRpc("assistant_manager_consent", {
+              p_agree: true,
+              p_policy_version: "manager-continuity-v2",
+            });
+            if (alive.current) await navigate({ to: "/assistant", search: { panel: "chat" } });
+          } catch (error) {
+            if (alive.current)
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "동의를 저장하지 못했어요. 다시 시도해 주세요.",
+              );
+          } finally {
+            if (alive.current) setBusy(false);
+          }
+        }}
+      >
+        동의하고 상담 시작
+      </Button>
+      <Link
+        to="/home"
+        className="mt-2 flex min-h-11 items-center justify-center text-sm text-muted-foreground"
+      >
+        나중에 할게요
+      </Link>
+    </AppScreen>
+  );
+}
 
 function ConsentPage() {
   const navigate = useNavigate();

@@ -153,7 +153,17 @@ const draft = (stage) => ({
   storySourceRevision: 1,
 });
 const allFixtures = [
+  {
+    name: "signup-consent",
+    path: "/signup?consent-preview=true",
+    heading: "시작하기 전에, 확인해 주세요",
+  },
   { name: "home-arrival", path: "/home", heading: "합성 지수님, 반가워요." },
+  { name: "home-history", path: "/home", heading: "합성 지수님, 반가워요.", consented: true },
+  { name: "manager-consent", path: "/consent?manager=true", heading: "나를 알아가는 매니저" },
+  { name: "meetings-pending", path: "/chats", heading: "함께할 약속" },
+  { name: "meetings-scheduling", path: "/chats", heading: "함께할 약속", gender: "male" },
+  { name: "meetings-confirmed", path: "/chats", heading: "함께할 약속" },
   { name: "intro-ai", path: "/intro", heading: "합성 도윤" },
   { name: "intro-ai-failure", path: "/intro", heading: "합성 도윤" },
   { name: "legacy-off", path: "/assistant", heading: "나와 매니저" },
@@ -293,9 +303,9 @@ async function verifyHome(page, width) {
     "compact 32px chip visuals",
   );
   assert.equal(metrics.overflow, "auto");
-  if (width === 320)
-    assert.ok(metrics.scroll > metrics.width, "small screen chips overflow locally");
-  await page.getByRole("button", { name: "내 상태", exact: true }).click();
+  assert.equal(metrics.tops.length, 3, "only three non-duplicate help actions");
+  await input.fill("진행 상태");
+  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   await page.locator(".assistant-reply").waitFor();
   assert.equal(await page.getByRole("link", { name: "홈에서 확인", exact: true }).count(), 0);
   assert.equal(await page.locator('.assistant-reply a[href="/home"]').count(), 0);
@@ -354,9 +364,8 @@ async function verifyAssistant(page, fixture, name, backendStart) {
     await history.locator("li").first().scrollIntoViewIfNeeded();
     await capture(page, `${name}-history`);
   } else {
-    await page.getByRole("button", { name: "동의하고 시작하기", exact: true }).waitFor();
-    assert.equal(await page.getByRole("checkbox").isChecked(), false);
-    assert.equal(await page.getByRole("button", { name: "동의하고 시작하기" }).isDisabled(), true);
+    await page.getByRole("link", { name: "맞춤 상담 시작", exact: true }).waitFor();
+    assert.equal(await page.getByRole("checkbox").count(), 0);
     assert.equal(await page.getByRole("textbox").count(), 0);
   }
 
@@ -381,8 +390,7 @@ async function verifyAssistant(page, fixture, name, backendStart) {
     assert.equal(await history.locator('a[href*="conversation-prep"]').count(), 0);
     assert.equal(await history.locator("li").count(), assistantHistory.length);
   } else {
-    assert.equal(await page.getByRole("checkbox").isChecked(), false);
-    assert.equal(await page.getByRole("button", { name: "동의하고 시작하기" }).isDisabled(), true);
+    assert.equal(await page.getByRole("checkbox").count(), 0);
   }
   const requests = summary.backendRequests.slice(backendStart);
   const edge = requests.filter((request) => request.path.includes("/functions/v1/"));
@@ -415,8 +423,8 @@ async function verifyLegacyStory(page, name, backendStart) {
   const guide = page.locator('.assistant-reply[role="status"]');
   await guide.getByText("어느 부분을 먼저 바꿀까요?", { exact: false }).waitFor();
   assert.equal(new URL(page.url()).pathname, "/home", "ambiguous edit stays at target selection");
-  assert.equal(await guide.getByRole("link", { name: "프로필 수정하기" }).count(), 1);
-  assert.equal(await guide.getByRole("link", { name: "매니저와 프로필 다듬기" }).count(), 1);
+  assert.equal(await guide.getByRole("link", { name: "내 프로필 보기" }).count(), 1);
+  assert.equal(await guide.getByRole("link").count(), 1, "general edit has one profile hub entry");
   await guide.scrollIntoViewIfNeeded();
   await capture(page, `${name}-choose-target`);
 
@@ -507,10 +515,16 @@ try {
         serviceWorkers: "block",
       });
       let current = fixtures[0];
+      let switchedOwner = false;
+      let releaseConsent;
       let currentDraft = null;
       let revision = 1;
       await context.addInitScript(
         ({ session, key }) => {
+          if (location.search.includes("consent-preview")) {
+            localStorage.removeItem(key);
+            return;
+          }
           localStorage.setItem(key, JSON.stringify(session));
           localStorage.setItem("after.theme", "system");
         },
@@ -532,14 +546,31 @@ try {
           });
         if (backend) {
           summary.backendRequests.push({ fixture: current.name, path, method: request.method() });
+          if (
+            current.name === "signup-consent" &&
+            path.endsWith("/rpc/begin_signup_with_manager")
+          ) {
+            const body = request.postDataJSON();
+            assert.equal(body.p_manager_policy_version, "manager-continuity-v2");
+            assert.match(body.p_token, /^[0-9a-f]{64}$/);
+            return fulfill({
+              policyVersion: body.p_policy_version,
+              acceptedAt: now,
+              expiresAt: new Date(Date.now() + 3600000).toISOString(),
+              verified: false,
+              managerConsented: true,
+            });
+          }
           const profile = {
             ...member,
+            id: switchedOwner ? otherId : id,
             gender: current.gender ?? member.gender,
             onboarding_step: current.stage ? 4 : 7,
           };
           const assistant =
             current.name.startsWith("assistant-") ||
             current.name === "home-chat" ||
+            current.name === "home-history" ||
             current.name === "legacy-off";
           const candidate =
             current.name === "intro-pending"
@@ -551,10 +582,40 @@ try {
             chat: assistant && current.name !== "legacy-off",
             schedule: assistant,
             memory: assistant,
-            profileEdit: assistant || current.name === "legacy-story",
+            profileEdit: assistant || current.name === "legacy-story" || current.name === "profile",
             introduction: current.name.startsWith("intro-ai"),
           };
-          if (path.endsWith("/auth/v1/user")) return fulfill(session.user);
+          if (path.endsWith("/auth/v1/user"))
+            return fulfill({ ...session.user, id: switchedOwner ? otherId : id });
+          if (
+            current.name === "manager-consent" &&
+            path.endsWith("/rpc/assistant_manager_consent")
+          ) {
+            await new Promise((resolve) => {
+              releaseConsent = resolve;
+            });
+            return fulfill({ consented: true, flags, revision: 2, turns: [], memories: [] });
+          }
+          if (current.name.startsWith("meetings-")) {
+            if (path.endsWith("/rest/v1/intros"))
+              return fulfill([
+                {
+                  id: introId,
+                  female_id: profile.gender === "female" ? id : otherId,
+                  male_id: profile.gender === "male" ? id : otherId,
+                },
+              ]);
+            if (path.endsWith("/rest/v1/meetings"))
+              return fulfill([
+                {
+                  ...pendingMeeting,
+                  prefs_submitted_at: current.name !== "meetings-pending" ? now : null,
+                  confirmed_at: current.name === "meetings-confirmed" ? now : null,
+                  scheduled_at: current.name === "meetings-confirmed" ? now : null,
+                },
+              ]);
+            if (path.endsWith("/rpc/get_public_profiles")) return fulfill([other]);
+          }
           if (path.endsWith("/rest/v1/profiles") && request.method() === "GET")
             return fulfill(profile);
           if (path.endsWith("/rest/v1/profile_interview_drafts") && request.method() === "GET")
@@ -686,6 +747,8 @@ try {
           "/signup",
           "/assistant",
           "/assistant-profile",
+          "/consent",
+          "/chats",
         ].includes(path);
         const allowedAsset =
           /^(?:\/src\/|\/supabase\/functions\/_shared\/|\/node_modules\/|\/@(?:vite|id|fs|tanstack-start)\/|\/@react-refresh$|\/fonts\/|\/brand\/|\/favicon\.)/.test(
@@ -708,6 +771,8 @@ try {
       );
       for (const fixture of fixtures) {
         current = fixture;
+        switchedOwner = false;
+        releaseConsent = undefined;
         currentDraft = fixture.stage ? draft(fixture.stage) : null;
         revision = 1;
         const name = `${fixture.name}-${scheme}-${width}`;
@@ -736,6 +801,161 @@ try {
                 .evaluate((el) => getComputedStyle(el).borderTopStyle),
               "solid",
             );
+          }
+          if (fixture.name === "signup-consent") {
+            const optional = page.getByRole("checkbox", {
+              name: "AI 맞춤 상담 동의 (선택)",
+              exact: true,
+            });
+            assert.equal(await optional.isChecked(), false);
+            await page.getByRole("checkbox", { name: "이용약관 동의 (필수)", exact: true }).check();
+            await page
+              .getByRole("checkbox", { name: "개인정보 수집·이용 동의 (필수)", exact: true })
+              .check();
+            await page
+              .locator("button:not([disabled])")
+              .filter({ hasText: "동의하고 시작하기" })
+              .waitFor();
+            assert.equal(
+              await optional.isChecked(),
+              false,
+              "AI consent is not required for signup",
+            );
+            await capture(page, `${name}-notice`);
+            await optional.check();
+            const signupResponse = page.waitForResponse((response) =>
+              response.url().endsWith("/rpc/begin_signup_with_manager"),
+            );
+            await page.getByRole("button", { name: "동의하고 시작하기", exact: true }).click();
+            await signupResponse;
+            assert.equal(
+              summary.backendRequests
+                .slice(backendStart)
+                .filter((r) => r.path.endsWith("/rpc/begin_signup_with_manager")).length,
+              1,
+            );
+          }
+          if (fixture.name === "home-history") {
+            const history = page.getByRole("list", { name: "나만의 상담 기록" });
+            await history.getByText(assistantHistory.at(-1).answer, { exact: true }).waitFor();
+            assert.equal(
+              await history.locator("li").count(),
+              1,
+              "home displays latest question/answer pair only",
+            );
+            assert.equal(
+              await page.getByText(assistantHistory[0].answer, { exact: true }).count(),
+              0,
+            );
+            assert.equal(
+              await page.getByRole("group", { name: "빠른 도움" }).count(),
+              0,
+              "no duplicate navigation chips on home",
+            );
+            assert.equal(await page.getByRole("checkbox").count(), 0);
+            assert.equal(
+              await page.getByRole("link", { name: "상점", exact: true }).count(),
+              0,
+              "female store rule unchanged",
+            );
+            await capture(page, `${name}-home`);
+            await page.getByRole("link", { name: "전체 대화", exact: true }).click();
+            await page
+              .getByRole("list", { name: "나만의 상담 기록" })
+              .getByText(assistantHistory[0].answer, { exact: true })
+              .waitFor();
+            assert.equal(
+              await page.getByRole("list", { name: "나만의 상담 기록" }).locator("li").count(),
+              2,
+              "same archive in full conversation",
+            );
+            await page.getByRole("button", { name: "상담 기록 지우기" }).click();
+            await page.getByRole("heading", { name: "기록을 지울까요?" }).waitFor();
+            assert.equal(
+              (
+                await page.getByRole("button", { name: "확인하고 삭제" }).getAttribute("class")
+              ).includes("border-destructive/40"),
+              true,
+            );
+            await page.getByRole("button", { name: "유지하기" }).click();
+          }
+          if (fixture.name === "manager-consent") {
+            const consent = page.getByRole("checkbox", { name: "AI 맞춤 상담 동의 (선택)" });
+            assert.equal(await consent.isChecked(), false);
+            assert.equal(
+              await page.getByRole("button", { name: "동의하고 상담 시작" }).isDisabled(),
+              true,
+            );
+            await consent.check();
+            await page
+              .locator("button:not([disabled])")
+              .filter({ hasText: "동의하고 상담 시작" })
+              .waitFor();
+            assert.equal(
+              await page.getByRole("button", { name: "동의하고 상담 시작" }).isEnabled(),
+              true,
+            );
+            // A's in-flight consent must neither check B's box nor navigate B.
+            await page.getByRole("button", { name: "동의하고 상담 시작" }).click();
+            for (let attempt = 0; attempt < 200 && !releaseConsent; attempt++)
+              await new Promise((resolve) => setTimeout(resolve, 10));
+            assert.ok(releaseConsent, "consent request started in synthetic handler");
+            switchedOwner = true;
+            const nextToken = `${Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url")}.${Buffer.from(JSON.stringify({ sub: otherId, exp: Math.floor(Date.now() / 1000) + 86400 })).toString("base64url")}.${Buffer.from("synthetic-signature").toString("base64url")}`;
+            await page.evaluate(
+              async ({ access_token, refresh_token }) => {
+                const { supabase } = await import("/src/lib/supabase.ts");
+                const result = await supabase.auth.setSession({ access_token, refresh_token });
+                if (result.error) throw result.error;
+              },
+              { access_token: nextToken, refresh_token: "synthetic-owner-b" },
+            );
+            await page.waitForFunction(() => {
+              const checkbox = document.querySelector(
+                'input[aria-label="AI 맞춤 상담 동의 (선택)"]',
+              );
+              return checkbox && !checkbox.checked;
+            });
+            releaseConsent();
+            await page.waitForLoadState("networkidle");
+            assert.equal(
+              new URL(page.url()).pathname,
+              "/consent",
+              "late A response cannot navigate B",
+            );
+            assert.equal(await consent.isChecked(), false, "owner switch resets consent");
+            assert.equal(
+              await page.getByRole("button", { name: "동의하고 상담 시작" }).isDisabled(),
+              true,
+            );
+          }
+          if (fixture.name.startsWith("meetings-")) {
+            await page.getByRole("heading", { name: "합성 도윤" }).waitFor();
+            assert.equal(
+              await page
+                .getByRole("navigation", { name: "소개 메뉴" })
+                .getByRole("link", { name: "만남", exact: true })
+                .getAttribute("aria-current"),
+              "page",
+            );
+            assert.equal(
+              await page
+                .getByRole("navigation", { name: "주요 메뉴" })
+                .getByRole("link", { name: "소개", exact: true })
+                .getAttribute("aria-current"),
+              "page",
+            );
+            await page
+              .getByRole("link", {
+                name:
+                  fixture.name === "meetings-pending"
+                    ? "요청 확인·답하기"
+                    : fixture.name === "meetings-scheduling"
+                      ? "날짜 고르기"
+                      : "약속·상대와 대화",
+                exact: true,
+              })
+              .waitFor();
           }
           if (fixture.name === "legacy-off") {
             assert.equal(await page.getByRole("button", { name: "동의하고 시작하기" }).count(), 0);
@@ -782,6 +1002,11 @@ try {
             await verifyHome(page, width);
           }
           if (fixture.name === "home-chat") {
+            assert.equal(
+              await page.getByRole("link", { name: "상점", exact: true }).count(),
+              1,
+              "male store remains visible",
+            );
             await page.getByLabel("매니저에게 상담할 내용").waitFor();
             assert.equal(await page.getByRole("switch").count(), 0);
             await capture(page, name);
@@ -878,6 +1103,8 @@ try {
           await capture(page, `${name}-failure`).catch(() => {});
           summary.results.push({ name, status: "failed", error: String(error) });
           console.error(`FAIL ${name}: ${error.message}`);
+        } finally {
+          releaseConsent?.();
         }
       }
       await context.close();

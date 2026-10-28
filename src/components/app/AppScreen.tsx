@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useContentArrival } from "@/lib/contentMotion";
 import { useKeepFieldVisible } from "@/lib/keyboard";
 import { useMe } from "@/lib/me";
+import { IntroductionNavigation } from "@/components/app/IntroductionNavigation";
 
 /**
  * 탭 라벨은 성별과 무관하게 "소개" 하나로 둔다.
@@ -67,7 +68,7 @@ export function AppScreen({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { me } = useMe();
-  const utilityRoot = !back && ["/home", "/intro"].includes(pathname);
+  const utilityRoot = !back && ["/home", "/intro", "/chats"].includes(pathname);
   const accountActive = [
     "/me",
     "/profile",
@@ -184,6 +185,9 @@ export function AppScreen({
         )}
         style={fill ? undefined : { paddingBottom: "1.5rem" }}
       >
+        {["/intro", "/chats", "/requests"].includes(pathname) ? (
+          <IntroductionNavigation meetings={pathname !== "/intro"} />
+        ) : null}
         {children}
       </main>
 
@@ -208,7 +212,10 @@ export function AppScreen({
         >
           <ul className="app-tab-segments mx-auto flex items-stretch gap-2">
             {TABS.map((t) => {
-              const introActive = pathname === "/intro" || pathname.startsWith("/intro/");
+              const introActive =
+                ["/intro", "/chats", "/requests", "/schedule", "/ticket"].includes(pathname) ||
+                pathname.startsWith("/intro/") ||
+                pathname.startsWith("/chat/");
               const active = t.to === "/intro" ? introActive : !introActive && !accountActive;
               const Icon = t.icon;
               return (

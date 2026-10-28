@@ -679,7 +679,7 @@ try {
   });
   await freshPage.getByLabel("휴대폰 번호", { exact: true }).fill("01000000074");
   await freshPage.getByRole("button", { name: "인증 없이 계속", exact: true }).click();
-  await freshPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
+  await freshPage.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
   await freshPage.getByRole("button", { name: "나중에 내 비서에서 이어하기" }).click();
   await freshPage.getByRole("heading", { name: "반가워요. 어떤 분인지 들려주세요." }).waitFor();
   assert.equal(
@@ -896,7 +896,7 @@ try {
   await carrierPage.getByLabel("비밀번호").fill(password);
   await carrierPage.getByRole("button", { name: "가입 계속하기" }).click();
   await chooseWorkZone(carrierPage);
-  await carrierPage.getByRole("heading", { name: "내 비서가 생겼어요." }).waitFor();
+  await carrierPage.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
   await carrierPage.getByRole("button", { name: "프로필 준비 시작" }).click();
   await carrierPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(await carrierPage.getByLabel("생년월일").inputValue(), "1994-02-15");
@@ -1023,7 +1023,8 @@ try {
   ).newPage();
   await login(femalePage, female);
   await checkPage(femalePage, "female home");
-  await femalePage.getByRole("link", { name: "요청 확인하기" }).click();
+  await femalePage.getByRole("link", { name: "만남 요청 보기" }).click();
+  await femalePage.getByRole("link", { name: "요청 확인·답하기" }).click();
   await checkPage(femalePage, "meeting request received");
   if (screenshotDir)
     await femalePage.screenshot({ path: join(screenshotDir, "meeting-received-native.png") });
@@ -1043,6 +1044,7 @@ try {
   await homeSummary.waitFor();
   const homeTime = await homeSummary.locator("dd").first().textContent();
   await femalePage.goto(`${baseUrl}/chats`);
+  await femalePage.getByRole("link", { name: "약속·상대와 대화" }).click();
   const chatSummary = femalePage.getByRole("region", { name: "약속 요약", exact: true });
   await chatSummary.waitFor();
   assert.equal(

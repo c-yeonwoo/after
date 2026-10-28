@@ -142,7 +142,8 @@ try {
   await (await ask(male, "약속 잡아줘", "소개 확인하기")).waitFor();
   assert.equal(cycleStatus(env, manifest).meetings, 0);
   // Profile edit stays in the real wizard, with no LLM needed for this QA edit.
-  await (await ask(male, "프로필 수정해줘", "프로필 수정하기")).click();
+  await (await ask(male, "프로필 수정해줘", "내 프로필 보기")).click();
+  await male.getByRole("link", { name: "사진·기본정보", exact: true }).click();
   await male.getByLabel("직업", { exact: true }).fill("로컬 QA 엔지니어");
   await male.getByRole("button", { name: "다음", exact: true }).click();
   await male.getByRole("button", { name: "다음", exact: true }).click();

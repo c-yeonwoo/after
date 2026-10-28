@@ -49,7 +49,7 @@ export function AssistantActions({
           case "edit":
             return (
               <Link key={action} className={style} to="/signup" search={{ edit: true }}>
-                {content("프로필 수정하기")}
+                {content("사진·기본정보 수정")}
               </Link>
             );
           case "revise":
@@ -62,7 +62,7 @@ export function AssistantActions({
                   if (draft) setAssistantDraft(draft.owner, draft.text);
                 }}
               >
-                {content("매니저와 프로필 다듬기")}
+                {content("소개글 함께 다듬기")}
               </Link>
             );
           case "intro":
@@ -97,8 +97,8 @@ export function AssistantActions({
             );
           case "requests":
             return (
-              <Link key={action} className={style} to="/requests">
-                {content("도착한 요청 보기")}
+              <Link key={action} className={style} to="/chats">
+                {content("만남 요청 보기")}
               </Link>
             );
           case "appointments":

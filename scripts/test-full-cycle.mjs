@@ -976,7 +976,7 @@ try {
     const f = personas.find((p) => p.id === success.female_id);
     success.female = f;
     await homeObserver
-      .getByRole("link", { name: "요청 확인하기", exact: true })
+      .getByRole("link", { name: "만남 요청 보기", exact: true })
       .waitFor({ timeout: 25000 });
     await f.page
       .getByLabel("소개 이유", { exact: true })

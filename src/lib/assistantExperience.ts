@@ -95,14 +95,11 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
       return context.complete
         ? {
             text: "상대에게 보이는 내 프로필이에요. 바꾸고 싶은 내용은 수정에서 정리해요.",
-            actions: ["profile", "edit"],
+            actions: ["profile"],
           }
         : generic("프로필 준비", ["account"]);
     case "edit":
-      return generic(
-        "프로필 수정",
-        context.complete ? (context.profileEdit ? ["revise", "edit"] : ["edit"]) : ["account"],
-      );
+      return generic("프로필 수정", context.complete ? ["profile"] : ["account"]);
     case "coach_profile":
       return {
         text: "내 프로필에서 표현을 점검할 수 있어요. AI 상담이 열리면 원문을 함께 읽고 코칭해요.",
@@ -117,7 +114,7 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
       return context.complete && context.profileEdit
         ? {
             text: "바꾸고 싶은 이야기를 들려주세요. 수정안을 함께 보고, 괜찮으면 프로필에 반영해요.",
-            actions: ["revise", "edit"],
+            actions: ["revise"],
           }
         : generic("소개글 수정", [context.complete ? "edit" : "account"]);
     case "clarify":

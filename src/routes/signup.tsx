@@ -64,6 +64,8 @@ import { pruneMyPhotos } from "@/lib/photo";
 import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
+import { ManagerConsentNotice } from "@/components/assistant/ManagerConsentNotice";
+import { recordManagerSignupConsent } from "@/lib/signupSession";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>): { edit?: true; prepare?: true } => ({
@@ -137,6 +139,7 @@ function Onboarding() {
   const [codeSent, setCodeSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
+  const [managerAgreed, setManagerAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const agreed = termsAgreed && privacyAgreed;
   const [signupSession, setSignupSession] = useState<SignupSession | null>(null);
@@ -203,6 +206,7 @@ function Onboarding() {
         setSignupSession(session);
         setTermsAgreed(true);
         setPrivacyAgreed(true);
+        setManagerAgreed(session.managerConsented === true);
         if (session.gender) setGender(session.gender);
         if (session.birth) setBasics((value) => ({ ...value, birth: session.birth! }));
         if (session.verified) setAuthError(null);
@@ -274,6 +278,7 @@ function Onboarding() {
     setSignupSession(null);
     setSignupResumeRequired(false);
     setTermsAgreed(false);
+    setManagerAgreed(false);
     setPrivacyAgreed(false);
     setGender(null);
     setHubId(null);
@@ -560,6 +565,7 @@ function Onboarding() {
             </span>
           </label>
         </div>
+        <ManagerConsentNotice checked={managerAgreed} onChange={setManagerAgreed} />
         {authError ? (
           <p role="alert" className="mt-4 text-sm text-destructive">
             {authError}
@@ -575,10 +581,11 @@ function Onboarding() {
             try {
               if (me) {
                 const updated = await recordConsent();
+                if (managerAgreed) await recordManagerSignupConsent();
                 setMe(updated);
                 setStep(resumeStep(updated));
               } else {
-                const session = signupSession ?? (await beginSignup());
+                const session = signupSession ?? (await beginSignup(managerAgreed));
                 setSignupSession(session);
                 setStep(carrierIdentityEnabled ? (session.verified ? 4 : PHONE) : 1);
               }

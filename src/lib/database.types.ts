@@ -3042,6 +3042,14 @@ export type Database = {
       }
     }
     Functions: {
+      begin_signup_with_manager: {
+        Args: { p_token: string; p_policy_version: string; p_manager_policy_version?: string | null }
+        Returns: Json
+      }
+      record_manager_signup_consent: {
+        Args: { p_policy_version: string }
+        Returns: undefined
+      }
       accept_meeting_slot: {
         Args: { p_index: number; p_meeting_id: string }
         Returns: {

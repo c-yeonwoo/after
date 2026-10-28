@@ -86,16 +86,14 @@ function LegacyAssistantDock({
         <div className="flex items-center gap-2.5">
           <AssistantMark />
           <div>
-            <h2 className="text-base font-semibold">같이 이야기해요</h2>
-            <p className="mt-1 text-xs text-muted-foreground">애프터 매니저 · 나를 알아가는 AI</p>
+            <h2 className="text-base font-semibold">애프터 매니저</h2>
+            <p className="mt-1 text-xs text-muted-foreground">무엇을 도와드릴까요?</p>
           </div>
         </div>
       ) : null}
       <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
         {(
           [
-            ["status", "내 상태"],
-            ["intro", "소개 확인"],
             ["profile", "내 프로필"],
             ["prepare", "대화 팁"],
             ["schedule", "일정 정리"],

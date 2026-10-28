@@ -19,8 +19,8 @@ function AssistantProfilePage() {
   }, [me, ready, navigate]);
   return (
     <AppScreen
-      title="프로필 다듬기"
-      back="/home"
+      title="소개글 다듬기"
+      back="/profile"
       hideTabs
       keyboardAware
       footer={<div id="profile-revision-footer" />}

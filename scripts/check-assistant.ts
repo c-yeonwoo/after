@@ -211,10 +211,17 @@ for (const intent of ["edit_photo", "edit_facts"] as const)
     ["edit"],
     "photo/fact requests must not open paid story generation",
   );
-assert.deepEqual(assistantReply("edit_story", { ...ctx, profileEdit: true }).actions, [
-  "revise",
-  "edit",
-]);
+assert.deepEqual(assistantReply("edit_story", { ...ctx, profileEdit: true }).actions, ["revise"]);
+assert.deepEqual(
+  assistantReply("edit", { ...ctx, profileEdit: true }).actions,
+  ["profile"],
+  "general edit opens the shared profile hub",
+);
+assert.deepEqual(
+  assistantReply("profile", ctx).actions,
+  ["profile"],
+  "profile has one entry point",
+);
 assert.deepEqual(assistantReply("clarify", changedCounterpartContext).actions, []);
 assert.match(assistantServiceReply("今", "waiting") ?? "unknown", /unknown/);
 assert.match(assistantServiceReply("진행 상태", "photos_pending")!, /사진을 확인 중/);

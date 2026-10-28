@@ -255,10 +255,10 @@ try {
   await page.getByLabel("매니저에게 상담할 내용").waitFor();
   assert.equal(sharedReads.flags, 1, "one capability observer, not nested duplicate readers");
   assert.equal(sharedReads.payments, 1);
-  await page.getByRole("link", { name: "대화 전체 보기" }).click();
+  await page.getByRole("link", { name: "전체 대화" }).click();
   await page.getByRole("heading", { name: "나와 매니저", exact: true }).waitFor();
   await page.goBack();
-  await page.getByRole("link", { name: "대화 전체 보기" }).waitFor();
+  await page.getByRole("link", { name: "전체 대화" }).waitFor();
   assert.equal(sharedReads.flags, 1, "returning home reuses the fresh capability snapshot");
   assert.equal(sharedReads.payments, 1, "home remount reuses the payment display setting");
   // Playwright routing disables HTTP caching in this harness. Assert stable
@@ -271,7 +271,7 @@ try {
   };
   page.on("request", countDraftCalls);
   await page.getByLabel("매니저에게 상담할 내용").fill(draftedQuestion);
-  await page.getByRole("link", { name: "대화 전체 보기" }).click();
+  await page.getByRole("link", { name: "전체 대화" }).click();
   await page.waitForURL("**/assistant?panel=chat");
   // Router URL commits before its outgoing home surface unmounts.
   await page.getByRole("heading", { name: "나와 매니저", exact: true }).waitFor();
@@ -298,7 +298,7 @@ try {
     (await rpc("my_assistant_state")).turns.some((turn) => turn.question === "소개글 수정해줘"),
     "server persisted service command",
   );
-  await page.getByRole("link", { name: "프로필 수정하기", exact: true }).waitFor();
+  await page.getByRole("link", { name: "사진·기본정보 수정", exact: true }).waitFor();
   assert.equal(draftApiCalls, 1, "service command uses the persistent server conversation");
   assert.equal(
     sql(`select count(*) from ai_runs where user_id='${id}'`),
@@ -314,7 +314,7 @@ try {
   assert.equal(new URL(page.url()).pathname, "/home", "home sends in place");
   await page.reload();
   await page.getByText("지금 진행 상태", { exact: true }).waitFor();
-  await page.getByRole("link", { name: "대화 전체 보기" }).click();
+  await page.getByRole("link", { name: "전체 대화" }).click();
   await page.getByText("소개글 수정해줘", { exact: true }).waitFor();
   await page.getByText("지금 진행 상태", { exact: true }).waitFor();
   // Same-timestamp records exercise the stable timestamp + UUID cursor.

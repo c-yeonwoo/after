@@ -97,7 +97,7 @@ function OwnProfileCoaching({
           search={{ edit: true }}
           className="assistant-suggestion inline-flex items-center"
         >
-          프로필 직접 다듬기
+          직접 수정하기
         </Link>
       )}
       {canAsk ? (
