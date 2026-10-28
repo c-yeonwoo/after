@@ -95,7 +95,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
   page.on("request", countPrivateCalls);
   for (const [query, link] of [
     ["프로필 준비", "내 프로필 보기"],
-    ["소개글 수정해줘", "프로필 수정하기"],
+    ["소개글 수정해줘", "사진·기본정보 수정"],
     ["소개 보여줘", "소개 확인하기"],
     ["호감 보내줘", "소개 확인하기"],
     ["결제 방법", "티켓·가격 확인"],

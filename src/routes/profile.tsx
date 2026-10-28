@@ -1,14 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Sparkles } from "lucide-react";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
-import { GuideNote } from "@/components/app/GuideNote";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { BRAND } from "@/lib/brand";
 import { useMe } from "@/lib/me";
 import { toProfileView } from "@/lib/profileView";
+import { useAssistantFlags } from "@/lib/useAssistantFlags";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
   const { me, ready } = useMe();
   const navigate = useNavigate();
+  const capabilities = useAssistantFlags(me?.id);
 
   useEffect(() => {
     if (ready && !me) navigate({ to: "/" });
@@ -56,15 +57,19 @@ function ProfilePage() {
           className="pressable inline-flex min-h-11 items-center gap-1.5 rounded-control bg-muted px-3 text-sm font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Pencil className="size-3.5" aria-hidden="true" />
-          수정
+          사진·기본정보
         </Link>
       }
     >
-      <div className="mb-6">
-        <GuideNote assistant>
-          지금 공개되는 프로필이에요. 수정한 내용은 마지막에 저장해야 반영돼요.
-        </GuideNote>
-      </div>
+      {capabilities.data?.profileEdit ? (
+        <Link
+          to="/assistant-profile"
+          className="mb-5 flex min-h-12 items-center gap-3 rounded-control bg-muted/60 px-4 text-sm font-semibold"
+        >
+          <Sparkles className="size-4 text-primary-strong" aria-hidden="true" />
+          소개글 함께 다듬기
+        </Link>
+      ) : null}
       <ProfileDetail p={view} own assistantSignature={<AssistantMark />} />
     </AppScreen>
   );

@@ -200,24 +200,23 @@ function HomePage() {
           <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
             <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
           </h1>
-          <p className="mt-2 break-keep text-sm leading-relaxed text-muted-foreground">
-            {welcome.invitation}
-          </p>
         </div>
       </div>
 
-      <div className="home-progress mt-5">
-        <h2 className="break-keep text-base font-semibold leading-relaxed">{headline}</h2>
-        {!live.isError &&
-        !live.isPaused &&
-        primaryState === "waiting" &&
-        !isMale &&
-        serverState?.intro_progress?.has_likes ? (
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            만남 요청이 오면 날짜를 보고 결정해요.
-          </p>
-        ) : null}
-      </div>
+      {!hasPriorityContent ? (
+        <div className="home-progress mt-4">
+          <h2 className="break-keep text-base font-semibold leading-relaxed">{headline}</h2>
+          {!live.isError &&
+          !live.isPaused &&
+          primaryState === "waiting" &&
+          !isMale &&
+          serverState?.intro_progress?.has_likes ? (
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              만남 요청이 오면 날짜를 보고 결정해요.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {(live.isError || live.isPaused) && live.data ? (
         <LiveRefreshNotice retry={() => void live.refetch()} />
@@ -290,7 +289,7 @@ function HomePage() {
           ) : !isMale && requestCount > 0 ? (
             // 여러 남성이 동시에 티켓을 쓸 수 있다 — 한 건만 보여주면 나머지는
             // 답을 못 받고 24시간 뒤 자동 환불된다.
-            <GuideNote action={<CardAction to="/requests">요청 확인하기</CardAction>}>
+            <GuideNote action={<CardAction to="/chats">만남 요청 보기</CardAction>}>
               {requestCount > 1
                 ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
                 : "날짜를 확인하고 답해 주세요."}
@@ -334,18 +333,7 @@ function HomePage() {
             여기 오는 candidate 는 이미 연 소개라 답할 것이 없다 — 예전에는 둘 다에게
             같은 안내가 붙어 남성 화면이 사실과 다른 말을 했다.
           */
-            <>
-              {isMale ? null : (
-                <GuideNote>
-                  {serverState?.intro_progress?.has_likes
-                    ? "마음을 남긴 소개가 있어요. 요청이 오면 날짜를 보고 결정해요."
-                    : "좋아요는 만남 확정이 아니에요. 요청이 오면 날짜를 보고 결정해요."}
-                </GuideNote>
-              )}
-              <div className={isMale ? undefined : "mt-4"}>
-                <CandidatePreview candidate={candidate} isMale={isMale} />
-              </div>
-            </>
+            <CandidatePreview candidate={candidate} isMale={isMale} />
           ) : isMale && queued > 0 ? (
             /*
             큐에 카드가 도착한 상태. 여는 데 소개 티켓 1장이 들어가므로 홈에서
@@ -448,12 +436,17 @@ function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isM
   return (
     <div className="introduction-arrival overflow-hidden rounded-surface">
       <div className="px-5 pt-5 pb-6">
-        <p className="text-2xl leading-[1.3] font-semibold">
-          {candidate.name}
-          {candidate.age !== null ? (
-            <span className="ml-2 text-base text-muted-foreground">{candidate.age}</span>
-          ) : null}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-2xl leading-[1.3] font-semibold">
+            {candidate.name}
+            {candidate.age !== null ? (
+              <span className="ml-2 text-base text-muted-foreground">{candidate.age}</span>
+            ) : null}
+          </p>
+          <span className="shrink-0 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
+            {isMale ? "이번 소개" : "새 소개"}
+          </span>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
         {candidate.headline ? (
           <p className="mt-4 line-clamp-2 break-keep break-words text-lg leading-[1.5] font-medium text-foreground">

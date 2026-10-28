@@ -1,136 +1,119 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowRight, CalendarCheck } from "lucide-react";
-
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { ArrowUpRight, CalendarCheck } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
-import { Conversation } from "@/components/app/Conversation";
-import { SafetyMenu } from "@/components/app/SafetyMenu";
-import { BRAND } from "@/lib/brand";
-import { listMyActiveMeetings, type ActiveMeeting } from "@/lib/api";
+import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
+import { Button } from "@/components/ui/button";
+import { listMyActiveMeetings } from "@/lib/api";
+import { useMe } from "@/lib/me";
+import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
+import { formatMeetTime } from "@/lib/meet";
 
 export const Route = createFileRoute("/chats")({
-  head: () => ({
-    meta: [
-      { title: `대화 — ${BRAND.name}` },
-      {
-        name: "description",
-        content: "약속을 잡는 데 필요한 만큼의 대화. 양쪽이 좋다고 했을 때만 열립니다.",
-      },
-      { property: "og:title", content: `대화 — ${BRAND.name}` },
-      { property: "og:description", content: "양쪽이 좋다고 했을 때만 열리는 1:1 대화." },
-    ],
-  }),
-  component: ChatsPage,
+  head: () => ({ meta: [{ title: "만남 — 애프터" }] }),
+  component: MeetingsPage,
 });
 
-/**
- * 대화 탭.
- *
- * 남성은 불변식 2 때문에 항상 0~1건이라 탭이 곧 대화다.
- * 여성은 여러 남성에게 동시에 요청을 받을 수 있어 N건이 될 수 있으므로,
- * 2건 이상일 때만 목록을 보여준다 — 1건인데 목록을 거치게 하면
- * 의미 없는 탭이 한 번 더 생긴다.
- */
-function ChatsPage() {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<ActiveMeeting[]>([]);
-
+/** One overview for requests, scheduling and confirmed conversations. */
+function MeetingsPage() {
+  const { me, ready } = useMe();
+  const navigate = useNavigate();
+  const live = useMemberLiveQuery(
+    "member-meetings",
+    me?.id,
+    () => listMyActiveMeetings(false, me?.id),
+    ready,
+  );
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const list = await listMyActiveMeetings();
-      if (!cancelled) {
-        setItems(list);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <AppScreen title="약속" back="/home">
-        <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
-      </AppScreen>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <AppScreen title="약속" back="/home">
-        <div className="mt-16 px-6 py-12 text-center">
-          <p className="headline text-base">아직 열린 대화가 없습니다</p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            날짜와 장소가 확정되면 이곳에서 대화가 열립니다.
-          </p>
-        </div>
-      </AppScreen>
-    );
-  }
-
-  if (items.length === 1) {
-    const { meeting, counterpart } = items[0];
-    const title = `${counterpart.name ?? "대화"}${
-      counterpart.age !== null ? ` ${counterpart.age}` : ""
-    }`;
-    return (
-      <AppScreen
-        title={title}
-        back="/home"
-        fill
-        action={
-          <SafetyMenu
-            targetId={counterpart.id!}
-            targetName={counterpart.name ?? "상대"}
-            kind="profile"
-            onDone={() => setItems([])}
-          />
-        }
-      >
-        <Conversation
-          meeting={meeting}
-          onMeetingChange={(m) => setItems([{ meeting: m, counterpart }])}
-        />
-      </AppScreen>
-    );
-  }
-
+    if (ready && !me) void navigate({ to: "/login" });
+  }, [ready, me, navigate]);
   return (
-    <AppScreen title="약속" back="/home">
-      <p className="mt-2 text-sm text-muted-foreground">진행 중인 대화 {items.length}개</p>
-      <ul className="mt-4 divide-y divide-border">
-        {items.map(({ meeting, counterpart }) => (
-          <li key={meeting.id}>
-            <Link
-              to="/chat/$id"
-              params={{ id: meeting.id }}
-              className="pressable block rounded-control px-1 py-5 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="headline truncate text-lg">
-                    {counterpart.name}
-                    {counterpart.age !== null ? (
-                      <span className="ml-1.5 text-sm text-muted-foreground">
-                        {counterpart.age}
-                      </span>
-                    ) : null}
+    <AppScreen title="소개">
+      <h1 className="text-lg font-semibold">함께할 약속</h1>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        만남 요청부터 날짜 조율, 확정된 대화까지.
+      </p>
+      {live.isError || live.isPaused ? (
+        <LiveRefreshNotice retry={() => void live.refetch()} />
+      ) : null}
+      {live.isPending && !live.isPaused ? (
+        <p role="status" className="py-8 text-sm text-muted-foreground">
+          만남을 불러오는 중…
+        </p>
+      ) : null}
+      {live.data?.length === 0 ? (
+        <div className="py-10">
+          <p className="font-semibold">아직 진행 중인 만남이 없어요.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            마음이 가는 소개부터 천천히 살펴보세요.
+          </p>
+          <Button asChild variant="outline" className="mt-5">
+            <Link to="/intro">새 소개 보기</Link>
+          </Button>
+        </div>
+      ) : null}
+      <ul className="mt-5 space-y-4">
+        {live.data?.map(({ meeting, counterpart }) => (
+          <li key={meeting.id} className="rounded-surface border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">
+                {counterpart.name ?? "상대"}
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  {counterpart.age}
+                </span>
+              </h2>
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+                {meeting.completed_at
+                  ? "지난 만남"
+                  : meeting.confirmed_at
+                    ? "약속 확정"
+                    : meeting.prefs_submitted_at
+                      ? "날짜 조율"
+                      : "만남 요청"}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{counterpart.job}</p>
+            {meeting.confirmed_at ? (
+              <>
+                {meeting.scheduled_at ? (
+                  <p className="mt-4 flex items-center gap-2 text-sm">
+                    <CalendarCheck className="size-4 shrink-0" aria-hidden="true" />
+                    {formatMeetTime(meeting.scheduled_at)}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{counterpart.job}</p>
-                  {meeting.confirmed_at ? (
-                    <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <CalendarCheck className="size-3.5" aria-hidden="true" />
-                      만남 확정
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">날짜·장소 정하는 중</p>
-                  )}
-                </div>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              </div>
-            </Link>
+                ) : null}
+                <Link
+                  to="/chat/$id"
+                  params={{ id: meeting.id }}
+                  className="mt-3 flex min-h-11 items-center justify-between text-sm font-semibold text-primary-strong"
+                >
+                  약속·상대와 대화
+                  <ArrowUpRight className="size-4" aria-hidden="true" />
+                </Link>
+              </>
+            ) : !meeting.prefs_submitted_at && me?.gender === "female" ? (
+              <Link
+                to="/requests"
+                className="mt-3 flex min-h-11 items-center justify-between text-sm font-semibold text-primary-strong"
+              >
+                요청 확인·답하기
+                <ArrowUpRight className="size-4" aria-hidden="true" />
+              </Link>
+            ) : meeting.prefs_submitted_at && me?.gender === "male" ? (
+              <Link
+                to="/schedule"
+                search={{ meetingId: meeting.id }}
+                className="mt-3 flex min-h-11 items-center justify-between text-sm font-semibold text-primary-strong"
+              >
+                날짜 고르기
+                <ArrowUpRight className="size-4" aria-hidden="true" />
+              </Link>
+            ) : (
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                {meeting.prefs_submitted_at
+                  ? "가능한 날짜를 전했어요. 상대의 선택을 기다리고 있어요."
+                  : "만남을 요청했어요. 상대의 답변을 기다리고 있어요."}
+              </p>
+            )}
           </li>
         ))}
       </ul>

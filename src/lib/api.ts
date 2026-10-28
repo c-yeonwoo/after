@@ -1464,7 +1464,10 @@ export type ActiveMeeting = { meeting: Meeting; counterpart: PublicProfile };
  *
  * 최근 것이 위로 온다.
  */
-export async function listMyActiveMeetings(): Promise<ActiveMeeting[]> {
+export async function listMyActiveMeetings(
+  confirmedOnly = true,
+  expectedUserId?: string,
+): Promise<ActiveMeeting[]> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -1477,7 +1480,8 @@ export async function listMyActiveMeetings(): Promise<ActiveMeeting[]> {
   if (introErr) throw introErr;
   if (!intros?.length) return [];
 
-  const { data: meetings, error: meetingErr } = await supabase
+  if (expectedUserId && session.user.id !== expectedUserId) throw new Error("account changed");
+  let meetingQuery = supabase
     .from("meetings")
     .select("*")
     .in(
@@ -1485,8 +1489,9 @@ export async function listMyActiveMeetings(): Promise<ActiveMeeting[]> {
       intros.map((i) => i.id),
     )
     .is("cancelled_at", null)
-    .not("confirmed_at", "is", null)
     .order("created_at", { ascending: false });
+  if (confirmedOnly) meetingQuery = meetingQuery.not("confirmed_at", "is", null);
+  const { data: meetings, error: meetingErr } = await meetingQuery;
   if (meetingErr) throw meetingErr;
   if (!meetings?.length) return [];
 

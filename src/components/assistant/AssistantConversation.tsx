@@ -140,6 +140,9 @@ export function AssistantConversation({
         ).values(),
       ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
     : [];
+  const shownTurns = compact
+    ? visibleTurns.filter((turn) => !turn.kind || turn.kind === "conversation").slice(-1)
+    : visibleTurns;
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [suggestionsHidden, setSuggestionsHidden] = useState(false);
@@ -148,7 +151,6 @@ export function AssistantConversation({
     const draft = takeAssistantDraft(owner);
     if (draft && !inputEdited.current) setInput(draft);
   }, [owner]);
-  const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [guide, setGuide] = useState<string | null>(null);
@@ -418,8 +420,10 @@ export function AssistantConversation({
         <div className="assistant-conversation-heading">
           <AssistantMark />
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-semibold">같이 이야기해요</h2>
-            <p className="mt-1 text-xs text-muted-foreground">애프터 매니저</p>
+            <h2 className="text-base font-semibold">애프터 매니저</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {data?.turns.length ? "최근 대화" : "어떤 이야기를 해볼까요?"}
+            </p>
           </div>
           {data?.consented ? (
             <Link
@@ -428,7 +432,7 @@ export function AssistantConversation({
               className="inline-flex min-h-11 items-center gap-1 text-sm font-medium"
               onClick={() => setAssistantDraft(owner, input)}
             >
-              대화 전체 보기 <ArrowUpRight className="size-4" aria-hidden="true" />
+              전체 대화 <ArrowUpRight className="size-4" aria-hidden="true" />
             </Link>
           ) : null}
         </div>
@@ -453,7 +457,7 @@ export function AssistantConversation({
           </Link>
         </nav>
       ) : null}
-      {panel === "chat" && (!compact || data?.consented) ? (
+      {panel === "chat" && !compact ? (
         <>
           <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
             {(compact
@@ -503,48 +507,20 @@ export function AssistantConversation({
                 상담은 상대에게 전송되지 않아요. 공개 프로필과도 분리해서 다뤄요.
               </p>
               {data.flags.chat ? (
-                <>
-                  <label className="mt-5 flex gap-3 text-sm leading-relaxed">
-                    <input
-                      className="mt-1 size-5 shrink-0 accent-primary-strong"
-                      type="checkbox"
-                      checked={agree}
-                      onChange={(e) => setAgree(e.target.checked)}
-                    />
-                    <span>
-                      내 공개 프로필(나이·직업·활동 지역·MBTI·소개글), 상담과 관련 이전 대화를
-                      Anthropic AI에 보내 맞춤 조언을 받아요. 대화는 초기화·동의 철회·탈퇴 전까지
-                      보관해요. 연락처·건강 등 민감한 내용은 입력하지 마세요.
-                    </span>
-                  </label>
-                  <Link
-                    to="/privacy"
-                    className="mt-3 flex min-h-11 items-center text-sm font-semibold"
-                  >
-                    개인정보 처리 안내
-                  </Link>
-                  <Button
-                    className="mt-3 w-full"
-                    disabled={!agree || busy}
-                    onClick={() =>
-                      void run(() =>
-                        assistantRpc("assistant_manager_consent", {
-                          p_agree: true,
-                          p_policy_version: "manager-continuity-v2",
-                        }),
-                      )
-                    }
-                  >
-                    동의하고 시작하기
-                  </Button>
-                </>
+                <Link
+                  to="/consent"
+                  search={{ manager: true }}
+                  className="app-primary-button mt-4 flex min-h-12 items-center justify-center rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                >
+                  맞춤 상담 시작
+                </Link>
               ) : (
                 <p className="mt-5 text-sm font-semibold">
                   비공개 상담은 아직 준비 중이에요. 기존 대화 준비와 소개 기능은 계속 이용할 수
                   있어요.
                 </p>
               )}
-              {data.session_id ? (
+              {data.session_id && !compact ? (
                 <>
                   <details className="mt-4">
                     <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">
@@ -610,7 +586,7 @@ export function AssistantConversation({
                   {loadingEarlier ? "이전 대화 불러오는 중…" : "이전 대화 보기"}
                 </Button>
               ) : null}
-              {visibleTurns.length === 0 ? (
+              {shownTurns.length === 0 ? (
                 <div>
                   {!compact ? (
                     <div className="assistant-reply">
@@ -633,7 +609,7 @@ export function AssistantConversation({
                 </div>
               ) : (
                 <ol className="assistant-transcript mt-4 space-y-5" aria-label="나만의 상담 기록">
-                  {(compact ? visibleTurns.slice(-3) : visibleTurns).map((turn) => (
+                  {shownTurns.map((turn) => (
                     <li key={turn.id}>
                       {!turn.kind || turn.kind === "conversation" ? (
                         <div className="ml-8 rounded-[16px_4px_16px_16px] bg-bubble-mine p-4 text-bubble-mine-foreground">
@@ -838,7 +814,8 @@ export function AssistantConversation({
               </p>
               <div className="mt-4 flex gap-2">
                 <Button
-                  variant="destructive"
+                  variant="outline"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={busy}
                   onClick={() =>
                     void run(() =>

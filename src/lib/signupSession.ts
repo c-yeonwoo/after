@@ -6,6 +6,7 @@ export type SignupSession = {
   acceptedAt: string;
   expiresAt: string;
   verified: boolean;
+  managerConsented?: boolean;
   gender?: "male" | "female" | null;
   birth?: string | null;
 };
@@ -19,18 +20,26 @@ export function clearSignupSession() {
   sessionStorage.removeItem(PENDING_KEY);
 }
 
-export async function beginSignup(): Promise<SignupSession> {
+export async function beginSignup(managerConsent = false): Promise<SignupSession> {
   const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
     b.toString(16).padStart(2, "0"),
   ).join("");
-  const { data, error } = await supabase.rpc("begin_signup", {
+  const { data, error } = await supabase.rpc("begin_signup_with_manager", {
     p_token: token,
     p_policy_version: POLICY_VERSION,
+    p_manager_policy_version: managerConsent ? "manager-continuity-v2" : null,
   });
   if (error) throw error;
   sessionStorage.setItem(KEY, token);
   sessionStorage.removeItem(PENDING_KEY);
   return data as unknown as SignupSession;
+}
+
+export async function recordManagerSignupConsent() {
+  const { error } = await supabase.rpc("record_manager_signup_consent", {
+    p_policy_version: "manager-continuity-v2",
+  });
+  if (error) throw error;
 }
 
 export async function loadSignupSession(): Promise<SignupSession | null> {

@@ -75,7 +75,7 @@ function RequestsPage() {
 
   if (loading) {
     return (
-      <AppScreen title="만남 요청" back="/home">
+      <AppScreen title="만남 요청" back="/chats">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
       </AppScreen>
     );
@@ -83,7 +83,7 @@ function RequestsPage() {
 
   if (loadError) {
     return (
-      <AppScreen title="만남 요청" back="/home">
+      <AppScreen title="만남 요청" back="/chats">
         <div role="alert" className="app-elevated mt-10 rounded-surface bg-card p-6">
           <p className="text-sm">요청 목록을 확인할 수 없습니다.</p>
           <Button className="mt-4" variant="outline" onClick={() => void live.refetch()}>
@@ -96,7 +96,7 @@ function RequestsPage() {
 
   if (requests.length === 0) {
     return (
-      <AppScreen title="만남 요청" back="/home">
+      <AppScreen title="만남 요청" back="/chats">
         {refreshNotice}
         <div className="mt-16 px-6 py-12 text-center">
           <p className="headline text-base">아직 받은 요청이 없습니다</p>
@@ -109,7 +109,7 @@ function RequestsPage() {
   }
 
   return (
-    <AppScreen title="만남 요청" back="/home">
+    <AppScreen title="만남 요청" back="/chats">
       {refreshNotice}
       <div className="mt-3">
         <GuideNote assistant>

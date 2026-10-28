@@ -46,9 +46,8 @@ const MENU = [
     hint: "퇴근 후 편한 요일",
     male: false,
   },
-  // 베타에는 결제를 받지 않으므로 구매·상점으로 부르지 않는다. 결제를 켠 뒤에도
-  // 티켓 보유량과 신청 상태를 확인하는 화면이라 중립적인 이름이 더 오래 간다.
-  { to: "/store", icon: Ticket, label: "티켓 받기", hint: "소개 · 만남 티켓", male: true },
+  // 무료 베타에도 상점 진입은 유지한다. 구매 가능 여부는 상점 안에서 안내한다.
+  { to: "/store", icon: Ticket, label: "티켓 상점", hint: "소개 · 만남 이용 안내", male: true },
   { to: "/orders", icon: Receipt, label: "티켓 이용 내역", hint: "발급 · 사용 · 결제", male: true },
   { to: "/settings", icon: Settings, label: "환경설정", hint: "화면 · 알림", male: false },
   {
@@ -59,10 +58,6 @@ const MENU = [
     male: false,
   },
 ] as const;
-
-function toVisibleInMenu(to: string, paid: boolean | null) {
-  return to !== "/store" || paid === true;
-}
 
 /**
  * 마이페이지 = 허브.
@@ -260,29 +255,27 @@ function MePage() {
       {/* ── 메뉴 ──────────────────────────────── */}
       <nav className="mt-6" aria-label="설정 메뉴">
         <ul className="app-elevated divide-y divide-border/60 overflow-hidden rounded-surface bg-card">
-          {MENU.filter((m) => (!m.male || isMale) && toVisibleInMenu(m.to, paid)).map(
-            ({ to, icon: Icon, label, hint }) => (
-              <li key={to}>
-                <Link
-                  to={to}
-                  search={to === "/availability" ? { from: "me" } : {}}
-                  className="pressable flex min-h-20 items-center gap-3.5 px-4 py-3 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
-                >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-surface-subtle text-primary-strong">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{label}</span>
-                    <span className="block text-xs text-muted-foreground">{hint}</span>
-                  </span>
-                  <ChevronRight
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li>
-            ),
-          )}
+          {MENU.filter((m) => !m.male || isMale).map(({ to, icon: Icon, label, hint }) => (
+            <li key={to}>
+              <Link
+                to={to}
+                search={to === "/availability" ? { from: "me" } : {}}
+                className="pressable flex min-h-20 items-center gap-3.5 px-4 py-3 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-surface-subtle text-primary-strong">
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">{label}</span>
+                  <span className="block text-xs text-muted-foreground">{hint}</span>
+                </span>
+                <ChevronRight
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
 
