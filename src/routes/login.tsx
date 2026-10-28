@@ -111,7 +111,7 @@ function LoginPage() {
       }
       if (result.kind === "incomplete") {
         const checked = accountChecksComplete(result.profile, carrierIdentityEnabled);
-        toast(checked ? "내 비서와 프로필 준비를 이어가세요." : "남은 계정 확인을 마쳐주세요.");
+        toast(checked ? "내 매니저와 프로필 준비를 이어가세요." : "남은 계정 확인을 마쳐주세요.");
         await goTo(checked ? "/home" : "/signup");
         return;
       }

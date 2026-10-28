@@ -60,6 +60,15 @@ async function invoke(
               ? [{ question: "내 프로필 장점 코칭해줘", answer: "과거 제안은 원문이 아닙니다." }]
               : [],
             memories: [],
+            owner_profile: {
+              age: 29,
+              job: "기획자",
+              introduction_area: "종로",
+              mbti: "INFJ",
+              intro: "주말에는 전시를 봐요.",
+              phone: "NEVER_SEND",
+            },
+            related_history: [],
           },
         };
       if (name === "reserve_ai_run") return { data: { reserved: true } };
@@ -180,6 +189,9 @@ for (const options of [{ denied: true }, { replay: true }]) {
 const generic = await invoke("첫 만남이 긴장돼요");
 assert.equal(generic.reads, 0);
 assert.doesNotMatch(JSON.stringify(generic.model), /owner_public_profile/);
+assert.match(JSON.stringify(generic.model), /owner_profile/);
+assert.match(JSON.stringify(generic.model), /주말에는 전시/);
+assert.doesNotMatch(JSON.stringify(generic.model), /NEVER_SEND/);
 const status = await invoke("지금 상태 알려줘");
 assert.equal(status.model.length, 0);
 console.log(

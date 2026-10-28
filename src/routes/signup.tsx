@@ -450,7 +450,7 @@ function Onboarding() {
         <div className="assistant-welcome mt-6">
           <AssistantMark className="size-14" />
           <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight">
-            내 비서가 생겼어요.
+            내 매니저가 생겼어요.
           </h2>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
             이제 나다운 프로필을 준비할 차례예요. 나이와 사진, 몇 가지 이야기를 확인한 뒤 소개를
@@ -465,7 +465,7 @@ function Onboarding() {
           className="mt-3 w-full"
           onClick={() => navigate({ to: "/home", replace: true })}
         >
-          나중에 내 비서에서 이어하기
+          나중에 내 매니저에서 이어하기
         </Button>
       </AppScreen>
     );

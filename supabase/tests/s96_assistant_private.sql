@@ -1,4 +1,6 @@
 begin;
+-- This suite also runs on an explicitly enabled local manual-test stack.
+update app_settings set assistant_chat_enabled=false,assistant_memory_enabled=false,assistant_schedule_enabled=false;
 select plan(30);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 select ('96000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','private96-'||n||'@verify.local','',now(),now(),now() from generate_series(1,2) n;
@@ -9,9 +11,9 @@ select ok(not has_table_privilege('authenticated','public.assistant_turns','inse
 select ok(not has_function_privilege('authenticated','public.assistant_finish_turn(uuid,uuid,bigint,text)','execute'),'reply writer service-only');
 select ok(not (select assistant_chat_enabled or assistant_memory_enabled or assistant_schedule_enabled from app_settings),'all new write features default off');
 select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000001',true);
-select throws_ok($$select assistant_consent(true)$$,'PT403','feature disabled','no consent activation while disabled');
+select throws_ok($$select assistant_manager_consent(true,'manager-continuity-v2')$$,'PT403','feature disabled','no consent activation while disabled');
 update app_settings set assistant_chat_enabled=true,assistant_memory_enabled=true;
-select is(assistant_consent(true)->>'consented','true','explicit consent');
+select is(assistant_manager_consent(true,'manager-continuity-v2')->>'consented','true','explicit consent');
 select is(assistant_begin_turn('96000000-0000-0000-0000-000000000010','커피로 짧게 만나는 게 좋아요',2)->>'created','true','start a private turn');
 select is(assistant_begin_turn('96000000-0000-0000-0000-000000000010','커피로 짧게 만나는 게 좋아요',2)->>'created','false','same request receipt no rerun');
 select throws_ok($$select assistant_begin_turn('96000000-0000-0000-0000-000000000011','다른 질문',2)$$,'PT409','turn in progress','parallel turn blocked');
@@ -38,7 +40,7 @@ select assistant_begin_turn('96000000-0000-0000-0000-000000000013','내 선호�
 select assistant_consent(false);
 select is(jsonb_array_length(my_assistant_state()->'memories'),0,'withdraw consent erases memory');
 select ok(not assistant_finish_turn('96000000-0000-0000-0000-000000000001','96000000-0000-0000-0000-000000000013',6,'철회한 정보를 다시 넣지 않습니다.'),'withdrawal fences late output');
-select assistant_consent(true);
+select assistant_manager_consent(true,'manager-continuity-v2');
 select assistant_begin_turn('96000000-0000-0000-0000-000000000014','중단된 요청 검사',(my_assistant_state()->>'revision')::bigint);
 update assistant_turns set created_at=now()-interval '3 minutes' where id='96000000-0000-0000-0000-000000000014';
 select is(assistant_begin_turn('96000000-0000-0000-0000-000000000014','중단된 요청 검사',(my_assistant_state()->>'revision')::bigint)->>'state','failed','expired pending receipt permits an explicit new retry');

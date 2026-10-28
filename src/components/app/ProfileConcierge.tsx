@@ -89,7 +89,7 @@ function OwnProfileCoaching({
           className="assistant-suggestion inline-flex items-center"
           onClick={() => setAssistantDraft(me.id, ask)}
         >
-          비서에게 코칭받기
+          매니저에게 코칭받기
         </Link>
       ) : (
         <Link
@@ -126,7 +126,7 @@ function RuleProfileConcierge({
   if (!own && !comparison && !reading.summary && !reading.hooks.length) return null;
 
   return (
-    <aside aria-labelledby={id} className="space-y-5 rounded-surface bg-muted p-5">
+    <aside aria-labelledby={id} className="manager-reading space-y-5">
       <div className="flex items-center gap-3">
         {signature}
         <div>
@@ -242,7 +242,6 @@ function MemberManagerIntroduction({
       ? live.data
       : null;
   const fingerprint = context?.profiles ? introductionProfileFingerprint(context.profiles) : "";
-  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{
@@ -252,7 +251,6 @@ function MemberManagerIntroduction({
   const generation = useRef(0);
   const busyRef = useRef(false);
   useEffect(() => {
-    setConsent(false);
     setError("");
     setResult(null);
     setBusy(false);
@@ -275,7 +273,7 @@ function MemberManagerIntroduction({
       : null;
 
   async function prepare() {
-    if (!me || !context?.enabled || !context.profiles || !consent || busyRef.current) return;
+    if (!me || !context?.enabled || !context.profiles || busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
     setError("");
@@ -307,8 +305,17 @@ function MemberManagerIntroduction({
   if (!context) return null;
   if (!context.enabled) return fallback;
   if (!context.profiles) return null;
+  if (error && !visible)
+    return (
+      <div>
+        <p role="alert" className="mb-4 text-sm leading-relaxed text-muted-foreground">
+          {error} 아래 내용은 AI 설명이 아닌 공개 프로필에서 찾은 이야기예요.
+        </p>
+        {fallback}
+      </div>
+    );
   return (
-    <aside aria-labelledby={id} className="space-y-5 rounded-surface bg-muted p-5">
+    <aside aria-labelledby={id} className="manager-reading space-y-5">
       <div className="flex items-center gap-3">
         {signature}
         <h3 id={id} className="text-lg font-semibold leading-snug text-foreground">
@@ -317,7 +324,7 @@ function MemberManagerIntroduction({
       </div>
       {visible ? (
         <div className="space-y-6" aria-live="polite">
-          <section aria-label="비서가 읽어드리는 프로필" className="space-y-4">
+          <section aria-label="매니저가 읽어드리는 프로필" className="space-y-4">
             {visible.portrait.map((item) => (
               <ManagerObservation key={item.text} text={item.text} sources={item.sources} />
             ))}
@@ -355,19 +362,16 @@ function MemberManagerIntroduction({
           <p className="text-base leading-relaxed text-foreground">
             어떤 일상을 보내는지, 두 분은 어디서 이야기가 통할지 살펴볼게요.
           </p>
-          <label className="mt-3 flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm leading-relaxed text-foreground">
-            <input
-              type="checkbox"
-              checked={consent}
-              disabled={busy}
-              onChange={(event) => setConsent(event.target.checked)}
-              className="mt-0.5 size-5 shrink-0 accent-primary-strong"
-            />
-            <span>두 사람의 공개 답변을 AI에 보내 소개 설명을 준비하는 데 동의해요.</span>
-          </label>
+          <p id={`${id}-notice`} className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            아래 버튼을 누르면 두 분의 공개 답변을 AI가 함께 읽어요. 비공개 상담은 보내지 않아요.
+            <Link to="/privacy" className="ml-1 underline underline-offset-4">
+              처리 안내
+            </Link>
+          </p>
           <Button
             className="mt-3 w-full"
-            disabled={!consent || busy}
+            disabled={busy}
+            aria-describedby={`${id}-notice`}
             onClick={() => void prepare()}
           >
             {busy ? (
@@ -376,7 +380,7 @@ function MemberManagerIntroduction({
                 읽고 있어요…
               </>
             ) : (
-              "비서 설명 듣기"
+              "매니저와 함께 읽기"
             )}
           </Button>
         </div>
@@ -394,23 +398,18 @@ function ManagerObservation({ text, sources }: { text: string; sources: PublicEv
   return (
     <div>
       <p className="break-keep break-words text-base leading-relaxed text-foreground">{text}</p>
-      <details className="mt-1 text-sm">
-        <summary className="min-h-11 cursor-pointer py-3 font-medium text-primary-strong underline-offset-4 hover:underline focus-visible:rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          공개 답변 보기
-        </summary>
-        <dl className="space-y-3 pb-2">
-          {sources.map((source) => (
-            <div key={`${source.person}:${source.field}:${source.quote}`}>
-              <dt className="text-xs font-medium text-muted-foreground">
-                {source.person === "self" ? "나" : "상대"}의 이야기
-              </dt>
-              <dd className="mt-1 break-keep break-words text-sm leading-relaxed text-foreground">
-                “{source.quote}”
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </details>
+      <dl className="mt-3 space-y-2">
+        {sources.map((source) => (
+          <div key={`${source.person}:${source.field}:${source.quote}`}>
+            <dt className="text-xs font-medium text-muted-foreground">
+              {source.person === "self" ? "나" : "상대"}의 이야기
+            </dt>
+            <dd className="mt-1 break-keep break-words text-sm leading-relaxed text-foreground">
+              <mark className="profile-highlight">{source.quote}</mark>
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }

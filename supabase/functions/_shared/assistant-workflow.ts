@@ -166,7 +166,7 @@ export function assistantServiceReply(
     case "status":
       return assistantStatusText(state);
     case "signup":
-      return "가입은 약관과 인증부터 진행해요. 확인을 마치면 비서와 프로필을 준비할 수 있어요. 홈에서 필요한 단계를 이어가 주세요.";
+      return "가입은 약관과 인증부터 진행해요. 확인을 마치면 매니저와 프로필을 준비할 수 있어요. 홈에서 필요한 단계를 이어가 주세요.";
     case "profile":
       return "사진·기본 정보와 짧은 인터뷰로 프로필을 준비해요. 작성안을 직접 확인하고 저장해야 공개돼요. 내 프로필에서 이어갈 수 있어요.";
     case "edit":

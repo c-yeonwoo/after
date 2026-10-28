@@ -51,7 +51,7 @@ export function ProfilePreparationHome({ profile }: { profile: Profile }) {
       </ol>
       <Button asChild size="lg" className="mt-7 w-full">
         <Link to="/signup" search={{ prepare: true }}>
-          {checked ? "내 비서와 프로필 만들기" : "계정 확인 이어하기"}
+          {checked ? "내 매니저와 프로필 만들기" : "계정 확인 이어하기"}
           <ArrowRight className="ml-2 size-4" />
         </Link>
       </Button>

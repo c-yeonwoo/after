@@ -102,7 +102,7 @@ export function ProfileDetail({
   const hasAnyFact = facts.some((f) => f.v);
 
   return (
-    <article className="space-y-6 pb-4">
+    <article className="profile-sheet space-y-6">
       <header>
         <h2 className="text-[1.875rem] leading-[1.25] font-semibold tracking-[-0.03em] text-foreground">
           {p.name}

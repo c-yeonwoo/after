@@ -498,7 +498,7 @@ function IntroPage() {
           search={{ target: candidate.id }}
           className="assistant-suggestion mt-4 mb-5 flex items-center justify-between gap-3"
         >
-          내 비서와 대화 준비하기<span aria-hidden="true">→</span>
+          내 매니저와 대화 준비하기<span aria-hidden="true">→</span>
         </Link>
       ) : null}
 

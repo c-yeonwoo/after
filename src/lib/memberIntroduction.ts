@@ -37,7 +37,7 @@ export async function introduceMember(target: string, requestId: string) {
 
 export const memberIntroductionError = (code: string) =>
   ({
-    disabled: "비서 설명은 아직 준비 중이에요. 아래 프로필을 먼저 읽어보세요.",
+    disabled: "매니저 설명은 준비 중이에요. 아래 프로필을 먼저 읽어보세요.",
     unavailable: "지금은 이 프로필을 확인할 수 없어요. 소개 화면을 다시 확인해 주세요.",
     unauthorized: "로그인을 다시 확인해 주세요.",
     changed: "프로필이 바뀌었어요. 새 내용으로 다시 살펴볼게요.",
@@ -45,6 +45,6 @@ export const memberIntroductionError = (code: string) =>
     daily_limit: "오늘 준비 횟수를 모두 썼어요. 이미 준비한 설명은 다시 볼 수 있어요.",
     in_progress: "이미 설명을 준비 중이에요. 잠시 후 다시 확인해 주세요.",
     duplicate_request: "요청을 이미 받았어요. 잠시 후 다시 확인해 주세요.",
-    quality_failed: "공개 답변과 맞지 않는 표현이 있어 다시 준비해야 해요.",
-    not_configured: "비서 설명을 점검하고 있어요. 잠시 후 다시 이용해 주세요.",
+    quality_failed: "소개 설명의 정확성을 확인하지 못해 표시하지 않았어요.",
+    not_configured: "매니저 설명을 점검하고 있어요. 잠시 후 다시 이용해 주세요.",
   })[code] ?? "설명을 마치지 못했어요. 연결을 확인하고 다시 시도해 주세요.";

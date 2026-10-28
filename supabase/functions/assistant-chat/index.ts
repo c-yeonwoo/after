@@ -30,7 +30,7 @@ const Check = z.object({
   reason: z.enum(["ok", "ungrounded", "unsafe", "false_execution", "insufficient_coaching"]),
 });
 const MODEL = Deno.env.get("ASSISTANT_COACH_MODEL") || DEFAULT_TEXT_MODEL;
-const VERSION = "assistant-private-v5-profile-coach";
+const VERSION = "assistant-private-v6-personal-manager";
 
 Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
@@ -219,6 +219,15 @@ Deno.serve(async (req) => {
         );
       }
       if (coaching && JSON.stringify(await readOwnCopy()) !== JSON.stringify(ownCopy)) {
+        await store(null);
+        await finish("invalid");
+        return json({ code: "context_changed" }, 409);
+      }
+      const latest = await caller.rpc("assistant_turn_context", { p_id: input.requestId });
+      if (
+        latest.error ||
+        JSON.stringify(privateAssistantModelContext(latest.data)) !== JSON.stringify(privateContext)
+      ) {
         await store(null);
         await finish("invalid");
         return json({ code: "context_changed" }, 409);

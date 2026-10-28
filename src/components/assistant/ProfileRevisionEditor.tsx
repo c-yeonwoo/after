@@ -34,9 +34,9 @@ function revisionError(code: string): string {
     case "generation_failed":
       return "초안을 완성하지 못했어요. 현재 프로필은 그대로예요. 잠시 뒤 다시 시도해 주세요.";
     case "not_configured":
-      return "지금은 비서가 글을 다듬을 수 없어요. 직접 수정은 계속 사용할 수 있어요.";
+      return "지금은 매니저가 글을 다듬을 수 없어요. 직접 수정은 계속 사용할 수 있어요.";
     case "disabled_or_no_consent":
-      return "지금은 비서의 프로필 수정을 사용할 수 없어요. 직접 수정에서 이어가 주세요.";
+      return "지금은 매니저의 프로필 수정을 사용할 수 없어요. 직접 수정에서 이어가 주세요.";
     default:
       return "처리 결과를 확인하지 못했어요. ‘상태 확인’으로 먼저 확인해 주세요.";
   }
@@ -183,7 +183,7 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
         disabled={busy || !consent || instruction.trim().length < 3 || recovery}
       >
         <Send aria-hidden="true" />
-        {busy ? "다듬는 중…" : "비서와 다듬기"}
+        {busy ? "다듬는 중…" : "매니저와 다듬기"}
       </Button>
     </div>
   );
@@ -213,7 +213,7 @@ export function ProfileRevisionEditor({ owner }: { owner: string }) {
       ) : !state.enabled ? (
         <div className="space-y-3">
           <p className="text-sm leading-relaxed text-muted-foreground">
-            비서와 글 다듬기는 준비 중이에요. 직접 수정은 바로 할 수 있어요.
+            매니저와 글 다듬기는 준비 중이에요. 직접 수정은 바로 할 수 있어요.
           </p>
           <ManualEdit />
         </div>

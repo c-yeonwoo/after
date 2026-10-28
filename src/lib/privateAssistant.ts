@@ -36,6 +36,7 @@ type AssistantRpcName =
   | "my_assistant_state"
   | "assistant_history"
   | "assistant_consent"
+  | "assistant_manager_consent"
   | "assistant_save_memory"
   | "assistant_forget"
   | "my_assistant_schedule"

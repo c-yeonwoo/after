@@ -397,7 +397,7 @@ export function ProfileInterviewV3({
     title: string,
     description: string,
     children: ReactNode,
-    eyebrow = "내 비서와 프로필 준비",
+    eyebrow = "매니저와 프로필 준비",
   ) => (
     <StepShell
       assistant

@@ -179,7 +179,7 @@ function ConversationPrep() {
                   </>
                 ) : (
                   <>
-                    공개 프로필로 준비하기
+                    대화 주제 받아보기
                     <ArrowRight className="ml-2 size-4" />
                   </>
                 )}

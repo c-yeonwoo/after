@@ -62,9 +62,20 @@ try {
   sql(
     "update app_settings set assistant_chat_enabled=false,assistant_memory_enabled=false,assistant_schedule_enabled=false",
   );
-  assert.equal((await member.rpc("assistant_consent", { p_agree: true })).error.code, "PT403");
+  assert.equal(
+    (
+      await member.rpc("assistant_manager_consent", {
+        p_agree: true,
+        p_policy_version: "manager-continuity-v2",
+      })
+    ).error.code,
+    "PT403",
+  );
   sql("update app_settings set assistant_chat_enabled=true,assistant_memory_enabled=true");
-  await rpc("assistant_consent", { p_agree: true });
+  await rpc("assistant_manager_consent", {
+    p_agree: true,
+    p_policy_version: "manager-continuity-v2",
+  });
   const call = async (question, requestId = randomUUID()) => {
     const response = await fetch(`${env.API_URL}/functions/v1/assistant-chat`, {
       method: "POST",
@@ -132,7 +143,10 @@ try {
   const femaleClient = createClient(env.API_URL, env.ANON_KEY, { auth: { persistSession: false } });
   const femaleLogin = await femaleClient.auth.signInWithPassword({ email: femaleEmail, password });
   assert.ifError(femaleLogin.error);
-  const femaleConsent = await femaleClient.rpc("assistant_consent", { p_agree: true });
+  const femaleConsent = await femaleClient.rpc("assistant_manager_consent", {
+    p_agree: true,
+    p_policy_version: "manager-continuity-v2",
+  });
   assert.ifError(femaleConsent.error);
   const femaleState = await femaleClient.rpc("my_assistant_state");
   assert.ifError(femaleState.error);
@@ -238,11 +252,11 @@ try {
   );
   await page.getByRole("link", { name: "상점", exact: true }).waitFor();
   await page.locator('.assistant-mark img[data-assistant-avatar="female"]').waitFor();
-  await page.getByLabel("비서에게 상담할 내용").waitFor();
+  await page.getByLabel("매니저에게 상담할 내용").waitFor();
   assert.equal(sharedReads.flags, 1, "one capability observer, not nested duplicate readers");
   assert.equal(sharedReads.payments, 1);
   await page.getByRole("link", { name: "대화 전체 보기" }).click();
-  await page.getByRole("heading", { name: "나와 비서", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "나와 매니저", exact: true }).waitFor();
   await page.goBack();
   await page.getByRole("link", { name: "대화 전체 보기" }).waitFor();
   assert.equal(sharedReads.flags, 1, "returning home reuses the fresh capability snapshot");
@@ -256,20 +270,20 @@ try {
     if (request.url().includes("/functions/v1/assistant-chat")) draftApiCalls++;
   };
   page.on("request", countDraftCalls);
-  await page.getByLabel("비서에게 상담할 내용").fill(draftedQuestion);
+  await page.getByLabel("매니저에게 상담할 내용").fill(draftedQuestion);
   await page.getByRole("link", { name: "대화 전체 보기" }).click();
   await page.waitForURL("**/assistant?panel=chat");
   // Router URL commits before its outgoing home surface unmounts.
-  await page.getByRole("heading", { name: "나와 비서", exact: true }).waitFor();
-  await page.getByLabel("비서에게 상담할 내용").waitFor();
-  assert.equal(await page.getByLabel("비서에게 상담할 내용").inputValue(), draftedQuestion);
+  await page.getByRole("heading", { name: "나와 매니저", exact: true }).waitFor();
+  await page.getByLabel("매니저에게 상담할 내용").waitFor();
+  assert.equal(await page.getByLabel("매니저에게 상담할 내용").inputValue(), draftedQuestion);
   assert.equal(draftApiCalls, 0, "expanding the same conversation must not submit the draft");
   assert.equal(new URL(page.url()).search, "?panel=chat", "private draft never appears in URL");
   page.off("request", countDraftCalls);
-  await page.getByLabel("비서에게 상담할 내용").fill("소개글 수정해줘");
+  await page.getByLabel("매니저에게 상담할 내용").fill("소개글 수정해줘");
   await delay(200);
   assert.equal(
-    await page.getByLabel("비서에게 상담할 내용").inputValue(),
+    await page.getByLabel("매니저에게 상담할 내용").inputValue(),
     "소개글 수정해줘",
     "visible edit is not overwritten by a transferred draft",
   );
@@ -294,7 +308,7 @@ try {
   page.off("request", countDraftCalls);
   await page.goto(`${base}/home`);
   await page.getByText("소개글 수정해줘", { exact: true }).waitFor();
-  await page.getByLabel("비서에게 상담할 내용").fill("지금 진행 상태");
+  await page.getByLabel("매니저에게 상담할 내용").fill("지금 진행 상태");
   await page.getByRole("button", { name: "상담 보내기", exact: true }).click();
   await page.getByText("지금 진행 상태", { exact: true }).waitFor();
   assert.equal(new URL(page.url()).pathname, "/home", "home sends in place");
@@ -362,7 +376,7 @@ try {
         await page.setViewportSize({ width, height: 844 });
         for (const surface of ["home", "assistant"]) {
           await page.goto(`${base}/${surface}`);
-          await page.getByLabel("비서에게 상담할 내용").waitFor();
+          await page.getByLabel("매니저에게 상담할 내용").waitFor();
           await page.getByText("이어지는 합성 질문 20", { exact: true }).waitFor();
           if (surface === "home") {
             await page.locator("main").evaluate((main) => {
@@ -386,12 +400,20 @@ try {
       }
     }
   }
+  // Existing saved preferences remain editable; normal conversations no longer prompt saving.
+  await rpc("assistant_save_memory", {
+    p_id: null,
+    p_content: "기존에 저장한 선호",
+    p_version: null,
+    p_source_id: null,
+    p_expected_revision: (await rpc("my_assistant_state")).revision,
+  });
   await page.goto(`${base}/assistant?panel=memory`);
-  await page.getByRole("button", { name: "기억할 선호 추가" }).click();
+  await page.getByRole("button", { name: "수정", exact: true }).click();
   await page
     .getByLabel("기억할 선호", { exact: true })
     .fill("첫 만남은 조용한 카페에서 짧게 하고 싶어요");
-  const save = page.getByRole("button", { name: "승인하고 기억하기" });
+  const save = page.getByRole("button", { name: "수정 저장" });
   assert.equal(await save.isEnabled(), false);
   await page.getByRole("checkbox").check();
   await save.click();
@@ -400,7 +422,7 @@ try {
   if (process.env.AFTER_LOCAL_AI_CONFIRM === "synthetic-only") {
     await page.goto(`${base}/assistant`);
     await page
-      .getByLabel("비서에게 상담할 내용")
+      .getByLabel("매니저에게 상담할 내용")
       .fill("기억해 둔 내 선호를 반영해서 첫 만남 장소와 분위기를 짧게 추천해 주세요.");
     const reply = page.waitForResponse((r) => r.url().includes("/functions/v1/assistant-chat"));
     await page.getByRole("button", { name: "상담 보내기" }).click();
@@ -440,7 +462,7 @@ try {
     "no deletion before confirmation",
   );
   await page.getByRole("button", { name: "확인하고 삭제" }).click();
-  await page.getByText("아직 승인한 기억이 없어요.").waitFor();
+  await page.getByText("따로 저장한 선호가 없어요. 대화할 때마다 저장할 필요는 없어요.").waitFor();
   state = await rpc("my_assistant_state");
   assert.equal(state.memories.length, 0);
   assert.equal(state.turns.length, 0);
@@ -506,13 +528,25 @@ try {
   await delay(200);
   if (!(await inScrollViewport(lastQuestion)))
     uiIssues.push("opening history does not reveal the latest conversation");
-  await page.getByRole("button", { name: "이 내용 기억하기", exact: true }).first().click();
+  assert.equal(
+    await page.getByRole("button", { name: "이 내용 기억하기", exact: true }).count(),
+    0,
+  );
+  await rpc("assistant_save_memory", {
+    p_id: null,
+    p_content: "기존에 저장한 선호",
+    p_version: null,
+    p_source_id: null,
+    p_expected_revision: (await rpc("my_assistant_state")).revision,
+  });
+  await page.goto(`${base}/assistant?panel=memory`);
+  await page.getByRole("button", { name: "수정", exact: true }).click();
   const memoryField = page.getByLabel("기억할 선호", { exact: true });
   await memoryField.waitFor();
   await delay(200);
   if (!(await inScrollViewport(memoryField)))
     uiIssues.push("memory approval opens outside the scroll viewport");
-  if ((await page.getByRole("heading", { name: "나와 비서", exact: true }).boundingBox()).y < 0)
+  if ((await page.getByRole("heading", { name: "나와 매니저", exact: true }).boundingBox()).y < 0)
     uiIssues.push("revealing approval scrolls the fixed app header offscreen");
   assert.equal(
     await page.getByRole("button", { name: "상담 보내기" }).count(),
@@ -523,8 +557,8 @@ try {
   const longMemory = "A".repeat(240);
   await memoryField.fill(longMemory);
   await page.getByRole("region", { name: "기억 저장 확인" }).getByRole("checkbox").check();
-  await page.getByRole("button", { name: "승인하고 기억하기" }).click();
-  await page.getByRole("link", { name: "기억 관리", exact: true }).click();
+  await page.getByRole("button", { name: "수정 저장" }).click();
+  await page.getByRole("link", { name: "대화 설정", exact: true }).click();
   const longText = page.getByText(longMemory, { exact: true });
   await longText.waitFor();
   if (await longText.evaluate((el) => el.scrollWidth > el.clientWidth + 1))
@@ -534,7 +568,7 @@ try {
   await rpc("assistant_forget", { p_scope: "all" });
   await page.goto(`${base}/assistant`);
   await page.getByRole("link", { name: "대화", exact: true }).click();
-  await page.getByLabel("비서에게 상담할 내용").fill("첫 만남이 긴장돼요");
+  await page.getByLabel("매니저에게 상담할 내용").fill("첫 만남이 긴장돼요");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("--keyboard-height", "300px"),
   );
