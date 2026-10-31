@@ -1,3 +1,5 @@
+export const approvedVariant = "a";
+export const approvedOn = "2026-11-01";
 export const variants = [
   {
     id: "a",

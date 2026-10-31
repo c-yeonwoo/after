@@ -1,21 +1,26 @@
 import { BRAND } from "@/lib/brand";
+import { BRAND_LOGO } from "@/lib/brandLogo";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact after monogram: a single-storey a with a coral dot.
- * 앱 아이콘(brand/app-icon-ios.svg)·파비콘과 같은 형태다.
+ * Approved connected f/t mark. Geometry is generated from brand/after-logo.json
+ * and shared by app icons, favicons and social exports.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox={BRAND_LOGO.symbol.viewBox.join(" ")}
       fill="none"
+      stroke="currentColor"
+      strokeWidth={BRAND_LOGO.strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
       className={cn("size-6 text-foreground", className)}
     >
-      <circle cx="13" cy="17" r="7.1" stroke="currentColor" strokeWidth="4.4" />
-      <path d="M20.1 17v7" stroke="currentColor" strokeWidth="4.4" strokeLinecap="round" />
-      <circle cx="26.5" cy="6.5" r="3.4" fill="var(--color-brand-blush)" />
+      {BRAND_LOGO.symbol.paths.map((path) => (
+        <path key={path} d={path} />
+      ))}
     </svg>
   );
 }
@@ -24,23 +29,27 @@ export function Logo({ className, size = "md" }: { className?: string; size?: "s
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 items-center whitespace-nowrap text-foreground",
-        size === "sm" ? "text-[1.625rem]" : "text-[2rem]",
+        "inline-flex min-w-0 items-center text-foreground",
+        size === "sm" ? "h-7" : "h-8",
         className,
       )}
       aria-label={BRAND.name}
       role="img"
     >
-      <span
+      <svg
         aria-hidden="true"
-        className="font-sans text-[1em] leading-none font-bold tracking-[-0.065em]"
+        viewBox={BRAND_LOGO.wordmark.viewBox.join(" ")}
+        className="block h-full w-auto max-w-full"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={BRAND_LOGO.strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        {BRAND.nameEn}
-      </span>
-      <span
-        aria-hidden="true"
-        className="mb-[0.06em] ml-[0.09em] size-[0.18em] self-end rounded-full bg-brand-blush"
-      />
+        {BRAND_LOGO.wordmark.paths.map((path) => (
+          <path key={path} d={path} />
+        ))}
+      </svg>
     </span>
   );
 }

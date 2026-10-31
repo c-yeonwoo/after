@@ -3,11 +3,12 @@ import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { BRAND } from "@/lib/brand";
+import { BRAND_LOGO } from "@/lib/brandLogo";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 import { Button } from "@/components/ui/button";
 
-const OG_IMAGE = `https://${BRAND.domain}/og-image.png`;
+const OG_IMAGE = `https://${BRAND.domain}/og-image.png?v=${BRAND_LOGO.revision}`;
 
 export const Route = createFileRoute("/")({
   head: () => ({

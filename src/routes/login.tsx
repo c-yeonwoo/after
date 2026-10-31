@@ -227,7 +227,7 @@ function LoginPage() {
               type="email"
               autoComplete="email"
               className="mt-2"
-              placeholder="name@company.co.kr"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);

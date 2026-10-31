@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="애프터">
-  <rect width="64" height="64" rx="15" fill="#23302B"/>
-  <g transform="translate(6.6 10.7) scale(1.5)" fill="none" stroke-linecap="round" stroke-width="4.4">
-    <circle cx="13" cy="17" r="7.1" stroke="#FAF8F3"/>
-    <path d="M20.1 17v7" stroke="#FAF8F3"/>
-    <circle cx="26.5" cy="6.5" r="3.4" fill="#E9A49B" stroke="none"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 1024 1024" role="img" aria-label="애프터"><title>애프터</title><rect width="1024" height="1024" rx="232" fill="#FAF9F6"/><g transform="translate(192 174) scale(6.2)"><g fill="none" stroke="#393B42" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M28 83V29c0-15 8-22 23-22h4M15 38h72M67 15v49c0 14 7 19 21 19"/></g></g></svg>

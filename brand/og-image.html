@@ -1,43 +1,66 @@
 <!doctype html>
-<!--
-  og:image 원본 (1200×630). Evening, Refined 팔레트.
-  다시 만들기: Chrome 헤드리스로 이 파일을 1200×630 스크린샷 → public/og-image.png
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
-      --force-device-scale-factor=1 --window-size=1200,630 \
-      --screenshot=public/og-image.png "file://$PWD/brand/og-image.html"
-  헤드리스 Chrome 의 로컬 폰트로 렌더한다. 제품 제목과 같은 산세리프 위계다.
--->
 <html lang="ko">
-<head>
-<meta charset="utf-8">
-<style>
-  html, body { margin: 0; width: 1200px; height: 630px; }
-  body {
-    background: #FAF8F3; color: #23302B;
-    font-family: -apple-system, "Pretendard", "Apple SD Gothic Neo", sans-serif;
-    display: flex; flex-direction: column; justify-content: space-between;
-    box-sizing: border-box; padding: 72px 88px;
-  }
-  .mark { display: flex; align-items: center; gap: 14px; font-family: -apple-system, "Pretendard", sans-serif; font-weight: 600; font-size: 40px; letter-spacing: -0.04em; }
-  h1 { font-size: 84px; line-height: 1.3; margin: 0; font-weight: 700; letter-spacing: -0.045em; }
-  .quote { color: #AC5147; }
-  p { margin: 0; font-family: -apple-system, "Pretendard", sans-serif; font-size: 32px; color: #526B75; }
-  .rule { height: 1px; background: #D7DED8; margin: 28px 0; }
-</style>
-</head>
-<body>
-  <div class="mark">
-    <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
-      <circle cx="13" cy="17" r="7.1" stroke="#23302B" stroke-width="4.1"/>
-      <path d="M20.1 17v7" stroke="#23302B" stroke-width="4.1" stroke-linecap="round"/>
-      <circle cx="25" cy="8" r="2.1" fill="#AC5147"/>
-    </svg>
-    after
-  </div>
-  <div>
-    <h1>하루 끝에,<br><span class="quote">설레는 시작.</span></h1>
-    <div class="rule"></div>
-    <p>나와 잘 맞는 직장인을 한 사람씩.</p>
-  </div>
-</body>
+  <meta charset="utf-8" /><title>애프터 · 공유 이미지</title>
+  <style>
+    @import url("../public/fonts/wanted-sans/WantedSansVariable.css");
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      margin: 0;
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+    }
+    body {
+      position: relative;
+      padding: 58px 80px;
+      background: #ffffff;
+      color: #393b42;
+      font-family: "Wanted Sans Variable", sans-serif;
+    }
+    .logo {
+      width: 175px;
+      height: 62px;
+      object-fit: contain;
+      object-position: left center;
+    }
+    h1 {
+      font-size: 88px;
+      line-height: 1.18;
+      letter-spacing: -0.03em;
+      font-weight: 750;
+      margin: 45px 0 22px;
+      word-break: keep-all;
+    }
+    p {
+      font-size: 29px;
+      line-height: 1.5;
+      font-weight: 500;
+      margin: 0;
+      color: #55535d;
+    }
+    .symbol {
+      position: absolute;
+      right: 76px;
+      top: 233px;
+      width: 255px;
+      height: 270px;
+      object-fit: contain;
+    }
+    .domain {
+      position: absolute;
+      left: 82px;
+      bottom: 43px;
+      font-size: 22px;
+      color: #55535d;
+    }
+  </style>
+  <body>
+    <img class="logo" src="after-wordmark.svg" alt="애프터" />
+    <h1>소개팅에도<br />내 편이 필요해.</h1>
+    <p>나를 알아가는 개인 소개 매니저</p>
+    <img class="symbol" src="after-symbol.svg" alt="" /><span class="domain">aftersunset.kr</span>
+  </body>
 </html>

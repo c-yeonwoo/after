@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
-  <rect width="2732" height="2732" fill="#FAF8F3"/>
-  <g transform="translate(1231 1110) scale(8)" fill="none" stroke-linecap="round" stroke-width="4.4">
-    <circle cx="13" cy="17" r="7.1" stroke="#23302B"/>
-    <path d="M20.1 17v7" stroke="#23302B"/>
-    <circle cx="26.5" cy="6.5" r="3.4" fill="#AC5147" stroke="none"/>
-  </g>
-  <text x="1366" y="1510" text-anchor="middle" fill="#23302B" font-family="Arial, sans-serif" font-size="112" font-weight="600" letter-spacing="-4">after</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732" role="img" aria-label="애프터"><title>애프터</title><rect width="2732" height="2732" fill="#FFFFFF"/><g transform="translate(826 1177) scale(3.32)"><g fill="none" stroke="#393B42" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M60 56c0-17-11-29-27-29S6 39 6 56s11 29 27 29 27-12 27-29zm0-29v58"/><path d="M90 85V29c0-14 7-22 21-22h8M78 38h97M143 16v50c0 14 7 19 20 19h12"/><path d="M201 55h49c0-17-9-28-25-28-17 0-27 12-27 29 0 18 11 29 29 29 10 0 18-3 24-9M279 85V29m0 26c0-18 9-28 26-28"/></g></g></svg>

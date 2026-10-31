@@ -8,9 +8,7 @@
   <body class="preview-page">
     <main class="preview-shell">
       <nav class="preview-nav" aria-label="시안 검토">
-        <img src="logos/a-wordmark.svg" alt="애프터 로고 시안" /><span
-          >브랜드·SNS 시안 · 선택 전</span
-        >
+        <img src="logos/a-wordmark.svg" alt="애프터 로고 시안" /><span>브랜드·SNS · A안 확정</span>
       </nav>
       <header class="preview-header">
         <h1>소개팅에도<br />내 편이 필요해.</h1>
@@ -21,8 +19,8 @@
       </header>
       <section class="preview-section" id="logos" aria-labelledby="logo-title">
         <div class="section-heading">
-          <h2 id="logo-title">어떤 애프터가 더 끌리나요?</h2>
-          <p>로고를 고르면 아래 게시물도 함께 바뀝니다.</p>
+          <h2 id="logo-title">이어주는 after로 확정했어요.</h2>
+          <p>첫 번째가 확정안입니다. 이전 시안도 비교할 수 있어요.</p>
         </div>
         <div id="logo-options" class="logo-options"></div>
         <div class="logo-tests" aria-label="선택한 로고 활용 예시">
@@ -47,7 +45,7 @@
           ><a id="download-icon" href="exports/a/profile-icon.png" download>프로필 아이콘 PNG</a>
         </div>
         <p class="campaign-note">
-          세 가지 모두 시안입니다. 앱의 로고와 매니저 캐릭터는 아직 변경하지 않았습니다.
+          첫 번째 로고로 확정했습니다. 매니저 캐릭터는 기존 승인 자산을 유지해요.
         </p>
       </section>
       <section class="preview-section" id="posts" aria-labelledby="posts-title">
@@ -72,22 +70,22 @@
       </section>
       <footer class="preview-footer">
         현재 가입·소개 흐름에 맞춰 회사 이메일 필수, 동일 직장 지역 제한, 만남 보장 문구를
-        제외했습니다. 로고 확정 후 앱·아이콘·SNS 프로필을 같은 자산으로 맞출 수 있습니다.
+        제외했습니다. 확정 로고의 SVG·아이콘·게시물은 같은 형태로 관리합니다.
       </footer>
     </main>
     <script type="module">
-      import { posts, variants } from "./campaign.mjs";
+      import { posts, variants, approvedVariant } from "./campaign.mjs";
       const escape = (value) =>
         value
           .replaceAll("&", "&amp;")
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;");
-      let selected = "a";
+      let selected = approvedVariant;
       document.querySelector("#logo-options").innerHTML = variants
         .map(
           (v) =>
-            `<button class="logo-option" data-variant="${v.id}" aria-pressed="${v.id === selected}" aria-label="${v.name} 선택"><span class="logo-sample"><img src="logos/${v.id}-wordmark.svg" alt="${v.name} 로고"></span><span class="logo-title">${v.name}${v.recommendation ? `<em>${v.recommendation}</em>` : ""}</span><p>${v.note}</p></button>`,
+            `<button class="logo-option" data-variant="${v.id}" aria-pressed="${v.id === selected}" aria-label="${v.name} 선택"><span class="logo-sample"><img src="logos/${v.id}-wordmark.svg" alt="${v.name} 로고"></span><span class="logo-title">${v.name}${v.id === approvedVariant ? "<em>확정</em>" : ""}</span><p>${v.note}</p></button>`,
         )
         .join("");
       document.querySelector("#caption-list").innerHTML = posts

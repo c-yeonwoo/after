@@ -1,0 +1,152 @@
+{
+  "geometryRevision": "after-ft-1",
+  "publicAndOwnedSyntheticScreens": [
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "route": "/",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.35309 0.0124 273.05)",
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "route": "/login",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.35309 0.0124 273.05)",
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "route": "/signup",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.35309 0.0124 273.05)",
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "route": "/home",
+      "scope": "header-only, existing synthetic account",
+      "homeUiVisible": true,
+      "loginFormAbsent": true,
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "route": "/",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.96 0.002 260)",
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "route": "/login",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.96 0.002 260)",
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "route": "/signup",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.96 0.002 260)",
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "route": "/home",
+      "scope": "header-only, existing synthetic account",
+      "homeUiVisible": true,
+      "loginFormAbsent": true,
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "route": "/",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.35309 0.0124 273.049988)",
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "route": "/login",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.35309 0.0124 273.049988)",
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "route": "/signup",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.35309 0.0124 273.049988)",
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "route": "/home",
+      "scope": "header-only, existing synthetic account",
+      "homeUiVisible": true,
+      "loginFormAbsent": true,
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "route": "/",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.96 0.002 260)",
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "route": "/login",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.96 0.002 260)",
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "route": "/signup",
+      "height": 28,
+      "width": 79.8125,
+      "stroke": "oklch(0.96 0.002 260)",
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "route": "/home",
+      "scope": "header-only, existing synthetic account",
+      "homeUiVisible": true,
+      "loginFormAbsent": true,
+      "overflow": false
+    }
+  ],
+  "desktopWidth": 1440,
+  "providerCallsBlocked": true,
+  "passed": true
+}

@@ -115,12 +115,6 @@ typography:
     fontWeight: 650
     lineHeight: 1
     letterSpacing: "-0.035em"
-  logo:
-    fontFamily: '"Wanted Sans Variable", ui-sans-serif, system-ui, sans-serif'
-    fontSize: "1em"
-    fontWeight: 700
-    lineHeight: 1
-    letterSpacing: "-0.065em"
   display-wordmark:
     fontFamily: '"Wanted Sans Variable", ui-sans-serif, system-ui, sans-serif'
     fontWeight: 400
@@ -146,6 +140,18 @@ spacing:
   section: "1.5rem"
   separation: "2rem"
 components:
+  brand-logo:
+    textColor: "{colors.foreground}"
+    height: "32px"
+  brand-logo-sm:
+    textColor: "{colors.foreground}"
+    height: "28px"
+  brand-logo-dark:
+    textColor: "{colors.dark-foreground}"
+    height: "32px"
+  brand-logo-mark:
+    textColor: "{colors.foreground}"
+    size: "24px"
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.primary-foreground}"
@@ -267,7 +273,7 @@ The official font's Unicode-range WOFF2 subsets are self-hosted with `font-displ
 - **Body / Supporting:** substantial human answers / assistant context and controls.
 - **Label / Micro label:** navigation, status, captions, and chips. Both existing micro scale names resolve to 12px; their line heights differ.
 - **Profile title / Introduction:** the established profile-specific size and weight variations.
-- **Wordmark / Logo / Display wordmark:** existing brand utilities and the logo's tighter tracking; these are legitimate type treatments rather than new UI fonts.
+- **Wordmark / Display wordmark:** existing text utilities; they do not construct the approved logo. The logo is custom SVG geometry, independent of UI typography.
 - **Quote:** the existing `Gowun Batang`, `Nanum Myeongjo`, `AppleMyungjo`, serif stack and tighter tracking, reserved for the existing short quotation. Do not extend it to assistant UI.
 
 The global tracking is the body token. The shared headline utility uses 700 weight, 1.25 line height, and -0.02em tracking; the explicit home headline uses its own documented headline role. Button defaults use supporting-size semibold text; the large button's 15px role is retained. Existing typography values are recorded to distinguish these intentional variants from accidental drift.
@@ -305,6 +311,12 @@ Controls and fields share the control radius; regular surfaces use the surface r
 Circular back controls, progress tracks, and switch tracks remain functional exceptions to the standard control radius.
 
 ## Components
+
+### Brand Logo
+
+The user approved **“이어주는 after”** on 2026-11-01: a custom monoline lowercase wordmark whose `f/t` share a connecting crossbar, with a matching standalone symbol. [brand/after-logo.json](brand/after-logo.json) is the canonical geometry; [Logo.tsx](src/components/Logo.tsx) renders generated paths from `src/lib/brandLogo.ts`. The wordmark uses the `brand-logo` / `brand-logo-sm` heights with automatic proportional width; the standalone mark uses `brand-logo-mark` size. Paths inherit `currentColor` from the theme's foreground, including the dark foreground variant. Rounded stroke caps and joins preserve the approved drawing.
+
+Production SVGs and raster exports are regenerated together with `node scripts/generate-brand-assets.mjs`; see [the brand asset guide](docs/brand-assets.md). Fixed exports use the canonical ink on warm white or the supplied white wordmark on a dark surface. Do not substitute font text, stretch the paths, or restore the previous coral dot or `a`-ring symbol. This logo approval preserves the white/pink/warm-white UI palette, Wanted Sans UI typography, and approved detailed assistant characters.
 
 ### Buttons
 
