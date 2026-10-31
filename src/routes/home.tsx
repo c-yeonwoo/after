@@ -21,6 +21,7 @@ import {
 import { useMe } from "@/lib/me";
 import { useMemberHome } from "@/lib/useMemberHome";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
 import { assistantWelcome } from "@/lib/assistantExperience";
 
@@ -195,28 +196,32 @@ function HomePage() {
 
   return (
     <AppScreen keyboardAware footer={<div id="assistant-home-composer" />}>
-      <div className="home-greeting assistant-home-greeting" aria-label="애프터 매니저 안내">
-        <div className="assistant-home-status min-w-0">
+      <section className="home-greeting assistant-home-greeting" aria-label="애프터 매니저 안내">
+        <div className="flex items-center gap-2.5">
+          <AssistantMark />
+          <span className="text-sm font-semibold">애프터 매니저</span>
+        </div>
+        <div className="assistant-home-status min-w-0 mt-3">
           <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
             <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
           </h1>
-        </div>
-      </div>
-
-      {!hasPriorityContent ? (
-        <div className="home-progress mt-4">
-          <h2 className="break-keep text-base font-semibold leading-snug">{headline}</h2>
-          {!live.isError &&
-          !live.isPaused &&
-          primaryState === "waiting" &&
-          !isMale &&
-          serverState?.intro_progress?.has_likes ? (
-            <p className="mt-0.5 text-sm leading-normal text-muted-foreground">
-              상대의 만남 요청을 기다리고 있어요.
-            </p>
+          {!loading && !loadError ? (
+            <div className="home-progress mt-3">
+              <h2 className="break-keep text-base font-semibold leading-snug">{headline}</h2>
+              {!live.isError && !live.isPaused && primaryState === "waiting" ? (
+                <div className="mt-0.5 text-sm leading-normal text-muted-foreground">
+                  <p>
+                    {!isMale && serverState?.intro_progress?.has_likes
+                      ? "상대의 만남 요청을 기다리고 있어요."
+                      : "새 소개가 오면 여기서 알려드릴게요."}
+                  </p>
+                  <p>궁금한 점은 편하게 물어봐 주세요.</p>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
-      ) : null}
+      </section>
 
       {(live.isError || live.isPaused) && live.data ? (
         <LiveRefreshNotice retry={() => void live.refetch()} />
@@ -410,7 +415,7 @@ function HomePage() {
 
       <AssistantDock
         key={me.id}
-        showIdentity
+        showIdentity={false}
         hasMeeting={
           loading || loadError || live.isError || live.isPaused ? undefined : Boolean(meeting)
         }

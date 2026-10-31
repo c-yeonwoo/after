@@ -34,7 +34,15 @@ export function AssistantDock(props: Omit<ComponentProps<typeof LegacyAssistantD
   // Keep the conversation mounted through a transient capability read failure.
   // Its own RPC enforces live consent/flags before any send.
   if (me && me.onboarding_step >= 7 && flags.data?.chat) {
-    return <AssistantConversation key={me.id} owner={me.id} compact context={props} />;
+    return (
+      <AssistantConversation
+        key={me.id}
+        owner={me.id}
+        compact
+        context={props}
+        showIdentity={props.showIdentity}
+      />
+    );
   }
   return <LegacyAssistantDock {...props} flags={flags} />;
 }

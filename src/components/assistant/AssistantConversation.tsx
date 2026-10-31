@@ -82,11 +82,13 @@ function revealInConversation(
 export function AssistantConversation({
   owner,
   compact = false,
+  showIdentity = true,
   panel = "chat",
   context,
 }: {
   owner: string;
   compact?: boolean;
+  showIdentity?: boolean;
   panel?: "chat" | "memory";
   context?: Partial<AssistantContext>;
 }) {
@@ -423,12 +425,16 @@ export function AssistantConversation({
     >
       {compact ? (
         <div className="assistant-conversation-heading">
-          <AssistantMark />
+          {showIdentity ? <AssistantMark /> : null}
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-semibold">애프터 매니저</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {data?.turns.length ? "최근 대화" : "어떤 이야기를 해볼까요?"}
-            </p>
+            <h2 className="text-base font-semibold">
+              {showIdentity ? "애프터 매니저" : data?.turns.length ? "최근 대화" : "이야기 나누기"}
+            </h2>
+            {showIdentity ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {data?.turns.length ? "최근 대화" : "어떤 이야기를 해볼까요?"}
+              </p>
+            ) : null}
           </div>
           {data?.consented ? (
             <Link

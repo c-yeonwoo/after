@@ -160,6 +160,7 @@ const allFixtures = [
   },
   { name: "home-arrival", path: "/home", heading: "합성 지수님, 반가워요." },
   { name: "home-history", path: "/home", heading: "합성 지수님, 반가워요.", consented: true },
+  { name: "home-liked", path: "/home", heading: "호감을 보냈어요.", consented: true },
   { name: "manager-consent", path: "/consent?manager=true", heading: "나를 알아가는 매니저" },
   { name: "meetings-pending", path: "/chats", heading: "함께할 약속" },
   { name: "meetings-scheduling", path: "/chats", heading: "함께할 약속", gender: "male" },
@@ -270,8 +271,8 @@ async function verifyHome(page, width) {
   assert.equal(await page.getByRole("link", { name: "만남 가능 시간" }).count(), 0);
   assert.equal(
     await page.locator(".home-greeting .assistant-mark").count(),
-    0,
-    "avatar belongs to conversation",
+    1,
+    "manager starts the home conversation",
   );
   const input = page.getByLabel("매니저에게 물어볼 내용");
   await page
@@ -657,7 +658,7 @@ try {
               next_action: null,
               deadline_at: null,
               ticket_summary: { intro_available: 0, meeting_available: 0 },
-              intro_progress: { has_likes: false },
+              intro_progress: { has_likes: current.name === "home-liked" },
             });
           if (path.endsWith("/rpc/assistant_capabilities")) return fulfill(flags);
           if (path.endsWith("/rpc/my_profile_revision") && current.name === "legacy-story")
@@ -810,6 +811,11 @@ try {
                 .evaluate((el) => getComputedStyle(el).borderTopStyle),
               "solid",
             );
+          }
+          if (fixture.name === "home-liked") {
+            await page.getByText("상대의 만남 요청을 기다리고 있어요.", { exact: true }).waitFor();
+            await page.getByText("궁금한 점은 편하게 물어봐 주세요.", { exact: true }).waitFor();
+            assert.equal(await page.locator(".home-greeting .assistant-mark").count(), 1);
           }
           if (fixture.name === "signup-consent") {
             const optional = page.getByRole("checkbox", {
