@@ -43,7 +43,9 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
+      // Preserve the existing two Hooks checks; Compiler adoption is separate.
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "no-restricted-imports": [
         "error",
         {
