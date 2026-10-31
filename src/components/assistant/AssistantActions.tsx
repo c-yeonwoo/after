@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { visibleAssistantActions, type AssistantAction } from "@/lib/assistantExperience";
 import { setAssistantDraft } from "@/lib/assistantDraft";
 
@@ -24,7 +24,7 @@ export function AssistantActions({
         const content = (label: string) => (
           <>
             {label}
-            <ArrowUpRight className="size-4" aria-hidden="true" />
+            <ChevronRight className="size-4" aria-hidden="true" />
           </>
         );
         switch (action) {

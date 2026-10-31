@@ -168,7 +168,7 @@ function HomePage() {
       ? "최신 상태를 확인하지 못했어요."
       : primaryState
         ? primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
-          ? "마음을 남긴 소개가 있어요."
+          ? "호감을 보냈어요."
           : stateHeadline(primaryState, isMale)
         : "지금 상태를 확인하고 있어요.";
   const hasPriorityContent = Boolean(
@@ -212,7 +212,7 @@ function HomePage() {
           !isMale &&
           serverState?.intro_progress?.has_likes ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              만남 요청이 오면 날짜를 보고 결정해요.
+              상대의 만남 요청을 기다리고 있어요.
             </p>
           ) : null}
         </div>
@@ -371,11 +371,11 @@ function HomePage() {
       ) : null}
 
       {(needsPhone || needsPhotos) && !loading && !loadError && blocksNewIntro ? (
-        <section className="mt-8 border-t border-border pt-5" aria-labelledby="home-ready-title">
+        <section className="mt-8 rounded-surface bg-muted p-4" aria-labelledby="home-ready-title">
           <h2 id="home-ready-title" className="text-sm font-semibold text-foreground">
             새 소개를 받으려면
           </h2>
-          <div className="mt-2 divide-y divide-border">
+          <div className="mt-2 space-y-1">
             {needsPhone ? (
               <Link
                 to="/verify-phone"

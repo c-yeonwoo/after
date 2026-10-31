@@ -119,7 +119,7 @@ function LegacyAssistantDock({
       </div>
       {safety || reply ? (
         <div className="assistant-reply mt-4" role="status">
-          <p className="text-sm leading-relaxed">{safety ?? reply?.text}</p>
+          <p className="text-base leading-relaxed">{safety ?? reply?.text}</p>
           {!safety && reply ? (
             <AssistantActions
               actions={reply.actions}
@@ -206,7 +206,7 @@ function LegacyAssistantDock({
           maxLength={300}
           enterKeyHint="send"
           onChange={(event) => setInput(event.target.value)}
-          className="min-w-0 flex-1 rounded-control bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="min-w-0 flex-1 rounded-control bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground outline-none"
         />
         <button
           type="submit"

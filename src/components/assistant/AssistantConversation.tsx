@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowUpRight, Send, Trash2 } from "lucide-react";
+import { ChevronRight, Send, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
@@ -153,6 +153,7 @@ export function AssistantConversation({
     if (draft && !inputEdited.current) setInput(draft);
   }, [owner]);
   const [busy, setBusy] = useState(false);
+  const [busyLabel, setBusyLabel] = useState("");
   const [error, setError] = useState("");
   const [guide, setGuide] = useState<string | null>(null);
   const actionContext: AssistantContext = {
@@ -235,9 +236,13 @@ export function AssistantConversation({
       client.removeQueries({ queryKey: ["assistant-private", owner], exact: true });
     };
   }, [client, owner]);
-  const run = async (action: () => Promise<AssistantPrivateState | void>) => {
+  const run = async (
+    action: () => Promise<AssistantPrivateState | void>,
+    label = "답변을 준비하고 있어요…",
+  ) => {
     if (sending.current) return;
     sending.current = true;
+    setBusyLabel(label);
     setBusy(true);
     setError("");
     const release = live.beginInteraction();
@@ -258,7 +263,7 @@ export function AssistantConversation({
             ? "오늘 이용 한도에 도달했어요. 잠시 쉬었다 다시 찾아주세요."
             : code === "quality_failed"
               ? "조언을 점검하는 중 표현이 맞지 않아 보여드리지 않았어요. 질문을 조금 바꿔 다시 물어봐 주세요."
-              : "처리 결과를 확인하지 못했어요. 아래 ‘상태 다시 확인’으로 먼저 확인해 주세요. 같은 요청을 중복 실행하지 않아요.",
+              : "요청이 완료됐는지 확인하지 못했어요. 다시 보내기 전에 ‘상태 다시 확인’을 눌러 주세요.",
         );
         await live.refetch();
       }
@@ -382,7 +387,7 @@ export function AssistantConversation({
                 <AssistantTextarea
                   inputRef={inputRef}
                   name="question"
-                  className="assistant-textarea block w-full resize-none rounded-control bg-transparent px-3 py-2.5 text-base leading-6 placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="assistant-textarea block w-full resize-none rounded-control bg-transparent px-3 py-2.5 text-base leading-6 placeholder:text-muted-foreground outline-none"
                   maxLength={1000}
                   value={input}
                   onChange={(e) => {
@@ -432,7 +437,7 @@ export function AssistantConversation({
               className="inline-flex min-h-11 items-center gap-1 text-sm font-medium"
               onClick={() => setAssistantDraft(owner, input)}
             >
-              전체 대화 <ArrowUpRight className="size-4" aria-hidden="true" />
+              전체 대화 <ChevronRight className="size-4" aria-hidden="true" />
             </Link>
           ) : null}
         </div>
@@ -477,7 +482,7 @@ export function AssistantConversation({
           </div>
           {guideReply ? (
             <div className="assistant-reply mb-5" role="status">
-              <p className="text-sm leading-relaxed">{guideReply.text}</p>
+              <p className="text-base leading-relaxed">{guideReply.text}</p>
               <AssistantActions
                 actions={guideReply.actions}
                 counterpartId={actionContext.counterpartId}
@@ -608,25 +613,25 @@ export function AssistantConversation({
                   />
                 </div>
               ) : (
-                <ol className="assistant-transcript mt-4 space-y-5" aria-label="나만의 상담 기록">
+                <ol className="assistant-transcript mt-4 space-y-4" aria-label="나만의 상담 기록">
                   {shownTurns.map((turn) => (
                     <li key={turn.id}>
                       {!turn.kind || turn.kind === "conversation" ? (
-                        <div className="ml-8 rounded-[16px_4px_16px_16px] bg-bubble-mine p-4 text-bubble-mine-foreground">
+                        <div className="ml-8 rounded-[16px_4px_16px_16px] bg-bubble-mine px-4 py-3 text-bubble-mine-foreground">
                           <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
                             {turn.question}
                           </p>
                         </div>
                       ) : null}
-                      <div className="assistant-reply mt-3 mr-4">
-                        <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                      <div className="assistant-reply mt-2 mr-4">
+                        <p className="mb-1 text-xs font-semibold text-muted-foreground">
                           {turn.kind === "profile_applied"
                             ? "프로필 반영 완료"
                             : turn.kind === "schedule_applied"
-                              ? "일정 처리 완료"
+                              ? "일정 반영 완료"
                               : "내 매니저"}
                         </p>
-                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                        <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
                           {turn.answer ??
                             (turn.state === "pending"
                               ? "답변을 준비하고 있어요…"
@@ -771,14 +776,16 @@ export function AssistantConversation({
                     memory.revision !== data.revision
                   }
                   onClick={() =>
-                    void run(() =>
-                      assistantRpc("assistant_save_memory", {
-                        p_id: memory.existing?.id ?? null,
-                        p_content: memory.text.trim(),
-                        p_version: memory.existing?.version ?? null,
-                        p_source_id: memory.source ?? null,
-                        p_expected_revision: memory.revision,
-                      }),
+                    void run(
+                      () =>
+                        assistantRpc("assistant_save_memory", {
+                          p_id: memory.existing?.id ?? null,
+                          p_content: memory.text.trim(),
+                          p_version: memory.existing?.version ?? null,
+                          p_source_id: memory.source ?? null,
+                          p_expected_revision: memory.revision,
+                        }),
+                      "기억을 저장하고 있어요…",
                     )
                   }
                 >
@@ -818,13 +825,15 @@ export function AssistantConversation({
                   className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={busy}
                   onClick={() =>
-                    void run(() =>
-                      erase === "consent"
-                        ? assistantRpc("assistant_consent", { p_agree: false })
-                        : assistantRpc("assistant_forget", {
-                            p_scope: erase === "history" ? "history" : "memory",
-                            p_memory_id: erase === "history" ? null : erase,
-                          }),
+                    void run(
+                      () =>
+                        erase === "consent"
+                          ? assistantRpc("assistant_consent", { p_agree: false })
+                          : assistantRpc("assistant_forget", {
+                              p_scope: erase === "history" ? "history" : "memory",
+                              p_memory_id: erase === "history" ? null : erase,
+                            }),
+                      "기록을 지우고 있어요…",
                     )
                   }
                 >
@@ -848,7 +857,7 @@ export function AssistantConversation({
       ) : null}
       {busy ? (
         <p className="mt-4 text-sm text-muted-foreground" role="status">
-          처리 결과를 확인하고 있어요…
+          {busyLabel}
         </p>
       ) : null}
     </ConversationFrame>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, RefreshCw } from "lucide-react";
+import { ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -211,7 +211,7 @@ function OperationsHome() {
                             : "확인 필요"}
                       </p>
                     </div>
-                    <ArrowUpRight
+                    <ChevronRight
                       className="size-4 shrink-0 text-muted-foreground"
                       aria-hidden="true"
                     />

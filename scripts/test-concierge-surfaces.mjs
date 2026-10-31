@@ -1020,6 +1020,45 @@ try {
             assert.equal(await page.getByRole("switch").count(), 0);
             await capture(page, name);
             const field = page.getByLabel("매니저에게 상담할 내용");
+            assert.equal(
+              await page
+                .locator(".assistant-dock")
+                .evaluate((el) => getComputedStyle(el).borderTopWidth),
+              "0px",
+            );
+            assert.equal(
+              await page
+                .locator(".app-footer")
+                .evaluate((el) => getComputedStyle(el).borderTopWidth),
+              "0px",
+            );
+            assert.ok(
+              (
+                await page
+                  .locator(".assistant-prompt")
+                  .evaluateAll((els) => els.map((el) => getComputedStyle(el).borderTopWidth))
+              ).every((width) => width === "0px"),
+            );
+            assert.equal(
+              await page
+                .locator(".assistant-composer")
+                .evaluate((el) => getComputedStyle(el).borderTopWidth),
+              "0px",
+            );
+            await field.focus();
+            assert.equal(
+              await page
+                .locator(".assistant-composer")
+                .evaluate((el) => getComputedStyle(el).outlineWidth),
+              "2px",
+              "composer retains one keyboard focus indicator",
+            );
+            assert.equal(await field.evaluate((el) => getComputedStyle(el).outlineStyle), "none");
+            assert.equal(
+              await field.evaluate((el) => getComputedStyle(el).boxShadow),
+              "none",
+              "input has no duplicate focus ring",
+            );
             const emptyHeight = (await field.boundingBox()).height;
             assert.ok(emptyHeight >= 44 && emptyHeight <= 46, "composer starts at one line");
             await field.fill("첫 줄\n두 번째 줄\n세 번째 줄");

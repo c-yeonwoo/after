@@ -789,10 +789,8 @@ try {
         "2",
       );
       await f.page.goto(`${base}/home`);
-      await f.page
-        .getByRole("heading", { name: "마음을 남긴 소개가 있어요.", exact: true })
-        .waitFor();
-      await f.page.getByText("만남 요청이 오면 날짜를 보고 결정해요.", { exact: true }).waitFor();
+      await f.page.getByRole("heading", { name: "호감을 보냈어요.", exact: true }).waitFor();
+      await f.page.getByText("상대의 만남 요청을 기다리고 있어요.", { exact: true }).waitFor();
       await f.page
         .getByRole("navigation", { name: "주요 메뉴", exact: true })
         .getByRole("link", { name: "소개", exact: true })
@@ -969,9 +967,7 @@ try {
     await waitingFemale.page.getByText("아직 받은 요청이 없습니다", { exact: true }).waitFor();
     const homeObserver = await pageFor();
     await login(homeObserver, waitingFemale);
-    await homeObserver
-      .getByRole("heading", { name: "마음을 남긴 소개가 있어요.", exact: true })
-      .waitFor();
+    await homeObserver.getByRole("heading", { name: "호감을 보냈어요.", exact: true }).waitFor();
     success = await openAndRequest(m1, false, approvedReason);
     const f = personas.find((p) => p.id === success.female_id);
     success.female = f;

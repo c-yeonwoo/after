@@ -17,7 +17,7 @@ export async function checkTicketScreens({ page, baseUrl, checkPage, screenshotD
     if (screenshotDir) await page.screenshot({ path: join(screenshotDir, `${name}.png`) });
   };
   await page.goto(`${baseUrl}/me`);
-  await page.getByRole("link", { name: /티켓 받기/ }).click();
+  await page.getByRole("link", { name: /티켓 상점/ }).click();
   const pay = page.getByRole("button", { name: "1장 결제하기", exact: true });
   await pay.waitFor();
   await capture("ticket-store-mobile");

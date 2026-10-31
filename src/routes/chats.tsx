@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowUpRight, CalendarCheck } from "lucide-react";
+import { ChevronRight, CalendarCheck } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ function MeetingsPage() {
                   className="mt-3 flex min-h-11 items-center justify-between text-sm font-semibold text-primary-strong"
                 >
                   약속·상대와 대화
-                  <ArrowUpRight className="size-4" aria-hidden="true" />
+                  <ChevronRight className="size-4" aria-hidden="true" />
                 </Link>
               </>
             ) : !meeting.prefs_submitted_at && me?.gender === "female" ? (
@@ -96,7 +96,7 @@ function MeetingsPage() {
                 className="mt-3 flex min-h-11 items-center justify-between text-sm font-semibold text-primary-strong"
               >
                 요청 확인·답하기
-                <ArrowUpRight className="size-4" aria-hidden="true" />
+                <ChevronRight className="size-4" aria-hidden="true" />
               </Link>
             ) : meeting.prefs_submitted_at && me?.gender === "male" ? (
               <Link
@@ -105,7 +105,7 @@ function MeetingsPage() {
                 className="mt-3 flex min-h-11 items-center justify-between text-sm font-semibold text-primary-strong"
               >
                 날짜 고르기
-                <ArrowUpRight className="size-4" aria-hidden="true" />
+                <ChevronRight className="size-4" aria-hidden="true" />
               </Link>
             ) : (
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
