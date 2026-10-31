@@ -142,8 +142,8 @@ export function comparePublicProfiles(own: ConciergeProfile, other: ConciergePro
   if (ownArea && otherArea && ownArea === otherArea) {
     connections.push({
       id: "area",
-      title: "같은 권역에서 시작하는 만남",
-      reading: `두 분 모두 ${ownArea} 권역으로 소개되어 있어요.`,
+      title: "만나기 편한 지역이 같아요",
+      reading: `두 분 모두 ${ownArea}을 선호 만남 지역으로 골랐어요.`,
       invitation: "각자 이동하기 편한 장소부터 함께 정해보세요.",
       evidence: [
         { person: "self", field: "area", label: "지역", quote: ownArea },

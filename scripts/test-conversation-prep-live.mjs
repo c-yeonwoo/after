@@ -48,7 +48,7 @@ try {
     emails.push(email);
     const id = ids[index];
     sql(`insert into profiles(id,gender,hub_id,company_email,email_verified_at,name,job,birth,onboarding_step,terms_agreed_at,privacy_agreed_at,agreed_policy_version,phone_verified_at,photo_paths,photo_state,intro,headline,profile_preferences)
-      values('${id}','${index ? "male" : "female"}','gangnam','${email}',now(),'가상검증','기획','1996-01-01',7,now(),now(),'2026-10-17.3',now(),array['${id}/1.png','${id}/2.png','${id}/3.png'],'approved',
+      values('${id}','${index ? "male" : "female"}','gangnam','${email}',now(),'가상검증','기획','1996-01-01',7,now(),now(),'2026-10-31.1',now(),array['${id}/1.png','${id}/2.png','${id}/3.png'],'approved',
       '퇴근 후 동네를 걸으며 작은 카페를 찾아요. 주말에는 독립영화를 보고 기억에 남는 장면을 기록해요. 최근에는 수영을 배우기 시작했어요.',
       '일상에서 작은 즐거움을 찾는 편이에요','{"private":"PRIVATE-NEVER-SEND"}');`);
   }

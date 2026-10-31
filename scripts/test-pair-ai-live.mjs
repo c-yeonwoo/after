@@ -76,7 +76,7 @@ try {
     sql(`insert into profiles(id,company_email,gender,hub_id,name,job,birth,role,onboarding_step,email_verified_at,
       terms_agreed_at,privacy_agreed_at,agreed_policy_version,phone_verified_at,photo_state,photo_paths,headline,intro,profile_story,profile_preferences)
       values('${id}','${email}','${i === 0 || i === 3 ? "male" : "female"}','${hub}','가상검증${i}',
-      '${i === 2 ? "교육 기획" : "개발"}','1993-01-01','${i === 3 ? "admin" : "member"}',7,now(),now(),now(),'2026-10-17.3',now(),'approved',
+      '${i === 2 ? "교육 기획" : "개발"}','1993-01-01','${i === 3 ? "admin" : "member"}',7,now(),now(),now(),'2026-10-31.1',now(),'approved',
       array['${id}/1.png','${id}/2.png','${id}/3.png'],${s ? `'${quote(s.headline)}'` : "null"},${s ? `'${quote(s.summary)}'` : "null"},${s ? `'${quote(JSON.stringify(s))}'::jsonb` : "null"},
       '{"choices":{"contact":["PRIVATE-NEVER-SEND"]}}');`);
   }

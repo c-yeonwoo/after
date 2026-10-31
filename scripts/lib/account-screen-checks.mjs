@@ -21,7 +21,7 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
   assert.equal(await page.locator('a[href="/profile"]').count(), 1, "one clear profile entry");
   assert.equal(await page.getByRole("link", { name: /티켓 이용 내역/ }).count(), 0);
   await capture("account-me-mobile");
-  await page.getByRole("link", { name: /환경설정 화면/ }).click();
+  await page.getByRole("link", { name: /환경설정/ }).click();
   await page.waitForURL("**/settings");
   assert.equal(
     await page
@@ -67,6 +67,27 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
       document.querySelector('[role="switch"]')?.getAttribute("aria-checked") === expected,
     originalReminder,
   );
+  const areaPicker = page.getByLabel("가장 편한 지역", { exact: true });
+  await areaPicker.waitFor();
+  await areaPicker.selectOption("pangyo");
+  await page.getByRole("button", { name: "강남·역삼권 해제", exact: true }).waitFor();
+  const savedArea = page.waitForResponse(
+    (r) => r.url().includes("/rpc/set_my_meeting_areas") && r.ok(),
+  );
+  await page.getByRole("button", { name: "지역 저장", exact: true }).click();
+  await savedArea;
+  await page.getByText("만남 지역을 저장했어요.", { exact: true }).waitFor();
+  await page.reload();
+  await areaPicker.waitFor();
+  assert.equal(await areaPicker.inputValue(), "pangyo", "primary meeting area survives reload");
+  await page.getByRole("button", { name: "강남·역삼권 해제", exact: true }).waitFor();
+  await areaPicker.selectOption("gangnam");
+  await page.getByRole("button", { name: "판교권 해제", exact: true }).click();
+  const restoredArea = page.waitForResponse(
+    (r) => r.url().includes("/rpc/set_my_meeting_areas") && r.ok(),
+  );
+  await page.getByRole("button", { name: "지역 저장", exact: true }).click();
+  await restoredArea;
   await capture("account-settings-mobile");
   await page.getByRole("button", { name: "어둡게", exact: true }).click();
   await capture("account-settings-dark");

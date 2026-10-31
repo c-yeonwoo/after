@@ -139,7 +139,7 @@ function MemberList({ q, setQ }: { q: string; setQ: (value: string) => void }) {
         />
         {/* 아직 열지 않은 권역도 남긴다 — 잘못 들어간 데이터를 찾아야 한다. */}
         <Select
-          label="권역"
+          label="선호 만남 지역"
           value={search.hub ?? ""}
           onChange={(v) => set({ hub: v || undefined })}
           options={[
@@ -159,7 +159,7 @@ function MemberList({ q, setQ }: { q: string; setQ: (value: string) => void }) {
         />
         <Input
           className="col-span-2 min-h-11 w-full sm:w-64"
-          placeholder="이름 · 회사 이메일"
+          placeholder="이름 · 가입 이메일"
           aria-label="회원 검색 — 이메일은 주소에 남기지 않습니다"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -254,11 +254,11 @@ function MemberList({ q, setQ }: { q: string; setQ: (value: string) => void }) {
                 <tr className="text-left text-xs text-muted-foreground">
                   <Th>이름 · ID</Th>
                   <Th>성별</Th>
-                  <Th>권역</Th>
+                  <Th>선호 지역</Th>
                   <Th>상태</Th>
                   <Th className="text-right">티켓</Th>
                   <Th className="text-right">신고</Th>
-                  <Th>회사 이메일</Th>
+                  <Th>가입 이메일</Th>
                 </tr>
               </thead>
               <tbody>

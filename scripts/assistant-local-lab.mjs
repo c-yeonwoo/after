@@ -313,7 +313,7 @@ if (command === "dev") {
           agreed_policy_version,phone_verified_at,role,paused_at)
           values(${q(person.id)},${q(person.gender)},'gangnam',${q(person.email)},now(),${q(person.name)},${q(person.birth)},${q(person.job)},${person.mbti ? q(person.mbti) : "null"},'none','social','none',
           ${q(person.headline)},${q(person.answers.join(" "))},${q(JSON.stringify(story))}::jsonb,'{"first_date":["짧게 커피"]}',array[${photoPaths.map(q)}],'approved',7,now(),now(),
-          '2026-10-17.3',now(),${q(person.key === "admin" ? "admin" : "member")},${person.key === "admin" ? "now()" : "null"})
+          '2026-10-31.1',now(),${q(person.key === "admin" ? "admin" : "member")},${person.key === "admin" ? "now()" : "null"})
           on conflict(id) do update set account_state='active',paused_at=excluded.paused_at,gender=excluded.gender,
           name=excluded.name,birth=excluded.birth,job=excluded.job,mbti=excluded.mbti,
           email_verified_at=excluded.email_verified_at,phone_verified_at=excluded.phone_verified_at,

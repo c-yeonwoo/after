@@ -83,7 +83,7 @@ function Landing() {
             <span className="text-primary-strong">설레는 시작.</span>
           </h1>
           <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted-foreground">
-            나와 잘 맞는 직장인을 한 사람씩.
+            나와 잘 맞는 사람을 한 명씩.
             <br />
             소개부터 만날 약속까지 함께해요.
           </p>
@@ -101,7 +101,7 @@ function Landing() {
             애프터 시작하기 <ArrowRight aria-hidden="true" />
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            무료 베타 진행 중 · 회사 이메일로 가입해요
+            무료 베타 진행 중 · 개인 이메일도 가능해요
           </p>
         </section>
 
@@ -118,7 +118,7 @@ function Landing() {
           </h2>
           <ol className="mt-5 space-y-5">
             {[
-              ["나를 소개해요", "회사 이메일을 확인하고, 사진과 짧은 답변으로 나를 알려요."],
+              ["나를 소개해요", "사진과 짧은 이야기로, 내 매니저에게 나를 알려요."],
               ["한 사람씩 소개받아요", "운영팀이 확인한 소개를 읽고, 더 알아갈지 결정해요."],
               ["만날 시간을 정해요", "서로 가능한 날짜를 확인하고, 만날 시간과 장소를 정해요."],
             ].map(([title, body], i) => (
@@ -150,7 +150,7 @@ function Landing() {
             애프터 시작하기 <ArrowRight aria-hidden="true" />
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            회사 이메일 주소는 상대에게 공개되지 않아요.
+            이메일과 연락처는 상대에게 공개되지 않아요.
           </p>
         </section>
         <footer

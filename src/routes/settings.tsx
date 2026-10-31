@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { MeetingAreaSettings } from "@/components/app/MeetingAreaSettings";
 import { MeetingContactPreference } from "@/components/app/MeetingContactPreference";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,6 +167,7 @@ function SettingsPage() {
           매니저 대화 설정
         </Link>
       ) : null}
+      <MeetingAreaSettings key={me.id} member={me} />
       <section className="mt-3 border-b border-border pb-6">
         <h2 className="text-sm font-semibold">화면</h2>
         <p className="mt-1 text-xs text-muted-foreground">기본은 기기 설정을 따릅니다.</p>
@@ -339,14 +341,14 @@ function SettingsPage() {
       {/*
         카카오는 **가입 수단이 아니라 재로그인 수단**이다. 여기서 연결해 둔
         사람만 로그인 화면의 카카오 버튼으로 들어올 수 있다 — 카카오로 계정을
-        만들 수 있게 하면 회사 메일 인증이라는 이 서비스의 전제가 무너진다.
+        만들 수 있게 하면 기존 가입·성인 확인 경로를 우회하게 된다.
       */}
       {!APP_BUILD ? (
         <section className="mt-6 border-b border-border pb-6">
           <h2 className="text-sm font-semibold">카카오</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {kakaoLinked
-              ? "카카오로 로그인하실 수 있습니다. 회사 메일과 비밀번호도 그대로 쓸 수 있습니다."
+              ? "카카오로 로그인하실 수 있습니다. 가입 이메일과 비밀번호도 그대로 쓸 수 있습니다."
               : "연결하면 다음부터 카카오로 로그인하실 수 있습니다. 카카오 계정 이메일과 회원 식별자는 로그인·계정 연결에만 사용하며, 소개 상대에게 공개되지 않습니다."}
           </p>
           {!kakaoLinked ? (
@@ -428,9 +430,9 @@ function SettingsPage() {
             <AlertDialogTitle>정말 탈퇴하시겠어요?</AlertDialogTitle>
             <AlertDialogDescription>
               <b className="font-semibold text-foreground">되돌릴 수 없습니다.</b> 프로필과 작성하신
-              내용이 삭제되고 같은 회사 메일로 다시 가입하셔도 이전 기록은 복구되지 않습니다. 당분간
-              쉬고 싶으신 거라면 위의 <b className="font-semibold text-foreground">잠시 쉬기</b>를
-              써 주세요.
+              내용이 삭제되고 같은 가입 이메일로 다시 가입하셔도 이전 기록은 복구되지 않습니다.
+              당분간 쉬고 싶으신 거라면 위의{" "}
+              <b className="font-semibold text-foreground">잠시 쉬기</b>를 써 주세요.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

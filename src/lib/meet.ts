@@ -12,17 +12,7 @@ export type MeetPrefs = {
   note?: string;
 };
 
-/**
- * 역 검색 후보 — **사용자의 권역 안에서만** 찾는다.
- *
- * 목록 자체는 `HUBS[].stations` 가 갖는다(brand.ts). 예전에는 여기 강남권 역만
- * 담긴 전역 배열이 있었는데, 그러면 판교 사용자가 생기는 순간 "역 이름 검색"에
- * 강남 역만 나온다. 권역을 여는 스위치와 그 권역의 역이 같은 자리에 있어야
- * 그 사고가 안 난다.
- *
- * 회원의 권역을 모르면 역을 추천하지 않는다. 다른 지역을 임의로 대신하지 않는다.
- */
-/* hubId 는 DB 컬럼(text)에서 그대로 온다 — HubId 로 좁히면 호출부마다 캐스팅이 붙는다. */
+/** 지역별 역 후보. 만남 범위의 여러 지역을 합쳐 검색할 수 있다. */
 export function stationsFor(hubId: string | null | undefined): readonly string[] {
   return HUBS.find((h) => h.id === hubId)?.stations ?? [];
 }
@@ -30,13 +20,14 @@ export function stationsFor(hubId: string | null | undefined): readonly string[]
 export function searchStations(
   query: string,
   exclude: string[] = [],
-  hubId?: string | null,
+  hubId?: string | string[] | null,
 ): string[] {
   const q = query.trim();
   if (!q) return [];
-  return stationsFor(hubId)
-    .filter((s) => s.includes(q) && !exclude.includes(s))
-    .slice(0, 6);
+  const stations = Array.isArray(hubId)
+    ? [...new Set(hubId.flatMap((id) => [...stationsFor(id)]))]
+    : stationsFor(hubId);
+  return stations.filter((s) => s.includes(q) && !exclude.includes(s)).slice(0, 6);
 }
 
 /** 요약 문구 — 상대(남성)에게 보여줄 때 쓴다. */

@@ -27,7 +27,7 @@ export function ProfilePreparationHome({ profile }: { profile: Profile }) {
           <span className="assistant-step-icon">{checked ? <Check /> : <UserRound />}</span>
           <div>
             <strong>계정 확인</strong>
-            <p>{checked ? "회사 이메일·휴대폰 확인 완료" : "약관 동의와 인증부터"}</p>
+            <p>{checked ? "이메일·휴대폰 확인 완료" : "약관 동의와 인증부터"}</p>
           </div>
         </li>
         <li>

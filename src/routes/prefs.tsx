@@ -22,6 +22,7 @@ import {
 } from "@/lib/meet";
 import { listMeetingsAwaitingMyPrefs, submitMeetingPrefs } from "@/lib/api";
 import { useMe } from "@/lib/me";
+import { myMeetingAreas } from "@/lib/meetingAreas";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/native";
 
@@ -46,8 +47,23 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 function PrefsPage() {
   const navigate = useNavigate();
   const { meetingId: meetingIdParam } = Route.useSearch();
-  // 역 후보를 내 권역으로 좁힌다 — 강남 사용자에게 판교 역을 보여줄 이유가 없다.
+  // 직접 선택한 만남 범위 안에서 역 후보를 찾는다.
   const { me } = useMe();
+  const userId = me?.id;
+  const [areas, setAreas] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    setAreas([]);
+    if (userId)
+      void myMeetingAreas()
+        .then((value) => {
+          if (active) setAreas(value);
+        })
+        .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [userId]);
   const [loading, setLoading] = useState(true);
   const [meetingId, setMeetingId] = useState<string | null>(null);
   const [candidateName, setCandidateName] = useState<string | null>(null);
@@ -294,9 +310,9 @@ function PrefsPage() {
           />
         </div>
 
-        {searchStations(q, stations, me?.hub_id).length ? (
+        {searchStations(q, stations, areas).length ? (
           <ul className="mt-2 overflow-hidden rounded-field border border-border">
-            {searchStations(q, stations, me?.hub_id).map((st) => (
+            {searchStations(q, stations, areas).map((st) => (
               <li key={st}>
                 <button
                   type="button"

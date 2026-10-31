@@ -216,14 +216,6 @@ async function checkPage(page, name, accessibility = true) {
   }
 }
 
-async function chooseWorkZone(page) {
-  await page.getByRole("heading", { name: "직장은 어느 지역에 있나요?" }).waitFor();
-  const next = page.getByRole("button", { name: "다음", exact: true });
-  assert.equal(await next.isEnabled(), false, "signup never guesses a work zone");
-  await page.getByRole("button", { name: /강남·역삼권/ }).click();
-  await next.click();
-}
-
 async function checkBrandRole(page, selector, token) {
   assert.equal(
     await page
@@ -413,7 +405,7 @@ try {
       body: JSON.stringify(authFailure),
     }),
   );
-  await signupPage.getByLabel("회사 이메일").fill("synthetic-error@verify.local");
+  await signupPage.getByLabel("이메일").fill("synthetic-error@verify.local");
   await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await signupPage.getByRole("alert").waitFor();
   assert.equal(
@@ -449,7 +441,7 @@ try {
     .waitFor();
   assert.equal((await signupPage.getByRole("alert").innerText()).includes("{}"), false);
   await signupPage.unroute(authRoute);
-  await signupPage.getByLabel("회사 이메일").fill(existing.email);
+  await signupPage.getByLabel("이메일").fill(existing.email);
   await signupPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   // Local sign-in loads this existing profile through the auth listener. Do not
   // race it with OTP continuation, which independently redirects to home.
@@ -574,7 +566,7 @@ try {
   }
   assert.equal(await incompleteNext.isEnabled(), true, "incomplete signup form did not hydrate");
   await incompleteNext.click();
-  await incompletePage.getByLabel("회사 이메일").fill(incomplete.email);
+  await incompletePage.getByLabel("이메일").fill(incomplete.email);
   await incompletePage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await incompletePage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   assert.equal(await incompletePage.getByText(incomplete.name).count(), 0);
@@ -617,13 +609,13 @@ try {
   assert.equal(await clearedNext.isEnabled(), true, "new account form did not hydrate");
   await clearedNext.click();
   assert.equal(
-    await incompletePage.getByLabel("회사 이메일").inputValue(),
+    await incompletePage.getByLabel("이메일").inputValue(),
     "",
     "starting a different account clears the previous email and draft",
   );
   await incompletePage.close();
 
-  const freshEmail = `after-e2e-fresh-${randomUUID()}@verify.local`;
+  const freshEmail = `after-e2e-fresh-${randomUUID()}@gmail.com`;
   const freshPage = await (
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
@@ -637,7 +629,7 @@ try {
   }
   assert.equal(await freshNext.isEnabled(), true, "fresh signup form did not hydrate");
   await freshNext.click();
-  await freshPage.getByLabel("회사 이메일").fill(freshEmail);
+  await freshPage.getByLabel("이메일").fill(freshEmail);
   await freshPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await freshPage.getByText("로컬 개발 환경").waitFor();
   const freshId = sql(`select id from auth.users where email='${freshEmail}'`);
@@ -652,7 +644,6 @@ try {
   );
   await freshPage.getByLabel("비밀번호").fill(password);
   await freshPage.getByRole("button", { name: "가입 계속하기" }).click();
-  await chooseWorkZone(freshPage);
   await freshPage.getByRole("heading", { name: "휴대폰 번호를 확인할게요" }).waitFor();
   assert.equal(
     sql(`select count(*) from public.profiles where id='${freshId}'
@@ -662,8 +653,8 @@ try {
   );
   assert.equal(
     sql(`select hub_id from public.profiles where id='${freshId}'`),
-    "gangnam",
-    "the new profile stores the work zone explicitly chosen during signup",
+    "undecided",
+    "account creation never assumes a work location; meeting areas come during profile preparation",
   );
   // Simulate delivery only: code issuance, wrong-code handling, consumption and
   // profile updates use the actual local DB. Never send SMS to a synthetic number.
@@ -712,6 +703,8 @@ try {
     "SMS proves phone access only, never verified identity or adulthood",
   );
   await freshPage.setViewportSize({ width: 320, height: 480 });
+  await freshPage.getByLabel("가장 편한 지역", { exact: true }).selectOption("gangnam");
+  await freshPage.getByLabel("서울·경기·인천 모두 괜찮아요").check();
   await freshPage.getByLabel("이름", { exact: true }).fill("신규 테스트");
   await delay(400);
   await freshPage
@@ -824,7 +817,7 @@ try {
   await carrierPage.getByRole("heading", { name: "본인과 성인 여부를 확인할게요" }).waitFor();
   assert.equal(await carrierPage.getByRole("heading", { name: "성별을 알려주세요" }).count(), 0);
   assert.equal(
-    await carrierPage.getByLabel("회사 이메일").count(),
+    await carrierPage.getByLabel("이메일").count(),
     0,
     "company email follows identity verification",
   );
@@ -836,7 +829,7 @@ try {
   await carrierPage.goto(`${carrierBase}/signup?code=USER_CANCEL`);
   await carrierPage.getByRole("heading", { name: "본인과 성인 여부를 확인할게요" }).waitFor();
   await carrierPage.getByRole("alert").waitFor();
-  assert.equal(await carrierPage.getByLabel("회사 이메일").count(), 0);
+  assert.equal(await carrierPage.getByLabel("이메일").count(), 0);
   const verificationId = `av${randomUUID().replaceAll("-", "")}`;
   const { error: startIdentityError } = await service.rpc("start_signup_identity", {
     p_token: signupProof,
@@ -870,7 +863,7 @@ try {
     });
   });
   await carrierPage.goto(`${carrierBase}/signup?identityVerificationId=${verificationId}`);
-  await carrierPage.getByRole("heading", { name: "회사 이메일로 인증해 주세요" }).waitFor();
+  await carrierPage.getByRole("heading", { name: "이메일로 인증해 주세요" }).waitFor();
   assert.equal(new URL(carrierPage.url()).searchParams.has("identityVerificationId"), false);
   assert.equal(await carrierPage.getByRole("heading", { name: "성별을 알려주세요" }).count(), 0);
   const carrierEmail = `after-e2e-carrier-${randomUUID()}@verify.local`;
@@ -886,8 +879,8 @@ try {
   await carrierPage.getByRole("button", { name: "다시 확인하기" }).click();
   await carrierPage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   await carrierPage.getByRole("button", { name: "가입 이어하기" }).click();
-  await carrierPage.getByRole("heading", { name: "회사 이메일로 인증해 주세요" }).waitFor();
-  await carrierPage.getByLabel("회사 이메일").fill(carrierEmail);
+  await carrierPage.getByRole("heading", { name: "이메일로 인증해 주세요" }).waitFor();
+  await carrierPage.getByLabel("이메일").fill(carrierEmail);
   await carrierPage.getByRole("button", { name: "개발 계정 만들기" }).click();
   await carrierPage.getByText("로컬 개발 환경").waitFor();
   const carrierUserId = sql(`select id from auth.users where email='${carrierEmail}'`);
@@ -897,7 +890,6 @@ try {
   await carrierPage.getByRole("heading", { name: "로그인 비밀번호를 정해 주세요" }).waitFor();
   await carrierPage.getByLabel("비밀번호").fill(password);
   await carrierPage.getByRole("button", { name: "가입 계속하기" }).click();
-  await chooseWorkZone(carrierPage);
   await carrierPage.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
   await carrierPage.getByRole("button", { name: "프로필 준비 시작" }).click();
   await carrierPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
@@ -1936,7 +1928,7 @@ try {
   if (ids.length) {
     const listed = ids.map((id) => `'${id}'`).join(",");
     const owned = sql(`select count(*) from auth.users where id in (${listed})
-      and email like 'after-e2e-%@verify.local'`);
+      and (email like 'after-e2e-%@verify.local' or email like 'after-e2e-fresh-%@gmail.com')`);
     if (owned !== String(ids.length)) throw new Error("Refusing to clean up non-E2E users");
     sql(`begin;
       delete from public.ops_cases where subject_id in (${listed}) and source_id like 'e2e-worklist-%';

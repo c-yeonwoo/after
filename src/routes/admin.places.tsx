@@ -72,7 +72,8 @@ function PlacesTab() {
       <section className="min-w-0">
         <h2 className="text-lg font-semibold">약속 장소</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          회원은 자기 권역의 "사용" 장소만 봅니다. 예약은 하지 않습니다.
+          회원이 선택한 만남 지역의 사용 장소를 보여줍니다. 만남 요청에는 양쪽 범위가 겹치는 장소만
+          제안합니다.
         </p>
         {rows === null ? (
           <p className="mt-6 text-sm text-muted-foreground">불러오는 중…</p>

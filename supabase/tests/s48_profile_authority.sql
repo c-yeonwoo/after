@@ -69,10 +69,9 @@ select is(
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"48000000-0000-0000-0000-000000000002","role":"authenticated"}';
-select throws_ok(
+select lives_ok(
   $$ select create_my_profile('male', 'gangnam') $$,
-  '22023', 'personal email not allowed',
-  'T7 개인 메일 OTP 로 얻은 세션은 프로필을 만들 수 없다'
+  'T7 확인된 개인 이메일도 가입할 수 있다'
 );
 
 set local request.jwt.claims = '{"sub":"48000000-0000-0000-0000-000000000003","role":"authenticated"}';
@@ -98,10 +97,9 @@ select lives_ok(
 );
 
 set local request.jwt.claims = '{"sub":"48000000-0000-0000-0000-000000000002","role":"authenticated"}';
-select throws_ok(
+select lives_ok(
   $$ select sync_email_verified() $$,
-  '22023', 'personal email not allowed',
-  'T11 개인 메일 세션은 회사 인증 시각을 얻지 못한다'
+  'T11 개인 메일도 이메일 소유 확인 시각을 동기화한다'
 );
 reset role;
 

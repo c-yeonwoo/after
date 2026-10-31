@@ -293,7 +293,7 @@ export async function prepareCycle(env, tag = "manual") {
       database(
         env,
         `insert into profiles(id,gender,hub_id,company_email,email_verified_at,name,birth,job,mbti,smoking,drinking,religion,headline,intro,profile_story,profile_preferences,photo_paths,photo_state,onboarding_step,terms_agreed_at,privacy_agreed_at,agreed_policy_version,phone_verified_at,role,paused_at)
-        values(${quote(id)},${quote(gender)},${quote(hub)},${quote(email)},now(),${quote(name)},'1997-05-10',${quote(job)},${quote(key === "female" ? "ENFP" : "INFJ")},'none','social','none',${quote(story.headline)},${quote(answers.join(" "))},${quote(JSON.stringify(story))}::jsonb,'{"version":1,"choices":{"first_date":["짧게 커피"]},"choiceCustom":{}}',array[${photos.map(quote)}],'approved',7,now(),now(),'2026-10-17.3',now(),${quote(key === "admin" ? "admin" : "member")},${key === "admin" ? "now()" : "null"});`,
+        values(${quote(id)},${quote(gender)},${quote(hub)},${quote(email)},now(),${quote(name)},'1997-05-10',${quote(job)},${quote(key === "female" ? "ENFP" : "INFJ")},'none','social','none',${quote(story.headline)},${quote(answers.join(" "))},${quote(JSON.stringify(story))}::jsonb,'{"version":1,"choices":{"first_date":["짧게 커피"]},"choiceCustom":{}}',array[${photos.map(quote)}],'approved',7,now(),now(),'2026-10-31.1',now(),${quote(key === "admin" ? "admin" : "member")},${key === "admin" ? "now()" : "null"});`,
       );
     }
     // No affinity, queue, ticket, order, intro or meeting is seeded.
