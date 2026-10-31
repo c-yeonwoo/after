@@ -192,7 +192,7 @@
   --motion-feedback: 140ms;
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
-  --assistant-surface: oklch(0.975 0.003 100);
+  --assistant-surface: var(--surface-subtle);
   --assistant-ink: oklch(0.35309 0.0124 273.05);
   --assistant-soft: oklch(0.98 0.001 250);
 
@@ -223,7 +223,7 @@
   --ink-muted: oklch(0.5387 0.01446 271.14); /* #6B6E77 */
 
   --surface: oklch(1 0 0);
-  --surface-subtle: oklch(0.96667 0.00171 247.84);
+  --surface-subtle: oklch(0.9820488 0.0041096 91.4458); /* #FAF9F6 · warm white */
   --scrim: oklch(0.18 0.015 169 / 48%);
   --success: oklch(0.45766 0.08285 169.76); /* #166650 */
   --warning: oklch(0.508 0.089 80); /* #805F21 */

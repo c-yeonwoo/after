@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Send, Trash2 } from "lucide-react";
+import { ChevronRight, Send, Settings2, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ManagerMessage } from "@/components/assistant/ManagerMessage";
@@ -31,10 +31,12 @@ import {
 
 function ConversationFrame({
   compact,
+  settingsMode,
   footer,
   children,
 }: {
   compact: boolean;
+  settingsMode: boolean;
   footer?: ReactNode;
   children: ReactNode;
 }) {
@@ -54,7 +56,25 @@ function ConversationFrame({
       ) : null}
     </section>
   ) : (
-    <AppScreen title="나와 매니저" back="/home" hideTabs keyboardAware footer={footer}>
+    <AppScreen
+      title={settingsMode ? "대화 설정" : "나와 매니저"}
+      back={settingsMode ? "/assistant" : "/home"}
+      action={
+        !settingsMode ? (
+          <Link
+            to="/assistant"
+            search={{ panel: "memory" }}
+            aria-label="대화 설정"
+            className="app-header-action pressable"
+          >
+            <Settings2 className="size-5" aria-hidden="true" />
+          </Link>
+        ) : undefined
+      }
+      hideTabs
+      keyboardAware
+      footer={footer}
+    >
       {children}
     </AppScreen>
   );
@@ -167,6 +187,18 @@ export function AssistantConversation({
     profileEdit: Boolean(data?.flags.profileEdit),
     ...context,
   };
+  const actionContextKey = JSON.stringify([
+    actionContext.state,
+    actionContext.counterpartId ?? null,
+    actionContext.hasMeeting,
+    actionContext.hasOpenIntro,
+  ]);
+  const [freshTurn, setFreshTurn] = useState<{
+    id: string;
+    revision: number;
+    sessionId: string | null;
+    contextKey: string;
+  } | null>(null);
   const guideReply = guide ? assistantReply(assistantIntent(guide), actionContext) : null;
   const [memory, setMemory] = useState<{
     text: string;
@@ -176,6 +208,12 @@ export function AssistantConversation({
   } | null>(null);
   const [approved, setApproved] = useState(false);
   const [erase, setErase] = useState<"history" | "all" | "consent" | string | null>(null);
+  useEffect(() => {
+    // Leaving settings cancels an unconfirmed edit/delete, never the conversation draft.
+    setErase(null);
+    setMemory(null);
+    setApproved(false);
+  }, [panel]);
   const sending = useRef(false);
   const alive = useRef(true);
   const pendingRequest = useRef<{
@@ -294,6 +332,12 @@ export function AssistantConversation({
         };
       try {
         followTurn.current = pendingRequest.current.id;
+        setFreshTurn({
+          id: pendingRequest.current.id,
+          revision: pendingRequest.current.revision,
+          sessionId: pendingRequest.current.sessionId,
+          contextKey: actionContextKey,
+        });
         await askPrivateAssistant(
           pendingRequest.current.text,
           pendingRequest.current.id,
@@ -357,6 +401,7 @@ export function AssistantConversation({
   return (
     <ConversationFrame
       compact={compact}
+      settingsMode={panel === "memory"}
       footer={
         panel === "chat" && data?.consented && data.flags.chat && !memory && !erase ? (
           <div className="assistant-input-area">
@@ -448,26 +493,6 @@ export function AssistantConversation({
             </Link>
           ) : null}
         </div>
-      ) : null}
-      {!compact ? (
-        <nav className="mb-4 flex items-center gap-2" aria-label="매니저 메뉴">
-          <Link
-            to="/assistant"
-            search={{ panel: "chat" }}
-            aria-current={panel === "chat" ? "page" : undefined}
-            className={`assistant-suggestion ${panel === "chat" ? "!bg-selection !text-selection-foreground" : ""}`}
-          >
-            대화
-          </Link>
-          <Link
-            to="/assistant"
-            search={{ panel: "memory" }}
-            aria-current={panel === "memory" ? "page" : undefined}
-            className={`assistant-suggestion ${panel === "memory" ? "!bg-selection !text-selection-foreground" : ""}`}
-          >
-            대화 설정
-          </Link>
-        </nav>
       ) : null}
       {panel === "chat" && !compact ? (
         <>
@@ -577,11 +602,6 @@ export function AssistantConversation({
             </section>
           ) : panel === "chat" ? (
             <>
-              {!compact ? (
-                <p className="mb-5 text-xs text-muted-foreground leading-relaxed">
-                  내 프로필과 대화를 바탕으로 이어가요. 중요한 내용은 언제든 바로잡아 주세요.
-                </p>
-              ) : null}
               {!data.flags.chat ? (
                 <p role="status" className="assistant-reply mb-5">
                   새 상담은 잠시 쉬고 있어요. 기록 확인과 삭제는 계속 할 수 있어요.
@@ -666,12 +686,19 @@ export function AssistantConversation({
                                 ? ["profile"]
                                 : turn.kind === "schedule_applied"
                                   ? ["appointments"]
-                                  : historicalAssistantActions(assistantIntent(turn.question), {
-                                      gender: me?.gender ?? null,
-                                      complete: true,
-                                      memory: data.flags.memory,
-                                      profileEdit: data.flags.profileEdit,
-                                    })
+                                  : turn.id === freshTurn?.id &&
+                                      freshTurn.revision === data.revision &&
+                                      freshTurn.sessionId === (data.session_id ?? null) &&
+                                      freshTurn.contextKey === actionContextKey &&
+                                      actionContext.state !== undefined
+                                    ? assistantReply(assistantIntent(turn.question), actionContext)
+                                        .actions
+                                    : historicalAssistantActions(assistantIntent(turn.question), {
+                                        gender: me?.gender ?? null,
+                                        complete: true,
+                                        memory: data.flags.memory,
+                                        profileEdit: data.flags.profileEdit,
+                                      })
                             }
                           />
                         ) : null}
@@ -681,22 +708,10 @@ export function AssistantConversation({
                 </ol>
               )}
               <div ref={conversationEnd} aria-hidden="true" />
-              {!compact ? (
-                <Button
-                  variant="ghost"
-                  className="mt-5"
-                  disabled={busy || !data.turns.length}
-                  onClick={() => setErase("history")}
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  상담 기록 지우기
-                </Button>
-              ) : null}
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold">대화와 내 정보</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 프로필과 관련 대화를 참고해 답해요. 대화는 초기화 전까지 이어지고 상대에게 공개되지
                 않아요. 예전에 따로 저장한 선호는 아래에서 관리할 수 있으며, 저장일부터 90일 뒤
                 지워져요.
@@ -739,6 +754,15 @@ export function AssistantConversation({
                   ))}
                 </ul>
               )}
+              <Button
+                variant="ghost"
+                className="mt-5"
+                disabled={busy || !data.turns.length}
+                onClick={() => setErase("history")}
+              >
+                <Trash2 className="mr-2 size-4" />
+                상담 기록 지우기
+              </Button>
               <Button
                 variant="ghost"
                 className="mt-5"

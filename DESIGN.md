@@ -11,12 +11,12 @@ colors:
   brand-tint: "oklch(0.97244 0.0149 356.61)"
   selection: "oklch(0.97244 0.0149 356.61)"
   selection-foreground: "oklch(0.46351 0.02203 306.31)"
-  assistant-surface: "oklch(0.979 0.012 15)"
+  assistant-surface: "oklch(0.9820488 0.0041096 91.4458)"
   assistant-ink: "oklch(0.35309 0.0124 273.05)"
   background: "oklch(1 0 0)"
   foreground: "oklch(0.35309 0.0124 273.05)"
   card: "oklch(1 0 0)"
-  muted: "oklch(0.96667 0.00171 247.84)"
+  muted: "oklch(0.9820488 0.0041096 91.4458)"
   muted-foreground: "oklch(0.5387 0.01446 271.14)"
   border: "oklch(0.91211 0.00461 258.33)"
   input: "oklch(0.58946 0.01122 267.3)"
@@ -415,3 +415,17 @@ content, align right, and stop at 87% width. Long unformatted manager paragraphs
 may wrap into sentence groups with 10px separation; preserve the complete text,
 explicit line breaks, lists and quoted wording. This is presentation only, without
 new model requests, persistence changes, truncation or disclosure controls.
+
+### Warm-white surfaces and simplified entry points — 2026-10-31
+
+White remains the main canvas. The user approved #FAF9F6 for quiet light-theme
+container/input/icon surfaces, replacing the repeated #F3F4F5-like cool gray.
+Manager bubbles share this warm-white role. Pink still means a selected choice or
+the member's own message; text, semantic warnings, errors, and dark-theme roles
+keep their existing contrast. Do not make every surface pink.
+
+The account header is the single profile entry on My Page. Full manager chat keeps
+conversation first: settings live in the header, with history deletion and existing
+legacy preferences on that settings screen. Return goes directly to chat. These
+are presentation/navigation cuts, not removed capabilities. Keep approval gates
+for public profile changes, paid actions, accepting appointments, and deletion.

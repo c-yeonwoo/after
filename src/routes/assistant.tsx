@@ -10,8 +10,11 @@ export const Route = createFileRoute("/assistant")({
   validateSearch: (s: Record<string, unknown>) => ({
     panel: s.panel === "memory" ? ("memory" as const) : ("chat" as const),
   }),
-  head: () => ({
-    meta: [{ title: "나와 매니저 — 애프터" }, { name: "robots", content: "noindex" }],
+  head: ({ match }) => ({
+    meta: [
+      { title: `${match.search.panel === "memory" ? "대화 설정" : "나와 매니저"} — 애프터` },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: AssistantPage,
 });
