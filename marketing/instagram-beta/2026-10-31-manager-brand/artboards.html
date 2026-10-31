@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>애프터 · 캠페인 원본</title>
+  <link rel="stylesheet" href="campaign.css" />
+  <body class="artboard-page">
+    <main id="artboards"></main>
+    <script type="module">
+      import { posts, variants } from "./campaign.mjs";
+      const requested = new URLSearchParams(location.search).get("logo");
+      const variant = variants.some((item) => item.id === requested) ? requested : "a";
+      const logo = (white = false) =>
+        `<img class="brand" src="logos/${variant}-wordmark${white ? "-white" : ""}.svg" alt="after">`;
+      const footer = (label = "") =>
+        `<footer><span>${label || "나를 알아가는 개인 소개 매니저"}</span><span>aftersunset.kr</span></footer>`;
+      const mark = `<img class="signature" src="logos/${variant}-symbol.svg" alt="">`;
+      const photoDisclosure = "AI로 만든 연출 이미지";
+      const bodies = [
+        `${logo()}<h1>소개팅에도<br><em>내 편</em>이 필요해.</h1><p class="lead">내 이야기를 듣고,<br>한 사람씩 소개하는 매니저.</p>${mark}${footer()}`,
+        `${logo()}<h1>자소서 말고,<br>나다운 소개.</h1><div class="conversation"><div class="user-turn">제 프로필,<br>너무 평범한가요?</div><div class="manager-turn"><img src="assets/manager-female.webp" alt="애프터 매니저 캐릭터"><div><span class="sender">애프터 매니저</span><p>말보다 행동으로 챙기는 편이네요.<br>그 다정함부터 꺼내볼까요?</p></div></div><p class="reply-note">작은 답변에도, 나다운 매력이 있어요.</p></div>${footer("가상 대화 예시 · 프로필 코칭")}`,
+        `${logo()}<h1>연애는 하고 싶은데,<br>연애 준비가<br>너무 많다.</h1><p class="photo-lead">프로필부터 만날 약속까지,<br>조금 덜 애쓰는 시작.</p><img class="life-photo" src="assets/first-coffee.jpg" alt="카페에서 편하게 대화하는 두 사람"><span class="photo-credit">${photoDisclosure}</span>${footer("가볍게 커피 한 잔부터")}`,
+        `${logo(true)}<h1>프로필 사이의<br>사람을 읽어요.</h1><section class="profile-note"><div class="profile-heading"><strong>지우 <span>29</span></strong><span>가상 프로필</span></div><blockquote>쉬는 날엔 동네 카페를 찾아요.<br>처음엔 천천히 친해지고 싶어요.</blockquote><div class="reading"><img src="assets/manager-male.webp" alt="애프터 매니저 캐릭터"><div><strong>함께 읽어보면</strong><p>화려한 이벤트보다 일상을 나누는<br>만남이 편할 수 있겠어요.<br>첫 약속은 짧은 커피부터 어떨까요?</p></div></div></section><p class="reading-tagline">조건 너머, 알아가고 싶은 이야기.</p>${footer("공개 프로필을 바탕으로 한 해설 예시")}`,
+        `${logo()}<h1>복잡한 건 줄이고,<br>약속은 가볍게.</h1><p class="schedule-lead">둘 다 편한 시간과 장소를 골라요.</p><div class="date-options"><span>화<br><b>18:30</b></span><span class="chosen">목<br><b>19:30</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><span>금<br><b>20:00</b></span></div><section class="appointment"><span>우리의 첫 약속</span><h2>목요일, 저녁 7시 반.</h2><p>만나기 편한 카페에서<br>천천히 이야기해요.</p><div class="agreement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>두 사람이 확인한 약속</div></section>${footer("일정 화면은 이해를 돕기 위한 예시입니다")}`,
+        `${logo(true)}<h1>잘 맞는 사람을,<br>한 사람씩.</h1><p class="invite-lead">내 이야기를 알아가는<br>개인 소개 매니저, 애프터.</p><div class="invitation"><strong>베타에 함께해요.</strong><p>개인 이메일로 시작하고,<br>만나기 편한 지역을 직접 골라요.</p><span class="invite-cta">참여는 프로필 링크에서</span></div>${footer("베타 기간 서비스 이용료 무료 · 개인 데이트 비용 별도")}`,
+      ];
+      document.querySelector("#artboards").innerHTML = posts
+        .map(
+          (post, i) =>
+            `<article class="board board-${i + 1}" data-id="${post.id}" aria-label="${post.title}">${bodies[i]}</article>`,
+        )
+        .join("");
+    </script>
+  </body>
+</html>
