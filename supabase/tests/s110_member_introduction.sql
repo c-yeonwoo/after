@@ -1,5 +1,5 @@
 begin;
-select plan(26);
+select plan(32);
 update public.app_settings set identity_required=false,assistant_introduction_enabled=false;
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 select ('11000000-0000-0000-0000-00000000000'||n)::uuid,
@@ -9,6 +9,7 @@ insert into public.profiles(id,gender,hub_id,company_email,name,onboarding_step,
 select id,case when email='manager110-1@verify.local' then 'male'::public.gender else 'female'::public.gender end,
  'gangnam',email,'합성매니저검증',7,now()-interval '1 minute'
 from auth.users where email like 'manager110-%@verify.local';
+insert into public.assistant_preferences(owner_id,consented_at,policy_version) values ('11000000-0000-0000-0000-000000000001',now(),'manager-continuity-v2');
 create temporary table manager_args as
 select '11000000-0000-0000-0000-000000000001'::uuid owner_id,
  '11000000-0000-0000-0000-000000000002'::uuid target_id,
@@ -39,6 +40,14 @@ select is(current_setting('request.jwt.claim.sub'),'11000000-0000-0000-0000-0000
 select is(current_setting('request.jwt.claims')::jsonb->>'sub','11000000-0000-0000-0000-000000000002','helper restores prior claims object');
 select ok(pg_temp.manager_store() is not null,'current readable pair may store explanation');
 select ok(pg_temp.manager_read() is not null,'matching current public revisions may read cache');
+update public.assistant_preferences set consented_at=null where owner_id='11000000-0000-0000-0000-000000000001';
+select is(pg_temp.manager_read(),null::jsonb,'withdrawn consent cannot read cache');
+select is(pg_temp.manager_store(),null::jsonb,'withdrawn consent cannot store an in-flight explanation');
+update public.assistant_preferences set consented_at=now() where owner_id='11000000-0000-0000-0000-000000000001';
+select ok(pg_temp.manager_store() is not null,'renewed consent permits a fresh explanation');
+select ok(not has_function_privilege('authenticated','public.store_member_introduction_for_consent(uuid,uuid,timestamptz,timestamptz,text,jsonb,bigint)','execute'),'consent-bound writer is service-only');
+select is(public.store_member_introduction_for_consent(owner_id,target_id,owner_revision,target_revision,repeat('a',64),'{"portrait":[]}'::jsonb,-1),null::jsonb,'old consent revision cannot resurrect a result') from manager_args;
+select ok(public.store_member_introduction_for_consent(owner_id,target_id,owner_revision,target_revision,repeat('a',64),'{"portrait":[]}'::jsonb,(select revision from public.assistant_preferences where owner_id=manager_args.owner_id)) is not null,'matching consent revision stores atomically') from manager_args;
 select is(public.read_member_introduction(owner_id,target_id,owner_revision,target_revision,repeat('b',64)),null::jsonb,'changed source fingerprint does not reuse cache') from manager_args;
 select is(public.read_member_introduction(owner_id,target_id,owner_revision-interval '1 second',target_revision,repeat('a',64)),null::jsonb,'changed owner revision does not reuse cache') from manager_args;
 update public.profiles set intro='고친 공개 이야기입니다.' where id='11000000-0000-0000-0000-000000000002';

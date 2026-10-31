@@ -474,17 +474,19 @@ export function AssistantConversation({
             {(compact
               ? ["소개 확인", "내 프로필 수정", "일정 정리"]
               : ["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리", "티켓 가격"]
-            ).map((text) => (
-              <button
-                type="button"
-                key={text}
-                className="assistant-quick-chip pressable"
-                aria-pressed={guide === text}
-                onClick={() => setGuide(text)}
-              >
-                <span className="assistant-quick-chip-label">{text}</span>
-              </button>
-            ))}
+            )
+              .filter((text) => text !== "대화 팁" || actionContext.state === "meeting_confirmed")
+              .map((text) => (
+                <button
+                  type="button"
+                  key={text}
+                  className="assistant-quick-chip pressable"
+                  aria-pressed={guide === text}
+                  onClick={() => setGuide(text)}
+                >
+                  <span className="assistant-quick-chip-label">{text}</span>
+                </button>
+              ))}
           </div>
           {guideReply ? (
             <div className="assistant-reply mb-5" role="status">

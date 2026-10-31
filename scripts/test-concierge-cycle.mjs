@@ -294,7 +294,10 @@ async function showIntroduction(page, result, name) {
   browserIntroductionReceipt = result;
   try {
     await go(page, "/intro");
-    await page.getByRole("button", { name: "매니저와 함께 읽기", exact: true }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "매니저와 함께 읽기", exact: true }).count(),
+      0,
+    );
     await page.getByText(result.portrait[0].text, { exact: true }).waitFor();
     await screenModes(page, name);
   } finally {

@@ -172,10 +172,24 @@ assert.ok(assistantReply("schedule", { ...ctx, schedule: true }).actions.include
 assert.deepEqual(assistantReply("status", { ...ctx, state: "request_received" }).actions, [
   "requests",
 ]);
-assert.deepEqual(assistantReply("prepare", { ...ctx, counterpartId: "permitted" }).actions, [
-  "prepare",
-]);
+assert.deepEqual(
+  assistantReply("prepare", { ...ctx, counterpartId: "permitted", state: "meeting_confirmed" })
+    .actions,
+  ["prepare"],
+);
 assert.deepEqual(assistantReply("prepare", ctx).actions, ["intro"]);
+for (const state of [
+  "intro_available",
+  "waiting",
+  "request_waiting",
+  "request_received",
+  "schedule_selection",
+])
+  assert.deepEqual(
+    assistantReply("prepare", { ...ctx, counterpartId: "visible", state }).actions,
+    ["intro"],
+    "profile visibility alone never opens conversation preparation",
+  );
 const changedCounterpartContext: AssistantContext = {
   ...ctx,
   counterpartId: "new-current-counterpart",
@@ -189,7 +203,8 @@ for (const intent of ["prepare", "intro", "interest"] as const)
     ["intro"],
     "historical advice cannot bind to today's counterpart",
   );
-for (const intent of ["status", "schedule", "feedback"] as const)
+assert.deepEqual(historicalAssistantActions("status", changedCounterpartContext), ["home"]);
+for (const intent of ["schedule", "feedback"] as const)
   assert.deepEqual(
     historicalAssistantActions(intent, changedCounterpartContext),
     ["appointments"],
@@ -204,7 +219,7 @@ assert.deepEqual(
   historicalAssistantActions("payment", { ...changedCounterpartContext, gender: "female" }),
   ["intro"],
 );
-assert.deepEqual(assistantReply("prepare", changedCounterpartContext).actions, ["prepare"]);
+assert.deepEqual(assistantReply("prepare", changedCounterpartContext).actions, ["intro"]);
 for (const intent of ["edit_photo", "edit_facts"] as const)
   assert.deepEqual(
     assistantReply(intent, { ...ctx, profileEdit: true }).actions,

@@ -1,20 +1,10 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { RefreshCw } from "lucide-react";
+import { useId, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
 import { useMe } from "@/lib/me";
 import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { setAssistantDraft } from "@/lib/assistantDraft";
-import { getAssistantFlags } from "@/lib/privateAssistant";
-import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
-import {
-  introduceMember,
-  introductionProfileFingerprint,
-  memberIntroductionError,
-  readIntroductionProfiles,
-  type MemberIntroductionBrief,
-  type PublicEvidence,
-} from "@/lib/memberIntroduction";
+import { useMemberIntroduction } from "@/lib/useMemberIntroduction";
+import type { PublicEvidence } from "@/lib/memberIntroduction";
 import {
   comparePublicProfiles,
   profileReading,
@@ -221,99 +211,10 @@ function MemberManagerIntroduction({
   fallback: ReactNode;
 }) {
   const id = useId();
-  const { me } = useMe();
-  const live = useMemberLiveQuery(
-    `member-introduction:${targetId}`,
-    me?.id,
-    async () => {
-      const flags = await getAssistantFlags();
-      const profiles =
-        flags.introduction && me ? await readIntroductionProfiles(me.id, targetId) : null;
-      return { owner: me?.id, target: targetId, enabled: flags.introduction, profiles };
-    },
-    Boolean(me?.id && me.id !== targetId),
-  );
-  const context =
-    !live.isError &&
-    !live.isPaused &&
-    live.data &&
-    live.data.owner === me?.id &&
-    live.data.target === targetId
-      ? live.data
-      : null;
-  const fingerprint = context?.profiles ? introductionProfileFingerprint(context.profiles) : "";
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [result, setResult] = useState<{
-    fingerprint: string;
-    brief: MemberIntroductionBrief;
-  } | null>(null);
-  const generation = useRef(0);
-  const busyRef = useRef(false);
-  useEffect(() => {
-    setError("");
-    setResult(null);
-    setBusy(false);
-    busyRef.current = false;
-    generation.current++;
-    return () => {
-      // Ignore a completed request after unmount or account/target switch.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      generation.current++;
-    };
-  }, [me?.id, targetId]);
-  const visible =
-    context?.enabled &&
-    fingerprint &&
-    result?.fingerprint === fingerprint &&
-    result.brief.viewerId === me?.id &&
-    result.brief.targetId === targetId &&
-    Date.parse(result.brief.expiresAt) > Date.now()
-      ? result.brief
-      : null;
-
-  async function prepare() {
-    if (!me || !context?.enabled || !context.profiles || busyRef.current) return;
-    busyRef.current = true;
-    setBusy(true);
-    setError("");
-    const epoch = ++generation.current;
-    const ownerId = me.id;
-    try {
-      const brief = await introduceMember(targetId, crypto.randomUUID());
-      const latest = await readIntroductionProfiles(ownerId, targetId);
-      if (
-        !latest ||
-        introductionProfileFingerprint(latest) !== fingerprint ||
-        brief.viewerId !== ownerId ||
-        brief.targetId !== targetId
-      )
-        throw new Error("changed");
-      if (generation.current === epoch) setResult({ fingerprint, brief });
-    } catch (cause) {
-      if (generation.current === epoch)
-        setError(memberIntroductionError(cause instanceof Error ? cause.message : ""));
-    } finally {
-      if (generation.current === epoch) {
-        setBusy(false);
-        busyRef.current = false;
-      }
-      void live.refetch();
-    }
-  }
-
+  const { context, brief, visible } = useMemberIntroduction(targetId);
   if (!context) return null;
-  if (!context.enabled) return fallback;
-  if (!context.profiles) return null;
-  if (error && !visible)
-    return (
-      <div>
-        <p role="alert" className="mb-4 text-sm leading-relaxed text-muted-foreground">
-          {error} 아래 내용은 AI 설명이 아닌 공개 프로필에서 찾은 이야기예요.
-        </p>
-        {fallback}
-      </div>
-    );
+  if (!context.enabled || !context.profiles || (!visible && !brief.isPending)) return fallback;
+  if (!visible) return <div aria-busy="true">{fallback}</div>;
   return (
     <aside aria-labelledby={id} className="manager-reading space-y-5">
       <div className="flex items-center gap-3">
@@ -357,38 +258,6 @@ function MemberManagerIntroduction({
             두 사람의 공개 답변에서 AI가 정리한 설명이에요.
           </p>
         </div>
-      ) : (
-        <div>
-          <p className="text-base leading-relaxed text-foreground">
-            어떤 일상을 보내는지, 두 분은 어디서 이야기가 통할지 살펴볼게요.
-          </p>
-          <p id={`${id}-notice`} className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            아래 버튼을 누르면 두 분의 공개 답변을 AI가 함께 읽어요. 비공개 상담은 보내지 않아요.
-            <Link to="/privacy" className="ml-1 underline underline-offset-4">
-              처리 안내
-            </Link>
-          </p>
-          <Button
-            className="mt-3 w-full"
-            disabled={busy}
-            aria-describedby={`${id}-notice`}
-            onClick={() => void prepare()}
-          >
-            {busy ? (
-              <>
-                <RefreshCw className="animate-spin motion-reduce:animate-none" />두 분의 이야기를
-                읽고 있어요…
-              </>
-            ) : (
-              "매니저와 함께 읽기"
-            )}
-          </Button>
-        </div>
-      )}
-      {error ? (
-        <p role="alert" className="text-sm leading-relaxed text-destructive">
-          {error}
-        </p>
       ) : null}
     </aside>
   );

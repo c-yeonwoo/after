@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 
 export async function checkAssistantScreens({ page, baseUrl, target, checkPage, screenshotDir }) {
+  await page.route("**/rest/v1/rpc/conversation_preparation_allowed", (route) =>
+    route.fulfill({ json: true }),
+  );
   let calls = 0;
   const endpoint = "**/functions/v1/prepare-conversation";
   await page.route(endpoint, async (route) => {
@@ -43,7 +46,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
       },
     });
   });
-  await page.getByRole("link", { name: "내 매니저와 대화 준비하기" }).click();
+  await page.goto(`${baseUrl}/conversation-prep?target=${target}`);
   const generate = page.getByRole("button", { name: "공개 프로필로 준비하기" });
   await generate.waitFor();
   assert.equal(await generate.isEnabled(), false, "no AI request before explicit consent");
@@ -142,5 +145,5 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     await page.waitForTimeout(300);
   }
   await page.goto(`${baseUrl}/intro`);
-  await page.getByRole("link", { name: "내 매니저와 대화 준비하기" }).waitFor();
+  await page.locator(".profile-sheet").waitFor();
 }

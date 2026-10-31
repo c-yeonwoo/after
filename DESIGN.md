@@ -371,3 +371,27 @@ Questions are compact neutral-ink prompts at supporting size, 700 weight, and ke
 - Don't introduce decorative eyebrow labels above already clear titles.
 - Don't wrap supporting evidence in another card inside a topic card.
 - Don't treat the legacy generic Card or a removed dock shadow as assistant defaults.
+
+
+### Introduction workflow clarity — approved 2026-10-31
+
+The home uses a white base and a warm neutral assistant surface, with pink limited to
+brand details, light user messages, and short evidence highlights. The introduction
+preview is a compact image-and-copy composition: 86×108 thumbnail, 18px name,
+14px summary, 12px metadata. Its single main action uses foreground ink over the
+page background color (inverted in dark mode), without the pink outline treatment.
+The active bottom tab uses a neutral selected segment. Preserve all photo permissions;
+a man’s unopened paid teaser still does not reveal a name or photo.
+
+The introduction workflow is female interest → curated male queue → male profile
+opening → male date/place request → female acceptance → confirmed appointment.
+An open profile is not a confirmed appointment. Personalized conversation preparation
+unlocks only after confirmation, including API and cached-result access. Before that,
+profile reading and contact points help the member decide whether to express interest.
+
+Manager introductions start automatically for the currently readable candidate when
+the feature flag and existing manager consent allow it. Home and detail share the
+same owner/target/public-profile/consent-revision cache. There is no separate generation
+button. Failed AI reading falls back to visibly attributed public-profile observations.
+Quantitative indicators count exact public interest/topic selections, not MBTI/saju
+compatibility or inferred relationship success. Missing data never becomes a zero score.

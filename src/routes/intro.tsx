@@ -481,7 +481,7 @@ function IntroPage() {
                 : "요청을 전달했어요. 아직 상대의 답변을 기다리고 있어요."
             : isMale
               ? "프로필을 읽어보세요. 마음이 가면 날짜와 장소를 함께 제안해요."
-              : "어떤 분인지 천천히 읽어보세요. 좋아요를 남기면 소개와 만남 조율을 이어가요."}
+              : "어떤 분인지 천천히 읽어보세요. 호감을 보내면 만남 요청이 올 때 알려드릴게요."}
         </GuideNote>
       </div>
 
@@ -492,13 +492,13 @@ function IntroPage() {
         assistantSignature={<AssistantMark />}
         introductionTarget={candidate.id ?? undefined}
       />
-      {candidate.id ? (
+      {candidate.id && meeting?.confirmed_at && !meeting.cancelled_at ? (
         <Link
           to="/conversation-prep"
           search={{ target: candidate.id }}
           className="assistant-suggestion mt-4 mb-5 flex items-center justify-between gap-3"
         >
-          내 매니저와 대화 준비하기<span aria-hidden="true">→</span>
+          만나기 전 대화 팁 보기<span aria-hidden="true">→</span>
         </Link>
       ) : null}
 

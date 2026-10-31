@@ -106,24 +106,26 @@ function LegacyAssistantDock({
             ["prepare", "대화 팁"],
             ["schedule", "일정 정리"],
           ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            className="assistant-quick-chip pressable"
-            aria-pressed={intent === key}
-            onFocus={(event) =>
-              event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" })
-            }
-            onClick={() => {
-              setSafety(null);
-              setLastQuestion(null);
-              setIntent(key);
-            }}
-          >
-            <span className="assistant-quick-chip-label">{label}</span>
-          </button>
-        ))}
+        )
+          .filter(([key]) => key !== "prepare" || state === "meeting_confirmed")
+          .map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              className="assistant-quick-chip pressable"
+              aria-pressed={intent === key}
+              onFocus={(event) =>
+                event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" })
+              }
+              onClick={() => {
+                setSafety(null);
+                setLastQuestion(null);
+                setIntent(key);
+              }}
+            >
+              <span className="assistant-quick-chip-label">{label}</span>
+            </button>
+          ))}
       </div>
       {safety || reply ? (
         <div className="assistant-reply mt-4" role="status">

@@ -6,6 +6,7 @@ import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { Button } from "@/components/ui/button";
 import { getProfile } from "@/lib/api";
 import { useMe } from "@/lib/me";
+import { assistantRpc } from "@/lib/privateAssistant";
 import { supabase } from "@/lib/supabase";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 import type { ConversationPreparation } from "../../supabase/functions/_shared/conversation-prep";
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/conversation-prep")({
 });
 
 const errors: Record<string, string> = {
+  meeting_required: "약속이 확정되면 상대에게 맞는 대화 팁을 준비해요.",
+  disabled: "맞춤 대화 팁은 아직 준비 중이에요.",
   unavailable: "이 프로필을 더 이상 확인할 수 없어요. 소개 화면에서 현재 상태를 확인해 주세요.",
   unauthorized: "로그인을 다시 확인해 주세요.",
   needs_material:
@@ -41,7 +44,12 @@ function ConversationPrep() {
   const live = useMemberLiveQuery(
     `conversation-prep-access:${target}`,
     me?.id,
-    async () => ({ target, profile: target ? await getProfile(target) : null }),
+    async () => {
+      const allowed = target
+        ? await assistantRpc<boolean>("conversation_preparation_allowed", { p_target: target })
+        : false;
+      return { target, profile: allowed ? await getProfile(target) : null };
+    },
     Boolean(ready && me && me.onboarding_step >= 7 && target),
   );
   const profile =
@@ -104,6 +112,10 @@ function ConversationPrep() {
           errors[code ?? ""] ?? "준비를 마치지 못했어요. 연결을 확인하고 다시 시도해 주세요.",
         );
       }
+      const stillAllowed = await assistantRpc<boolean>("conversation_preparation_allowed", {
+        p_target: target,
+      });
+      if (!stillAllowed) throw new Error(errors.meeting_required);
       const latest = await getProfile(target);
       if (!latest || JSON.stringify(latest) !== fingerprint) throw new Error(errors.unavailable);
       if (generation.current === epoch) setResult({ owner: me.id, target, fingerprint, data });
@@ -128,7 +140,7 @@ function ConversationPrep() {
         <div className="py-8">
           <h2 className="text-2xl font-bold">지금은 준비할 수 없어요</h2>
           <p className="mt-3 text-sm text-muted-foreground">
-            소개가 열려 있는 상대인지, 연결 상태가 괜찮은지 확인해 주세요.
+            약속이 확정된 상대에게 맞는 대화 팁을 준비해요. 연결 상태도 확인해 주세요.
           </p>
           <Button className="mt-5" variant="outline" onClick={() => void live.refetch()}>
             다시 확인하기

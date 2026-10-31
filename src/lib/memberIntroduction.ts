@@ -20,7 +20,7 @@ export const introductionProfileFingerprint = (profiles: {
 export async function introduceMember(target: string, requestId: string) {
   const { data, error } = await supabase.functions.invoke<
     MemberIntroductionBrief & { code?: string }
-  >("introduce-member", { body: { target, requestId, consent: true } });
+  >("introduce-member", { body: { target, requestId, consent: true, automatic: true } });
   if (error || data?.code || !data?.portrait?.length) {
     let code = data?.code;
     if (error && "context" in error && error.context instanceof Response) {

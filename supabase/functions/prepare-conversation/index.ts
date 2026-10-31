@@ -83,6 +83,19 @@ Deno.serve(async (req) => {
   if (authError || !user) return json({ code: "unauthorized" }, 401);
   if (input.target === user.id) return json({ code: "unavailable" }, 403);
   const db = createClient(URL, SERVICE, { auth: { persistSession: false } });
+  const allowed = async () => {
+    const { data, error } = await caller.rpc("conversation_preparation_allowed", {
+      p_target: input.target,
+    });
+    return !error && data === true;
+  };
+  if (!(await allowed())) return json({ code: "meeting_required" }, 403);
+  const { data: flags } = await db
+    .from("app_settings")
+    .select("assistant_introduction_enabled")
+    .eq("id", true)
+    .single();
+  if (!flags?.assistant_introduction_enabled) return json({ code: "disabled" }, 403);
   const { data: owner, error: ownerError } = await db
     .from("profiles")
     .select("account_state,onboarding_step,updated_at")
@@ -121,8 +134,10 @@ Deno.serve(async (req) => {
     cached?.source_hash === hash &&
     Date.parse(cached.created_at) > Date.now() - 12 * 3600000 &&
     validConversationPreparation(cached.result, sources)
-  )
+  ) {
+    if (!(await allowed())) return json({ code: "meeting_required" }, 403);
     return json({ ...cached.result, cached: true });
+  }
   if (!KEY) return json({ code: "not_configured" }, 503);
   const { data: reservation, error: reserveError } = await db.rpc("reserve_ai_run", {
     p_user: user.id,
@@ -179,6 +194,10 @@ Deno.serve(async (req) => {
     if (!verify.parsed_output?.pass) {
       await finish("invalid");
       return json({ code: "quality_failed" }, 502);
+    }
+    if (!(await allowed())) {
+      await finish("invalid");
+      return json({ code: "meeting_required" }, 403);
     }
     const latest = await publicSource();
     if (
