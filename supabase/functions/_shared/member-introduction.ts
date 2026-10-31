@@ -1,6 +1,8 @@
 import { containsContact, scrubUserText, type SourceMap } from "./ai-grounding.ts";
 import { pairSources, type PairPublicProfile } from "./pair-material.ts";
 
+export const MEMBER_INTRODUCTION_VERSION = "member-introduction-v4.2-personal-reading";
+
 export type PublicEvidence = {
   person: "self" | "other";
   field: string;
@@ -84,7 +86,18 @@ export function validMemberIntroduction(
     brief.questions.length > 2
   )
     return false;
+  const isCopied = (text: string) => {
+    const normalize = (value: string) => value.normalize("NFKC").replace(/[\p{P}\p{Z}\s]/gu, "");
+    const value = normalize(text);
+    return Object.values({
+      ...self,
+      ...Object.fromEntries(Object.entries(other).map(([key, source]) => [`other:${key}`, source])),
+    }).some((source) => normalize(source) === value);
+  };
   return (
+    [...brief.portrait, ...brief.connections, ...brief.questions].every(
+      (item) => item && typeof item.text === "string" && !isCopied(item.text),
+    ) &&
     brief.portrait.every(
       (item) => item && validText(item.text, 20, 280) && evidence(item.sources, "other"),
     ) &&

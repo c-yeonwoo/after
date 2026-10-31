@@ -3,6 +3,7 @@ import { useMe } from "./me";
 import { useMemberLiveQuery } from "./useMemberLiveQuery";
 import { assistantRpc, getAssistantFlags } from "./privateAssistant";
 import {
+  MEMBER_INTRODUCTION_VERSION,
   introduceMember,
   introductionProfileFingerprint,
   readIntroductionProfiles,
@@ -47,6 +48,7 @@ export function useMemberIntroduction(targetId: string) {
   const brief = useQuery({
     queryKey: [
       "member-introduction-brief",
+      MEMBER_INTRODUCTION_VERSION,
       me?.id,
       targetId,
       fingerprint,
@@ -54,6 +56,7 @@ export function useMemberIntroduction(targetId: string) {
     ],
     queryFn: async () => {
       const result = await introduceMember(targetId, crypto.randomUUID());
+      if (result.promptVersion !== MEMBER_INTRODUCTION_VERSION) throw new Error("engine_changed");
       const latest = await readIntroductionProfiles(me!.id, targetId);
       if (
         !latest ||

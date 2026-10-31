@@ -128,7 +128,7 @@ export function ProfileDetail({
       <ProfilePhotos key={p.photos.join("|")} paths={p.photos} name={p.name} />
 
       {hasAnyFact ? (
-        <dl className="grid grid-cols-3 gap-x-3 gap-y-4 border-b border-border pb-5">
+        <dl className="profile-facts grid grid-cols-3 gap-x-3 gap-y-4">
           {facts.map((f) => (
             <div key={f.k}>
               <dt className="text-xs text-muted-foreground">{f.k}</dt>
@@ -155,8 +155,8 @@ export function ProfileDetail({
       ) : null}
 
       {p.story?.sections.length ? (
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold leading-snug text-foreground">
+        <div className="profile-stories space-y-5">
+          <h3 className="text-base font-semibold leading-snug text-foreground">
             {own ? "내가 들려준 이야기" : "직접 들려준 이야기"}
           </h3>
           {p.story.sections.map((section) => (

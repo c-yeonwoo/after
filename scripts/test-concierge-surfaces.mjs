@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { chromium, webkit } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
@@ -16,6 +16,9 @@ const widths = process.env.AFTER_CONCIERGE_WIDTHS?.split(",").map(Number) ?? [32
 const schemes = process.env.AFTER_CONCIERGE_SCHEMES?.split(",") ?? ["light", "dark"];
 assert.ok(widths.length && widths.every((width) => [320, 390, 1440].includes(width)));
 assert.ok(schemes.length && schemes.every((scheme) => ["light", "dark"].includes(scheme)));
+const introductionVersion = (
+  await readFile("supabase/functions/_shared/member-introduction.ts", "utf8")
+).match(/MEMBER_INTRODUCTION_VERSION\s*=\s*["']([^"']+)/)[1];
 const id = "11111111-1111-4111-8111-111111111111";
 const otherId = "22222222-2222-4222-8222-222222222222";
 const introId = "33333333-3333-4333-8333-333333333333";
@@ -167,6 +170,7 @@ const allFixtures = [
   { name: "meetings-confirmed", path: "/chats", heading: "함께할 약속" },
   { name: "intro-ai", path: "/intro", heading: "합성 도윤" },
   { name: "intro-ai-failure", path: "/intro", heading: "합성 도윤" },
+  { name: "intro-ai-limit", path: "/intro", heading: "합성 도윤" },
   { name: "legacy-off", path: "/assistant", heading: "나와 매니저" },
   { name: "home", path: "/home", heading: "아직 새 소개가 없어요." },
   {
@@ -340,16 +344,16 @@ async function verifyProfile(page, own) {
     assert.ok((await page.locator(".profile-answer").allTextContents()).includes(ownAnswer));
     return;
   }
-  await page.getByRole("heading", { name: "이분을 소개할게요" }).waitFor();
   assert.ok((await page.locator(".profile-answer").allTextContents()).includes(otherAnswer));
-  const evidence = page.locator("summary").filter({ hasText: "두 사람의 공개 답변 보기" }).first();
-  await evidence.click();
-  const text = await evidence.locator("..").innerText();
-  assert.ok(text.includes(ownAnswer), "negated original is preserved in evidence");
-  assert.ok(text.includes(otherAnswer), "counterpart original is preserved in evidence");
-  assert.doesNotMatch(
-    await page.locator("aside").innerText(),
-    /둘 다 영화를 좋아|영화를 함께 좋아/,
+  assert.equal(
+    await page.locator(".profile-sheet details").count(),
+    0,
+    "no native disclosure triangles",
+  );
+  assert.equal(
+    await page.getByText(otherAnswer, { exact: true }).count(),
+    1,
+    "original interview is shown once",
   );
 }
 
@@ -686,6 +690,12 @@ try {
             path.endsWith("/functions/v1/introduce-member")
           ) {
             assert.equal(request.postDataJSON().consent, true);
+            if (current.name === "intro-ai-limit")
+              return route.fulfill({
+                status: 429,
+                contentType: "application/json",
+                body: JSON.stringify({ code: "daily_limit" }),
+              });
             if (current.name === "intro-ai-failure")
               return route.fulfill({
                 status: 502,
@@ -696,7 +706,7 @@ try {
               viewerId: id,
               targetId: otherId,
               sourceFingerprint: "synthetic",
-              promptVersion: "fixture",
+              promptVersion: introductionVersion,
               expiresAt: new Date(Date.now() + 3600000).toISOString(),
               cached: false,
               portrait: [
@@ -801,6 +811,7 @@ try {
                   "intro",
                   "intro-ai",
                   "intro-ai-failure",
+                  "intro-ai-limit",
                   "intro-pending",
                   "profile",
                 ].includes(fixture.name),
@@ -984,46 +995,67 @@ try {
           }
           if (fixture.name === "intro-ai") {
             assert.equal(await page.getByRole("button", { name: "매니저와 함께 읽기" }).count(), 0);
-            assert.equal(await page.getByRole("checkbox").count(), 0);
-            await page.locator(".profile-highlight").first().waitFor();
+            await page.locator(".manager-reading-text").first().waitFor();
             assert.equal(
               summary.backendRequests
                 .slice(backendStart)
                 .filter((r) => r.path.endsWith("/functions/v1/introduce-member")).length,
               1,
-              "introduction is prepared automatically once",
+              "automatic generation occurs once",
             );
-            assert.equal(await page.locator(".profile-highlight").count(), 3);
-            assert.ok(
-              (await page.locator(".profile-highlight").allTextContents()).includes(ownAnswer),
+            assert.equal(
+              await page.locator(".manager-reading details, .manager-reading mark").count(),
+              0,
+            );
+            assert.equal(
+              await page.getByText(ownAnswer, { exact: true }).count(),
+              0,
+              "internal evidence is not recited",
+            );
+            assert.equal(
+              await page.getByText(otherAnswer, { exact: true }).count(),
+              1,
+              "interview original is displayed once",
             );
             await page.locator(".manager-reading").scrollIntoViewIfNeeded();
             await capture(page, `${name}-reading`);
           }
+          if (fixture.name === "intro-ai-limit") {
+            await page.getByText(/오늘 준비 횟수를 모두 썼어요/).waitFor();
+            assert.equal(
+              await page.getByRole("button", { name: "설명 다시 준비하기" }).count(),
+              0,
+              "hard quota cannot invite an unusable retry",
+            );
+            assert.equal(await page.getByText(otherAnswer, { exact: true }).count(), 1);
+          }
           if (fixture.name === "intro-ai-failure") {
-            await page.getByRole("heading", { name: "말문을 열어 줄 접점", exact: true }).waitFor();
-            assert.equal(await page.getByRole("button", { name: "매니저와 함께 읽기" }).count(), 0);
+            await page.getByRole("button", { name: "설명 다시 준비하기", exact: true }).waitFor();
+            assert.equal(
+              await page.locator(".manager-reading-text").count(),
+              0,
+              "failed generation does not become a copied explanation",
+            );
             assert.equal(
               summary.backendRequests
                 .slice(backendStart)
                 .filter((r) => r.path.endsWith("/functions/v1/introduce-member")).length,
               1,
             );
+            assert.equal(await page.getByText(otherAnswer, { exact: true }).count(), 1);
           }
           if (fixture.name === "home") {
             await capture(page, name);
             await verifyHome(page, width);
           }
           if (fixture.name === "home-arrival") {
-            await page.getByText("프로필 속 이야기", { exact: true }).waitFor();
-            await page
-              .locator(".introduction-arrival")
-              .getByText(otherAnswer, { exact: true })
-              .waitFor();
             assert.equal(
-              await page.getByText("매니저의 한마디", { exact: true }).count(),
+              await page
+                .locator(".introduction-arrival")
+                .getByText(otherAnswer, { exact: true })
+                .count(),
               0,
-              "public-profile fallback is never presented as a generated AI explanation",
+              "home does not repeat the interview when AI is unavailable",
             );
           }
           if (fixture.name === "home-chat") {
@@ -1177,7 +1209,11 @@ try {
           await audit(page, name);
           if (["intro", "profile", "draft"].includes(fixture.name)) {
             const target =
-              fixture.name === "draft" ? page.locator("article") : page.locator("aside");
+              fixture.name === "draft"
+                ? page.locator("article")
+                : fixture.name === "intro"
+                  ? page.locator(".profile-stories")
+                  : page.locator("aside");
             await target.scrollIntoViewIfNeeded();
             await capture(page, `${name}-reading`);
           }
