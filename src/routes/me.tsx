@@ -223,22 +223,9 @@ function MePage() {
           </div>
         </dl>
 
-        {/*
-          여성에게 요금 정책을 **문장으로** 말한다. 앱 어디에도 이 문장이 없었다.
-          숫자로 암시하지 않는 이유는, 없는 것은 눈에 띄지 않기 때문이다.
-        */}
-        {isMale ? (
-          stats?.metCount === 0 ? (
-            <p className="mt-3 text-xs text-muted-foreground">아직 첫 만남 전이에요.</p>
-          ) : null
-        ) : (
-          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            <span className="font-semibold text-foreground">
-              여성 회원은 이용료를 내지 않습니다.
-            </span>{" "}
-            소개도, 만남도 무료예요.
-          </p>
-        )}
+        {isMale && stats?.metCount === 0 ? (
+          <p className="mt-3 text-xs text-muted-foreground">아직 첫 만남 전이에요.</p>
+        ) : null}
         {statsError ? (
           <div
             role="alert"
