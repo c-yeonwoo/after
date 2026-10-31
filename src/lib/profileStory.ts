@@ -1,3 +1,6 @@
+import { PROFILE_CHOICES as CHOICE_QUESTIONS } from "../../supabase/functions/_shared/profile-signals";
+export { CHOICE_QUESTIONS };
+
 export const STORY_QUESTIONS = [
   { id: "daily_life", questionId: "daily_life_v1", question: "퇴근 후에는 어떻게 보내세요?" },
   { id: "getting_closer", questionId: "getting_closer_v1", question: "어떤 만남에서 편해지나요?" },
@@ -24,54 +27,6 @@ export type ProfileStoryV3 = {
   conversationHooks: string[];
   publishedRevision: number;
 };
-
-export const CHOICE_QUESTIONS = [
-  {
-    id: "rhythm",
-    title: "퇴근 후 시간이 생기면 주로 어떻게 보내세요?",
-    max: 2,
-    options: ["혼자 푹 쉬기", "운동하기", "사람 만나기", "취미에 몰입하기", "동네 돌아보기"],
-  },
-  {
-    id: "first_date",
-    title: "처음 만날 때 편한 자리는 어떤 쪽인가요?",
-    max: 2,
-    options: ["짧게 커피", "함께 걷기", "식사하며 대화", "가벼운 술자리", "활동이나 체험"],
-  },
-  {
-    id: "contact",
-    title: "일하는 날에는 어떻게 연락하는 편인가요?",
-    max: 1,
-    options: ["틈틈이 짧게", "여유 생길 때 모아서", "퇴근 후 편하게", "미리 정한 방식 없음"],
-  },
-  {
-    id: "planning",
-    title: "약속은 어떻게 정할 때 편하세요?",
-    max: 1,
-    options: ["며칠 전에 정하기", "당일 상황 보고", "큰 틀만 정하기", "상대와 함께 맞추기"],
-  },
-  {
-    id: "closeness",
-    title: "어떤 순간에 상대와 가까워졌다고 느끼나요?",
-    max: 2,
-    options: ["일상을 나눌 때", "함께 무언가 할 때", "작은 배려를 느낄 때", "생각을 깊이 나눌 때"],
-  },
-  {
-    id: "topics",
-    title: "만나면 자연스럽게 꺼내고 싶은 이야기는요?",
-    max: 3,
-    options: [
-      "요즘 일상",
-      "영화·드라마",
-      "음식",
-      "운동",
-      "음악",
-      "여행",
-      "하는 일",
-      "중요하게 생각하는 것",
-    ],
-  },
-] as const;
 
 export type ChoiceId = (typeof CHOICE_QUESTIONS)[number]["id"];
 export type ChoiceAnswers = Partial<Record<ChoiceId, string[]>>;

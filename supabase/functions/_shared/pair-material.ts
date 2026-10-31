@@ -1,3 +1,4 @@
+import { publicSignalRows } from "./profile-signals.ts";
 import {
   containsContact,
   scrubUserText,
@@ -9,6 +10,7 @@ import {
 
 export type PairPublicProfile = {
   job?: string | null;
+  profile_public_signals?: unknown;
   profile_story?: {
     version?: number;
     sections?: { id: string; question: string; answer: string }[];
@@ -27,6 +29,8 @@ export type PairPublicProfile = {
 /** Only approved public copy. Never pass a whole profiles row to the model. */
 export function pairSources(p: PairPublicProfile): SourceMap {
   const source: SourceMap = { job: scrubUserText(p.job, 80) };
+  for (const row of publicSignalRows(p.profile_public_signals))
+    source[`preference_${row.id}`] = `${row.label}: ${row.values.join(" · ")}`;
   if (p.profile_story?.version === 3 && Array.isArray(p.profile_story.sections)) {
     for (const section of p.profile_story.sections) {
       if (["daily_life", "getting_closer", "conversation"].includes(section.id))

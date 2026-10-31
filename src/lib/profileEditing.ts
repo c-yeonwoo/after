@@ -1,3 +1,7 @@
+import {
+  publicProfileSignals,
+  SIGNAL_LABELS,
+} from "../../supabase/functions/_shared/profile-signals";
 import type { Basics } from "@/components/onboarding/basics";
 import type { Profile } from "@/lib/api";
 import { newProfileInterviewV3 } from "@/lib/profileInterviewV3";
@@ -5,6 +9,7 @@ import {
   STORY_QUESTIONS,
   storyFromAnswers,
   validProfileStory,
+  CHOICE_QUESTIONS,
   type ProfileStoryV3,
 } from "@/lib/profileStory";
 
@@ -32,12 +37,26 @@ export function editableStory(member: Profile): ProfileStoryV3 {
 }
 
 /** Start from the published profile, never an abandoned signup/edit draft. */
-export function profileEditDraft(member: Profile, basics: Basics, story: ProfileStoryV3) {
+export function profileEditDraft(
+  member: Profile,
+  basics: Basics,
+  story: ProfileStoryV3,
+  selected: Record<string, string[]> = publicProfileSignals(member.profile_public_signals),
+) {
   const draft = newProfileInterviewV3(member, basics);
   const preferences = member.profile_preferences as {
     choices?: Record<string, string[]>;
     choiceCustom?: Record<string, string>;
   } | null;
+  const signals = publicProfileSignals(selected);
+  const choices = { ...preferences?.choices };
+  for (const key of Object.keys(SIGNAL_LABELS))
+    if (Object.hasOwn(selected, key)) choices[key] = signals[key] ?? [];
+  const choiceScope = CHOICE_QUESTIONS.flatMap((question) =>
+    (signals[question.id] ?? []).map(
+      (value) => `choice:${question.id}:${(question.options as readonly string[]).indexOf(value)}`,
+    ),
+  );
   return {
     ...draft,
     stage: "preview" as const,
@@ -49,10 +68,10 @@ export function profileEditDraft(member: Profile, basics: Basics, story: Profile
         story.sections.find((section) => section.id === question.id)?.answer ?? "",
       ]),
     ) as typeof draft.answers,
-    publicIds: story.sections.map((section) => `answer:${section.id}`),
+    publicIds: [...story.sections.map((section) => `answer:${section.id}`), ...choiceScope],
     sourceRevision: 0,
     storySourceRevision: 0,
-    choices: preferences?.choices ?? draft.choices,
+    choices: preferences?.choices ? choices : { ...draft.choices, ...choices },
     choiceCustom: preferences?.choiceCustom ?? draft.choiceCustom,
   };
 }

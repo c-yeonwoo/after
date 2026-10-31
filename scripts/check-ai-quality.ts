@@ -335,7 +335,7 @@ assert.equal(
 );
 assert.equal(validProfileStory({ ...story, summary: "연락 010-1234-5678" }), false);
 assert.equal(storyFromAnswers({ daily_life: "몰라" }).sections.length, 0);
-assert.equal(CHOICE_QUESTIONS.length, 6);
+assert.equal(CHOICE_QUESTIONS.length, 8);
 checked += 8;
 
 // These are static prompt/contract checks, not evidence of actual model output quality.
@@ -463,7 +463,11 @@ const sourceHarness = ts.transpileModule(
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } },
 ).outputText;
 const sourceModule: { exports: Record<string, unknown> } = { exports: {} };
-runInNewContext(sourceHarness, { module: sourceModule, scrubUserText });
+runInNewContext(sourceHarness, {
+  module: sourceModule,
+  scrubUserText,
+  PROFILE_CHOICES: CHOICE_QUESTIONS,
+});
 type TestSource = { id: string; question: string; text: string; public: boolean };
 const productionSources = sourceModule.exports.sources as (
   input: Record<string, unknown>,

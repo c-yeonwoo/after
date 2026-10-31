@@ -51,7 +51,12 @@ const member = {
   updated_at: now,
   profile_preferences: {
     version: 1,
-    choices: { planning: ["상대와 함께 맞추기"] },
+    choices: {
+      planning: ["상대와 함께 맞추기"],
+      first_date: ["짧게 커피"],
+      relationship_goal: ["좋은 사람과 진지한 연애"],
+      care: ["이야기 들어주기"],
+    },
     choiceCustom: { contact: privateSentinel },
   },
   gender: "female",
@@ -81,6 +86,11 @@ const member = {
   headline: "일상의 작은 이야기를 나누고 싶어요",
   intro: ownAnswer,
   profile_story: story(ownAnswer),
+  profile_public_signals: {
+    first_date: ["짧게 커피"],
+    relationship_goal: ["좋은 사람과 진지한 연애"],
+    care: ["이야기 들어주기"],
+  },
   interests: ["음악"],
   match_tags: [],
   topics: ["퇴근 후 시간"],
@@ -96,6 +106,11 @@ const other = {
   company_email: "not-public@verify.local",
   intro: otherAnswer,
   profile_story: story(otherAnswer),
+  profile_public_signals: {
+    first_date: ["짧게 커피"],
+    relationship_goal: ["결혼도 생각하는 연애"],
+    care: ["혼자 쉴 시간 존중하기"],
+  },
   drinking: "social",
   private_notes: privateSentinel,
 };
@@ -203,6 +218,12 @@ const allFixtures = [
   { name: "profile-edit-failure", path: "/profile-edit", heading: "프로필 수정" },
   { name: "profile-edit-conflict", path: "/profile-edit", heading: "프로필 수정" },
   { name: "profile-edit-load-error", path: "/profile-edit", heading: "프로필 수정" },
+  {
+    name: "style-choices",
+    path: "/signup?prepare=true",
+    stage: "choices2",
+    heading: "나에게 편한 방식",
+  },
   { name: "interview", path: "/signup?prepare=true", stage: "story0", heading: null },
   {
     name: "understanding",
@@ -855,6 +876,13 @@ try {
         switchedOwner = false;
         releaseConsent = undefined;
         currentDraft = fixture.stage ? draft(fixture.stage) : null;
+        if (fixture.name === "draft") {
+          currentDraft.choices = {
+            first_date: ["짧게 커피", "함께 걷기"],
+            contact: ["퇴근 후 편하게"],
+          };
+          currentDraft.publicIds = ["answer:daily_life", "choice:first_date:1", "choice:contact:2"];
+        }
         if (fixture.name === "photos")
           currentDraft = { ...draft("preview"), basics: { ...basics, job: "예전 초안의 직업" } };
         revision = currentDraft ? 1 : 0;
@@ -897,6 +925,19 @@ try {
               await page.getByLabel("직업", { exact: true }).waitFor();
               await page.getByLabel("직업", { exact: true }).fill("새로운 제품 기획자");
               assert.equal(saves().length, 0, "typing is not publication or autosave");
+              if (fixture.name === "photos") {
+                await page.getByRole("button", { name: "짧게 커피", exact: true }).click();
+                await page
+                  .getByRole("button", { name: "이전에 고른 답 불러오기", exact: true })
+                  .click();
+                assert.equal(
+                  await page
+                    .getByRole("button", { name: "짧게 커피", exact: true })
+                    .getAttribute("aria-pressed"),
+                  "true",
+                );
+              }
+
               assert.equal(
                 await page.getByRole("button", { name: "다음", exact: true }).count(),
                 0,
@@ -972,6 +1013,7 @@ try {
           }
           if (fixture.name === "home-arrival") {
             await page.locator(".introduction-arrival").waitFor();
+            await page.getByText("함께 고른 답", { exact: false }).waitFor();
             assert.equal(
               await page
                 .locator(".introduction-arrival")
@@ -1146,6 +1188,8 @@ try {
             await page.getByText(assistantHistory[0].answer, { exact: true }).waitFor();
           }
           if (fixture.name === "intro-ai") {
+            await page.getByText("공통 선택", { exact: true }).waitFor();
+            assert.equal(await page.getByText("함께 맞춰볼 점", { exact: true }).count(), 2);
             assert.equal(await page.getByRole("button", { name: "매니저와 함께 읽기" }).count(), 0);
             await page.locator(".manager-reading-text").first().waitFor();
             assert.equal(
@@ -1351,6 +1395,24 @@ try {
               0,
               "unselected/private source omitted",
             );
+          }
+          if (fixture.name === "draft") {
+            const style = page.getByRole("region", { name: "만남 스타일", exact: true });
+            await style.getByText("함께 걷기", { exact: true }).waitFor();
+            assert.equal(await style.getByText("짧게 커피", { exact: true }).count(), 0);
+            assert.equal(await style.getByText("퇴근 후 편하게", { exact: true }).count(), 0);
+          }
+          if (fixture.name === "style-choices") {
+            await page
+              .getByRole("group", { name: "어떤 관계를 기대하나요?", exact: true })
+              .waitFor();
+            await page.getByRole("button", { name: "결혼도 생각하는 연애", exact: true }).click();
+            await page.getByRole("button", { name: "혼자 쉴 시간 존중하기", exact: true }).click();
+            await page.getByRole("button", { name: "다음", exact: true }).click();
+            await page.getByRole("textbox", { name: "내 답변", exact: true }).waitFor();
+            assert.equal(currentDraft.stage, "story0", "no extra choice page or required field");
+            assert.ok(currentDraft.publicIds.includes("choice:relationship_goal:2"));
+            assert.ok(currentDraft.publicIds.includes("choice:care:2"));
           }
           if (fixture.name === "interview") {
             assert.equal(

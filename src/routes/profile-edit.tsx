@@ -1,3 +1,5 @@
+import { PublicSignalEditor } from "@/components/onboarding/PublicSignalEditor";
+import { publicProfileSignals } from "../../supabase/functions/_shared/profile-signals";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -82,9 +84,14 @@ function ProfileEditor({ member }: { member: Profile }) {
   const navigate = useNavigate();
   const { setMe } = useMe();
   const [basics, setBasics] = useState(() => editableBasics(member));
+  const [signals, setSignals] = useState(() => publicProfileSignals(member.profile_public_signals));
   const [story, setStory] = useState(() => editableStory(member));
   const initial = useRef(
-    JSON.stringify({ basics: editableBasics(member), story: editableStory(member) }),
+    JSON.stringify({
+      basics: editableBasics(member),
+      story: editableStory(member),
+      signals: publicProfileSignals(member.profile_public_signals),
+    }),
   );
   const source = useRef(member);
   const revision = useRef(0);
@@ -99,7 +106,8 @@ function ProfileEditor({ member }: { member: Profile }) {
   const draftReplacementApproved = useRef(false);
   const skipBlock = useRef(false);
   const submitting = useRef(false);
-  const dirty = initial.current !== JSON.stringify({ basics, story });
+  const dirty =
+    initial.current !== JSON.stringify({ basics, story, signals: publicProfileSignals(signals) });
   const blocker = useBlocker({
     shouldBlockFn: () => !skipBlock.current && (dirty || uploading || submitting.current),
     enableBeforeUnload: dirty || uploading || saving,
@@ -155,7 +163,7 @@ function ProfileEditor({ member }: { member: Profile }) {
       if (current.updated_at !== source.current.updated_at)
         throw Object.assign(new Error("profile changed"), { code: "PT409" });
       revision.current = await saveProfileInterviewDraft(
-        profileEditDraft(source.current, basics, story) as unknown as Json,
+        profileEditDraft(source.current, basics, story, signals) as unknown as Json,
         revision.current,
         session.access_token,
       );
@@ -360,6 +368,13 @@ function ProfileEditor({ member }: { member: Profile }) {
                 }
               />
             </section>
+            {Object.hasOwn(member, "profile_public_signals") ? (
+              <PublicSignalEditor
+                value={signals}
+                previous={(member.profile_preferences as { choices?: unknown } | null)?.choices}
+                onChange={setSignals}
+              />
+            ) : null}
             <section aria-labelledby="edit-story" className="space-y-4">
               <h2 id="edit-story" className="text-base font-semibold">
                 소개글

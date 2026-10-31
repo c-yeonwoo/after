@@ -113,6 +113,18 @@ try {
   await page
     .getByLabel("어떤 만남에서 편해지나요?", { exact: true })
     .fill("조용한 카페에서 천천히 이야기를 나눌 때 편해요.");
+  await page.getByRole("button", { name: "결혼도 생각하는 연애", exact: true }).click();
+  await page.getByRole("button", { name: "혼자 쉴 시간 존중하기", exact: true }).click();
+  await page.getByRole("button", { name: "짧게 커피", exact: true }).click();
+  const expectedPreferences = {
+    ...preferences,
+    choices: {
+      ...preferences.choices,
+      relationship_goal: ["결혼도 생각하는 연애"],
+      care: ["혼자 쉴 시간 존중하기"],
+      first_date: ["짧게 커피"],
+    },
+  };
   const publicBeforeSave = (
     await service.from("profiles").select("job,headline").eq("id", id).single()
   ).data;
@@ -126,7 +138,12 @@ try {
   assert.equal(after.onboarding_step, 7);
   assert.equal(after.company_email, original.company_email);
   assert.equal(after.gender, original.gender);
-  assert.deepEqual(after.profile_preferences, preferences);
+  assert.deepEqual(after.profile_preferences, expectedPreferences);
+  assert.deepEqual(after.profile_public_signals, {
+    relationship_goal: ["결혼도 생각하는 연애"],
+    care: ["혼자 쉴 시간 존중하기"],
+    first_date: ["짧게 커피"],
+  });
   assert.deepEqual(after.photo_paths, photos);
   assert.equal(
     (await owner.from("profile_interview_drafts").select("revision").eq("user_id", id)).data.length,
@@ -152,7 +169,28 @@ try {
     deleted.profile_story.sections.some((section) => section.id === "daily_life"),
     false,
   );
-  assert.deepEqual(deleted.profile_preferences, preferences);
+  assert.deepEqual(deleted.profile_preferences, expectedPreferences);
+  await page.getByRole("link", { name: "프로필 수정", exact: true }).click();
+  await page.getByRole("button", { name: "결혼도 생각하는 연애", exact: true }).click();
+  await page.getByRole("button", { name: "변경사항 저장", exact: true }).click();
+  await page.waitForURL("**/profile");
+  const styleChanged = (
+    await service
+      .from("profiles")
+      .select("profile_public_signals,profile_story,profile_preferences")
+      .eq("id", id)
+      .single()
+  ).data;
+  assert.equal(
+    styleChanged.profile_public_signals.relationship_goal,
+    undefined,
+    "unchecking a public style removes it",
+  );
+  assert.ok(
+    styleChanged.profile_story.publishedRevision > deleted.profile_story.publishedRevision,
+    "same prose approval still advances revision",
+  );
+  assert.deepEqual(styleChanged.profile_preferences.choices.contact, preferences.choices.contact);
   await page.goto(base + "/signup");
   await page.getByRole("heading", { name: "이미 가입된 계정이 있어요", exact: true }).waitFor();
   assert.equal(

@@ -512,8 +512,8 @@ function Workbench({
                   />
                 </summary>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  입력된 일정·첫 만남·가까워지는 방식·대화 선호를 비교합니다. 3일 이상 기다린 분은
-                  우선 검토하며, 저장 전에는 누구에게도 소개를 보내지 않습니다.
+                  입력된 일정과 공개한 만남 스타일·관계 기대·배려 방식을 비교합니다. 3일 이상 기다린
+                  분은 우선 검토하며, 저장 전에는 누구에게도 소개를 보내지 않습니다.
                 </p>
                 <p className="mt-2 text-2xs text-muted-foreground">
                   추천 근거와 대기 시간을 기준으로 초안을 담습니다. 저장 전 프로필과 순서를

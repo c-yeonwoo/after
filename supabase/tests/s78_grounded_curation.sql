@@ -1,5 +1,5 @@
 begin;
-select plan(38);
+select plan(39);
 select set_config('request.jwt.claims','{"role":"service_role","aal":"aal2"}',true);
 update public.app_settings set identity_required=false,admin_mfa_required=false;
 update public.profiles set paused_at=now() where hub_id='yeouido';
@@ -8,11 +8,12 @@ select ('78000000-0000-0000-0000-00000000000'||n)::uuid,'curation78-'||n||'@veri
  'authenticated','authenticated',now(),'x' from generate_series(1,4) n;
 insert into public.profiles(id,company_email,gender,hub_id,name,job,birth,role,onboarding_step,
  email_verified_at,terms_agreed_at,privacy_agreed_at,agreed_policy_version,phone_verified_at,
- photo_state,photo_paths,headline,intro,interests,profile_preferences)
+ photo_state,photo_paths,headline,intro,interests,profile_public_signals,profile_preferences)
 select id,email,case when email in ('curation78-1@verify.local','curation78-4@verify.local') then 'male'::gender else 'female'::gender end,
  'yeouido','개인식별이름','직업','1993-01-01',case when email='curation78-4@verify.local' then 'admin' else 'member' end,
  7,now(),now(),now(),'2026-10-17.3',now(),'approved',array[id||'/1.png',id||'/2.png',id||'/3.png'],
  '첫 만남은 커피가 좋아요','처음에는 커피를 마시며 이야기하고 싶어요.',array['커피'],
+ '{"first_date":["짧게 커피"]}'::jsonb,
  '{"choices":{"first_date":["짧게 커피"],"contact":["PRIVATE-CONTACT-SENTINEL"]}}'::jsonb
 from auth.users where email like 'curation78-%@verify.local';
 insert into public.affinities(from_id,to_id,verdict,created_at) values
@@ -33,6 +34,12 @@ select throws_ok($$select public.admin_apply_pair_reason('78000000-0000-0000-000
 reset role;
 select is(public.curation_recommendation_tick('78000000-0000-0000-0000-000000000001'),2,'two eligible like pairs are scored');
 select is((select preference_dimensions from public.curation_recommendations where female_id='78000000-0000-0000-0000-000000000002'),1,'first-date preference is a declared shared dimension');
+update profiles set profile_public_signals='{}' where id='78000000-0000-0000-0000-000000000002';
+select public.curation_recommendation_tick('78000000-0000-0000-0000-000000000001');
+select is((select preference_dimensions from public.curation_recommendations where female_id='78000000-0000-0000-0000-000000000002'),0,'private unapproved choices cannot inflate visible support counts');
+update profiles set profile_public_signals='{"first_date":["짧게 커피"]}' where id='78000000-0000-0000-0000-000000000002';
+select public.curation_recommendation_tick('78000000-0000-0000-0000-000000000001');
+
 select is((select schedule_overlap from public.curation_recommendations where female_id='78000000-0000-0000-0000-000000000002'),1,'fresh availability overlap is counted');
 select ok((select schedule_overlap is null from public.curation_recommendations where female_id='78000000-0000-0000-0000-000000000003'),'missing availability stays unknown, not incompatible');
 select is((select count(*)::integer from public.intro_queue where male_id='78000000-0000-0000-0000-000000000001'),0,'batch never sends introductions');

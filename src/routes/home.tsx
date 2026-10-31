@@ -1,3 +1,4 @@
+import { comparePublicSignals } from "../../supabase/functions/_shared/profile-signals";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Clock, UserRound } from "lucide-react";
@@ -445,12 +446,21 @@ function CandidatePreview({
 }: {
   candidate: PublicProfile;
   isMale: boolean;
-  viewer: { interests: string[] | null; topics: string[] | null } | null;
+  viewer: {
+    interests: string[] | null;
+    topics: string[] | null;
+    profile_public_signals?: unknown;
+    profile_story?: unknown;
+  } | null;
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const path = candidate.photo_paths?.[0] ?? candidate.photo_url;
   const { visible } = useMemberIntroduction(candidate.id ?? "");
   const signals = introductionSignals(viewer ?? {}, candidate);
+  const styles = comparePublicSignals(
+    viewer?.profile_public_signals,
+    candidate.profile_public_signals,
+  );
   const managerReading = visible?.connections[0]?.text ?? visible?.portrait[0]?.text;
   useEffect(() => {
     let active = true;
@@ -499,11 +509,17 @@ function CandidatePreview({
           ) : null}
         </div>
       </div>
-      {signals.interests.length || signals.topics.length ? (
+      {styles.common.length || signals.interests.length || signals.topics.length ? (
         <div
           className="introduction-signals mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs"
           aria-label="공개 프로필의 접점"
         >
+          {styles.common.length ? (
+            <span>
+              함께 고른 답{" "}
+              <strong>{styles.common.reduce((n, item) => n + item.values.length, 0)}개</strong>
+            </span>
+          ) : null}
           {signals.interests.length ? (
             <span>
               공통 관심사 <strong>{signals.interests.length}개</strong>

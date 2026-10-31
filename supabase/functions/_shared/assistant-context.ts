@@ -1,3 +1,4 @@
+import { publicProfileSignals } from "./profile-signals.ts";
 import { profileCoachSources } from "./profile-coach.ts";
 import { containsContact } from "./ai-grounding.ts";
 
@@ -20,6 +21,7 @@ export function ownerAssistantProfile(value: unknown) {
     self_reported_mbti:
       typeof p.mbti === "string" && /^[EI][NS][TF][JP]$/.test(p.mbti) ? p.mbti : null,
     public_words: profileCoachSources(p),
+    self_reported_meeting_style: publicProfileSignals(p.profile_public_signals),
   };
 }
 

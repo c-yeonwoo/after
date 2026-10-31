@@ -6,6 +6,7 @@ export type ConciergeProfile = {
   headline: string;
   intro: string;
   story?: ProfileStoryV3 | null;
+  publicSignals?: Record<string, string[]>;
   interests: string[];
   topics: string[];
   answers: { q: string; a: string }[];
