@@ -154,10 +154,17 @@ jobs:
       - run: npm ci
 
       # 빌드를 먼저 끝내 둔다. 빌드가 실패하면 DB 를 건드리기 전에 멈춘다.
-      - run: npm run check
+      - name: Validate public payment key and build
+        run: |
+          case "$VITE_TOSS_CLIENT_KEY" in
+            ""|test_gck_?*|live_gck_?*) ;;
+            *) echo "::error::Use a Toss payment-widget client key (test_gck_/live_gck_), never a secret key."; exit 1 ;;
+          esac
+          npm run check
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_TOSS_CLIENT_KEY: ${{ secrets.VITE_TOSS_CLIENT_KEY }}
           VITE_CARRIER_IDENTITY_ENABLED: ${{ vars.CARRIER_IDENTITY_ENABLED || 'false' }}
 
       - name: Link production project
