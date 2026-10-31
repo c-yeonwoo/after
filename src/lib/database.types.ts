@@ -3048,6 +3048,15 @@ export type Database = {
       }
     }
     Functions: {
+      meet_places_for_intro: {
+        Args: { p_intro: string }
+        Returns: Database["public"]["Functions"]["meet_places_for_me"]["Returns"]
+      }
+      my_meeting_areas: { Args: Record<PropertyKey, never>; Returns: string[] }
+      set_my_meeting_areas: {
+        Args: { p_primary: string; p_areas: string[] }
+        Returns: Database["public"]["Tables"]["profiles"]["Row"]
+      }
       approved_profile_signals: { Args: { p_draft: Json }; Returns: Json }
       normalize_profile_signals: { Args: { p_value: Json }; Returns: Json }
       profile_signal_options: { Args: never; Returns: Json }

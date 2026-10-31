@@ -50,7 +50,7 @@ export function authErrorMessage(error: unknown): string {
     return "이미 등록된 정보가 있어요. 기존 계정으로 로그인하거나 고객센터에 문의해 주세요.";
   }
   if (m.includes("personal email")) {
-    return "개인 메일은 사용할 수 없습니다. 회사 이메일로 인증해 주세요.";
+    return "이메일을 확인하지 못했어요. 새로고침 후 다시 시도해 주세요.";
   }
   if (code === "invalid_credentials" || m.includes("invalid login credentials")) {
     return "이메일이나 비밀번호를 다시 확인해 주세요. 비밀번호를 잊었다면 코드로 로그인할 수 있어요.";

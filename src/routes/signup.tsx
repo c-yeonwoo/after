@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
 import { AppScreen } from "@/components/app/AppScreen";
 import { CarrierIdentityForm } from "@/components/app/CarrierIdentityForm";
+import { MeetingAreaPicker } from "@/components/onboarding/MeetingAreaPicker";
+import { myMeetingAreas, saveMeetingAreas } from "@/lib/meetingAreas";
 import { PhotoSetEditor } from "@/components/onboarding/PhotoSetEditor";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { ProfileInterviewV3 } from "@/components/onboarding/ProfileInterviewV3";
@@ -24,7 +26,7 @@ import {
 } from "@/components/onboarding/basics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BRAND, HUBS, isCompanyEmail, OPEN_HUBS } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import { carrierIdentityEnabled, carrierIdentityError } from "@/lib/carrierIdentity";
 import {
   beginSignup,
@@ -78,12 +80,12 @@ export const Route = createFileRoute("/signup")({
       { title: `가입 — ${BRAND.name}` },
       {
         name: "description",
-        content: "회사 이메일을 확인하고, 내 이야기를 담은 프로필을 함께 써요.",
+        content: "이메일을 확인하고, 내 이야기를 담은 프로필을 함께 써요.",
       },
       { property: "og:title", content: `가입 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "회사 이메일 인증 · 프로필 인터뷰",
+        content: "이메일 인증 · 프로필 인터뷰",
       },
     ],
   }),
@@ -94,7 +96,7 @@ export const Route = createFileRoute("/signup")({
   단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
   두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
 
-    동의 → 본인·성인 확인 → 회사 이메일 → 직장 지역 → 기본 정보 → 생활 정보 → 인터뷰
+    동의 → 본인·성인 확인 → 이메일 → 기본 정보 → 생활 정보 → 인터뷰
     통신사 미개통 베타에서만 성별 수기 입력·가입 후 문자 OTP 경로를 유지한다.
 
   생활 정보는 소개장 생성 전에 받는다. 성격을 추측하는 근거로 쓰지 않고,
@@ -106,8 +108,8 @@ const CONSENT = 0;
 const PHONE = 5;
 const ACCOUNT_READY = 21;
 const ORDER = carrierIdentityEnabled
-  ? [CONSENT, PHONE, 4, 3, 2, CONDITIONS, Q_FIRST]
-  : [CONSENT, 1, 4, 3, PHONE, 2, CONDITIONS, Q_FIRST];
+  ? [CONSENT, PHONE, 4, 2, CONDITIONS, Q_FIRST]
+  : [CONSENT, 1, 4, PHONE, 2, CONDITIONS, Q_FIRST];
 const PROFILE_ORDER = [2, CONDITIONS, Q_FIRST];
 const ACCOUNT_ORDER = ORDER.filter((id) => !PROFILE_ORDER.includes(id));
 /** 화면에 보이는 단계 번호. */
@@ -118,7 +120,7 @@ type Gender = "female" | "male";
 function resumeStep(me: Profile) {
   if (!me.terms_agreed_at || !me.privacy_agreed_at) return CONSENT;
   if (carrierIdentityEnabled ? !me.identity_verified_at : !me.phone_verified_at) return PHONE;
-  if (me.onboarding_step < 4) return 2;
+  if (me.onboarding_step < 4 || me.hub_id === "undecided") return 2;
   if (!me.smoking || !me.drinking) return CONDITIONS;
   return Q_FIRST;
 }
@@ -130,8 +132,10 @@ function Onboarding() {
   const [step, setStep] = useState(CONSENT);
   const TOTAL = PROFILE_ORDER.includes(step) ? PROFILE_ORDER.length : ACCOUNT_ORDER.length;
   const [gender, setGender] = useState<Gender | null>(null);
-  // 모집 중인 지역이 하나여도 직장 위치를 추측해 자동 배정하지 않는다.
-  const [hubId, setHubId] = useState<string | null>(null);
+  // 만남 지역은 가입 뒤 프로필 준비에서 본인이 고른다.
+  const [hubId, setHubId] = useState("");
+  const [meetingAreas, setMeetingAreas] = useState<string[]>([]);
+  const [areasReady, setAreasReady] = useState(false);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -148,7 +152,7 @@ function Onboarding() {
   const [autoFilled, setAutoFilled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   /*
-    다음 로그인에 쓸 비밀번호. 인증 직후 같은 화면에서 받는다 — 회사 메일 확인은
+    다음 로그인에 쓸 비밀번호. 인증 직후 같은 화면에서 받는다 — 이메일 확인은
     여기서 딱 한 번 하고, 그 뒤로는 메일함을 오갈 일이 없어야 한다.
   */
   const [pw, setPw] = useState("");
@@ -231,7 +235,7 @@ function Onboarding() {
     setUserId(me.id);
     savedStep.current = me.onboarding_step;
     setGender(me.gender);
-    setHubId(me.hub_id);
+    setHubId(me.hub_id === "undecided" ? "" : me.hub_id);
     setEmail(me.company_email);
     const nextBasics: Basics = {
       name: me.name ?? "",
@@ -249,7 +253,26 @@ function Onboarding() {
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
   }, [ready, me, navigate, resumed, resumeConfirmed]);
 
-  const emailValid = email.includes("@") && isCompanyEmail(email);
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    setAreasReady(false);
+    void myMeetingAreas()
+      .then((areas) => {
+        if (active) {
+          setMeetingAreas(areas);
+          setAreasReady(true);
+        }
+      })
+      .catch(() => {
+        if (active) toast.error("만남 지역을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   function restartSignup() {
     clearSignupSession();
@@ -259,7 +282,9 @@ function Onboarding() {
     setManagerAgreed(false);
     setPrivacyAgreed(false);
     setGender(null);
-    setHubId(null);
+    setHubId("");
+    setMeetingAreas([]);
+    setAreasReady(false);
     setEmail("");
     setCode("");
     setCodeSent(false);
@@ -271,7 +296,7 @@ function Onboarding() {
   }
 
   async function completeSignup() {
-    if (!hubId || (!carrierIdentityEnabled && !gender)) return;
+    if (!carrierIdentityEnabled && !gender) return;
     const token = signupToken();
     if (!token) {
       setAuthError("가입 확인 시간이 지났어요. 약관부터 다시 확인해 주세요.");
@@ -282,7 +307,7 @@ function Onboarding() {
     setAuthError(null);
     try {
       const created = await createSignupProfile(
-        hubId,
+        "undecided",
         token,
         carrierIdentityEnabled ? undefined : (gender ?? undefined),
       );
@@ -663,7 +688,7 @@ function Onboarding() {
 
   if (step === 2) {
     const age = ageFrom(basics.birth);
-    const issues = basicsIssues(basics);
+    const issues = [...basicsIssues(basics), ...(!hubId ? ["만나기 편한 지역 선택"] : [])];
     const setB = (n: Partial<Basics>) => setBasics((prev) => ({ ...prev, ...n }));
 
     return (
@@ -757,12 +782,25 @@ function Onboarding() {
             <Input
               id="job"
               className="mt-2"
-              placeholder="예: IT 기획, 회계사, 디자이너"
+              placeholder="예: IT 기획, 프리랜서 디자이너, 자영업"
               value={basics.job}
               onChange={(e) => setB({ job: e.target.value })}
             />
           </div>
         </div>
+
+        <section className="mt-6 rounded-surface bg-card p-5" aria-label="만남 지역">
+          <h2 className="mb-4 text-base font-semibold">어디서 만나면 편할까요?</h2>
+          <MeetingAreaPicker
+            primary={hubId}
+            areas={meetingAreas}
+            disabled={!areasReady || saving}
+            onChange={(primary, areas) => {
+              setHubId(primary);
+              setMeetingAreas(areas);
+            }}
+          />
+        </section>
 
         {issues.length ? (
           <p role="status" className="mt-6 text-sm leading-relaxed text-muted-foreground">
@@ -781,12 +819,14 @@ function Onboarding() {
           <Button
             className="flex-1"
             size="lg"
-            disabled={!basicsValid(basics) || saving || photosUploading}
+            disabled={!basicsValid(basics) || !hubId || !areasReady || saving || photosUploading}
             onClick={async () => {
               // 신규 가입은 재개를 위해 기본 정보를 프로필에 저장한다.
               if (userId) {
                 setSaving(true);
                 try {
+                  const updated = await saveMeetingAreas(hubId, meetingAreas);
+                  setMe(updated);
                   await saveOnboardingStep(userId, keepStep(4), {
                     name: basics.name,
                     birth: basics.birth,
@@ -812,58 +852,13 @@ function Onboarding() {
     );
   }
 
-  if (step === 3) {
-    return (
-      <StepShell
-        step={shown(3)}
-        total={TOTAL}
-        eyebrow="직장 지역"
-        title="직장은 어느 지역에 있나요?"
-        description="직장과 가까운 지역의 사람을 소개해 드려요."
-      >
-        <div className="grid gap-3">
-          {OPEN_HUBS.map((hub) => (
-            <ChoiceCard
-              key={hub.id}
-              selected={hubId === hub.id}
-              onClick={() => setHubId(hub.id)}
-              title={hub.label}
-              body={hub.detail}
-            />
-          ))}
-        </div>
-        {OPEN_HUBS.length < HUBS.length ? (
-          <p className="mt-4 text-sm text-muted-foreground">다른 지역은 차례로 준비하고 있어요.</p>
-        ) : null}
-        {authError ? (
-          <p role="alert" className="mt-4 text-sm text-destructive">
-            {authError}
-          </p>
-        ) : null}
-        <div className="mt-8 flex gap-2">
-          <Button variant="ghost" onClick={() => setStep(4)}>
-            이전
-          </Button>
-          <Button
-            className="flex-1"
-            size="lg"
-            disabled={!hubId || authBusy}
-            onClick={completeSignup}
-          >
-            {authBusy ? "저장 중…" : "다음"}
-          </Button>
-        </div>
-      </StepShell>
-    );
-  }
-
   if (step === 4) {
     return (
       <StepShell
         step={shown(4)}
         total={TOTAL}
-        eyebrow="회사 이메일 인증"
-        title={emailVerified ? "로그인 비밀번호를 정해 주세요" : "회사 이메일로 인증해 주세요"}
+        eyebrow="이메일 인증"
+        title={emailVerified ? "로그인 비밀번호를 정해 주세요" : "이메일로 인증해 주세요"}
         description={
           emailVerified
             ? "다음부터는 이 비밀번호로 로그인할 수 있어요."
@@ -871,14 +866,14 @@ function Onboarding() {
         }
       >
         <label className="text-sm font-semibold text-foreground" htmlFor="work-email">
-          회사 이메일
+          이메일
         </label>
         <Input
           id="work-email"
           type="email"
           inputMode="email"
           autoComplete="email"
-          placeholder="name@company.co.kr"
+          placeholder="name@example.com"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -901,11 +896,11 @@ function Onboarding() {
             className="mt-2 flex items-start gap-1.5 text-sm font-medium text-destructive"
           >
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            <span>회사 도메인 이메일만 인증할 수 있습니다.</span>
+            <span>이메일 주소를 확인해 주세요.</span>
           </p>
         ) : (
           <p id="work-email-hint" className="mt-2 text-sm text-muted-foreground">
-            개인 메일은 사용할 수 없습니다.
+            개인·회사 이메일 모두 가능해요. 재직 인증은 필수가 아니에요.
           </p>
         )}
 
@@ -1002,7 +997,7 @@ function Onboarding() {
               className="flex-1"
               size="lg"
               disabled={pw.length < PASSWORD_MIN_LENGTH || !agreed || authBusy}
-              onClick={() => setStep(3)}
+              onClick={completeSignup}
             >
               {authBusy ? "저장 중…" : "가입 계속하기"}
             </Button>
@@ -1019,7 +1014,7 @@ function Onboarding() {
                   if (result.kind === "closed") {
                     setAuthError(
                       result.state === "withdrawn"
-                        ? "탈퇴한 계정입니다. 다른 회사 이메일로 새로 가입해 주세요."
+                        ? "탈퇴한 계정입니다. 다른 이메일로 새로 가입해 주세요."
                         : "이용이 중지된 계정입니다. 문의해 주세요.",
                     );
                   } else if (result.kind === "existing") {

@@ -40,7 +40,13 @@ const MENU = [
   // 무료 베타에도 상점 진입은 유지한다. 구매 가능 여부는 상점 안에서 안내한다.
   { to: "/store", icon: Ticket, label: "티켓 상점", hint: "소개 · 만남 이용 안내", male: true },
   { to: "/orders", icon: Receipt, label: "티켓 이용 내역", hint: "발급 · 사용 · 결제", male: true },
-  { to: "/settings", icon: Settings, label: "환경설정", hint: "화면 · 알림", male: false },
+  {
+    to: "/settings",
+    icon: Settings,
+    label: "환경설정",
+    hint: "만남 지역 · 화면 · 알림",
+    male: false,
+  },
   {
     to: "/support",
     icon: CircleHelp,
@@ -158,7 +164,7 @@ function MePage() {
               로 읽힌다. 쓸모가 없으면 지우는 편이 낫다.
             */}
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                {hub ? `직장 지역 · ${hub.label}` : "직장 지역 확인 필요"}
+                {hub ? `만남 지역 · ${hub.label}` : "만남 지역 선택 전"}
               </p>
             </div>
           </div>

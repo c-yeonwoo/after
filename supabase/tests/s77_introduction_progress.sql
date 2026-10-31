@@ -13,7 +13,7 @@ insert into profiles (id, gender, hub_id, company_email, email_verified_at, name
   onboarding_step, terms_agreed_at, privacy_agreed_at, agreed_policy_version,
   phone_verified_at, photo_paths, photo_state, photo_reviewed_at)
 select id, case when email = 'intro77-3@verify.local' then 'male'::gender else 'female'::gender end,
-  'yeouido', email, now(), '소개77', '1993-01-01', 7, now(), now(), '2026-10-17.3', now(),
+  'yeouido', email, now(), '소개77', '1993-01-01', 7, now(), now(), '2026-10-31.1', now(),
   array[id::text || '/1.png', id::text || '/2.png', id::text || '/3.png'], 'approved', now()
 from auth.users where email like 'intro77-%@verify.local';
 

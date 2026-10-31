@@ -5,20 +5,12 @@ export const BRAND = {
   domain: "aftersunset.kr",
 
   tagline: "하루 끝에, 설레는 시작.",
-  description:
-    "나와 잘 맞는 직장인을 한 사람씩. 서로의 이야기를 알아가고, 만날 약속까지 애프터가 함께합니다.",
+  description: "나를 알아가는 개인 소개 매니저. 잘 맞는 사람을 소개하고, 만날 약속까지 함께합니다.",
 } as const;
 
-/**
- * 권역 정의.
- *
- * ── stations 가 왜 여기 있나 ──
- * 만남 장소로 고를 수 있는 역 목록은 **권역의 정의에 속한다.** 예전에는
- * `meet.ts` 에 강남권 역만 담긴 배열 하나가 전역으로 있어서, 판교 사용자가
- * 생기는 순간 "역 이름 검색"에 강남 역만 나오는 상태가 됐다. 권역을 여는
- * 스위치(`available`)와 그 권역의 역이 한 자리에 있어야 그 사고가 안 난다.
- *
- * 아직 안 연 권역도 목록을 채워 둔다 — `available` 한 줄만 바꾸면 열리도록.
+/** 만남 선호 지역과 역 검색 목록. 가입 자격이나 고정 매칭 구역이 아니다.
+ * DB meeting_area_catalog()와 같은 ID를 사용한다. 지역 선택이 겹치는 회원을
+ * 소개하되, 신규 모집은 운영 가능한 범위에 집중한다.
  */
 export const HUBS = [
   {
@@ -57,14 +49,14 @@ export const HUBS = [
     id: "pangyo",
     label: "판교권",
     detail: "판교 · 정자 · 서현",
-    available: false,
+    available: true,
     stations: ["판교", "정자", "서현", "이매", "야탑", "수내", "미금", "모란", "청계산입구"],
   },
   {
     id: "jongno",
     label: "종로권",
     detail: "종로 · 광화문 · 을지로",
-    available: false,
+    available: true,
     stations: [
       "종각",
       "종로3가",
@@ -83,7 +75,7 @@ export const HUBS = [
     id: "yeouido",
     label: "여의도권",
     detail: "여의도 · 영등포",
-    available: false,
+    available: true,
     stations: [
       "여의도",
       "여의나루",
@@ -97,11 +89,48 @@ export const HUBS = [
       "노량진",
     ],
   },
+  {
+    id: "seoul",
+    label: "서울 그 외 지역",
+    detail: "마포 · 성수 · 잠실 등",
+    available: true,
+    stations: ["홍대입구", "합정", "성수", "건대입구", "잠실", "왕십리", "서울역"],
+  },
+  {
+    id: "gyeonggi",
+    label: "경기 그 외 지역",
+    detail: "수원 · 안양 · 고양 등",
+    available: true,
+    stations: ["수원", "광교", "범계", "평촌", "일산", "화정", "구리", "다산"],
+  },
+  {
+    id: "incheon",
+    label: "인천",
+    detail: "인천 · 송도",
+    available: true,
+    stations: ["부평", "인천시청", "송도달빛축제공원"],
+  },
+  { id: "busan", label: "부산", detail: "", available: true, stations: ["서면", "해운대", "광안"] },
+  { id: "daegu", label: "대구", detail: "", available: true, stations: ["반월당", "동대구"] },
+  { id: "daejeon", label: "대전·세종", detail: "", available: true, stations: ["대전", "시청"] },
+  {
+    id: "gwangju",
+    label: "광주·전남",
+    detail: "",
+    available: true,
+    stations: ["상무", "광주송정"],
+  },
+  { id: "ulsan", label: "울산·경남", detail: "", available: true, stations: [] },
+  { id: "gyeongbuk", label: "경북", detail: "", available: true, stations: [] },
+  { id: "gangwon", label: "강원", detail: "", available: true, stations: [] },
+  { id: "chungcheong", label: "충북·충남", detail: "", available: true, stations: [] },
+  { id: "jeonbuk", label: "전북", detail: "", available: true, stations: [] },
+  { id: "jeju", label: "제주", detail: "", available: true, stations: [] },
 ] as const;
 
 export type HubId = (typeof HUBS)[number]["id"];
 
-/** 지금 가입을 받는 권역. 하드코딩한 "강남·역삼권" 을 대신한다. */
+/** 만남 장소를 고르는 지역 목록. 가입 자격이나 직장 소재지가 아니다. */
 export const OPEN_HUBS = HUBS.filter((h) => h.available);
 
 /**
@@ -121,8 +150,8 @@ export const INTRO_TICKET_PRICE_KRW = 5000;
 export const INTRO_TICKET_PRICE_LABEL = `${INTRO_TICKET_PRICE_KRW.toLocaleString("ko-KR")}원`;
 
 /**
- * 회사 이메일 인증에서 거부하는 개인 메일 도메인 — 입력 안내용이다.
- * 거절의 권위는 서버의 is_company_email()(s48)에 있고, 두 목록은 같아야 한다.
+ * 기존 회사 이메일 확인 이력을 분류할 때 쓰는 개인 도메인 목록.
+ * 가입·소개 자격을 차단하지 않으며 재직 증명을 뜻하지 않는다.
  */
 export const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
@@ -148,8 +177,8 @@ export function isCompanyEmail(email: string) {
 export const FEATURES = [
   {
     id: "verify",
-    title: "회사 이메일 인증 · 가까운 거리",
-    body: "회사 이메일 주소를 인증하고, 퇴근 후 만나기 좋은 생활권의 사람을 소개합니다.",
+    title: "나를 알아가는 매니저",
+    body: "나의 이야기와 만남 선호를 바탕으로, 잘 맞을 만한 사람을 함께 찾아요.",
   },
   {
     id: "profile",

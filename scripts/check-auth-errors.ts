@@ -35,7 +35,7 @@ const cases: [unknown, string][] = [
   [{ code: "over_email_send_rate_limit" }, "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."],
   [
     new Error("personal email not allowed"),
-    "개인 메일은 사용할 수 없습니다. 회사 이메일로 인증해 주세요.",
+    "이메일을 확인하지 못했어요. 새로고침 후 다시 시도해 주세요.",
   ],
   [
     { code: "email_not_confirmed" },

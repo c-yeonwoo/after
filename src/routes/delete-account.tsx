@@ -38,8 +38,8 @@ function DeleteAccountPage() {
 
       <InfoSection title="로그인할 수 없는 경우">
         <p>
-          가입한 회사 이메일 주소와 함께 삭제 요청을 보내주세요. 본인 확인을 위해 해당 주소로 확인
-          메일을 드릴 수 있습니다.
+          가입한 이메일 주소와 함께 삭제 요청을 보내주세요. 본인 확인을 위해 해당 주소로 확인 메일을
+          드릴 수 있습니다.
         </p>
         <a
           href={`mailto:${BUSINESS.contactEmail}?subject=${subject}`}

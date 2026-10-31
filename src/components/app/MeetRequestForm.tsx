@@ -84,7 +84,7 @@ export function MeetRequestForm({
         .slice(0, 10)
         .map((d) => d.key),
     );
-    meetPlacesForMe()
+    meetPlacesForMe(introId)
       .then(setPlaces)
       .catch(() => setPlaces([]));
     suggestedMeetingSlots(introId)

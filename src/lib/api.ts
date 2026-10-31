@@ -38,9 +38,8 @@ export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type MsgChannel = Database["public"]["Enums"]["msg_channel"];
 
 // ─────────────────────────── 인증 (이메일 OTP) ───────────────────────────
-// 회사 이메일 인증 = Supabase Auth 이메일 OTP. 온보딩 4단계의 "코드 받기 → 6자리
-// 입력" UI가 그대로 이 흐름과 맞아떨어진다. isCompanyEmail() 도메인 차단 목록은
-// 인증이 아니라 보조 수단이며, 실제 인증은 verifySignupEmail() 이 한다.
+// 로그인 이메일 소유 확인은 Supabase Auth OTP를 사용한다.
+// 개인·회사 도메인 모두 가입 가능하며, 이 결과를 재직 증명으로 해석하지 않는다.
 
 /*
   로컬 DB에만 허용하는 가입 편의 경로다.
@@ -219,8 +218,7 @@ export const PASSWORD_MIN_LENGTH = 8;
 /**
  * 비밀번호 로그인.
  *
- * 가입 인증(회사 메일)은 **한 번만** 한다. 인증한 회사 주소만 받는다는 약속을
- * 지키는 자리이고, 그 뒤의 재로그인은 본인 확인만 하면 되므로 매번 메일을 오갈
+ * 가입 이메일 소유 확인은 **한 번만** 한다. 그 뒤의 재로그인은 본인 확인만 하면 되므로 매번 메일을 오갈
  * 이유가 없다. 코드 로그인은 비밀번호를 잊었을 때의 길로 남긴다.
  *
  * 로그인 뒤 판정은 signInExisting 과 **같아야 한다** — 탈퇴·제명·미완료 가입이
@@ -251,7 +249,7 @@ export async function setPassword(password: string): Promise<void> {
 /**
  * 카카오는 **가입 수단이 아니라 재로그인 수단**이다.
  *
- * 이 서비스의 전제는 회사 메일로 확인한 직장이다. 카카오로 계정을 만들 수 있게
+ * 카카오는 기존 계정에 연결하는 재로그인 수단이다. 카카오로 계정을 만들 수 있게
  * 하면 그 관문이 무의미해지므로, 카카오는 **이미 있는 계정에 붙이는** 방식만
  * 허용한다(설정 → 카카오 연결). 연결하고 나면 다음부터는 카카오 하나로 들어온다.
  *
@@ -375,7 +373,7 @@ export async function verifySignupEmail(email: string, token: string): Promise<S
   return { kind: "existing", profile };
 }
 
-/** 새 계정으로 확인된 뒤에만 프로필을 만든다. 성별·권역·회사 메일은 서버가 확정한다. */
+/** 새 계정으로 확인된 뒤에만 프로필을 만든다. 성별과 로그인 이메일 확인은 서버가 확정한다. */
 export async function createSignupProfile(
   hubId: string,
   token: string,
@@ -788,11 +786,13 @@ export type TicketKind = "intro" | "meeting";
 /** 티켓 차감 + 만남 생성. 이름이 "use"로 시작하면 React 훅으로 오인되므로 redeem 을 쓴다. */
 // ─────────── 확정 약속 (s51, D1-B) ───────────
 
-/** 운영팀이 내 권역에 골라 둔 약속 장소. 예약이 아니라 "가기 좋은 곳" 목록이다. */
+/** 운영팀이 선택한 만남 지역에 골라 둔 약속 장소. 예약이 아니라 "가기 좋은 곳" 목록이다. */
 export type MeetPlace = Database["public"]["Functions"]["meet_places_for_me"]["Returns"][number];
 
-export async function meetPlacesForMe(): Promise<MeetPlace[]> {
-  const { data, error } = await supabase.rpc("meet_places_for_me");
+export async function meetPlacesForMe(introId?: string): Promise<MeetPlace[]> {
+  const { data, error } = introId
+    ? await supabase.rpc("meet_places_for_intro", { p_intro: introId })
+    : await supabase.rpc("meet_places_for_me");
   if (error) throw error;
   return data ?? [];
 }
@@ -1207,7 +1207,7 @@ export async function setRequestReminderPreference(enabled: boolean): Promise<vo
   if (error) throw error;
 }
 
-/** 회사 인증 메일과 분리된 개인 알림 메일로 확인 코드를 보낸다. */
+/** 로그인 이메일과 분리된 개인 알림 메일로 확인 코드를 보낸다. */
 export async function requestNotificationEmail(email: string): Promise<string> {
   const { data, error } = await supabase.rpc("request_notification_email", {
     p_email: email.trim().toLowerCase(),

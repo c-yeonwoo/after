@@ -241,7 +241,7 @@ async function signup(person, i) {
     .getByRole("button", { name: person.gender === "male" ? "남성" : "여성", exact: true })
     .click();
   await page.getByRole("button", { name: "다음", exact: true }).click();
-  await page.getByLabel("회사 이메일").fill(person.email);
+  await page.getByLabel("이메일").fill(person.email);
   await page.getByRole("button", { name: "개발 계정 만들기" }).click();
   await page.getByText("로컬 개발 환경").waitFor();
   person.id = sql(`select id from auth.users where email='${person.email}'`);
@@ -249,8 +249,6 @@ async function signup(person, i) {
   await page.getByRole("button", { name: "계속하기" }).click();
   await page.getByLabel("비밀번호", { exact: true }).fill(password);
   await page.getByRole("button", { name: "가입 계속하기" }).click();
-  await page.getByRole("button", { name: /강남·역삼권/ }).click();
-  await page.getByRole("button", { name: "다음", exact: true }).click();
   const phone = `+82100000008${i}`;
   let code;
   await page.route("**/functions/v1/phone-otp", async (route) => {
@@ -300,6 +298,7 @@ async function signup(person, i) {
   await page.getByLabel("이름", { exact: true }).fill(person.name);
   await page.getByLabel("생년월일", { exact: true }).fill(person.birth);
   await page.getByLabel("직업", { exact: true }).fill(person.job);
+  await page.getByLabel("가장 편한 지역", { exact: true }).selectOption("gangnam");
   await page.getByRole("button", { name: "다음", exact: true }).click();
   await page.getByRole("button", { name: "비흡연", exact: true }).click();
   await page.getByRole("button", { name: "가끔 한 잔", exact: true }).click();
@@ -500,7 +499,8 @@ try {
   if (personas.some((p) => !p.id || !paths.some((x) => x.startsWith(p.id))))
     throw new Error("A signup failed; dependent scenarios cannot be trusted");
   sql(
-    `update profiles set hub_id='${cohortHub}' where id in (${personas.map((p) => `'${p.id}'`).join(",")})`,
+    `update profiles set hub_id='${cohortHub}' where id in (${personas.map((p) => `'${p.id}'`).join(",")});
+     update member_meeting_areas set area_ids=array['${cohortHub}'] where user_id in (${personas.map((p) => `'${p.id}'`).join(",")})`,
   );
   const adminEmail = `cycle-${run}-admin@verify.local`;
   const a = await service.auth.admin.createUser({
@@ -1416,7 +1416,8 @@ try {
   personas.push(extra);
   await check("additional persona signs up for repeat-warning scenario", async () => {
     await signup(extra, 5);
-    sql(`update profiles set hub_id='${cohortHub}' where id='${extra.id}'`);
+    sql(`update profiles set hub_id='${cohortHub}' where id='${extra.id}';
+      update member_meeting_areas set area_ids=array['${cohortHub}'] where user_id='${extra.id}'`);
     await ap.goto(`${base}/admin/photos`);
     const card = ap
       .locator("li")

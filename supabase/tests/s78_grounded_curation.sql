@@ -11,7 +11,7 @@ insert into public.profiles(id,company_email,gender,hub_id,name,job,birth,role,o
  photo_state,photo_paths,headline,intro,interests,profile_public_signals,profile_preferences)
 select id,email,case when email in ('curation78-1@verify.local','curation78-4@verify.local') then 'male'::gender else 'female'::gender end,
  'yeouido','개인식별이름','직업','1993-01-01',case when email='curation78-4@verify.local' then 'admin' else 'member' end,
- 7,now(),now(),now(),'2026-10-17.3',now(),'approved',array[id||'/1.png',id||'/2.png',id||'/3.png'],
+ 7,now(),now(),now(),'2026-10-31.1',now(),'approved',array[id||'/1.png',id||'/2.png',id||'/3.png'],
  '첫 만남은 커피가 좋아요','처음에는 커피를 마시며 이야기하고 싶어요.',array['커피'],
  '{"first_date":["짧게 커피"]}'::jsonb,
  '{"choices":{"first_date":["짧게 커피"],"contact":["PRIVATE-CONTACT-SENTINEL"]}}'::jsonb
