@@ -141,24 +141,21 @@ try {
   );
   await (await ask(male, "약속 잡아줘", "소개 확인하기")).waitFor();
   assert.equal(cycleStatus(env, manifest).meetings, 0);
-  // Profile edit stays in the real wizard, with no LLM needed for this QA edit.
+  // Direct profile editing is separate from signup and does not call an LLM.
   await (await ask(male, "프로필 수정해줘", "내 프로필 보기")).click();
-  await male.getByRole("link", { name: "사진·기본정보", exact: true }).click();
+  await male.getByRole("link", { name: "프로필 수정", exact: true }).click();
   await male.getByLabel("직업", { exact: true }).fill("로컬 QA 엔지니어");
-  await male.getByRole("button", { name: "다음", exact: true }).click();
-  await male.getByRole("button", { name: "다음", exact: true }).click();
-  await male.getByRole("button", { name: "프로필 수정", exact: true }).click();
   await male
     .getByLabel("한 줄 소개", { exact: true })
     .fill("작은 일상을 다정하게 나누고 싶은 사람");
   await male
-    .getByLabel("카드에서 보일 짧은 소개", { exact: true })
+    .getByLabel("짧은 소개", { exact: true })
     .fill("퇴근길에 동네 서점을 들러 책을 읽어요. 서로의 하루를 편하게 궁금해하는 만남이 좋아요.");
   await male
-    .locator('textarea[id^="section-"]')
+    .locator('textarea[id^="edit-daily_life"]')
     .first()
     .fill("퇴근길 동네 서점을 들러 새 책을 살펴보는 걸 좋아해요. 요즘은 수영도 배우고 있습니다.");
-  await male.getByRole("button", { name: "프로필 저장하기", exact: true }).click();
+  await male.getByRole("button", { name: "변경사항 저장", exact: true }).click();
   await male.waitForURL("**/profile");
   assert.equal(
     database(env, `select job from profiles where id=${quote(manifest.accounts.male.id)}`),

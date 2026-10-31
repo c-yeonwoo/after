@@ -368,10 +368,9 @@ function ManualEdit() {
   return (
     <Link
       className="inline-flex min-h-11 items-center text-sm font-medium text-primary-strong"
-      to="/signup"
-      search={{ edit: true }}
+      to="/profile-edit"
     >
-      사진·기본 정보 직접 수정
+      프로필 직접 수정
     </Link>
   );
 }

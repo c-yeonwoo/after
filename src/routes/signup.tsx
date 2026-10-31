@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +39,6 @@ import {
 import {
   authErrorMessage,
   createSignupProfile,
-  loadProfileInterviewDraft,
   LOCAL_DEV_AUTH_BYPASS,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
@@ -48,7 +47,6 @@ import {
   recordConsent,
   recordMyAiDecision,
   publishProfileInterviewV3,
-  saveProfileInterviewDraft,
   saveOnboardingStep,
   setPassword,
   signOut,
@@ -58,8 +56,6 @@ import {
 } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { isNative } from "@/lib/native";
-import { isProfileInterviewData } from "@/lib/profileInterview";
-import { isProfileInterviewV3Data, newProfileInterviewV3 } from "@/lib/profileInterviewV3";
 import { pruneMyPhotos } from "@/lib/photo";
 import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
@@ -68,8 +64,11 @@ import { ManagerConsentNotice } from "@/components/assistant/ManagerConsentNotic
 import { recordManagerSignupConsent } from "@/lib/signupSession";
 
 export const Route = createFileRoute("/signup")({
-  validateSearch: (search: Record<string, unknown>): { edit?: true; prepare?: true } => ({
-    ...(search.edit === "1" || search.edit === true ? { edit: true as const } : {}),
+  beforeLoad: ({ location }) => {
+    if (["1", "true"].includes(new URLSearchParams(location.searchStr).get("edit") ?? ""))
+      throw redirect({ to: "/profile-edit", replace: true });
+  },
+  validateSearch: (search: Record<string, unknown>): { prepare?: true } => ({
     ...(search.prepare === "1" || search.prepare === true || search.prepare === "true"
       ? { prepare: true as const }
       : {}),
@@ -126,10 +125,9 @@ function resumeStep(me: Profile) {
 
 function Onboarding() {
   const navigate = useNavigate();
-  const { edit, prepare } = Route.useSearch();
-  const editing = Boolean(edit);
+  const { prepare } = Route.useSearch();
   const { me, ready, refresh, setMe } = useMe();
-  const [step, setStep] = useState(editing ? 2 : CONSENT);
+  const [step, setStep] = useState(CONSENT);
   const TOTAL = PROFILE_ORDER.includes(step) ? PROFILE_ORDER.length : ACCOUNT_ORDER.length;
   const [gender, setGender] = useState<Gender | null>(null);
   // 모집 중인 지역이 하나여도 직장 위치를 추측해 자동 배정하지 않는다.
@@ -145,7 +143,7 @@ function Onboarding() {
   const [signupSession, setSignupSession] = useState<SignupSession | null>(null);
   const [signupResumeRequired, setSignupResumeRequired] = useState(false);
   const [signupRestoreError, setSignupRestoreError] = useState(false);
-  const [signupReady, setSignupReady] = useState(editing);
+  const [signupReady, setSignupReady] = useState(false);
   const signupRestored = useRef(false);
   const [autoFilled, setAutoFilled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
@@ -162,14 +160,11 @@ function Onboarding() {
   const [resumed, setResumed] = useState(false);
   /** 기존 세션의 사진·이름은 사용자가 명시적으로 '이어하기'를 고르기 전에는 불러오지 않는다. */
   const [resumeConfirmed, setResumeConfirmed] = useState(Boolean(prepare));
-  const [editDraftReady, setEditDraftReady] = useState(!editing);
-  const [editDraftLoadError, setEditDraftLoadError] = useState(false);
 
   const [basics, setBasics] = useState<Basics>(emptyBasics);
   /*
-    저장할 onboarding_step. **내려가지 않는다.** 완료된 회원(7)이 수정하면서 4·5 를
-    쓰면 매칭 자격을 잃는다 — eligible 조건이 step=7 이다. 예전 수정 흐름은 관심사·
-    매치 단계에서 5·6 을 써서, 수정 도중에 자격이 빠졌다.
+    중단했던 프로필 준비를 재개해도 저장된 단계 번호를 낮추지 않는다.
+    완료된 회원의 수정은 /profile-edit에서 따로 처리한다.
   */
   const savedStep = useRef(0);
   const keepStep = (n: number) => {
@@ -179,7 +174,7 @@ function Onboarding() {
   const [mbtiParts, setMbtiParts] = useState<string[]>(["", "", "", ""]);
 
   useEffect(() => {
-    if (!ready || me || editing || signupRestored.current) return;
+    if (!ready || me || signupRestored.current) return;
     signupRestored.current = true;
     void (async () => {
       let session: SignupSession | null = null;
@@ -215,11 +210,10 @@ function Onboarding() {
       }
       setSignupReady(true);
     })();
-  }, [ready, me, editing]);
+  }, [ready, me]);
 
   /**
-   * 저장된 프로필을 불러온다. 두 경로가 여기로 온다:
-   *   · 수정 진입 (`?edit=1`, "나" 탭에서)
+   * 중단한 프로필 준비를 재개한다:
    *   · **가입 재개** — 인증까지 마치고 중간에 닫은 사람
    *
    * 재개가 예전에는 사실상 재시작이었다. onboarding_step 은 기록만 되고
@@ -228,12 +222,10 @@ function Onboarding() {
   useEffect(() => {
     if (!ready) return;
     if (!me) {
-      // 수정 진입인데 세션이 없으면 나간다. 신규 가입은 아직 me 가 없는 게 정상이다.
-      if (editing) navigate({ to: "/" });
       return;
     }
-    if (!editing && me.onboarding_step >= 7) return;
-    if (!editing && !resumeConfirmed) return;
+    if (me.onboarding_step >= 7) return;
+    if (!resumeConfirmed) return;
     if (resumed) return;
     setResumed(true);
     setUserId(me.id);
@@ -253,23 +245,9 @@ function Onboarding() {
       religion: me.religion ?? "",
     };
     setBasics(nextBasics);
-    if (editing) {
-      void loadProfileInterviewDraft(me.id)
-        .then((row) => {
-          if (row && !isProfileInterviewData(row.data) && !isProfileInterviewV3Data(row.data))
-            throw new Error("invalid draft");
-          const restoredBasics =
-            row && (isProfileInterviewData(row.data) || isProfileInterviewV3Data(row.data))
-              ? row.data.basics
-              : undefined;
-          if (restoredBasics) setBasics((current) => ({ ...current, ...restoredBasics }));
-          setEditDraftReady(true);
-        })
-        .catch(() => setEditDraftLoadError(true));
-    }
-    if (!editing) setStep(resumeStep(me));
+    setStep(resumeStep(me));
     setMbtiParts(nextBasics.mbti ? nextBasics.mbti.split("") : ["", "", "", ""]);
-  }, [editing, ready, me, navigate, resumed, resumeConfirmed]);
+  }, [ready, me, navigate, resumed, resumeConfirmed]);
 
   const emailValid = email.includes("@") && isCompanyEmail(email);
 
@@ -334,7 +312,7 @@ function Onboarding() {
 
   // SSR·세션 복구 중에는 빈 가입 폼도 보여주지 않는다. 기존 회원 데이터가 뒤늦게
   // 폼에 채워져 '새 가입'처럼 보이던 순간적인 노출을 막는다.
-  if (!ready || (editing && !me) || (!editing && !me && !signupReady)) {
+  if (!ready || (!me && !signupReady)) {
     return (
       <AppScreen title="가입" hideTabs>
         <p className="mt-16 text-center text-sm text-muted-foreground">계정을 확인하고 있어요…</p>
@@ -342,7 +320,7 @@ function Onboarding() {
     );
   }
 
-  if (!editing && me && (me.onboarding_step >= 7 || !resumeConfirmed)) {
+  if (me && (me.onboarding_step >= 7 || !resumeConfirmed)) {
     const completed = me.onboarding_step >= 7;
     return (
       <AppScreen title="가입" hideTabs>
@@ -428,23 +406,6 @@ function Onboarding() {
             처음부터 시작하기
           </Button>
         </div>
-      </StepShell>
-    );
-  }
-
-  if (editing && step === 2 && !editDraftReady) {
-    return (
-      <StepShell step={shown(2)} total={TOTAL} eyebrow="기본 정보" title="프로필을 불러오고 있어요">
-        {editDraftLoadError ? (
-          <div>
-            <p role="alert" className="text-sm text-destructive">
-              저장된 내용을 불러오지 못했어요.
-            </p>
-            <Button className="mt-4" onClick={() => window.location.reload()}>
-              다시 시도
-            </Button>
-          </div>
-        ) : null}
       </StepShell>
     );
   }
@@ -813,9 +774,9 @@ function Onboarding() {
           <Button
             variant="ghost"
             disabled={photosUploading || saving}
-            onClick={() => (editing ? navigate({ to: "/me" }) : setStep(PHONE))}
+            onClick={() => setStep(PHONE)}
           >
-            {editing ? "취소" : "이전"}
+            이전
           </Button>
           <Button
             className="flex-1"
@@ -823,45 +784,16 @@ function Onboarding() {
             disabled={!basicsValid(basics) || saving || photosUploading}
             onClick={async () => {
               // 신규 가입은 재개를 위해 기본 정보를 프로필에 저장한다.
-              // 기존 회원의 수정은 확정 전까지 비공개 인터뷰 초안에만 둔다.
               if (userId) {
                 setSaving(true);
                 try {
-                  if (editing) {
-                    const row = await loadProfileInterviewDraft(userId);
-                    if (
-                      row &&
-                      !isProfileInterviewData(row.data) &&
-                      !isProfileInterviewV3Data(row.data)
-                    )
-                      throw new Error("저장된 인터뷰를 읽을 수 없습니다.");
-                    const draft =
-                      row &&
-                      (isProfileInterviewData(row.data) || isProfileInterviewV3Data(row.data))
-                        ? row.data
-                        : newProfileInterviewV3(me, basics);
-                    await saveProfileInterviewDraft(
-                      {
-                        ...draft,
-                        basics: {
-                          name: basics.name,
-                          birth: basics.birth,
-                          job: basics.job,
-                          photos: basics.photos,
-                        },
-                      } as unknown as import("@/lib/database.types").Json,
-                      row?.revision ?? 0,
-                    );
-                  } else {
-                    await saveOnboardingStep(userId, keepStep(4), {
-                      name: basics.name,
-                      birth: basics.birth,
-                      job: basics.job,
-                      photo_paths: basics.photos,
-                    });
-                    // 묶음에서 뺀 사진 파일을 치운다. 저장이 끝난 뒤라야 안전하다.
-                    void pruneMyPhotos(basics.photos);
-                  }
+                  await saveOnboardingStep(userId, keepStep(4), {
+                    name: basics.name,
+                    birth: basics.birth,
+                    job: basics.job,
+                    photo_paths: basics.photos,
+                  });
+                  void pruneMyPhotos(basics.photos);
                   setStep(CONDITIONS);
                 } catch {
                   toast.error("저장하지 못했어요. 다시 시도해 주세요.");
@@ -1160,7 +1092,7 @@ function Onboarding() {
         userId={userId}
         member={me}
         basics={basics}
-        editing={editing}
+        editing={false}
         progressStep={shown(Q_FIRST)}
         progressTotal={TOTAL}
         onBack={() => setStep(CONDITIONS)}
@@ -1168,7 +1100,7 @@ function Onboarding() {
           setSaving(true);
           try {
             await publishProfileInterviewV3(revision, basics);
-            if (editing) void pruneMyPhotos(basics.photos);
+            void pruneMyPhotos(basics.photos);
             if (runId && decision) {
               try {
                 await recordMyAiDecision(runId, decision);
@@ -1177,9 +1109,8 @@ function Onboarding() {
               }
             }
             await refresh();
-            toast.success(editing ? "프로필을 고쳤어요." : "프로필이 완성됐어요.");
-            if (editing) navigate({ to: "/profile" });
-            else if (isNative && (await pushPermission()) === "prompt") setStep(10);
+            toast.success("프로필이 완성됐어요.");
+            if (isNative && (await pushPermission()) === "prompt") setStep(10);
             else navigate({ to: "/home" });
           } finally {
             setSaving(false);
@@ -1301,24 +1232,12 @@ function Onboarding() {
               if (!userId) return;
               setSaving(true);
               try {
-                if (editing) {
-                  const row = await loadProfileInterviewDraft(userId);
-                  const draft =
-                    row && (isProfileInterviewData(row.data) || isProfileInterviewV3Data(row.data))
-                      ? row.data
-                      : newProfileInterviewV3(me, basics);
-                  await saveProfileInterviewDraft(
-                    { ...draft, basics } as unknown as import("@/lib/database.types").Json,
-                    row?.revision ?? 0,
-                  );
-                } else {
-                  await saveOnboardingStep(userId, keepStep(4), {
-                    smoking: basics.smoking,
-                    drinking: basics.drinking,
-                    mbti: basics.mbti || null,
-                    religion: basics.religion || null,
-                  });
-                }
+                await saveOnboardingStep(userId, keepStep(4), {
+                  smoking: basics.smoking,
+                  drinking: basics.drinking,
+                  mbti: basics.mbti || null,
+                  religion: basics.religion || null,
+                });
                 setStep(Q_FIRST);
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");

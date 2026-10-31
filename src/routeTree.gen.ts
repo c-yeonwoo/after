@@ -30,6 +30,8 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PrefsRouteImport } from './routes/prefs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ProfileEditRouteImport } from './routes/profile-edit'
+import { Route as ProfileInterviewRouteImport } from './routes/profile-interview'
 import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -160,6 +162,16 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileEditRoute = ProfileEditRouteImport.update({
+  id: '/profile-edit',
+  path: '/profile-edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileInterviewRoute = ProfileInterviewRouteImport.update({
+  id: '/profile-interview',
+  path: '/profile-interview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RequestsRoute = RequestsRouteImport.update({
@@ -315,6 +327,8 @@ export interface FileRoutesByFullPath {
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/profile-edit': typeof ProfileEditRoute
+  '/profile-interview': typeof ProfileInterviewRoute
   '/requests': typeof RequestsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -363,6 +377,8 @@ export interface FileRoutesByTo {
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/profile-edit': typeof ProfileEditRoute
+  '/profile-interview': typeof ProfileInterviewRoute
   '/requests': typeof RequestsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -413,6 +429,8 @@ export interface FileRoutesById {
   '/prefs': typeof PrefsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/profile-edit': typeof ProfileEditRoute
+  '/profile-interview': typeof ProfileInterviewRoute
   '/requests': typeof RequestsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -464,6 +482,8 @@ export interface FileRouteTypes {
     | '/prefs'
     | '/privacy'
     | '/profile'
+    | '/profile-edit'
+    | '/profile-interview'
     | '/requests'
     | '/schedule'
     | '/settings'
@@ -512,6 +532,8 @@ export interface FileRouteTypes {
     | '/prefs'
     | '/privacy'
     | '/profile'
+    | '/profile-edit'
+    | '/profile-interview'
     | '/requests'
     | '/schedule'
     | '/settings'
@@ -561,6 +583,8 @@ export interface FileRouteTypes {
     | '/prefs'
     | '/privacy'
     | '/profile'
+    | '/profile-edit'
+    | '/profile-interview'
     | '/requests'
     | '/schedule'
     | '/settings'
@@ -611,6 +635,8 @@ export interface RootRouteChildren {
   PrefsRoute: typeof PrefsRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
+  ProfileEditRoute: typeof ProfileEditRoute
+  ProfileInterviewRoute: typeof ProfileInterviewRoute
   RequestsRoute: typeof RequestsRoute
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
@@ -772,6 +798,20 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile-edit': {
+      id: '/profile-edit'
+      path: '/profile-edit'
+      fullPath: '/profile-edit'
+      preLoaderRoute: typeof ProfileEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile-interview': {
+      id: '/profile-interview'
+      path: '/profile-interview'
+      fullPath: '/profile-interview'
+      preLoaderRoute: typeof ProfileInterviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/requests': {
@@ -1027,6 +1067,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrefsRoute: PrefsRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
+  ProfileEditRoute: ProfileEditRoute,
+  ProfileInterviewRoute: ProfileInterviewRoute,
   RequestsRoute: RequestsRoute,
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,

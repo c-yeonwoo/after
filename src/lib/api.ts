@@ -559,11 +559,17 @@ export async function loadProfileInterviewDraft(userId: string) {
   return data;
 }
 
-export async function saveProfileInterviewDraft(data: Json, expectedRevision: number) {
-  const { data: revision, error } = await supabase.rpc("save_profile_interview_draft", {
+export async function saveProfileInterviewDraft(
+  data: Json,
+  expectedRevision: number,
+  accessToken?: string,
+) {
+  const request = supabase.rpc("save_profile_interview_draft", {
     p_data: data,
     p_expected_revision: expectedRevision,
   });
+  if (accessToken) request.setHeader("Authorization", `Bearer ${accessToken}`);
+  const { data: revision, error } = await request;
   if (error) throw error;
   return revision;
 }
@@ -586,8 +592,12 @@ export async function publishProfileInterview(revision: number, conditions: Basi
   return data;
 }
 
-export async function publishProfileInterviewV3(revision: number, conditions: Basics) {
-  const { data, error } = await supabase.rpc("publish_profile_interview_v3", {
+export async function publishProfileInterviewV3(
+  revision: number,
+  conditions: Basics,
+  accessToken?: string,
+) {
+  const request = supabase.rpc("publish_profile_interview_v3", {
     p_expected_revision: revision,
     p_conditions: {
       name: conditions.name,
@@ -600,6 +610,8 @@ export async function publishProfileInterviewV3(revision: number, conditions: Ba
       religion: conditions.religion,
     },
   });
+  if (accessToken) request.setHeader("Authorization", `Bearer ${accessToken}`);
+  const { data, error } = await request;
   if (error) throw error;
   return data;
 }

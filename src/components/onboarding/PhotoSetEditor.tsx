@@ -21,10 +21,12 @@ export function PhotoSetEditor({
   photos,
   onChange,
   onUploadingChange,
+  showCoaching = true,
 }: {
   photos: string[];
   onChange: (next: string[]) => void;
   onUploadingChange?: (uploading: boolean) => void;
+  showCoaching?: boolean;
 }) {
   /* 경로 → 방금 고른 파일의 blob URL. 서명 URL 을 받기 전에도 바로 보이게. */
   const [previews, setPreviews] = useState<Record<string, string>>({});
@@ -129,7 +131,7 @@ export function PhotoSetEditor({
           ? `${MIN_PHOTOS - photos.length}장 더 필요해요 (${photos.length}/${MIN_PHOTOS})`
           : `${photos.length}/${MAX_PHOTOS}장 · 사진을 누르면 대표 사진이 돼요`}
       </p>
-      <PhotoCoach photos={photos} observations={observations} />
+      {showCoaching ? <PhotoCoach photos={photos} observations={observations} /> : null}
     </div>
   );
 }

@@ -34,6 +34,7 @@
     "assistant:lab:dev": "node scripts/assistant-local-lab.mjs dev",
     "assistant:cycle": "node scripts/assistant-manual-cycle.mjs",
     "assistant:cycle:dev": "node scripts/assistant-manual-cycle.mjs dev",
+    "test:profile-edit": "node scripts/test-profile-edit-local.mjs",
     "test:manual-cycle": "node scripts/test-manual-cycle.mjs",
     "test:ai-live": "node scripts/test-ai-live.mjs",
     "test:pair-ai-live": "node scripts/test-pair-ai-live.mjs",
