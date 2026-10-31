@@ -23,6 +23,7 @@ import {
   type ProfileInterviewV3Data,
 } from "@/lib/profileInterviewV3";
 import { hasContactDetail } from "@/lib/profileInterview";
+import { INTERVIEW_CHOICE_PAGES } from "../../../supabase/functions/_shared/profile-signals";
 import { PROFILE_INTERVIEW_PROMPTS } from "@/lib/profileInterviewPrompts";
 import {
   profileAnswerCoaching,
@@ -497,13 +498,15 @@ export function ProfileInterviewV3({
 
   if (data.stage.startsWith("choices")) {
     const page = Number(data.stage.slice(-1));
-    const questions = CHOICE_QUESTIONS.slice(page * 2, page * 2 + 2);
+    const questions = INTERVIEW_CHOICE_PAGES[page as 0 | 1 | 2].map((id) =>
+      CHOICE_QUESTIONS.find((question) => question.id === id)!,
+    );
     return shell(
       "나에게 편한 방식",
       [
         "일상과 첫 만남에서 편한 쪽을 알려주세요.",
         "연락·약속은 어떤 방식이 편한가요? 이 두 답은 공개하지 않아요.",
-        "가까워지는 순간과 나누고 싶은 이야기를 골라주세요.",
+        "어떤 관계와 배려가 편한지 골라주세요. 건너뛰어도 괜찮아요.",
       ][page],
       <>
         <div className="space-y-5">

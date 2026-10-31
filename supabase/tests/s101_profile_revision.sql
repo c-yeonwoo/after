@@ -1,11 +1,12 @@
 begin;
-select plan(26);
+select plan(27);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 select ('a1010000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','revision101-'||n||'@verify.local','',now(),now(),now() from generate_series(1,2) n;
 create temporary table revision_test_story (story jsonb);
 insert into revision_test_story values ('{"version":3,"headline":"가끔 산책하는 저녁이 좋아요","summary":"퇴근하고 가끔 동네를 걸어요. 언젠가 도예도 배워보고 싶어요.","sections":[{"id":"daily_life","questionId":"daily_life_v1","questionVersion":1,"question":"퇴근 후에는 어떻게 보내세요?","answer":"가끔 동네를 걸어요. 도예는 아직 해본 적 없지만 배워보고 싶어요."}],"conversationHooks":["가끔 걷는 길"],"publishedRevision":3}');
 insert into public.profiles(id,gender,hub_id,company_email,name,onboarding_step,profile_story,headline,intro,profile_preferences)
 select id,'male'::gender,'gangnam',email,'가상검증',7,(select story from revision_test_story),'가끔 산책하는 저녁이 좋아요','퇴근하고 가끔 동네를 걸어요. 언젠가 도예도 배워보고 싶어요.','{"version":1,"choices":{"contact":["PRIVATE_PREFERENCE_CANARY"]}}'::jsonb from auth.users where email like 'revision101-%@verify.local';
+update profiles set profile_public_signals='{"first_date":["짧게 커피"]}' where id::text like 'a1010000-%';
 select ok(not has_table_privilege('authenticated','public.profile_revision_drafts','select'),'drafts cannot be read as a raw table');
 select ok(not has_table_privilege('authenticated','public.profile_revision_drafts','insert'),'members cannot forge a draft');
 select ok(not has_function_privilege('authenticated','public.store_profile_revision(uuid,uuid,jsonb,jsonb,text)','execute'),'candidate writer is service-only');
@@ -31,6 +32,7 @@ select is((select profile_story->>'headline' from profiles where id=auth.uid()),
 select is((select profile_preferences->'choices'->'contact'->>0 from profiles where id=auth.uid()),'PRIVATE_PREFERENCE_CANARY','private preferences survive assistant publication');
 select is(approve_profile_revision('a1010000-0000-0000-0000-000000000010',true)->>'reused','true','duplicate approval reuses its receipt');
 select is((select profile_story->>'publishedRevision' from profiles where id=auth.uid()),'4','duplicate approval does not increment revision twice');
+select is((select profile_public_signals from profiles where id=auth.uid()),'{"first_date":["짧게 커피"]}'::jsonb,'AI prose edit preserves approved meeting preferences');
 select begin_profile_revision('a1010000-0000-0000-0000-000000000012','요약을 다듬어주세요',true);
 select store_profile_revision(auth.uid(),'a1010000-0000-0000-0000-000000000012',(select story from revision_test_story),jsonb_set((select story from revision_test_story),'{headline}','"다른 산책 이야기예요"'),'한 줄을 정리했어요.');
 update profiles set name='다른 곳에서 수정' where id=auth.uid();

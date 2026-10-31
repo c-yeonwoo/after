@@ -1,7 +1,7 @@
 import { containsContact, scrubUserText, type SourceMap } from "./ai-grounding.ts";
 import { pairSources, type PairPublicProfile } from "./pair-material.ts";
 
-export const MEMBER_INTRODUCTION_VERSION = "member-introduction-v4.2-personal-reading";
+export const MEMBER_INTRODUCTION_VERSION = "member-introduction-v4.3-public-preferences";
 
 export type PublicEvidence = {
   person: "self" | "other";

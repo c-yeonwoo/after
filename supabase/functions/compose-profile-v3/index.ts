@@ -1,3 +1,4 @@
+import { PROFILE_CHOICES } from "../_shared/profile-signals.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { scrubUserText, sourceHash } from "../_shared/ai-grounding.ts";
@@ -32,14 +33,9 @@ const ANSWER_SOURCE_CONTEXT: Record<string, string> = {
     "사람과 편해지는 경험·선호에 관한 주관식 원문 (실제로 물은 질문과 시점은 확인되지 않음)",
   conversation: "대화 소재에 관한 주관식 원문 (실제로 물은 질문과 시점은 확인되지 않음)",
 };
-const CHOICE_QUESTION_TEXT: Record<string, string> = {
-  rhythm: "퇴근 후 시간이 생기면 주로 어떻게 보내세요?",
-  first_date: "처음 만날 때 편한 자리는 어떤 쪽인가요?",
-  contact: "일하는 날에는 어떻게 연락하는 편인가요?",
-  planning: "약속은 어떻게 정할 때 편하세요?",
-  closeness: "어떤 순간에 상대와 가까워졌다고 느끼나요?",
-  topics: "만나면 자연스럽게 꺼내고 싶은 이야기는요?",
-};
+const CHOICE_QUESTION_TEXT: Record<string, string> = Object.fromEntries(
+  PROFILE_CHOICES.map((question) => [question.id, question.title]),
+);
 const FOLLOWUP_QUESTION_TEXT: Record<string, string> = {
   walk: "걷는 시간은 어떤 점이 좋아요?",
   series: "최근 기억에 남은 영화나 드라마가 있나요?",
@@ -48,23 +44,9 @@ const FOLLOWUP_QUESTION_TEXT: Record<string, string> = {
   music: "요즘 자주 듣는 음악이 있나요?",
   weekend: "쉬는 날 가장 편한 시간은 언제인가요?",
 };
-const CHOICES: Record<string, readonly string[]> = {
-  rhythm: ["혼자 푹 쉬기", "운동하기", "사람 만나기", "취미에 몰입하기", "동네 돌아보기"],
-  first_date: ["짧게 커피", "함께 걷기", "식사하며 대화", "가벼운 술자리", "활동이나 체험"],
-  contact: ["틈틈이 짧게", "여유 생길 때 모아서", "퇴근 후 편하게", "미리 정한 방식 없음"],
-  planning: ["며칠 전에 정하기", "당일 상황 보고", "큰 틀만 정하기", "상대와 함께 맞추기"],
-  closeness: ["일상을 나눌 때", "함께 무언가 할 때", "작은 배려를 느낄 때", "생각을 깊이 나눌 때"],
-  topics: [
-    "요즘 일상",
-    "영화·드라마",
-    "음식",
-    "운동",
-    "음악",
-    "여행",
-    "하는 일",
-    "중요하게 생각하는 것",
-  ],
-};
+const CHOICES: Record<string, readonly string[]> = Object.fromEntries(
+  PROFILE_CHOICES.map((question) => [question.id, question.options]),
+);
 
 type Source = { id: string; question: string; text: string; public: boolean };
 type Input = {

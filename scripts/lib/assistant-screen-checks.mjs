@@ -47,7 +47,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     });
   });
   await page.goto(`${baseUrl}/conversation-prep?target=${target}`);
-  const generate = page.getByRole("button", { name: "공개 프로필로 준비하기" });
+  const generate = page.getByRole("button", { name: "대화 주제 받아보기" });
   await generate.waitFor();
   assert.equal(await generate.isEnabled(), false, "no AI request before explicit consent");
   assert.equal(calls, 0);
@@ -82,6 +82,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
   assert.equal(await page.getByText("동네를 걷다가 자주 들르게 되는 곳이 있나요?").count(), 0);
   await page.unroute(access);
   await page.unroute(endpoint);
+  await page.unroute("**/rest/v1/rpc/conversation_preparation_allowed");
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/home`);
@@ -89,7 +90,8 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
     .getByRole("navigation", { name: "주요 메뉴" })
     .getByRole("link", { name: "홈", exact: true })
     .waitFor();
-  await page.getByRole("button", { name: "내 상태", exact: true }).click();
+  await page.getByLabel("매니저에게 물어볼 내용").fill("내 상태");
+  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   assert.equal(await page.locator(".assistant-reply").count(), 1);
   let privateCalls = 0;
   const countPrivateCalls = (request) => {
@@ -98,7 +100,7 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
   page.on("request", countPrivateCalls);
   for (const [query, link] of [
     ["프로필 준비", "내 프로필 보기"],
-    ["소개글 수정해줘", "사진·기본정보 수정"],
+    ["소개글 수정해줘", "프로필 직접 수정"],
     ["소개 보여줘", "소개 확인하기"],
     ["호감 보내줘", "소개 확인하기"],
     ["결제 방법", "티켓·가격 확인"],

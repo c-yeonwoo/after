@@ -1093,17 +1093,20 @@ try {
     await checkPage(femalePage, `compact conversation ${viewport.width}x${viewport.height}`);
     const composerBox = await femalePage.locator(".chat-composer").boundingBox();
     const logBox = await femalePage.getByRole("log").boundingBox();
-    const tabBox = await femalePage
-      .getByRole("navigation", { name: "주요 메뉴", exact: true })
-      .boundingBox();
+    assert.equal(
+      await femalePage.getByRole("navigation", { name: "주요 메뉴", exact: true }).count(),
+      0,
+      "focused conversation hides root navigation",
+    );
+    const frameBottom = femalePage.viewportSize().height;
     assert.ok(
       logBox.height >= 60,
       `meeting context must leave room to read messages at ${viewport.width}x${viewport.height}`,
     );
     assert.ok(
       composerBox.y >= logBox.y + logBox.height - 1 &&
-        composerBox.y + composerBox.height <= tabBox.y,
-      `composer remains between conversation and navigation at ${viewport.width}x${viewport.height}: ${JSON.stringify({ composerBox, logBox, tabBox })}`,
+        composerBox.y + composerBox.height <= frameBottom,
+      `composer remains inside the focused conversation frame at ${viewport.width}x${viewport.height}: ${JSON.stringify({ composerBox, logBox, frameBottom })}`,
     );
     const context = femalePage.getByRole("region", { name: "약속 정보와 참석 확인", exact: true });
     await context.focus();
@@ -1215,7 +1218,7 @@ try {
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage.getByRole("button", { name: "틈틈이 짧게", exact: true }).waitFor();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("button", { name: "영화·드라마" }).click();
+  await femalePage.getByRole("button", { name: "좋은 사람과 진지한 연애" }).click();
   await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage
     .getByRole("heading", { name: "최근 퇴근 후 기억에 남는 작은 순간이 있나요?" })
@@ -1674,7 +1677,7 @@ try {
   for (const question of [
     "퇴근 후 시간이 생기면 주로 어떻게 보내세요?",
     "일하는 날에는 어떻게 연락하는 편인가요?",
-    "어떤 순간에 상대와 가까워졌다고 느끼나요?",
+    "어떤 관계를 기대하나요?",
   ]) {
     await femalePage.getByRole("group", { name: question, exact: true }).waitFor();
     await femalePage.getByRole("button", { name: "다음", exact: true }).click();

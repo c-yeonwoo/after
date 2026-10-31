@@ -1,3 +1,8 @@
+import {
+  publicSignalRows,
+  comparePublicSignals,
+} from "../../../supabase/functions/_shared/profile-signals";
+import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 import { ProfilePhotos } from "@/components/app/ProfilePhotos";
 import { cn } from "@/lib/utils";
@@ -19,6 +24,7 @@ export type ProfileView = {
   headline: string;
   intro: string;
   story?: ProfileStoryV3 | null;
+  publicSignals?: Record<string, string[]>;
   interests: string[];
   matchTags: string[];
   topics: string[];
@@ -100,6 +106,7 @@ export function ProfileDetail({
     { k: "종교", v: p.religion },
   ].map((f) => ({ ...f, v: f.v?.trim() || null }));
   const hasAnyFact = facts.some((f) => f.v);
+  const styleComparison = comparePublicSignals(viewer?.publicSignals, p.publicSignals);
 
   return (
     <article className="profile-sheet space-y-6">
@@ -143,6 +150,36 @@ export function ProfileDetail({
             </div>
           ))}
         </dl>
+      ) : null}
+
+      {publicSignalRows(p.publicSignals).length ? (
+        <section aria-label="만남 스타일" className="rounded-surface bg-muted/60 p-4">
+          <h3 className="mb-3 text-base font-semibold">만남 스타일</h3>
+          <dl className="space-y-3">
+            {publicSignalRows(p.publicSignals).map((row) => {
+              const different = styleComparison.differences.some((item) => item.id === row.id);
+              const shared =
+                !own &&
+                viewer?.publicSignals?.[row.id]?.some((value) => row.values.includes(value));
+              return (
+                <div key={row.id}>
+                  <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {row.label}
+                    {shared ? (
+                      <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                        <Check className="size-3" aria-hidden="true" />
+                        공통 선택
+                      </span>
+                    ) : different && !own ? (
+                      <span className="font-medium text-foreground">함께 맞춰볼 점</span>
+                    ) : null}
+                  </dt>
+                  <dd className="mt-1 text-sm leading-relaxed">{row.values.join(" · ")}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </section>
       ) : null}
 
       {viewer && !own ? (

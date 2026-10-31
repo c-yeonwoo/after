@@ -1,3 +1,4 @@
+import { publicProfileSignals } from "../../supabase/functions/_shared/profile-signals";
 import {
   DRINKING_OPTIONS,
   RELIGION_OPTIONS,
@@ -36,6 +37,7 @@ export type ProfileSource = {
   headline: string | null;
   intro: string | null;
   profile_story?: unknown;
+  profile_public_signals?: unknown;
   interests: string[] | null;
   match_tags: string[] | null;
   topics: string[] | null;
@@ -58,6 +60,7 @@ export function toProfileView(p: ProfileSource): ProfileView {
     photos: p.photo_paths?.length ? p.photo_paths : p.photo_url ? [p.photo_url] : [],
     headline: p.headline ?? "",
     intro: p.intro ?? "",
+    publicSignals: publicProfileSignals(p.profile_public_signals),
     story: validProfileStory(p.profile_story) ? p.profile_story : null,
     interests,
     matchTags: p.match_tags ?? [],

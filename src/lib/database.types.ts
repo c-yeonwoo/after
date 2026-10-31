@@ -2421,6 +2421,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -2470,6 +2471,7 @@ export type Database = {
           privacy_agreed_at?: string | null
           profile_preferences?: Json
           profile_story?: Json | null
+          profile_public_signals?: Json
           religion?: string | null
           role?: string
           smoking?: string | null
@@ -2519,6 +2521,7 @@ export type Database = {
           privacy_agreed_at?: string | null
           profile_preferences?: Json
           profile_story?: Json | null
+          profile_public_signals?: Json
           religion?: string | null
           role?: string
           smoking?: string | null
@@ -2994,6 +2997,7 @@ export type Database = {
           photo_paths: string[] | null
           photo_url: string | null
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -3014,6 +3018,7 @@ export type Database = {
           photo_paths?: string[] | null
           photo_url?: string | null
           profile_story?: Json | null
+          profile_public_signals?: Json
           religion?: string | null
           smoking?: string | null
           topics?: string[] | null
@@ -3034,6 +3039,7 @@ export type Database = {
           photo_paths?: string[] | null
           photo_url?: string | null
           profile_story?: Json | null
+          profile_public_signals?: Json
           religion?: string | null
           smoking?: string | null
           topics?: string[] | null
@@ -3042,6 +3048,9 @@ export type Database = {
       }
     }
     Functions: {
+      approved_profile_signals: { Args: { p_draft: Json }; Returns: Json }
+      normalize_profile_signals: { Args: { p_value: Json }; Returns: Json }
+      profile_signal_options: { Args: never; Returns: Json }
       begin_signup_with_manager: {
         Args: { p_token: string; p_policy_version: string; p_manager_policy_version?: string | null }
         Returns: Json
@@ -3517,6 +3526,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -3580,6 +3590,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -3937,6 +3948,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -4072,6 +4084,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -4120,6 +4133,7 @@ export type Database = {
           photo_paths: string[] | null
           photo_url: string | null
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -4149,6 +4163,7 @@ export type Database = {
           photo_paths: string[] | null
           photo_url: string | null
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -4375,6 +4390,7 @@ export type Database = {
           photo_paths: string[] | null
           photo_url: string | null
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           smoking: string | null
           topics: string[] | null
@@ -4532,6 +4548,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -4590,6 +4607,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -4648,6 +4666,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -4950,6 +4969,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -5053,6 +5073,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null
@@ -5168,6 +5189,7 @@ export type Database = {
           privacy_agreed_at: string | null
           profile_preferences: Json
           profile_story: Json | null
+          profile_public_signals: Json
           religion: string | null
           role: string
           smoking: string | null

@@ -1,3 +1,4 @@
+import { publicProfileSignals } from "../../supabase/functions/_shared/profile-signals";
 import type { Basics } from "@/components/onboarding/basics";
 import type { Profile } from "@/lib/api";
 import {
@@ -62,6 +63,34 @@ export function newProfileInterviewV3(
     getting_closer: member?.known_as ?? "",
     conversation: member?.topic_note ?? "",
   };
+  const preferences = member?.profile_preferences as
+    | { choices?: Record<string, unknown>; choiceCustom?: Record<string, unknown> }
+    | null
+    | undefined;
+  const choices = Object.fromEntries(
+    CHOICE_QUESTIONS.map((question) => {
+      const old = preferences?.choices?.[question.id];
+      return [
+        question.id,
+        Array.isArray(old)
+          ? question.options.filter((option) => old.includes(option)).slice(0, question.max)
+          : [],
+      ];
+    }),
+  );
+  const choiceCustom = Object.fromEntries(
+    CHOICE_QUESTIONS.flatMap((question) => {
+      const old = preferences?.choiceCustom?.[question.id];
+      return typeof old === "string" && old.length <= 100 ? [[question.id, old]] : [];
+    }),
+  );
+  const approved = publicProfileSignals(member?.profile_public_signals);
+  const publicChoices = CHOICE_QUESTIONS.flatMap((question) =>
+    (approved[question.id] ?? []).map(
+      (option) =>
+        `choice:${question.id}:${(question.options as readonly string[]).indexOf(option)}`,
+    ),
+  );
   const existing = member?.profile_story;
   const story = isStory(existing) ? existing : null;
   return {
@@ -70,11 +99,16 @@ export function newProfileInterviewV3(
     mode: "interview",
     basics,
     answers,
-    choices: Object.fromEntries(CHOICE_QUESTIONS.map((question) => [question.id, []])),
-    choiceCustom: {},
+    choices,
+    choiceCustom,
     followups: {},
     followupIds: [],
-    publicIds: ["answer:daily_life", "answer:getting_closer", "answer:conversation"],
+    publicIds: [
+      "answer:daily_life",
+      "answer:getting_closer",
+      "answer:conversation",
+      ...publicChoices,
+    ],
     understanding: [],
     contradictions: [],
     understandingConfirmed: false,

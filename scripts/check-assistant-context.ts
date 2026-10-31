@@ -72,3 +72,10 @@ assert.doesNotMatch(JSON.stringify(personal), /PRIVATE_|UNVERIFIED|AI_INFERENCE/
 assert.equal(ownerAssistantProfile({ job: "문의 private@example.test" }).job, null);
 assert.equal(ownerAssistantProfile({ introduction_area: "010-1234-5678" }).introduction_area, null);
 assert.equal(personal?.earlier_user_statements?.length, 1);
+
+assert.deepEqual(
+  ownerAssistantProfile({
+    profile_public_signals: { care: ["이야기 들어주기"], contact: ["PRIVATE_CONTACT"] },
+  }).self_reported_meeting_style,
+  { care: ["이야기 들어주기"] },
+);
