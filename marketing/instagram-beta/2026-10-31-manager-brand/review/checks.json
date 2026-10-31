@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-10-31T14:19:09.086Z",
+  "feedExports": 18,
+  "storyExports": 6,
+  "profileIcons": 3,
+  "svgLogos": 21,
+  "viewports": [
+    1440,
+    390
+  ],
+  "fontReady": true,
+  "imagesDecoded": true,
+  "contentBounds": true,
+  "horizontalOverflow": false,
+  "logoSwitch": true,
+  "logoQueryAllowlist": true,
+  "serverBoundary": true,
+  "consoleErrors": []
+}
