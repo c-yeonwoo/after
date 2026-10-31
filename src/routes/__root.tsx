@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { BRAND } from "@/lib/brand";
+import { BRAND_LOGO } from "@/lib/brandLogo";
 import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import { MobileFrame } from "@/components/MobileFrame";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
@@ -130,9 +131,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         예전 ico 는 256px 한 장 20KB 였는데, 탭에서 쓰는 16px 로 축소될 때
         브라우저 리샘플링에 맡겨져 뭉갰다.
       */
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", href: `/favicon.svg?v=${BRAND_LOGO.revision}`, type: "image/svg+xml" },
+      { rel: "icon", href: `/favicon.ico?v=${BRAND_LOGO.revision}`, sizes: "48x48" },
+      { rel: "apple-touch-icon", href: `/apple-touch-icon.png?v=${BRAND_LOGO.revision}` },
     ],
   }),
 

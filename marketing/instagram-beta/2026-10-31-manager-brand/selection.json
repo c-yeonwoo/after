@@ -1,0 +1,10 @@
+{
+  "variant": "a",
+  "name": "이어주는 after",
+  "approvedOn": "2026-11-01",
+  "timezone": "Asia/Seoul",
+  "source": "brand/after-logo.json",
+  "revision": "after-ft-1",
+  "socialPostingApproved": false,
+  "featurePublicationGatesUnchanged": true
+}

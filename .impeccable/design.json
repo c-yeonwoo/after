@@ -772,15 +772,11 @@
       },
       "wordmark": {
         "displayName": "Wordmark utility",
-        "purpose": "Existing brand utility."
-      },
-      "logo": {
-        "displayName": "Logo",
-        "purpose": "Logo-specific tighter tracking."
+        "purpose": "Existing text utility; does not construct the approved SVG logo."
       },
       "display-wordmark": {
         "displayName": "Display wordmark",
-        "purpose": "Existing larger wordmark utility."
+        "purpose": "Existing larger text utility; does not construct the approved SVG logo."
       },
       "quote": {
         "displayName": "Short quotation",
@@ -878,6 +874,53 @@
         "purpose": "Maximum form-container height: hide composer recommendations and reduce textarea to 44px to preserve send access."
       }
     ],
+    "brandArtwork": {
+      "canonicalSource": "brand/after-logo.json",
+      "revision": "after-ft-1",
+      "name": "이어주는 after",
+      "approvedOn": "2026-11-01",
+      "generatedAppGeometry": "src/lib/brandLogo.ts",
+      "component": "src/components/Logo.tsx",
+      "rendering": "Custom monoline SVG paths, round caps and joins, currentColor from theme foreground; no font dependency.",
+      "sizes": {
+        "wordmarkDefault": "32px high; proportional width",
+        "wordmarkSmall": "28px high; proportional width",
+        "symbolDefault": "24px × 24px"
+      },
+      "geometry": {
+        "wordmarkViewBox": [0, 0, 325, 114],
+        "symbolViewBox": [0, 0, 104, 110],
+        "strokeWidth": 12
+      },
+      "exportPalette": {
+        "ink": "#393B42",
+        "paper": "#FAF9F6",
+        "background": "#FFFFFF",
+        "inverseWordmark": "#FFFFFF"
+      },
+      "exports": [
+        "brand/after-wordmark.svg",
+        "brand/after-wordmark-white.svg",
+        "brand/after-symbol.svg",
+        "public/brand/after-wordmark.svg",
+        "public/brand/after-wordmark-white.svg",
+        "public/brand/after-symbol.svg",
+        "public/favicon.svg",
+        "public/favicon.ico",
+        "public/icon-512.png",
+        "public/apple-touch-icon.png",
+        "brand/app-store-1024.png",
+        "brand/social-profile-1024.png",
+        "brand/app-icon-ios.svg",
+        "brand/splash.svg",
+        "public/og-image.png",
+        "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png",
+        "ios/App/App/Assets.xcassets/Splash.imageset/"
+      ],
+      "regenerate": "node scripts/generate-brand-assets.mjs",
+      "preservation": "Preserve connected f/t geometry. Keep approved UI palette, Wanted Sans UI typography and manager characters. Earlier coral dot/a-ring assets are historical.",
+      "updatedOn": "2026-11-01"
+    },
     "assistantArtwork": {
       "sources": ["/brand/concierge/male.webp", "/brand/concierge/female.webp"],
       "mapping": {
@@ -896,6 +939,14 @@
     }
   },
   "components": [
+    {
+      "name": "Brand · approved wordmark",
+      "kind": "custom",
+      "refersTo": "brand-logo",
+      "description": "Approved connected f/t geometry; 32px default, 28px small, currentColor from theme foreground.",
+      "html": "<span class=\"ds-brand-logo\" role=\"img\" aria-label=\"애프터\"><svg aria-hidden=\"true\" viewBox=\"0 0 325 114\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"12\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M60 56c0-17-11-29-27-29S6 39 6 56s11 29 27 29 27-12 27-29zm0-29v58\"/><path d=\"M90 85V29c0-14 7-22 21-22h8M78 38h97M143 16v50c0 14 7 19 20 19h12\"/><path d=\"M201 55h49c0-17-9-28-25-28-17 0-27 12-27 29 0 18 11 29 29 29 10 0 18-3 24-9M279 85V29m0 26c0-18 9-28 26-28\"/></svg></span>",
+      "css": ".ds-brand-logo{display:inline-flex;min-width:0;height:32px;align-items:center;color:var(--foreground,#393B42)}.ds-brand-logo svg{display:block;height:100%;width:auto;max-width:100%}.ds-brand-logo[data-size=sm]{height:28px}"
+    },
     {
       "name": "Button · primary",
       "kind": "button",
