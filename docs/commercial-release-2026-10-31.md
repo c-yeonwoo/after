@@ -83,3 +83,19 @@ core에서 보안 감사 0개, DB 76개 파일·1,190 assertions와 코드/빌�
 독립 합성 브라우저 검사에서 인증/목록 지연 중 빠른 작성, 같은 계정 재인증 후 보존,
 다른 계정 초안 분리, 한 번의 정상 제출을 확인한다. 실제 백엔드·회원·외부 공급자
 요청 없이 두 CI 브라우저에서 같은 회귀를 실행한다.
+
+### 결제 키의 배포 경로
+
+체크아웃은 빌드된 `VITE_TOSS_CLIENT_KEY`를 사용하지만 기존 GitHub 배포 빌드에는
+그 값의 전달이 빠져 있었다. 배포의 `npm run check` 단계에 GitHub Actions secret
+`VITE_TOSS_CLIENT_KEY`를 연결하고, 비밀키나 위젯용이 아닌 키를 넣으면 번들 생성 전에 실패시킨다.
+키가 비어 있으면 기존 결제 OFF 상태로 빌드할 수 있다. 결제 플래그를 자동으로 켜지 않는다.
+
+계약 승인 후 대표가 설정할 곳은 둘이다. **공개 클라이언트 키**는 GitHub 저장소의
+Actions secret `VITE_TOSS_CLIENT_KEY`, **비밀키**는 Supabase Edge Functions secret
+`TOSS_SECRET_KEY`다. 같은 환경의 키 쌍을 사용하고, 키 원문을 채팅이나 문서에
+쓰지 않는다. 클라이언트 키를 추가/변경한 뒤에는 웹을 다시 빌드·배포해야 한다.
+현재 결제 위젯의 공개 키는 `test_gck_`/`live_gck_` 형식을 사용한다.
+형식과 키 쌍의 구분은 [Toss 공식 키 안내](https://docs.tosspayments.com/reference/using-api/api-keys),
+[SDK 오류 안내](https://docs.tosspayments.com/sdk/v2/error-codes)를 기준으로 확인했다.
+실결제·취소 확인 후 운영자가 별도로 결제 활성화를 판단한다.
