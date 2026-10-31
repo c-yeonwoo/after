@@ -1,4 +1,3 @@
-import { ArrowUpLeft } from "lucide-react";
 import { assistantSuggestions } from "@/lib/assistantSuggestions";
 
 export function AssistantPrompts({
@@ -29,7 +28,6 @@ export function AssistantPrompts({
           onClick={() => onChoose(text)}
         >
           <span>{text}</span>
-          <ArrowUpLeft className="size-4 shrink-0" aria-hidden="true" />
         </button>
       ))}
     </div>
