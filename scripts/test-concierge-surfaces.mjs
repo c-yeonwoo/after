@@ -372,6 +372,34 @@ async function verifyHome(page, width) {
     "keyboard focus reveals final chip",
   );
   await page.locator(".assistant-quick-actions").evaluate((row) => row.scrollTo({ left: 0 }));
+  const otherTab = await page.context().newPage();
+  const homeUrl = "**/rest/v1/rpc/home_state_v2";
+  const staleNotice = page.getByText(
+    "최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.",
+    { exact: true },
+  );
+  await page.route(homeUrl, (route) =>
+    route.fulfill({ status: 503, json: { message: "QA outage" } }),
+  );
+  try {
+    const failedRefresh = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname.endsWith("/rest/v1/rpc/home_state_v2") &&
+        response.status() === 503,
+    );
+    await page.bringToFront();
+    assert.equal(await page.evaluate(() => document.visibilityState), "visible");
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await failedRefresh;
+    await staleNotice.waitFor();
+    await input.waitFor();
+    assert.equal(await page.locator(".home-greeting h1").count(), 1);
+  } finally {
+    await page.unroute(homeUrl);
+    await otherTab.close();
+  }
+  await page.getByRole("button", { name: "상태 다시 확인", exact: true }).click();
+  await staleNotice.waitFor({ state: "hidden" });
 }
 
 async function verifyProfile(page, own) {

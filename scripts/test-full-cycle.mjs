@@ -129,6 +129,9 @@ async function waitForHome(page) {
   // Wait for the home UI, not a delay or a second forced navigation.
   await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).waitFor();
   await page.locator(".home-greeting h1").waitFor();
+  // The greeting can render from MeContext before the live snapshot exists.
+  // Background-failure checks require actual previous data, not just the shell.
+  await page.locator(".home-progress h2").waitFor();
 }
 
 async function finishFeedback(page) {
@@ -622,10 +625,12 @@ try {
       .waitFor();
     assert.equal(sql(`select (paused_at is null)::text from profiles where id='${m1.id}'`), "true");
     assert.equal(sql(`select count(*) from tickets where user_id='${m1.id}'`), "0");
+    await m1.page.bringToFront();
     await m1.page.goto(`${base}/home`);
     await waitForHome(m1.page);
   });
   await check("home background failure preserves state and retry recovers", async () => {
+    assert.equal(await m1.page.evaluate(() => document.visibilityState), "visible");
     const headline = await m1.page.locator(".home-greeting h1").innerText();
     await m1.page.route("**/rest/v1/rpc/home_state_v2", (route) =>
       route.fulfill({
@@ -634,7 +639,13 @@ try {
       }),
     );
     try {
+      const failedRefresh = m1.page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.endsWith("/rest/v1/rpc/home_state_v2") &&
+          response.status() === 503,
+      );
       await m1.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+      await failedRefresh;
       await m1.page
         .getByText("최신 상태를 확인하지 못했어요. 마지막으로 확인한 내용을 보여드려요.", {
           exact: true,
