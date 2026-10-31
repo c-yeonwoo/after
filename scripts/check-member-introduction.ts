@@ -147,3 +147,13 @@ assert.equal(hasIntroductionMaterial({ short: "음" }), false);
 console.log(
   "Member introduction: public allowlist, exact evidence, persona bounds, malformed output and unsafe claims passed.",
 );
+
+assert.equal(
+  validMemberIntroduction(
+    { ...brief, portrait: [{ text: other.story_daily_life, sources: [evidence] }] },
+    self,
+    other,
+  ),
+  false,
+  "a copied source is not a manager explanation",
+);

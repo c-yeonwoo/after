@@ -361,9 +361,9 @@ function IntroPage() {
       <div className="grid grid-cols-2 gap-2">
         <Button
           ref={passButton}
-          variant="outline"
+          variant="ghost"
           size="lg"
-          className="w-full min-w-0"
+          className="w-full min-w-0 bg-muted text-foreground"
           disabled={busy}
           onClick={() => {
             if (!me || !candidate.id || sending.current) return;
@@ -386,14 +386,18 @@ function IntroPage() {
           {isMale ? "이 소개 넘기기" : "관심 없어요"}
         </Button>
         {isMale ? (
-          <Button size="lg" className="w-full min-w-0" onClick={() => navigate({ to: "/ticket" })}>
+          <Button
+            size="lg"
+            className="intro-primary-button w-full min-w-0"
+            onClick={() => navigate({ to: "/ticket" })}
+          >
             <Ticket className="size-4" aria-hidden="true" />
             {paid === false ? "만남 요청하기" : "만남 티켓 쓰기"}
           </Button>
         ) : (
           <Button
             size="lg"
-            className="w-full min-w-0"
+            className="intro-primary-button w-full min-w-0"
             disabled={busy}
             onClick={async () => {
               if (sending.current) return;

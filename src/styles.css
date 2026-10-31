@@ -444,16 +444,42 @@
 .introduction-signals {
   color: var(--success);
 }
+.app-primary-button.intro-primary-button:not(:disabled):not([aria-disabled="true"]) {
+  border-color: transparent;
+  background: var(--foreground);
+  color: var(--background);
+}
 
 .profile-sheet {
   padding: clamp(1rem, 4vw, 1.5rem);
-  border: 1px solid var(--border);
   border-radius: var(--radius-surface);
   background: var(--card);
+  box-shadow: 0 5px 22px oklch(0.2 0.01 260 / 7%);
+}
+.profile-facts {
+  padding: 1rem;
+  border-radius: var(--radius-control);
+  background: var(--muted);
 }
 .manager-reading {
-  padding-block: 1.25rem;
-  border-block: 1px solid var(--border);
+  padding: 1rem;
+  border: 0;
+  border-radius: var(--radius-surface);
+  background: var(--assistant-surface);
+}
+.manager-reading-text {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.manager-reading-label {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--muted-foreground);
+}
+.profile-stories .profile-interview + .profile-interview {
+  padding-top: 0.25rem;
 }
 .profile-highlight {
   padding-inline: 0.125rem;
@@ -735,7 +761,7 @@
   margin: 0.5rem 0 0;
   color: var(--foreground);
   font-size: 1rem;
-  line-height: 1.7;
+  line-height: 1.6;
   white-space: pre-line;
   word-break: keep-all;
   overflow-wrap: anywhere;

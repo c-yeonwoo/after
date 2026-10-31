@@ -26,7 +26,6 @@ import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparatio
 import { photoUrl } from "@/lib/photo";
 import { introductionSignals } from "@/lib/introductionSignals";
 import { useMemberIntroduction } from "@/lib/useMemberIntroduction";
-import { toProfileView } from "@/lib/profileView";
 import { assistantWelcome } from "@/lib/assistantExperience";
 
 export const Route = createFileRoute("/home")({
@@ -459,9 +458,7 @@ function CandidatePreview({
   const path = candidate.photo_paths?.[0] ?? candidate.photo_url;
   const { visible } = useMemberIntroduction(candidate.id ?? "");
   const signals = introductionSignals(viewer ?? {}, candidate);
-  const profile = toProfileView(candidate);
   const managerReading = visible?.connections[0]?.text ?? visible?.portrait[0]?.text;
-  const reading = managerReading || profile.story?.sections[0]?.answer || profile.intro;
   useEffect(() => {
     let active = true;
     setSrc(null);
@@ -532,12 +529,12 @@ function CandidatePreview({
       >
         {isMale ? "프로필 이어보기" : "프로필 읽어보기"}
       </Link>
-      {reading ? (
+      {managerReading ? (
         <div className="mt-3">
-          <p className="mb-1 text-xs text-muted-foreground">
-            {managerReading ? "매니저의 한마디" : "프로필 속 이야기"}
+          <p className="mb-1 text-xs text-muted-foreground">매니저의 한마디</p>
+          <p className="line-clamp-3 break-keep break-words text-sm leading-relaxed">
+            {managerReading}
           </p>
-          <p className="line-clamp-3 break-keep break-words text-sm leading-relaxed">{reading}</p>
         </div>
       ) : null}
     </section>

@@ -350,7 +350,7 @@ The home greeting stays portrait-free; the assistant identity sits at the conver
 
 ### Profile Question and Answer
 
-Questions are compact neutral-ink prompts at supporting size, 700 weight, and keep-all wrapping. Answers are open paragraphs at body size/line height, preserve line breaks, and remain selectable. Manager explanations and source quotations remain distinct from the member's approved story.
+Questions are compact neutral-ink prompts at supporting size, 700 weight, and keep-all wrapping. Answers are open paragraphs at body size/line height, preserve line breaks, and remain selectable. Manager explanations are synthesized notes, visually separate from the member's approved story. Exact source quotations remain internal validation metadata; do not repeat them in the note or add native disclosure triangles.
 
 ## Do's and Don'ts
 
@@ -392,6 +392,17 @@ profile reading and contact points help the member decide whether to express int
 Manager introductions start automatically for the currently readable candidate when
 the feature flag and existing manager consent allow it. Home and detail share the
 same owner/target/public-profile/consent-revision cache. There is no separate generation
-button. Failed AI reading falls back to visibly attributed public-profile observations.
+button. Failed AI reading shows a compact recovery action while the original interview remains readable below. Never present copied answers as manager analysis.
 Quantitative indicators count exact public interest/topic selections, not MBTI/saju
 compatibility or inferred relationship success. Missing data never becomes a zero score.
+
+
+### Manager profile note — 2026-10-31
+
+The approved interview appears once under “직접 들려준 이야기”. A separate neutral
+manager note contains a brief synthesis, grounded connections, and genuine differences
+to explore. Internal evidence quotes never appear as repeated lists, underlines or
+native details/summary controls. The note uses a 16px heading, 15px body with 1.6
+leading and compact supporting labels. Profile facts use a quiet grouped surface;
+remove thin dividing rules. Failed generation offers an explicit retry rather than
+reciting the interview. Existing source, consent, payment and appointment gates remain.

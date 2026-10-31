@@ -2,6 +2,8 @@ import { getProfile, type PublicProfile } from "./api";
 import { supabase } from "./supabase";
 import type { MemberIntroductionBrief } from "../../supabase/functions/_shared/member-introduction";
 
+export { MEMBER_INTRODUCTION_VERSION } from "../../supabase/functions/_shared/member-introduction";
+
 export type {
   MemberIntroductionBrief,
   PublicEvidence,
@@ -37,6 +39,8 @@ export async function introduceMember(target: string, requestId: string) {
 
 export const memberIntroductionError = (code: string) =>
   ({
+    engine_changed: "새 소개 설명을 불러오지 못했어요. 다시 준비해 주세요.",
+    consent_required: "매니저 개인정보 동의 상태를 설정에서 확인해 주세요.",
     disabled: "매니저 설명은 준비 중이에요. 아래 프로필을 먼저 읽어보세요.",
     unavailable: "지금은 이 프로필을 확인할 수 없어요. 소개 화면을 다시 확인해 주세요.",
     unauthorized: "로그인을 다시 확인해 주세요.",
