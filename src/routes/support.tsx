@@ -37,12 +37,34 @@ function SupportPage() {
   const { meetingId } = Route.useSearch();
   const { me, ready } = useMe();
   const userId = ready ? me?.id : undefined;
+  return (
+    <SupportContent
+      key={`${ready ? (userId ?? "signed-out") : "loading"}:${meetingId ?? "general"}`}
+      userId={userId}
+      ready={ready}
+      signedIn={Boolean(me)}
+      meetingId={meetingId}
+    />
+  );
+}
+
+function SupportContent({
+  userId,
+  ready,
+  signedIn,
+  meetingId,
+}: {
+  userId: string | undefined;
+  ready: boolean;
+  signedIn: boolean;
+  meetingId: string | undefined;
+}) {
   const [category, setCategory] = useState(meetingId ? "introduction" : "account");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [list, setList] = useState<RequestList | null>(null);
   const [submitNotice, setSubmitNotice] = useState<string | null>(null);
-  const activeUser = useRef<string | null>(null);
+  const activeUser = useRef<string | null>(userId ?? null);
   const latestUserId = useRef(userId);
   const loadSequence = useRef(0);
   const submitSequence = useRef(0);
@@ -74,15 +96,9 @@ function SupportPage() {
   }, []);
 
   useEffect(() => {
-    loadSequence.current += 1;
-    submitSequence.current += 1;
     activeUser.current = userId ?? null;
-    setList(null);
-    setSubmitNotice(null);
-    setBody("");
-    setCategory(meetingId ? "introduction" : "account");
-    submitLock.current = false;
-    setSubmitting(false);
+    // Account/meeting changes remount this keyed content. Resetting form state
+    // in this effect can erase text entered immediately after auth resolves.
     if (userId) void load(userId);
     return () => {
       loadSequence.current += 1;
@@ -103,6 +119,7 @@ function SupportPage() {
       activeUser.current = null;
       setList(null);
       setSubmitNotice(null);
+      setBody("");
       submitLock.current = false;
       setSubmitting(false);
       if (signedInUserId && signedInUserId === latestUserId.current) {
@@ -177,14 +194,14 @@ function SupportPage() {
   }
 
   return (
-    <SupportFrame signedIn={Boolean(me)} meetingHelp={Boolean(meetingId)}>
+    <SupportFrame signedIn={signedIn} meetingHelp={Boolean(meetingId)}>
       <SupportSection title="1:1 문의">
         <p>
           {meetingId
             ? "이 약속의 일정이나 장소가 막혔다면 알려주세요. 운영팀이 확인하고 이 화면에서 답합니다."
             : "가입, 소개, 결제 문제를 남기면 이 화면에서 답변을 확인할 수 있습니다."}
         </p>
-        {ready && me ? (
+        {ready && signedIn ? (
           <form onSubmit={(event) => void submit(event)} className="space-y-3">
             {!meetingId ? (
               <div className="space-y-2">

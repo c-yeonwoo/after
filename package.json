@@ -31,7 +31,7 @@
     "test:ai-concurrency": "node scripts/test-ai-concurrency.mjs",
     "test:notification-concurrency": "node scripts/test-notification-concurrency.mjs",
     "test:meeting-concurrency": "node scripts/test-meeting-concurrency.mjs",
-    "test:browser-e2e": "node scripts/test-browser-e2e.mjs && node scripts/test-auth-required-ui.mjs",
+    "test:browser-e2e": "node scripts/test-browser-e2e.mjs && node scripts/test-auth-required-ui.mjs && node scripts/test-support-session.mjs",
     "test:full-cycle": "node scripts/test-full-cycle.mjs",
     "test:assistant-private": "node scripts/test-assistant-private.mjs",
     "test:assistant-schedule": "node scripts/test-assistant-schedule.mjs",
