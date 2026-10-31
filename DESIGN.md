@@ -372,7 +372,6 @@ Questions are compact neutral-ink prompts at supporting size, 700 weight, and ke
 - Don't wrap supporting evidence in another card inside a topic card.
 - Don't treat the legacy generic Card or a removed dock shadow as assistant defaults.
 
-
 ### Introduction workflow clarity — approved 2026-10-31
 
 The home uses a white base and a warm neutral assistant surface, with pink limited to
@@ -396,7 +395,6 @@ button. Failed AI reading shows a compact recovery action while the original int
 Quantitative indicators count exact public interest/topic selections, not MBTI/saju
 compatibility or inferred relationship success. Missing data never becomes a zero score.
 
-
 ### Manager profile note — 2026-10-31
 
 The approved interview appears once under “직접 들려준 이야기”. A separate neutral
@@ -406,3 +404,14 @@ native details/summary controls. The note uses a 16px heading, 15px body with 1.
 leading and compact supporting labels. Profile facts use a quiet grouped surface;
 remove thin dividing rules. Failed generation offers an explicit retry rather than
 reciting the interview. Existing source, consent, payment and appointment gates remain.
+
+### Manager conversation messages — 2026-10-31
+
+Home's latest turn, the full conversation, and workflow guidance use the same
+`ManagerMessage` signature: the approved 32px gender-specific character beside a
+12px sender label, a quiet assistant-surface bubble, and the timestamp outside the
+bubble. Both participants use 16px text with 1.65 leading. User messages fit their
+content, align right, and stop at 87% width. Long unformatted manager paragraphs
+may wrap into sentence groups with 10px separation; preserve the complete text,
+explicit line breaks, lists and quoted wording. This is presentation only, without
+new model requests, persistence changes, truncation or disclosure controls.

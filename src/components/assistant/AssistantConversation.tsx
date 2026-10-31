@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Send, Trash2 } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
+import { ManagerMessage } from "@/components/assistant/ManagerMessage";
 import { AssistantActions } from "@/components/assistant/AssistantActions";
 import { AssistantPrompts } from "@/components/assistant/AssistantPrompts";
 import { AssistantTextarea } from "@/components/assistant/AssistantTextarea";
@@ -489,13 +490,12 @@ export function AssistantConversation({
               ))}
           </div>
           {guideReply ? (
-            <div className="assistant-reply mb-5" role="status">
-              <p className="text-base leading-relaxed">{guideReply.text}</p>
+            <ManagerMessage text={guideReply.text} className="mb-5" role="status">
               <AssistantActions
                 actions={guideReply.actions}
                 counterpartId={actionContext.counterpartId}
               />
-            </div>
+            </ManagerMessage>
           ) : null}
         </>
       ) : null}
@@ -602,12 +602,11 @@ export function AssistantConversation({
               {shownTurns.length === 0 ? (
                 <div>
                   {!compact ? (
-                    <div className="assistant-reply">
-                      <p className="text-lg font-semibold">첫 만남, 어떤 점이 신경 쓰이나요?</p>
-                      <p className="mt-2 text-sm leading-relaxed">
-                        아래 질문을 골라도, 직접 물어봐도 좋아요.
-                      </p>
-                    </div>
+                    <ManagerMessage
+                      text={
+                        "첫 만남, 어떤 점이 신경 쓰이나요?\n\n아래 질문을 골라도, 직접 물어봐도 좋아요."
+                      }
+                    />
                   ) : null}
                   <AssistantPrompts
                     input=""
@@ -625,26 +624,39 @@ export function AssistantConversation({
                   {shownTurns.map((turn) => (
                     <li key={turn.id}>
                       {!turn.kind || turn.kind === "conversation" ? (
-                        <div className="ml-8 rounded-[16px_4px_16px_16px] bg-bubble-mine px-4 py-3 text-bubble-mine-foreground">
-                          <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
-                            {turn.question}
-                          </p>
+                        <div className="assistant-user-message">
+                          <p className="whitespace-pre-wrap break-words">{turn.question}</p>
                         </div>
                       ) : null}
-                      <div className="assistant-reply mt-2 mr-4">
-                        <p className="mb-1 text-xs font-semibold text-muted-foreground">
-                          {turn.kind === "profile_applied"
+                      <ManagerMessage
+                        className="mt-3"
+                        label={
+                          turn.kind === "profile_applied"
                             ? "프로필 반영 완료"
                             : turn.kind === "schedule_applied"
                               ? "일정 반영 완료"
-                              : "내 매니저"}
-                        </p>
-                        <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
-                          {turn.answer ??
-                            (turn.state === "pending"
-                              ? "답변을 준비하고 있어요…"
-                              : "답변을 마치지 못했어요. 질문을 다시 보내주세요.")}
-                        </p>
+                              : "내 매니저"
+                        }
+                        text={
+                          turn.answer ??
+                          (turn.state === "pending"
+                            ? "답변을 준비하고 있어요…"
+                            : "답변을 마치지 못했어요. 질문을 다시 보내주세요.")
+                        }
+                        footer={
+                          <time
+                            dateTime={turn.created_at}
+                            className="mt-2 block text-xs text-muted-foreground"
+                          >
+                            {new Date(turn.created_at).toLocaleString("ko-KR", {
+                              month: "numeric",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </time>
+                        }
+                      >
                         {turn.state === "complete" &&
                         !privateAssistantSafety(turn.question, { execution: false }) ? (
                           <AssistantActions
@@ -663,18 +675,7 @@ export function AssistantConversation({
                             }
                           />
                         ) : null}
-                        <time
-                          dateTime={turn.created_at}
-                          className="mt-2 block text-xs text-muted-foreground"
-                        >
-                          {new Date(turn.created_at).toLocaleString("ko-KR", {
-                            month: "numeric",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
-                      </div>
+                      </ManagerMessage>
                     </li>
                   ))}
                 </ol>

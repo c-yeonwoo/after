@@ -3,6 +3,7 @@ import { AssistantConversation } from "./AssistantConversation";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUp } from "lucide-react";
 import { AssistantMark } from "./AssistantMark";
+import { ManagerMessage } from "./ManagerMessage";
 import { AssistantActions } from "./AssistantActions";
 import { assistantIntent, type AssistantIntent } from "@/lib/assistant";
 import { assistantReply } from "@/lib/assistantExperience";
@@ -128,8 +129,7 @@ function LegacyAssistantDock({
           ))}
       </div>
       {safety || reply ? (
-        <div className="assistant-reply mt-4" role="status">
-          <p className="text-base leading-relaxed">{safety ?? reply?.text}</p>
+        <ManagerMessage text={safety ?? reply?.text ?? ""} className="mt-4" role="status">
           {!safety && reply ? (
             <AssistantActions
               actions={reply.actions}
@@ -137,7 +137,7 @@ function LegacyAssistantDock({
               draft={me && lastQuestion ? { owner: me.id, text: lastQuestion } : undefined}
             />
           ) : null}
-        </div>
+        </ManagerMessage>
       ) : null}
       {!reply && !safety ? (
         <AssistantPrompts

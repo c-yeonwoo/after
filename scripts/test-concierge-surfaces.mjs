@@ -127,6 +127,11 @@ const pendingMeeting = {
   closed_at: null,
   cancelled_at: null,
 };
+const longManagerAnswer =
+  "첫 만남이 걱정될 수 있어요. 오늘은 준비할 것을 세 가지로 나눠서 생각해 보세요. " +
+  "먼저 서로 공개한 일상에서 궁금한 소재를 하나 골라 보세요. 최근 본 영화나 쉬는 날의 취미처럼 가볍게 이어갈 수 있는 이야기면 충분해요. " +
+  "대화를 이어갈 때는 내 이야기와 질문을 번갈아 건네 보세요. 상대의 답을 끝까지 듣고 조금 더 궁금한 점을 물으면 급하게 주제를 바꾸지 않아도 돼요. " +
+  "만나기 전에는 약속 시간과 장소를 한 번 확인해 주세요. 첫 대화를 완벽하게 준비하기보다 서로를 알아가는 시간을 편안하게 가져보면 좋겠어요.";
 const assistantHistory = [
   {
     id: "55555555-5555-4555-8555-555555555555",
@@ -140,7 +145,7 @@ const assistantHistory = [
     id: "66666666-6666-4666-8666-666666666666",
     kind: "conversation",
     question: "약속 시간 변경해줘",
-    answer: "이전 약속의 시간은 상세에서 다시 확인해 주세요.",
+    answer: longManagerAnswer,
     state: "complete",
     created_at: new Date(Date.now() - 1800_000).toISOString(),
   },
@@ -347,7 +352,7 @@ async function verifyHome(page, width) {
     "compact 32px chip visuals",
   );
   assert.equal(metrics.overflow, "auto");
-  assert.equal(metrics.tops.length, 3, "only three non-duplicate help actions");
+  assert.equal(metrics.tops.length, 2, "pre-meeting home omits conversation preparation");
   await input.fill("진행 상태");
   await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   await page.locator(".assistant-reply").waitFor();
@@ -420,7 +425,7 @@ async function verifyAssistant(page, fixture, name, backendStart) {
     assert.equal(await page.getByRole("textbox").count(), 0);
   }
 
-  const guide = page.locator('.assistant-reply[role="status"]');
+  const guide = page.locator('.manager-message[role="status"]');
   await page.getByRole("button", { name: "내 상태", exact: true }).click();
   await guide.getByText("상대의 답을 기다리는 중이에요.", { exact: false }).waitFor();
   assert.doesNotMatch(await guide.innerText(), /답을 받았|홈에서 실제 진행/);
@@ -429,12 +434,11 @@ async function verifyAssistant(page, fixture, name, backendStart) {
   assert.equal(await guide.locator('a[href="/store"]').count(), 0);
   await page.getByRole("button", { name: "내 프로필 수정", exact: true }).click();
   await guide.getByText("어느 부분을 먼저 바꿀까요?", { exact: false }).waitFor();
-  await page.getByRole("button", { name: "대화 팁", exact: true }).click();
-  const preparation = guide.getByRole("link", { name: "대화 준비하기", exact: true });
-  await preparation.waitFor();
-  const preparationUrl = new URL(await preparation.getAttribute("href"), base);
-  assert.equal(preparationUrl.pathname, "/conversation-prep");
-  assert.equal(preparationUrl.searchParams.get("target"), otherId);
+  assert.equal(
+    await page.getByRole("button", { name: "대화 팁", exact: true }).count(),
+    0,
+    "pending meeting does not expose confirmed-meeting preparation",
+  );
 
   if (fixture.consented) {
     const history = page.getByRole("list", { name: "나만의 상담 기록" });
@@ -471,7 +475,7 @@ async function verifyLegacyStory(page, name, backendStart) {
   const send = page.getByRole("button", { name: "매니저에게 질문하기", exact: true });
   await input.fill("프로필 수정");
   await send.click();
-  const guide = page.locator('.assistant-reply[role="status"]');
+  const guide = page.locator('.manager-message[role="status"]');
   await guide.getByText("어느 부분을 먼저 바꿀까요?", { exact: false }).waitFor();
   assert.equal(new URL(page.url()).pathname, "/home", "ambiguous edit stays at target selection");
   assert.equal(await guide.getByRole("link", { name: "내 프로필 보기" }).count(), 1);
@@ -1061,7 +1065,13 @@ try {
           }
           if (fixture.name === "home-history") {
             const history = page.getByRole("list", { name: "나만의 상담 기록" });
-            await history.getByText(assistantHistory.at(-1).answer, { exact: true }).waitFor();
+            await history.locator(".manager-message-text").waitFor();
+            assert.equal(
+              await history.locator(".manager-message-text").textContent(),
+              longManagerAnswer,
+            );
+            assert.ok((await history.locator(".manager-message-text p").count()) >= 3);
+            assert.equal(await history.locator('[data-assistant-avatar="male"]').count(), 1);
             assert.equal(
               await history.locator("li").count(),
               1,
