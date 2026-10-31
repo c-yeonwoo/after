@@ -205,13 +205,13 @@ function HomePage() {
 
       {!hasPriorityContent ? (
         <div className="home-progress mt-4">
-          <h2 className="break-keep text-base font-semibold leading-relaxed">{headline}</h2>
+          <h2 className="break-keep text-base font-semibold leading-snug">{headline}</h2>
           {!live.isError &&
           !live.isPaused &&
           primaryState === "waiting" &&
           !isMale &&
           serverState?.intro_progress?.has_likes ? (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-0.5 text-sm leading-normal text-muted-foreground">
               상대의 만남 요청을 기다리고 있어요.
             </p>
           ) : null}
