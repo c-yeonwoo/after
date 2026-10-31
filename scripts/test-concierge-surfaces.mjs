@@ -1103,6 +1103,9 @@ try {
               2,
               "same archive in full conversation",
             );
+            await page.getByRole("link", { name: "대화 설정", exact: true }).click();
+            await page.getByRole("heading", { name: "대화 설정", exact: true }).waitFor();
+            assert.equal(await page.getByRole("navigation", { name: "매니저 메뉴" }).count(), 0);
             await page.getByRole("button", { name: "상담 기록 지우기" }).click();
             await page.getByRole("heading", { name: "기록을 지울까요?" }).waitFor();
             assert.equal(
@@ -1112,6 +1115,12 @@ try {
               true,
             );
             await page.getByRole("button", { name: "유지하기" }).click();
+            await page.getByRole("button", { name: "상담 기록 지우기" }).click();
+            await page.getByRole("heading", { name: "기록을 지울까요?" }).waitFor();
+            await page.getByRole("link", { name: "뒤로", exact: true }).click();
+            await page.getByRole("heading", { name: "나와 매니저", exact: true }).waitFor();
+            assert.equal(await page.getByRole("heading", { name: "기록을 지울까요?" }).count(), 0);
+            await page.getByLabel("매니저에게 상담할 내용").waitFor();
           }
           if (fixture.name === "manager-consent") {
             const consent = page.getByRole("checkbox", { name: "AI 맞춤 상담 동의 (선택)" });

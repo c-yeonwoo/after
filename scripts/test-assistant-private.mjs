@@ -298,7 +298,7 @@ try {
     (await rpc("my_assistant_state")).turns.some((turn) => turn.question === "소개글 수정해줘"),
     "server persisted service command",
   );
-  await page.getByRole("link", { name: "사진·기본정보 수정", exact: true }).waitFor();
+  await page.getByRole("link", { name: "프로필 직접 수정", exact: true }).waitFor();
   assert.equal(draftApiCalls, 1, "service command uses the persistent server conversation");
   assert.equal(
     sql(`select count(*) from ai_runs where user_id='${id}'`),
@@ -361,7 +361,7 @@ try {
        'complete','schedule_applied',gen_random_uuid(),now()+interval '2 seconds');`);
   await page.reload();
   await page.getByText("프로필 반영 완료", { exact: true }).waitFor();
-  await page.getByText("일정 처리 완료", { exact: true }).waitFor();
+  await page.getByText("일정 반영 완료", { exact: true }).waitFor();
   assert.equal(
     await page.getByText("프로필 반영 결과", { exact: true }).count(),
     0,
@@ -546,7 +546,7 @@ try {
   await delay(200);
   if (!(await inScrollViewport(memoryField)))
     uiIssues.push("memory approval opens outside the scroll viewport");
-  if ((await page.getByRole("heading", { name: "나와 매니저", exact: true }).boundingBox()).y < 0)
+  if ((await page.getByRole("heading", { name: "대화 설정", exact: true }).boundingBox()).y < 0)
     uiIssues.push("revealing approval scrolls the fixed app header offscreen");
   assert.equal(
     await page.getByRole("button", { name: "상담 보내기" }).count(),
@@ -558,7 +558,7 @@ try {
   await memoryField.fill(longMemory);
   await page.getByRole("region", { name: "기억 저장 확인" }).getByRole("checkbox").check();
   await page.getByRole("button", { name: "수정 저장" }).click();
-  await page.getByRole("link", { name: "대화 설정", exact: true }).click();
+  await page.getByRole("heading", { name: "대화 설정", exact: true }).waitFor();
   const longText = page.getByText(longMemory, { exact: true });
   await longText.waitFor();
   if (await longText.evaluate((el) => el.scrollWidth > el.clientWidth + 1))
@@ -567,7 +567,6 @@ try {
   assert.deepEqual(uiIssues, [], "native conversation and approval flow");
   await rpc("assistant_forget", { p_scope: "all" });
   await page.goto(`${base}/assistant`);
-  await page.getByRole("link", { name: "대화", exact: true }).click();
   await page.getByLabel("매니저에게 상담할 내용").fill("첫 만남이 긴장돼요");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("--keyboard-height", "300px"),

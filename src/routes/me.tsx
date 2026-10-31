@@ -1,14 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  ChevronRight,
-  CalendarDays,
-  CircleHelp,
-  Receipt,
-  Settings,
-  Ticket,
-  User,
-} from "lucide-react";
+import { ChevronRight, CalendarDays, CircleHelp, Receipt, Settings, Ticket } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationBell } from "@/components/app/NotificationBell";
@@ -38,7 +30,6 @@ export const Route = createFileRoute("/me")({
  * 주문이 만들어졌고, 운영자 승인 대기열에 영원히 이행 불가능한 주문이 쌓였다.
  */
 const MENU = [
-  { to: "/profile", icon: User, label: "내 프로필", hint: "상대에게 보이는 모습", male: false },
   {
     to: "/availability",
     icon: CalendarDays,
@@ -171,11 +162,10 @@ function MePage() {
               </p>
             </div>
           </div>
-          <ChevronRight
-            className="ml-auto size-5 shrink-0 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <span className="sr-only">내 프로필 보기</span>
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+            프로필 보기
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </span>
         </Link>
 
         <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
@@ -223,9 +213,6 @@ function MePage() {
           </div>
         </dl>
 
-        {isMale && stats?.metCount === 0 ? (
-          <p className="mt-3 text-xs text-muted-foreground">아직 첫 만남 전이에요.</p>
-        ) : null}
         {statsError ? (
           <div
             role="alert"

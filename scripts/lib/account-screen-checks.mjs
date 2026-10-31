@@ -17,7 +17,8 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/me`);
-  await page.getByRole("link", { name: /내 프로필 보기/ }).waitFor();
+  await page.getByRole("link", { name: /프로필 보기/ }).waitFor();
+  assert.equal(await page.locator('a[href="/profile"]').count(), 1, "one clear profile entry");
   assert.equal(await page.getByRole("link", { name: /티켓 이용 내역/ }).count(), 0);
   await capture("account-me-mobile");
   await page.getByRole("link", { name: /환경설정 화면/ }).click();
@@ -184,7 +185,10 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
   await page.setViewportSize({ width: 1440, height: 1000 });
   for (const route of ["me", "settings", "notifications", "support"]) {
     await page.goto(`${baseUrl}/${route}`);
-    if (route === "me") await page.getByRole("link", { name: /내 프로필 보기/ }).waitFor();
+    if (route === "me") {
+      await page.getByRole("link", { name: /프로필 보기/ }).waitFor();
+      assert.equal(await page.locator('a[href="/profile"]').count(), 1, "one clear profile entry");
+    }
     if (route === "settings")
       await page.getByRole("switch", { name: "답변 대기 리마인드", exact: true }).waitFor();
     if (route === "notifications")

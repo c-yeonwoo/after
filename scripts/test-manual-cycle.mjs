@@ -16,7 +16,11 @@ import {
   password,
   manifestPath,
 } from "./lib/manual-cycle-fixtures.mjs";
-import { startManualServer, manualOrigin as base } from "./lib/manual-cycle-server.mjs";
+import { startManualServer, manualOriginForPort } from "./lib/manual-cycle-server.mjs";
+
+// Regression must not compete with the participant's running 5191 lab.
+const port = Number(process.env.AFTER_MANUAL_TEST_PORT ?? 4294);
+const base = manualOriginForPort(port);
 
 const env = localEnvironment();
 const before = legacyFingerprint(env);
@@ -28,7 +32,7 @@ assert.deepEqual(
   [0, 0, 0, 0, 0, 0],
   "QA fixture must be fresh; never reset existing progress",
 );
-const server = await startManualServer(env, "qa-manual");
+const server = await startManualServer(env, "qa-manual", { port });
 database(
   env,
   `update profiles set paused_at=null where id in (${quote(manifest.accounts.male.id)},${quote(manifest.accounts.female.id)});`,
@@ -39,17 +43,26 @@ const shots = "/tmp/after-manual-cycle-qa";
 await mkdir(shots, { recursive: true });
 let providerRequests = 0;
 let llmRequests = 0;
+let serviceRequests = 0;
 const headers = (token) => ({
   "Content-Type": "application/json",
   Origin: base,
+  // Node-only QA requests can span minutes of browser interaction. Do not
+  // reuse an idle Vite socket, and never blindly retry payment mutations.
+  Connection: "close",
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 });
 async function post(path, body, token, origin = base) {
-  return fetch(base + path, {
-    method: "POST",
-    headers: { ...headers(token), Origin: origin },
-    body: JSON.stringify(body),
-  });
+  try {
+    return await fetch(base + path, {
+      method: "POST",
+      headers: { ...headers(token), Origin: origin },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (cause) {
+    throw new Error(`Local mock transport failed: ${path}`, { cause });
+  }
 }
 const clients = {};
 async function go(page, path) {
@@ -61,6 +74,16 @@ async function login(role) {
   const session = await client.auth.signInWithPassword({ email: account.email, password });
   assert.ifError(session.error);
   clients[role] = { client, token: session.data.session.access_token };
+  // This directly seeded, synthetic account did not pass through signup consent UI.
+  if (role !== "admin")
+    assert.ifError(
+      (
+        await client.rpc("assistant_manager_consent", {
+          p_agree: true,
+          p_policy_version: "manager-continuity-v2",
+        })
+      ).error,
+    );
   const context = await browser.newContext({
     viewport: { width: role === "admin" ? 1440 : 390, height: 844 },
     locale: "ko-KR",
@@ -74,8 +97,10 @@ async function login(role) {
   });
   const page = await context.newPage();
   page.on("request", (request) => {
+    if (/\/functions\/v1\/assistant-chat(?:\?|$)/.test(new URL(request.url()).pathname))
+      serviceRequests++;
     if (
-      /\/functions\/v1\/(assistant-chat|compose-profile|prepare-conversation|compose-pair-brief)(?:\?|$)/.test(
+      /\/functions\/v1\/(compose-profile(?:-v3)?|prepare-conversation|compose-pair-brief|introduce-member|revise-profile)(?:\?|$)/.test(
         new URL(request.url()).pathname,
       )
     )
@@ -97,8 +122,10 @@ async function login(role) {
 }
 async function ask(page, text, action) {
   await go(page, "/home");
-  await page.getByLabel("매니저에게 물어볼 내용").fill(text);
-  await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
+  await page.getByLabel("매니저에게 상담할 내용").fill(text);
+  const response = page.waitForResponse((r) => r.url().includes("/functions/v1/assistant-chat"));
+  await page.getByRole("button", { name: "상담 보내기", exact: true }).click();
+  assert.equal((await response).status(), 200);
   const link = page.locator(".assistant-reply").getByRole("link", { name: action, exact: true });
   await link.waitFor();
   return link;
@@ -124,7 +151,7 @@ try {
       .status,
     409,
   );
-  await assert.rejects(recoverIncompleteCycle(env, "manual"), /completed fixture/);
+  await assert.rejects(recoverIncompleteCycle(env, "qa-manual"), /completed fixture/);
   // Simulate an interrupted setup using another fresh, explicitly owned cohort.
   const incomplete = await prepareCycle(env, "qa-incomplete");
   incomplete.ready = false;
@@ -330,6 +357,17 @@ try {
   }
   assert.equal(providerRequests, 0, "No actual Toss SDK/API network requests");
   assert.equal(llmRequests, 0, "Service workflow must not invoke LLM");
+  assert.ok(serviceRequests > 0, "workflow commands use the persistent manager conversation");
+  assert.equal(
+    database(
+      env,
+      `select count(*) from ai_runs where user_id in (${Object.values(manifest.accounts)
+        .map((account) => quote(account.id))
+        .join(",")})`,
+    ),
+    "0",
+    "service commands never reserve provider usage",
+  );
   for (const orderId of Object.values(paidOrders))
     assert.equal(
       (
@@ -343,6 +381,9 @@ try {
       "Used orders cannot be refunded by the mock",
     );
   assert.deepEqual(legacyFingerprint(env), before, "Original accounts and settings preserved");
+  const summary = cycleStatus(env, manifest);
+  delete summary.accounts; // Disposable credentials are not needed in the result artifact.
+  summary.url = `${base}/login`;
   await writeFile(
     `${shots}/report.json`,
     JSON.stringify(
@@ -351,9 +392,10 @@ try {
         browser: process.env.AFTER_TEST_BROWSER === "webkit" ? "webkit" : "chromium",
         providerRequests,
         llmRequests,
+        serviceRequests,
         existingRecordsUnchanged: true,
         tag: manifest.tag,
-        state: cycleStatus(env, manifest),
+        state: summary,
       },
       null,
       2,
