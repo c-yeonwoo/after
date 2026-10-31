@@ -70,7 +70,7 @@ export function watchPush(onOpen: (path: string) => void): () => void {
 /** 로그아웃 직전에 부른다. 다음에 이 기기를 쓰는 사람에게 내 알림이 가지 않게. */
 export async function forgetPushToken(): Promise<void> {
   if (!isNative) return;
-  let token: string | null = null;
+  let token: string | null;
   try {
     token = localStorage.getItem(TOKEN_KEY);
   } catch {

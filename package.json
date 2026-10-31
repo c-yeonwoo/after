@@ -7,7 +7,11 @@
     "@capacitor/cli": {
       "xcode": "4.0.0"
     },
-    "seroval": "1.6.11"
+    "seroval": "1.6.11",
+    "minimatch": "11.0.1",
+    "rimraf": {
+      "glob": "14.0.2"
+    }
   },
   "scripts": {
     "dev": "vite dev",
@@ -21,7 +25,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run check:tooling && npm run check:contrast && npm run check:ai && npm run check:research && npm run check:identity && npm run check:age && npm run check:phone && npm run check:auth && npm run check:meet && npm run build",
-    "check:tooling": "node --test scripts/check-native-tooling.mjs scripts/check-serializer-security.mjs",
+    "check:tooling": "node --test scripts/check-native-tooling.mjs scripts/check-serializer-security.mjs scripts/check-glob-tooling.mjs",
     "check:meet": "bun scripts/check-meet-time.ts",
     "release:check": "npm run check && npx supabase test db && npm run test:meeting-concurrency && npm run test:notification-concurrency && npm run test:ai-concurrency",
     "test:ai-concurrency": "node scripts/test-ai-concurrency.mjs",
@@ -123,15 +127,15 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@capacitor/cli": "^8.5.0",
-    "@eslint/js": "^9.32.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.2.0",
-    "eslint": "^9.32.0",
+    "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "lightningcss": "^1.33.0",
@@ -139,7 +143,7 @@
     "playwright": "^1.64.1",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.56.1",
+    "typescript-eslint": "^8.72.1",
     "vite": "~8.1.6"
   }
 }
