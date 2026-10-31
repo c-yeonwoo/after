@@ -23,7 +23,10 @@ import {
   type ProfileInterviewV3Data,
 } from "@/lib/profileInterviewV3";
 import { hasContactDetail } from "@/lib/profileInterview";
-import { INTERVIEW_CHOICE_PAGES } from "../../../supabase/functions/_shared/profile-signals";
+import {
+  INTERVIEW_CHOICE_PAGES,
+  approvedProfileSignals,
+} from "../../../supabase/functions/_shared/profile-signals";
 import { PROFILE_INTERVIEW_PROMPTS } from "@/lib/profileInterviewPrompts";
 import {
   profileAnswerCoaching,
@@ -375,6 +378,7 @@ export function ProfileInterviewV3({
     headline: story?.headline ?? "",
     intro: story?.summary ?? "",
     profile_story: story,
+    profile_public_signals: approvedProfileSignals(data.choices, data.publicIds),
     interests: [],
     match_tags: [],
     topics: [],

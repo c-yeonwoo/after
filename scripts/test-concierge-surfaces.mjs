@@ -876,6 +876,13 @@ try {
         switchedOwner = false;
         releaseConsent = undefined;
         currentDraft = fixture.stage ? draft(fixture.stage) : null;
+        if (fixture.name === "draft") {
+          currentDraft.choices = {
+            first_date: ["짧게 커피", "함께 걷기"],
+            contact: ["퇴근 후 편하게"],
+          };
+          currentDraft.publicIds = ["answer:daily_life", "choice:first_date:1", "choice:contact:2"];
+        }
         if (fixture.name === "photos")
           currentDraft = { ...draft("preview"), basics: { ...basics, job: "예전 초안의 직업" } };
         revision = currentDraft ? 1 : 0;
@@ -1388,6 +1395,12 @@ try {
               0,
               "unselected/private source omitted",
             );
+          }
+          if (fixture.name === "draft") {
+            const style = page.getByRole("region", { name: "만남 스타일", exact: true });
+            await style.getByText("함께 걷기", { exact: true }).waitFor();
+            assert.equal(await style.getByText("짧게 커피", { exact: true }).count(), 0);
+            assert.equal(await style.getByText("퇴근 후 편하게", { exact: true }).count(), 0);
           }
           if (fixture.name === "style-choices") {
             await page

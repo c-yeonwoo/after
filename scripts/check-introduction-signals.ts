@@ -24,6 +24,7 @@ import {
   INTERVIEW_CHOICE_PAGES,
   PROFILE_CHOICES,
   SIGNAL_LABELS,
+  approvedProfileSignals,
 } from "../supabase/functions/_shared/profile-signals";
 import { introductionSources } from "../supabase/functions/_shared/member-introduction";
 assert.deepEqual(
@@ -44,6 +45,14 @@ assert.equal(compared.common.length, 1);
 assert.equal(compared.differences.length, 1);
 assert.deepEqual(comparePublicSignals({}, {}), { common: [], differences: [], compared: 0 });
 assert.equal(INTERVIEW_CHOICE_PAGES.flat().length, 6, "no extra onboarding questions or screens");
+assert.deepEqual(
+  approvedProfileSignals({ first_date: ["짧게 커피", "함께 걷기"], contact: ["퇴근 후 편하게"] }, [
+    "choice:first_date:1",
+    "choice:contact:2",
+  ]),
+  { first_date: ["함께 걷기"] },
+  "profile preview shows only checked public options, matching server publication",
+);
 assert.deepEqual(
   introductionSignals({ profile_story: {}, interests: ["산책"] }, { interests: ["산책"] }),
   { interests: [], topics: [] },

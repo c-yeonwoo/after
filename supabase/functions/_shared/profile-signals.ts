@@ -101,6 +101,23 @@ export function publicProfileSignals(value: unknown): PublicProfileSignals {
   return result;
 }
 
+/** Preview the same checked options that the server approves on publication. */
+export function approvedProfileSignals(choices: unknown, publicIds: readonly string[]) {
+  const normalized = publicProfileSignals(choices);
+  return publicProfileSignals(
+    Object.fromEntries(
+      PROFILE_CHOICES.map((question) => [
+        question.id,
+        (normalized[question.id] ?? []).filter((option) =>
+          publicIds.includes(
+            `choice:${question.id}:${(question.options as readonly string[]).indexOf(option)}`,
+          ),
+        ),
+      ]),
+    ),
+  );
+}
+
 export function publicSignalRows(value: unknown) {
   return Object.entries(publicProfileSignals(value)).map(([id, values]) => ({
     id,
