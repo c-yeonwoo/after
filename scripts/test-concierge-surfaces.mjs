@@ -1014,6 +1014,18 @@ try {
             await capture(page, name);
             await verifyHome(page, width);
           }
+          if (fixture.name === "home-arrival") {
+            await page.getByText("프로필 속 이야기", { exact: true }).waitFor();
+            await page
+              .locator(".introduction-arrival")
+              .getByText(otherAnswer, { exact: true })
+              .waitFor();
+            assert.equal(
+              await page.getByText("매니저의 한마디", { exact: true }).count(),
+              0,
+              "public-profile fallback is never presented as a generated AI explanation",
+            );
+          }
           if (fixture.name === "home-chat") {
             assert.equal(
               await page.getByRole("link", { name: "상점", exact: true }).count(),
