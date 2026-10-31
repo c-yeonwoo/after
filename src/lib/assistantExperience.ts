@@ -174,13 +174,13 @@ export function assistantReply(intent: AssistantIntent, context: AssistantContex
                   : ["meeting", "appointments", "availability"],
             };
     case "prepare":
-      return context.counterpartId
+      return context.counterpartId && context.state === "meeting_confirmed"
         ? {
             text: "공개된 프로필에서 대화의 실마리를 찾아드릴게요. 상대의 마음을 추측하지 않아요.",
             actions: ["prepare"],
           }
         : {
-            text: "소개가 열리면 그분에게 맞는 대화 팁을 준비해요. 일반적인 고민은 자유롭게 물어봐 주세요.",
+            text: "약속이 확정되면 그분에게 맞는 대화 팁을 준비해요. 일반적인 고민은 자유롭게 물어봐 주세요.",
             actions: ["intro"],
           };
     case "memory":
@@ -205,7 +205,8 @@ export function historicalAssistantActions(
   intent: AssistantIntent,
   context: Pick<AssistantContext, "gender" | "complete" | "memory" | "profileEdit">,
 ): AssistantAction[] {
-  if (["status", "schedule", "feedback", "support"].includes(intent))
+  if (intent === "status") return ["home"];
+  if (["schedule", "feedback", "support"].includes(intent))
     return intent === "support" ? ["appointments", "support"] : ["appointments"];
   if (["prepare", "intro", "interest"].includes(intent)) return ["intro"];
   if (intent === "payment") return context.gender === "male" ? ["store"] : ["intro"];

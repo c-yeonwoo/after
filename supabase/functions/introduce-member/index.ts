@@ -26,6 +26,7 @@ const Input = z.object({
   target: z.string().uuid(),
   requestId: z.string().uuid(),
   consent: z.literal(true),
+  automatic: z.boolean().optional(),
 });
 const Evidence = z.object({
   person: z.enum(["self", "other"]),
@@ -109,6 +110,11 @@ Deno.serve(async (req) => {
   if (settingsError) return json({ code: "unavailable" }, 503);
   if (!settings.assistant_introduction_enabled) return json({ code: "disabled" }, 403);
 
+  const { data: consentRevision, error: consentError } =
+    await caller.rpc("my_introduction_consent");
+  if (consentError) return json({ code: "unavailable" }, 503);
+  if (consentRevision === null) return json({ code: "consent_required" }, 403);
+
   // Capture both row revisions before reading the public projection. An edit
   // during the two model calls makes the final atomic store reject the result.
   const { data: revisions, error: revisionsError } = await db
@@ -142,7 +148,7 @@ Deno.serve(async (req) => {
   const sources = await readSources();
   if (!sources) return json({ code: "unavailable" }, 403);
   if (!hasIntroductionMaterial(sources.other)) return json({ code: "needs_material" }, 422);
-  const hash = await sourceHash({ sources, version: VERSION, model: MODEL });
+  const hash = await sourceHash({ sources, version: VERSION, model: MODEL, consentRevision });
   const envelope = (result: MemberIntroduction, expiresAt: string, cached: boolean) => ({
     ...result,
     viewerId: ownerId,
@@ -234,19 +240,24 @@ Deno.serve(async (req) => {
     const latest = await readSources();
     if (
       !latest ||
-      (await sourceHash({ sources: latest, version: VERSION, model: MODEL })) !== hash
+      (await sourceHash({ sources: latest, version: VERSION, model: MODEL, consentRevision })) !==
+        hash
     ) {
       await finish("invalid");
       return json({ code: "changed" }, 409);
     }
-    const { data: stored, error: storeError } = await db.rpc("store_member_introduction", {
-      p_owner: ownerId,
-      p_target: input.target,
-      p_owner_revision: owner.updated_at,
-      p_target_revision: target.updated_at,
-      p_source_hash: hash,
-      p_result: draft,
-    });
+    const { data: stored, error: storeError } = await db.rpc(
+      "store_member_introduction_for_consent",
+      {
+        p_owner: ownerId,
+        p_target: input.target,
+        p_owner_revision: owner.updated_at,
+        p_target_revision: target.updated_at,
+        p_source_hash: hash,
+        p_result: draft,
+        p_consent_revision: consentRevision,
+      },
+    );
     if (storeError) throw new Error("introduction storage failed");
     if (!stored) {
       await finish("invalid");

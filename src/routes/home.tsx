@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Clock } from "lucide-react";
+import { ArrowRight, Check, Clock, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { MeetingSummary } from "@/components/app/MeetingSummary";
@@ -23,6 +23,9 @@ import { useMemberHome } from "@/lib/useMemberHome";
 import { AssistantDock } from "@/components/assistant/AssistantDock";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ProfilePreparationHome } from "@/components/assistant/ProfilePreparationHome";
+import { photoUrl } from "@/lib/photo";
+import { introductionSignals } from "@/lib/introductionSignals";
+import { useMemberIntroduction } from "@/lib/useMemberIntroduction";
 import { assistantWelcome } from "@/lib/assistantExperience";
 
 export const Route = createFileRoute("/home")({
@@ -338,7 +341,12 @@ function HomePage() {
             여기 오는 candidate 는 이미 연 소개라 답할 것이 없다 — 예전에는 둘 다에게
             같은 안내가 붙어 남성 화면이 사실과 다른 말을 했다.
           */
-            <CandidatePreview candidate={candidate} isMale={isMale} />
+            <CandidatePreview
+              key={candidate.id}
+              candidate={candidate}
+              isMale={isMale}
+              viewer={currentProfile}
+            />
           ) : isMale && queued > 0 ? (
             /*
             큐에 카드가 도착한 상태. 여는 데 소개 티켓 1장이 들어가므로 홈에서
@@ -437,36 +445,95 @@ function HomePage() {
 }
 
 /** 소개가 도착한 상태 — 상세는 /intro 가 담당하므로 여기선 최소한만 보여준다. */
-function CandidatePreview({ candidate, isMale }: { candidate: PublicProfile; isMale: boolean }) {
+function CandidatePreview({
+  candidate,
+  isMale,
+  viewer,
+}: {
+  candidate: PublicProfile;
+  isMale: boolean;
+  viewer: { interests: string[] | null; topics: string[] | null } | null;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const path = candidate.photo_paths?.[0] ?? candidate.photo_url;
+  const { visible } = useMemberIntroduction(candidate.id ?? "");
+  const signals = introductionSignals(viewer ?? {}, candidate);
+  useEffect(() => {
+    let active = true;
+    setSrc(null);
+    if (path)
+      void photoUrl(path)
+        .then((url) => {
+          if (active) setSrc(url);
+        })
+        .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [path]);
   return (
-    <div className="introduction-arrival overflow-hidden rounded-surface">
-      <div className="px-5 pt-5 pb-6">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-2xl leading-[1.3] font-semibold">
+    <section aria-label="도착한 소개" className="introduction-arrival rounded-surface p-4">
+      <div className="flex items-center gap-3.5">
+        <div className="h-[108px] w-[86px] shrink-0 overflow-hidden rounded-control bg-muted">
+          {src ? (
+            <img
+              src={src}
+              alt={`${candidate.name ?? "상대"} 프로필 사진`}
+              onError={() => setSrc(null)}
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="grid size-full place-items-center text-muted-foreground">
+              <UserRound className="size-7" aria-hidden="true" />
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-lg leading-snug font-semibold">
             {candidate.name}
             {candidate.age !== null ? (
-              <span className="ml-2 text-base text-muted-foreground">{candidate.age}</span>
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                {candidate.age}
+              </span>
             ) : null}
-          </p>
-          <span className="shrink-0 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
-            {isMale ? "이번 소개" : "새 소개"}
-          </span>
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
+          {candidate.headline ? (
+            <p className="mt-2 line-clamp-2 break-keep text-sm leading-relaxed">
+              {candidate.headline}
+            </p>
+          ) : null}
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
-        {candidate.headline ? (
-          <p className="mt-4 line-clamp-2 break-keep break-words text-lg leading-[1.5] font-medium text-foreground">
-            {candidate.headline}
-          </p>
-        ) : null}
       </div>
+      {signals.interests.length || signals.topics.length ? (
+        <div
+          className="introduction-signals mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+          aria-label="공개 프로필의 접점"
+        >
+          {signals.interests.length ? (
+            <span>
+              공통 관심사 <strong>{signals.interests.length}개</strong>
+            </span>
+          ) : null}
+          {signals.topics.length ? (
+            <span>
+              공통 대화 주제 <strong>{signals.topics.length}개</strong>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       <Link
         to="/intro"
-        className="app-primary-button pressable mx-5 mb-5 flex min-h-12 items-center justify-between gap-2 rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="introduction-primary pressable mt-4 flex min-h-11 items-center justify-center rounded-control px-4 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        {isMale ? "프로필 열어보기" : "읽고 답하기"}
-        <ArrowRight className="size-4" aria-hidden="true" />
+        {isMale ? "프로필 이어보기" : "프로필 읽어보기"}
       </Link>
-    </div>
+      {visible?.connections[0]?.text || visible?.portrait[0]?.text ? (
+        <p className="mt-3 break-keep text-sm leading-relaxed">
+          {visible.connections[0]?.text ?? visible.portrait[0]?.text}
+        </p>
+      ) : null}
+    </section>
   );
 }
 

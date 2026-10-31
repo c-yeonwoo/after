@@ -661,6 +661,10 @@ try {
               intro_progress: { has_likes: current.name === "home-liked" },
             });
           if (path.endsWith("/rpc/assistant_capabilities")) return fulfill(flags);
+          if (path.endsWith("/rpc/my_introduction_consent"))
+            return fulfill(current.name.startsWith("intro-ai") ? 1 : null);
+          if (path.endsWith("/rpc/conversation_preparation_allowed"))
+            return fulfill(current.name === "meetings-confirmed");
           if (path.endsWith("/rpc/my_profile_revision") && current.name === "legacy-story")
             return fulfill({ enabled: true, draft: null });
           if (path.endsWith("/rpc/my_assistant_state") && assistant)
@@ -979,17 +983,16 @@ try {
             await page.getByText(assistantHistory[0].answer, { exact: true }).waitFor();
           }
           if (fixture.name === "intro-ai") {
-            const button = page.getByRole("button", { name: "매니저와 함께 읽기" });
-            await button.waitFor();
+            assert.equal(await page.getByRole("button", { name: "매니저와 함께 읽기" }).count(), 0);
+            assert.equal(await page.getByRole("checkbox").count(), 0);
+            await page.locator(".profile-highlight").first().waitFor();
             assert.equal(
               summary.backendRequests
                 .slice(backendStart)
                 .filter((r) => r.path.endsWith("/functions/v1/introduce-member")).length,
-              0,
+              1,
+              "introduction is prepared automatically once",
             );
-            assert.equal(await page.getByRole("checkbox").count(), 0);
-            await button.click();
-            await page.locator(".profile-highlight").first().waitFor();
             assert.equal(await page.locator(".profile-highlight").count(), 3);
             assert.ok(
               (await page.locator(".profile-highlight").allTextContents()).includes(ownAnswer),
@@ -998,11 +1001,6 @@ try {
             await capture(page, `${name}-reading`);
           }
           if (fixture.name === "intro-ai-failure") {
-            await page.getByRole("button", { name: "매니저와 함께 읽기" }).click();
-            await page
-              .getByRole("alert")
-              .filter({ hasText: "AI 설명이 아닌 공개 프로필" })
-              .waitFor();
             await page.getByRole("heading", { name: "말문을 열어 줄 접점", exact: true }).waitFor();
             assert.equal(await page.getByRole("button", { name: "매니저와 함께 읽기" }).count(), 0);
             assert.equal(

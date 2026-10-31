@@ -192,7 +192,7 @@
   --motion-feedback: 140ms;
   --motion-arrive: 200ms;
   --motion-exit: 140ms;
-  --assistant-surface: oklch(0.979 0.012 15);
+  --assistant-surface: oklch(0.975 0.003 100);
   --assistant-ink: oklch(0.35309 0.0124 273.05);
   --assistant-soft: oklch(0.98 0.001 250);
 
@@ -249,7 +249,7 @@
   --selection: var(--brand-50);
   --selection-foreground: oklch(0.46351 0.02203 306.31); /* #5C5663 */
 
-  --bubble-mine: oklch(0.935 0.032 15);
+  --bubble-mine: oklch(0.958 0.014 15);
   --bubble-mine-foreground: var(--selection-foreground);
   --secondary: var(--surface-subtle);
   --secondary-foreground: var(--ink);
@@ -281,7 +281,7 @@
 }
 
 .dark {
-  --assistant-surface: oklch(0.285 0.019 350);
+  --assistant-surface: oklch(0.285 0.005 260);
   --assistant-ink: oklch(0.96 0.002 260);
   --assistant-soft: oklch(0.26406 0.008 264.43);
   --scrim: oklch(0.12 0.012 169 / 64%);
@@ -331,7 +331,7 @@
   --input: oklch(0.64 0.011 267);
   --ring: var(--primary-strong);
 
-  --bubble-mine: var(--selection);
+  --bubble-mine: oklch(0.32 0.012 350);
   --bubble-mine-foreground: var(--selection-foreground);
   --brand-signature: var(--brand-600);
   --brand-blush: var(--brand-signature);
@@ -432,9 +432,19 @@
   padding: 0.5rem 0 0.25rem;
 }
 .introduction-arrival {
-  border: 1px solid var(--brand-200);
   background: var(--assistant-surface);
 }
+.introduction-primary {
+  background: var(--foreground);
+  color: var(--background);
+}
+.introduction-primary:active {
+  opacity: 0.85;
+}
+.introduction-signals {
+  color: var(--success);
+}
+
 .profile-sheet {
   padding: clamp(1rem, 4vw, 1.5rem);
   border: 1px solid var(--border);
@@ -974,8 +984,8 @@
     color 180ms ease-out;
 }
 .app-tab[aria-current="page"] {
-  background: var(--bubble-mine);
-  color: var(--bubble-mine-foreground);
+  background: var(--muted);
+  color: var(--foreground);
   font-weight: 700;
 }
 .app-tab[aria-current="page"] .app-tab-icon {

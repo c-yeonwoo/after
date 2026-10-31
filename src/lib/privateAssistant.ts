@@ -32,6 +32,8 @@ export type AssistantPrivateState = {
   }[];
 };
 type AssistantRpcName =
+  | "my_introduction_consent"
+  | "conversation_preparation_allowed"
   | "assistant_capabilities"
   | "my_assistant_state"
   | "assistant_history"
