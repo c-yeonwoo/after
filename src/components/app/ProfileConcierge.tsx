@@ -68,11 +68,7 @@ function OwnProfileCoaching({
           매니저에게 코칭받기
         </Link>
       ) : (
-        <Link
-          to="/signup"
-          search={{ edit: true }}
-          className="assistant-suggestion inline-flex items-center"
-        >
+        <Link to="/profile-edit" className="assistant-suggestion inline-flex items-center">
           직접 수정하기
         </Link>
       )}

@@ -587,17 +587,19 @@ try {
           "처음에는 조용한 카페에서 커피를 마시며 천천히 알아가고 싶어요. 술은 잘 마시지 않아요.",
           "최근 시도한 요리와 인상 깊게 본 전시 이야기를 나누고 싶어요. 평일에는 늦은 약속보다 짧게 만나는 편이 편해요.",
         ];
-        await go(female, "/signup?edit=true");
-        await female.getByRole("button", { name: "다음", exact: true }).click();
-        await female.getByRole("button", { name: "다음", exact: true }).click();
-        await female.getByRole("button", { name: "프로필 수정", exact: true }).click();
+        await go(female, "/profile-edit");
         await female
           .getByLabel("한 줄 소개", { exact: true })
           .fill("새로운 맛과 전시 이야기를 나누고 싶어요");
-        await female.getByLabel("카드에서 보일 짧은 소개", { exact: true }).fill(otherAnswers[0]);
+        await female.getByLabel("짧은 소개", { exact: true }).fill(otherAnswers[0]);
         for (let index = 0; index < otherAnswers.length; index++)
-          await female.locator('textarea[id^="section-"]').nth(index).fill(otherAnswers[index]);
-        await female.getByRole("button", { name: "프로필 저장하기", exact: true }).click();
+          await female
+            .locator(
+              'section[aria-labelledby="edit-story"] textarea[id^="edit-"]:not(#edit-summary)',
+            )
+            .nth(index)
+            .fill(otherAnswers[index]);
+        await female.getByRole("button", { name: "변경사항 저장", exact: true }).click();
         await female.waitForURL("**/profile");
         state.regenerationPersonaPrepared = true;
         await save();

@@ -127,6 +127,8 @@ async function createPerson(kind, gender, role, password) {
       name,
       birth: "1993-05-12",
       job: "제품 기획자",
+      smoking: "none",
+      drinking: "none",
       headline: "퇴근 후 동네를 걷는 편이에요.",
       intro: "퇴근 후에는 동네를 걸으며 하루를 정리합니다. 조용히 이야기 나누는 시간을 좋아해요.",
       interests: ["동네 산책"],
@@ -1191,14 +1193,7 @@ try {
   const publicProfileBeforeInterview = sql(`select row_to_json(p)::text from (
     select headline,intro,profile_story from public.profiles where id='${female.id}'
   ) p`);
-  await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
-  await femalePage.getByLabel("직업", { exact: true }).fill("서비스 기획자");
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
-  await femalePage.getByRole("button", { name: "비흡연" }).click();
-  await femalePage.getByRole("button", { name: "안 마심" }).click();
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.goto(`${baseUrl}/profile-interview`);
   await femalePage.getByRole("heading", { name: "내 이야기를 시작해 볼까요?" }).waitFor();
   await checkPage(femalePage, "interview start mobile");
   await femalePage.getByRole("button", { name: "시작하기", exact: true }).click();
@@ -1342,18 +1337,10 @@ try {
     sql(
       `select data->'basics'->>'job' from public.profile_interview_drafts where user_id='${female.id}'`,
     ),
-    "서비스 기획자",
-    "private draft retains edited job",
+    "제품 기획자",
+    "interview uses current published basics",
   );
   await femalePage.reload();
-  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
-  assert.equal(
-    await femalePage.getByLabel("직업", { exact: true }).inputValue(),
-    "서비스 기획자",
-    "private basic edits survive reload",
-  );
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
   await femalePage
     .getByRole("heading", { name: "요즘 누군가에게 들려주고 싶은 이야기가 있나요?" })
     .waitFor();
@@ -1603,8 +1590,8 @@ try {
   );
   assert.equal(
     sql(`select job from public.profiles where id='${female.id}'`),
-    "서비스 기획자",
-    "confirmed interview publishes private basic edits",
+    "제품 기획자",
+    "interview preserves existing job",
   );
   const publishedSections = JSON.parse(
     sql(`select profile_story->'sections' from public.profiles where id='${female.id}'`),
@@ -1639,21 +1626,15 @@ try {
     "published question identities stay unchanged by the input-only prompts",
   );
   await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("button", { name: "프로필 수정" }).click();
-  await femalePage.getByLabel("카드에서 보일 짧은 소개").fill("연락은 010-1234-5678로 주세요.");
+  await femalePage.waitForURL("**/profile-edit");
+  await femalePage.getByLabel("짧은 소개").fill("연락은 010-1234-5678로 주세요.");
   assert.equal(
-    await femalePage.getByRole("button", { name: "프로필 저장하기" }).isDisabled(),
+    await femalePage.getByRole("button", { name: "변경사항 저장" }).isDisabled(),
     true,
     "contact details cannot be submitted from the preview",
   );
-  await femalePage
-    .getByLabel("카드에서 보일 짧은 소개")
-    .fill("이번에는 제가 직접 쓴 소개글이에요.");
-  await femalePage.getByRole("button", { name: "프로필 저장하기" }).click();
+  await femalePage.getByLabel("짧은 소개").fill("이번에는 제가 직접 쓴 소개글이에요.");
+  await femalePage.getByRole("button", { name: "변경사항 저장" }).click();
   await femalePage.waitForURL("**/profile", { timeout: 15_000 });
   await femalePage.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
   assert.equal(
@@ -1680,11 +1661,7 @@ try {
       'followupIndex',0,'analyzed',false,'suggestedTopics','[]'::jsonb
     ))
     on conflict (user_id) do update set revision=1,data=excluded.data`);
-  await femalePage.goto(`${baseUrl}/signup?edit=1`);
-  await femalePage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
-  await femalePage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
-  await femalePage.getByRole("button", { name: "다음", exact: true }).click();
+  await femalePage.goto(`${baseUrl}/profile-interview`);
   await femalePage.getByRole("heading", { name: "내 이야기를 시작해 볼까요?" }).waitFor();
   const delayedDraftSave = "**/rest/v1/rpc/save_profile_interview_draft";
   await femalePage.route(delayedDraftSave, async (route) => {

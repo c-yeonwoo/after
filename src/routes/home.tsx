@@ -321,13 +321,7 @@ function HomePage() {
             primaryState === "photos_pending" ? (
               <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
             ) : primaryState === "profile_incomplete" ? (
-              <GuideNote
-                action={
-                  <CardAction to="/signup" search={{ edit: "1" }}>
-                    프로필 확인하기
-                  </CardAction>
-                }
-              >
+              <GuideNote action={<CardAction to="/profile-edit">프로필 확인하기</CardAction>}>
                 아직 확인할 정보가 있어요.
               </GuideNote>
             ) : primaryState === "policy_required" ? (
@@ -402,8 +396,7 @@ function HomePage() {
             ) : null}
             {needsPhotos ? (
               <Link
-                to="/signup"
-                search={{ edit: true }}
+                to="/profile-edit"
                 className="flex min-h-14 items-center justify-between gap-3 py-3 text-sm text-foreground"
               >
                 <span>

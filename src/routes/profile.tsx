@@ -52,12 +52,11 @@ function ProfilePage() {
       back="/me"
       action={
         <Link
-          to="/signup"
-          search={{ edit: true as const }}
+          to="/profile-edit"
           className="pressable inline-flex min-h-11 items-center gap-1.5 rounded-control bg-muted px-3 text-sm font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Pencil className="size-3.5" aria-hidden="true" />
-          사진·기본정보
+          프로필 수정
         </Link>
       }
     >

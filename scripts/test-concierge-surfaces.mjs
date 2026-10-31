@@ -48,6 +48,12 @@ const story = (answer) => ({
 });
 const member = {
   id,
+  updated_at: now,
+  profile_preferences: {
+    version: 1,
+    choices: { planning: ["상대와 함께 맞추기"] },
+    choiceCustom: { contact: privateSentinel },
+  },
   gender: "female",
   name: "합성 지수",
   age: 31,
@@ -186,7 +192,17 @@ const allFixtures = [
   { name: "assistant-no-consent", path: "/assistant", heading: "나와 매니저" },
   { name: "assistant-chat", path: "/assistant", heading: "나와 매니저", consented: true },
   { name: "profile", path: "/profile", heading: "합성 지수" },
-  { name: "photos", path: "/signup?edit=true", heading: "어떤 모습으로 소개할까요?" },
+  { name: "photos", path: "/profile-edit", heading: "프로필 수정" },
+  {
+    name: "reinterview",
+    path: "/profile-interview",
+    stage: "start",
+    complete: true,
+    heading: "내 이야기를 시작해 볼까요?",
+  },
+  { name: "profile-edit-failure", path: "/profile-edit", heading: "프로필 수정" },
+  { name: "profile-edit-conflict", path: "/profile-edit", heading: "프로필 수정" },
+  { name: "profile-edit-load-error", path: "/profile-edit", heading: "프로필 수정" },
   { name: "interview", path: "/signup?prepare=true", stage: "story0", heading: null },
   {
     name: "understanding",
@@ -533,6 +549,8 @@ try {
       let releaseConsent;
       let currentDraft = null;
       let revision = 1;
+      let publishFailed = false;
+      let profileSaved = null;
       await context.addInitScript(
         ({ session, key }) => {
           if (location.search.includes("consent-preview")) {
@@ -577,9 +595,10 @@ try {
           }
           const profile = {
             ...member,
+            ...profileSaved,
             id: switchedOwner ? otherId : id,
             gender: current.gender ?? member.gender,
-            onboarding_step: current.stage ? 4 : 7,
+            onboarding_step: current.stage && !current.complete ? 4 : 7,
           };
           const assistant =
             current.name.startsWith("assistant-") ||
@@ -630,10 +649,22 @@ try {
               ]);
             if (path.endsWith("/rpc/get_public_profiles")) return fulfill([other]);
           }
-          if (path.endsWith("/rest/v1/profiles") && request.method() === "GET")
-            return fulfill(profile);
-          if (path.endsWith("/rest/v1/profile_interview_drafts") && request.method() === "GET")
+          if (path.endsWith("/rest/v1/profiles") && request.method() === "GET") {
+            return fulfill(
+              current.name === "profile-edit-conflict" &&
+                url.searchParams.get("select") === "updated_at"
+                ? { updated_at: "changed-elsewhere" }
+                : profile,
+            );
+          }
+          if (path.endsWith("/rest/v1/profile_interview_drafts") && request.method() === "GET") {
+            if (current.name === "profile-edit-load-error")
+              return route.fulfill({
+                status: 503,
+                json: { message: "Synthetic draft unavailable" },
+              });
             return fulfill(currentDraft ? { data: currentDraft, revision } : null);
+          }
           if (path.endsWith("/rest/v1/app_settings") && request.method() === "GET")
             return fulfill({ payments_enabled: false });
           if (path.endsWith("/rpc/home_state_v2"))
@@ -747,7 +778,31 @@ try {
               return fulfill([candidate]);
             }
           }
+          if (path.endsWith("/rpc/publish_profile_interview_v3")) {
+            if (current.name === "profile-edit-failure" && !publishFailed) {
+              publishFailed = true;
+              return route.fulfill({
+                status: 503,
+                json: { message: "Synthetic publication failed" },
+              });
+            }
+            assert.equal(request.postDataJSON().p_expected_revision, revision);
+            assert.deepEqual(currentDraft.choices, member.profile_preferences.choices);
+            assert.deepEqual(currentDraft.choiceCustom, member.profile_preferences.choiceCustom);
+            profileSaved = {
+              ...request.postDataJSON().p_conditions,
+              profile_story: currentDraft.story,
+              headline: currentDraft.story.headline,
+              intro: currentDraft.story.summary,
+              onboarding_step: 7,
+            };
+            currentDraft = null;
+            revision = 0;
+            return fulfill({ ...profile, ...profileSaved });
+          }
           if (path.endsWith("/rpc/save_profile_interview_draft")) {
+            if (current.name === "photos" || current.name.startsWith("profile-edit-"))
+              assert.equal(request.postDataJSON().p_expected_revision, revision);
             currentDraft = request.postDataJSON().p_data;
             revision++;
             return fulfill(revision);
@@ -768,6 +823,8 @@ try {
           "/home",
           "/intro",
           "/profile",
+          "/profile-edit",
+          "/profile-interview",
           "/signup",
           "/assistant",
           "/assistant-profile",
@@ -798,7 +855,11 @@ try {
         switchedOwner = false;
         releaseConsent = undefined;
         currentDraft = fixture.stage ? draft(fixture.stage) : null;
-        revision = 1;
+        if (fixture.name === "photos")
+          currentDraft = { ...draft("preview"), basics: { ...basics, job: "예전 초안의 직업" } };
+        revision = currentDraft ? 1 : 0;
+        publishFailed = false;
+        profileSaved = null;
         const name = `${fixture.name}-${scheme}-${width}`;
         const backendStart = summary.backendRequests.length;
         try {
@@ -818,6 +879,97 @@ try {
               })
               .waitFor();
           else await page.getByRole("textbox", { name: "내 답변", exact: true }).waitFor();
+          if (fixture.name === "reinterview") {
+            await page.getByRole("button", { name: "이전", exact: true }).click();
+            await page.waitForURL("**/profile-edit");
+            await page.getByLabel("직업", { exact: true }).waitFor();
+          }
+          if (fixture.name === "photos" || fixture.name.startsWith("profile-edit-")) {
+            const saves = () =>
+              summary.backendRequests
+                .slice(backendStart)
+                .filter((r) => r.path.endsWith("/rpc/save_profile_interview_draft"));
+            const saveButton = page.getByRole("button", { name: "변경사항 저장", exact: true });
+            if (fixture.name === "profile-edit-load-error") {
+              await page.getByRole("button", { name: "다시 불러오기" }).waitFor();
+              assert.equal(await saveButton.isDisabled(), true);
+            } else {
+              await page.getByLabel("직업", { exact: true }).waitFor();
+              await page.getByLabel("직업", { exact: true }).fill("새로운 제품 기획자");
+              assert.equal(saves().length, 0, "typing is not publication or autosave");
+              assert.equal(
+                await page.getByRole("button", { name: "다음", exact: true }).count(),
+                0,
+              );
+              assert.equal(
+                await page.getByRole("progressbar").count(),
+                0,
+                "editing is not a signup wizard",
+              );
+              await page.getByRole("link", { name: "뒤로", exact: true }).click();
+              await page.getByRole("alertdialog").waitFor();
+              await page.getByRole("button", { name: "계속 수정", exact: true }).click();
+              assert.equal(
+                await page.getByLabel("직업", { exact: true }).inputValue(),
+                "새로운 제품 기획자",
+              );
+              await page.getByLabel("짧은 소개", { exact: true }).fill("010-1234-5678로 연락해요.");
+              assert.equal(
+                await saveButton.isDisabled(),
+                true,
+                "no contact details in public story",
+              );
+              await page.getByLabel("짧은 소개", { exact: true }).fill(ownAnswer);
+              await capture(page, `${name}-form`);
+              await audit(page, `${name}-form`);
+              if (fixture.name === "photos") {
+                await page.getByRole("button", { name: "3번째 사진 빼기", exact: true }).click();
+                assert.equal(await saveButton.isDisabled(), true, "three photos remain required");
+                await page
+                  .getByRole("heading", { name: "사진에도 나다운 모습이 담기게" })
+                  .waitFor();
+                await page.getByRole("button", { name: "취소", exact: true }).click();
+                await page.getByRole("button", { name: "저장하지 않고 나가기" }).click();
+                await page.waitForURL("**/profile");
+                await page.getByRole("heading", { name: "내 프로필", exact: true }).waitFor();
+                assert.equal(saves().length, 0, "discard leaves drafts and public profile alone");
+                await page.goto(base + "/signup?edit=true");
+                await page.waitForURL("**/profile-edit");
+                await page.getByLabel("직업", { exact: true }).fill("새로운 제품 기획자");
+              }
+              await saveButton.click();
+              if (fixture.name === "photos") {
+                await page.getByRole("button", { name: "현재 내용 저장", exact: true }).click();
+              }
+              if (fixture.name === "profile-edit-conflict") {
+                await page.getByRole("alert").filter({ hasText: "다른 화면에서" }).waitFor();
+                assert.equal(saves().length, 0, "stale profile never overwrites a newer edit");
+                assert.equal(await saveButton.isDisabled(), true);
+              } else {
+                if (fixture.name === "profile-edit-failure") {
+                  await page
+                    .getByRole("alert")
+                    .filter({ hasText: "입력한 내용은 그대로예요" })
+                    .waitFor();
+                  assert.equal(
+                    await page.getByLabel("직업", { exact: true }).inputValue(),
+                    "새로운 제품 기획자",
+                  );
+                  await saveButton.click();
+                }
+                await page.waitForURL("**/profile");
+                assert.equal(profileSaved.job, "새로운 제품 기획자");
+                assert.equal(profileSaved.onboarding_step, 7);
+                assert.equal(
+                  await page.getByRole("button", { name: "동의하고 시작하기" }).count(),
+                  0,
+                );
+                await page.getByRole("link", { name: "프로필 수정", exact: true }).click();
+                await page.waitForURL("**/profile-edit");
+                await page.getByLabel("직업", { exact: true }).waitFor();
+              }
+            }
+          }
           if (fixture.name === "home-arrival") {
             await page.locator(".introduction-arrival").waitFor();
             assert.equal(
@@ -1186,7 +1338,11 @@ try {
             await verifyAssistant(page, fixture, name, backendStart);
           if (fixture.name === "legacy-story") await verifyLegacyStory(page, name, backendStart);
           if (fixture.name === "photos")
-            await page.getByRole("heading", { name: "사진에도 나다운 모습이 담기게" }).waitFor();
+            assert.equal(
+              await page.getByRole("heading", { name: "사진에도 나다운 모습이 담기게" }).count(),
+              0,
+              "unchanged photos do not repeat coaching",
+            );
           if (["understanding", "draft"].includes(fixture.name)) {
             await page.locator("summary").first().click();
             assert.ok((await page.locator("details").first().innerText()).includes(ownAnswer));

@@ -48,8 +48,8 @@ export function AssistantActions({
             );
           case "edit":
             return (
-              <Link key={action} className={style} to="/signup" search={{ edit: true }}>
-                {content("사진·기본정보 수정")}
+              <Link key={action} className={style} to="/profile-edit">
+                {content("프로필 직접 수정")}
               </Link>
             );
           case "revise":
