@@ -36,6 +36,8 @@ function requestError(err: unknown) {
   if (raw.includes("place required")) return "만날 곳을 적어 주세요.";
   if (raw.includes("no unused ticket")) return "쓸 수 있는 만남 티켓이 없어요.";
   if (raw.includes("intro not open")) return "이 소개는 이미 닫혔어요.";
+  if (raw.includes("an appointment is still in progress"))
+    return "진행 중인 약속이 있어 지금은 요청할 수 없어요. 티켓은 사용되지 않았어요.";
   return "요청을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.";
 }
 

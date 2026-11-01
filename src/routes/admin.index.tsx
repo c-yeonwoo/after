@@ -1,3 +1,4 @@
+import { BetaReadiness } from "@/components/admin/BetaReadiness";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -129,6 +130,7 @@ function OperationsHome() {
         </Button>
       </div>
 
+      <BetaReadiness />
       {errors.length === 4 ? (
         <p className="rounded-surface border border-destructive/30 px-4 py-3 text-sm" role="alert">
           운영 현황을 확인할 수 없습니다. 마지막 성공 자료가 있다면 아래에 표시됩니다.

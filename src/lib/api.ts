@@ -461,6 +461,7 @@ export async function homeState(): Promise<HomeState> {
 }
 
 export type HomeStateV2 = HomeState & {
+  introduction_resume_at?: string | null;
   schema_version: 2;
   intro_progress?: { has_likes: boolean };
   as_of: string;

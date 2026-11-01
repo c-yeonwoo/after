@@ -1,5 +1,9 @@
 begin;
 select no_plan();
+-- Legacy overlap fixtures intentionally share participants across many independent
+-- lifecycle cases. New confirmations are separately covered by s61, beta_readiness
+-- and browser full-cycle tests; this rollback-only suite exercises old history.
+alter table public.meetings disable trigger guard_meeting_confirmation;
 insert into auth.users(id,email,email_confirmed_at,aud,role)
 select ('75000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'beta75-'||n||'@verify.local',now(),'authenticated','authenticated' from generate_series(1,6)n;
 -- Generate valid synthetic numbers without using real contact data.

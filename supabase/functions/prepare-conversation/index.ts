@@ -1,3 +1,4 @@
+import { budgetedAnthropicFetch } from "../_shared/ai-budget.ts";
 import Anthropic from "npm:@anthropic-ai/sdk@0.124.0";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.124.0/helpers/zod";
 import { z } from "npm:zod@4.6.7";
@@ -166,7 +167,12 @@ Deno.serve(async (req) => {
     finished = true;
   };
   try {
-    const ai = new Anthropic({ apiKey: KEY, timeout: 20000, maxRetries: 0 });
+    const ai = new Anthropic({
+      fetch: budgetedAnthropicFetch(db),
+      apiKey: KEY,
+      timeout: 20000,
+      maxRetries: 0,
+    });
     const response = await ai.messages.parse({
       model: MODEL,
       max_tokens: 2000,

@@ -1,3 +1,4 @@
+import { clearLocalOnboardingDraft } from "./onboardingDraft";
 /**
  * 내 프로필 컨텍스트.
  *
@@ -101,6 +102,7 @@ export function MeProvider({ children }: { children: ReactNode }) {
     // 예전에는 그때마다 재조회가 돌았다.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        clearLocalOnboardingDraft();
         paymentModeCache.clear();
         client.removeQueries({ queryKey: ["assistant-capabilities"] });
         loadGeneration.current++;

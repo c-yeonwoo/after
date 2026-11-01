@@ -1,3 +1,4 @@
+import { budgetedAnthropicFetch } from "../_shared/ai-budget.ts";
 import { PROFILE_CHOICES } from "../_shared/profile-signals.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -117,6 +118,7 @@ class ProviderError extends Error {
 
 function errorCode(status: number, type: string): string {
   if (status === 401 || status === 403) return "config_error";
+  if (type === "budget_exhausted") return "budget_exhausted";
   if (status === 429) return "rate_limited";
   if (status === 400 || status === 404) return "provider_request_invalid";
   if (status >= 500 || type === "overloaded_error") return "provider_unavailable";
@@ -129,8 +131,9 @@ async function ask(
   material: unknown,
   schema: unknown,
   timeout: number,
+  providerFetch: typeof fetch,
 ) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await providerFetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     signal: AbortSignal.timeout(timeout),
     headers: {
@@ -443,7 +446,7 @@ Deno.serve(async (req) => {
     schema: unknown,
     timeout: number,
   ) => {
-    const result = await ask(m, system, body, schema, timeout);
+    const result = await ask(m, system, body, schema, timeout, budgetedAnthropicFetch(db));
     inputTokens += result.usage?.input_tokens ?? 0;
     outputTokens += result.usage?.output_tokens ?? 0;
     addUsage(usageByModel, m, result.usage);
