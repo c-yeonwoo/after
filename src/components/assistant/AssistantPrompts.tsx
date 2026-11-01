@@ -5,13 +5,15 @@ export function AssistantPrompts({
   onChoose,
   disabled,
   canCoach = true,
+  canChat = true,
 }: {
   input: string;
   onChoose: (text: string) => void;
   disabled?: boolean;
   canCoach?: boolean;
+  canChat?: boolean;
 }) {
-  const suggestions = assistantSuggestions(input, canCoach);
+  const suggestions = assistantSuggestions(input, canCoach, canChat);
   if (!suggestions.length) return null;
   return (
     <div

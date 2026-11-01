@@ -1,3 +1,4 @@
+import { budgetedAnthropicFetch } from "../_shared/ai-budget.ts";
 // Operator-reviewed introductions: public evidence -> prose -> independent
 // grounding check -> short-lived draft -> explicit server-checked approval.
 import Anthropic from "npm:@anthropic-ai/sdk@0.124.0";
@@ -172,7 +173,12 @@ Deno.serve(async (req) => {
     return !error;
   };
   try {
-    const client = new Anthropic({ apiKey: KEY, timeout: 20000, maxRetries: 0 });
+    const client = new Anthropic({
+      fetch: budgetedAnthropicFetch(db),
+      apiKey: KEY,
+      timeout: 20000,
+      maxRetries: 0,
+    });
     const response = await client.messages.parse({
       model: MODEL,
       max_tokens: 1800,

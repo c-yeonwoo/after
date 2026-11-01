@@ -780,6 +780,43 @@ try {
   await freshPage.getByRole("main").evaluate((main) => main.scrollTo(0, 0));
   await checkPage(freshPage, "signup basics and photos");
   if (screenshotDir) await freshPage.screenshot({ path: join(screenshotDir, "signup-basics.png") });
+  await freshPage.getByText("임시저장됨", { exact: true }).waitFor();
+  assert.equal(
+    sql(
+      `select jsonb_array_length(data->'basics'->'photos') from public.onboarding_drafts where user_id='${freshId}'`,
+    ),
+    "3",
+    "photos are draft-saved before Next",
+  );
+  await freshPage.reload();
+  await freshPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
+  assert.equal(
+    await freshPage.getByLabel("직업", { exact: true }).inputValue(),
+    "서비스 기획자",
+    "unsubmitted basics survive reload",
+  );
+  await freshPage.getByText("3/6장 · 사진을 누르면 대표 사진이 돼요", { exact: true }).waitFor();
+
+  // Another device advances the server revision after this page loaded. A local
+  // edit must be held for an explicit choice, then save against the new revision.
+  sql(`update public.onboarding_drafts
+       set data=jsonb_set(data,'{basics,job}','"다른 기기에서 수정"'),revision=revision+1
+       where user_id='${freshId}'`);
+  await freshPage.getByLabel("직업", { exact: true }).fill("서비스 기획자 · 로컬 수정");
+  await freshPage.getByRole("button", { name: "이 화면 내용 저장", exact: true }).click();
+  await freshPage.getByText("임시저장됨", { exact: true }).waitFor();
+  assert.equal(
+    sql(`select data->'basics'->>'job' from public.onboarding_drafts where user_id='${freshId}'`),
+    "서비스 기획자 · 로컬 수정",
+    "explicit conflict recovery preserves local input and uses the latest revision",
+  );
+  await freshPage.reload();
+  assert.equal(
+    await freshPage.getByLabel("직업", { exact: true }).inputValue(),
+    "서비스 기획자 · 로컬 수정",
+    "conflict resolution survives reload",
+  );
+
   await freshPage.getByRole("button", { name: "다음", exact: true }).click();
   await freshPage.getByRole("heading", { name: "만나기 전에 알아 두면 좋은 것" }).waitFor();
   await checkPage(freshPage, "signup lifestyle choices");
@@ -1696,7 +1733,19 @@ try {
   await login(adminPage, admin);
   await adminPage.goto(`${baseUrl}/admin`);
   await adminPage.getByText("운영 홈").first().waitFor();
+  await adminPage.getByText(/AI 예산 · 오늘/).waitFor();
   await checkPage(adminPage, "admin operations");
+  if (screenshotDir) {
+    await adminPage.screenshot({ path: join(screenshotDir, "admin-beta-desktop.png") });
+    await adminPage.setViewportSize({ width: 390, height: 844 });
+    await checkPage(adminPage, "admin beta budget mobile");
+    await adminPage.screenshot({ path: join(screenshotDir, "admin-beta-mobile.png") });
+    await adminPage.emulateMedia({ colorScheme: "dark" });
+    await checkPage(adminPage, "admin beta budget dark");
+    await adminPage.screenshot({ path: join(screenshotDir, "admin-beta-dark.png") });
+    await adminPage.emulateMedia({ colorScheme: "light" });
+    await adminPage.setViewportSize({ width: 1440, height: 960 });
+  }
   await checkAdminScreens({ page: adminPage, baseUrl, checkPage, screenshotDir, male, female });
   await checkAdminReviewScreens({
     page: adminPage,

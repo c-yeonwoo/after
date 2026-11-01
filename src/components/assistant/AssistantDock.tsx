@@ -96,10 +96,13 @@ function LegacyAssistantDock({
           <AssistantMark />
           <div>
             <h2 className="text-base font-semibold">애프터 매니저</h2>
-            <p className="mt-1 text-xs text-muted-foreground">무엇을 도와드릴까요?</p>
+            <p className="mt-1 text-xs text-muted-foreground">소개·프로필·약속 이용을 안내해요.</p>
           </div>
         </div>
       ) : null}
+      <p className="text-sm text-muted-foreground">
+        지금은 이용 안내를 도와드려요. AI 맞춤 상담은 준비 중이에요.
+      </p>
       <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
         {(
           [
@@ -108,7 +111,10 @@ function LegacyAssistantDock({
             ["schedule", "일정 정리"],
           ] as const
         )
-          .filter(([key]) => key !== "prepare" || state === "meeting_confirmed")
+          .filter(
+            ([key]) =>
+              key !== "prepare" || (state === "meeting_confirmed" && flags.data?.introduction),
+          )
           .map(([key, label]) => (
             <button
               key={key}
@@ -143,6 +149,7 @@ function LegacyAssistantDock({
         <AssistantPrompts
           input={input}
           canCoach={false}
+          canChat={false}
           onChoose={(text) => {
             setInput(text);
             inputRef.current?.focus();
@@ -152,6 +159,7 @@ function LegacyAssistantDock({
         <AssistantPrompts
           input={input}
           canCoach={false}
+          canChat={false}
           onChoose={(text) => {
             setInput(text);
             inputRef.current?.focus();
@@ -211,7 +219,7 @@ function LegacyAssistantDock({
         <input
           ref={inputRef}
           aria-label="매니저에게 물어볼 내용"
-          placeholder="궁금한 점을 편하게 물어보세요"
+          placeholder="소개·프로필·약속 이용을 물어보세요"
           value={input}
           maxLength={300}
           enterKeyHint="send"

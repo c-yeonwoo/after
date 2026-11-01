@@ -4185,6 +4185,9 @@ export type Database = {
         }
       }
       home_state: { Args: never; Returns: Json }
+      admin_beta_readiness: { Args: never; Returns: Json }
+      my_onboarding_draft: { Args: { p_owner: string }; Returns: Json }
+      save_onboarding_draft: { Args: { p_owner: string; p_data: Json; p_revision: number }; Returns: number }
       home_state_v2: { Args: never; Returns: Json }
       home_state_v2_base: { Args: never; Returns: Json }
       intro_teaser: {

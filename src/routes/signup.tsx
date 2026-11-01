@@ -1,3 +1,4 @@
+import { useOnboardingDraft, clearLocalOnboardingDraft } from "@/lib/onboardingDraft";
 import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
@@ -272,6 +273,55 @@ function Onboarding() {
     };
   }, [userId]);
 
+  useEffect(() => {
+    if (!ready || !userId || me?.id === userId) return;
+    setUserId(null);
+    setResumed(false);
+    setResumeConfirmed(false);
+    setBasics(emptyBasics);
+    setMeetingAreas([]);
+    setHubId("");
+    setStep(CONSENT);
+  }, [ready, me?.id, userId]);
+
+  const draft = useOnboardingDraft(
+    userId,
+    Boolean(resumed && me && me.id === userId && me.onboarding_step < 7 && areasReady),
+    { basics, step: PROFILE_ORDER.includes(step) ? step : 2, meetingAreas, hubId },
+    (value) => {
+      setBasics(value.basics);
+      setStep(value.step);
+      setMeetingAreas(value.meetingAreas);
+      setHubId(value.hubId);
+      setMbtiParts(value.basics.mbti ? value.basics.mbti.split("") : ["", "", "", ""]);
+    },
+  );
+  const draftNotice = (
+    <span role="status">
+      {draft.status === "saving" ? (
+        "저장 중…"
+      ) : draft.status === "saved" ? (
+        "임시저장됨"
+      ) : draft.status === "conflict" ? (
+        <span className="flex flex-wrap gap-2">
+          <button type="button" className="underline underline-offset-4" onClick={draft.keepLocal}>
+            이 화면 내용 저장
+          </button>
+          <button type="button" className="underline underline-offset-4" onClick={draft.retry}>
+            서버 내용 불러오기
+          </button>
+        </span>
+      ) : (
+        <button type="button" className="underline underline-offset-4" onClick={draft.retry}>
+          저장 다시 시도
+        </button>
+      )}
+    </span>
+  );
+  useEffect(() => {
+    if (me && me.onboarding_step >= 7) clearLocalOnboardingDraft(me.id);
+  }, [me]);
+
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   function restartSignup() {
@@ -337,6 +387,24 @@ function Onboarding() {
 
   // SSR·세션 복구 중에는 빈 가입 폼도 보여주지 않는다. 기존 회원 데이터가 뒤늦게
   // 폼에 채워져 '새 가입'처럼 보이던 순간적인 노출을 막는다.
+  if (ready && userId && me?.id !== userId)
+    return (
+      <AppScreen>
+        <p role="status">계정을 확인하고 있어요.</p>
+      </AppScreen>
+    );
+  if (userId && resumed && PROFILE_ORDER.includes(step) && !draft.ready) {
+    return (
+      <AppScreen>
+        <p className="mt-10 text-sm" role="status">
+          {draft.status === "error"
+            ? "작성 중인 내용을 불러오지 못했어요."
+            : "작성 중인 내용을 불러오고 있어요."}
+        </p>
+        {draft.status === "error" ? <Button onClick={draft.retry}>다시 불러오기</Button> : null}
+      </AppScreen>
+    );
+  }
   if (!ready || (!me && !signupReady)) {
     return (
       <AppScreen title="가입" hideTabs>
@@ -693,6 +761,7 @@ function Onboarding() {
 
     return (
       <StepShell
+        eyebrowAction={draftNotice}
         step={shown(2)}
         total={TOTAL}
         eyebrow="기본 정보"
@@ -1131,6 +1200,7 @@ function Onboarding() {
 
     return (
       <StepShell
+        eyebrowAction={draftNotice}
         step={shown(CONDITIONS)}
         total={TOTAL}
         eyebrow="생활 정보"

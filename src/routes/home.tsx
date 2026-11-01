@@ -1,3 +1,4 @@
+import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { comparePublicSignals } from "../../supabase/functions/_shared/profile-signals";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -101,6 +102,7 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
 function HomePage() {
   const { me, ready } = useMe();
   const navigate = useNavigate();
+  const capabilities = useAssistantFlags(me?.id);
   const live = useMemberHome(me?.id, ready && Boolean(me && me.onboarding_step >= 7));
   const serverState = live.data?.state ?? null;
   const currentProfile = serverState?.me ?? me;
@@ -167,14 +169,17 @@ function HomePage() {
     new Date(meeting.scheduled_at).getTime() < now,
   );
 
+  const holding = Boolean(serverState?.introduction_resume_at);
   const headline = loadError
     ? "상태를 확인할 수 없어요."
     : live.isError || live.isPaused
       ? "최신 상태를 확인하지 못했어요."
       : primaryState
-        ? primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
-          ? "호감을 보냈어요."
-          : stateHeadline(primaryState, isMale)
+        ? primaryState === "waiting" && holding
+          ? "오늘의 만남에 집중해 보세요."
+          : primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
+            ? "호감을 보냈어요."
+            : stateHeadline(primaryState, isMale)
         : "지금 상태를 확인하고 있어요.";
   const hasPriorityContent = Boolean(
     loading ||
@@ -215,11 +220,17 @@ function HomePage() {
               {!live.isError && !live.isPaused && primaryState === "waiting" ? (
                 <div className="mt-0.5 text-sm leading-normal text-muted-foreground">
                   <p>
-                    {!isMale && serverState?.intro_progress?.has_likes
-                      ? "상대의 만남 요청을 기다리고 있어요."
-                      : "새 소개가 오면 여기서 알려드릴게요."}
+                    {holding
+                      ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
+                      : !isMale && serverState?.intro_progress?.has_likes
+                        ? "상대의 만남 요청을 기다리고 있어요."
+                        : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
                   </p>
-                  <p>궁금한 점은 편하게 물어봐 주세요.</p>
+                  {capabilities.data?.chat ? (
+                    <p>궁금한 점은 편하게 물어봐 주세요.</p>
+                  ) : (
+                    <p>기다리는 동안 내 프로필과 만남 가능 시간을 확인해 주세요.</p>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -320,7 +331,13 @@ function HomePage() {
             </>
           ) : blocksNewIntro ? (
             primaryState === "photos_pending" ? (
-              <GuideNote>사진 검수가 끝나면 새 소개를 받을 수 있어요.</GuideNote>
+              <GuideNote>
+                사진을 먼저 확인한 뒤 소개를 준비해요. 24시간 안에 1차 검토를 목표로 하고 있어요.
+                검토가 늦어지면 고객센터에서 진행 상황을 확인할 수 있어요.
+                <Link to="/support" className="mt-2 block font-semibold text-foreground">
+                  검토 문의하기
+                </Link>
+              </GuideNote>
             ) : primaryState === "profile_incomplete" ? (
               <GuideNote action={<CardAction to="/profile-edit">프로필 확인하기</CardAction>}>
                 아직 확인할 정보가 있어요.

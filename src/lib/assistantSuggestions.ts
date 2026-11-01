@@ -8,10 +8,17 @@ const questions = [
   { text: "내 소개는 지금 어떤 상태야?", words: /소개|상태|기다|진행/ },
 ];
 
-export function assistantSuggestions(input: string, canCoach = true): string[] {
+const serviceQuestions = [
+  { text: "내 소개는 지금 어떤 상태야?", words: /소개|상태|기다|진행/ },
+  { text: "프로필은 어디서 수정해?", words: /프로필|사진|수정|소개글/ },
+  { text: "약속 일정은 어디서 확인해?", words: /일정|시간|약속|요일/ },
+];
+export function assistantSuggestions(input: string, canCoach = true, canChat = true): string[] {
   const query = input.normalize("NFKC").trim();
   if (query.length > 80) return [];
-  const available = questions.filter((item) => canCoach || item.text !== questions[0].text);
+  const available = (canChat ? questions : serviceQuestions).filter(
+    (item) => canCoach || item.text !== questions[0].text,
+  );
   return available
     .filter(
       (item) =>

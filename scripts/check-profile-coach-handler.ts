@@ -1,3 +1,4 @@
+import { budgetedAnthropicFetch } from "../supabase/functions/_shared/ai-budget";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { Transpiler } from "bun";
@@ -126,6 +127,7 @@ async function invoke(
       },
     },
     Anthropic: FakeAI,
+    budgetedAnthropicFetch,
     z,
     zodOutputFormat: () => ({}),
     createClient: () => db,

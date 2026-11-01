@@ -64,6 +64,8 @@ function resultError(result: StoryGenerationResult): string {
   if (result.status === "needs_input") return "내 이야기를 조금만 더 알려주세요.";
   if (result.status !== "error") return "";
   switch (result.code) {
+    case "budget_exhausted":
+      return "지금은 AI 작성 지원을 쉬고 있어요. 답변은 저장돼 있어요. 직접 작성으로 프로필을 완성할 수 있어요.";
     case "rate_limited":
     case "daily_limit":
       return "오늘은 소개글 생성 횟수를 모두 사용했어요. 직접 정리하거나 내일 다시 시도해 주세요.";

@@ -105,7 +105,7 @@ function LoginPage() {
           없는 계정에 세션만 남아 앱이 빈 화면을 돈다.
         */
         await supabase.auth.signOut();
-        toast("가입 이력이 없는 계정입니다. 가입 이메일로 가입해 주세요.");
+        toast("아직 연결된 계정이 없어요. 이메일로 가입한 뒤 설정에서 카카오를 연결해 주세요.");
         await goTo("/signup");
         return;
       }

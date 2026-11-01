@@ -1,3 +1,4 @@
+import { budgetedAnthropicFetch } from "../_shared/ai-budget.ts";
 // 프로필 문장 생성 — 가입자가 적은 답변으로 한 줄 소개 후보와 소개글을 쓴다.
 //
 // ── 왜 Edge Function 인가 ──
@@ -198,7 +199,12 @@ Deno.serve(async (req) => {
       return !error;
     };
     try {
-      const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY, timeout: 4_000, maxRetries: 0 });
+      const client = new Anthropic({
+        fetch: budgetedAnthropicFetch(db),
+        apiKey: ANTHROPIC_API_KEY,
+        timeout: 4_000,
+        maxRetries: 0,
+      });
       const result = await client.messages.parse({
         model: MODEL,
         max_tokens: 300,
@@ -332,7 +338,12 @@ Deno.serve(async (req) => {
     );
   }
 
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY, timeout: 12_000, maxRetries: 1 });
+  const client = new Anthropic({
+    fetch: budgetedAnthropicFetch(db),
+    apiKey: ANTHROPIC_API_KEY,
+    timeout: 12_000,
+    maxRetries: 1,
+  });
   const startedAt = Date.now();
   const record = async (
     status: "success" | "refused" | "invalid" | "error",
