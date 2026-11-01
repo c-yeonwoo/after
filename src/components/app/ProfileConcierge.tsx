@@ -41,23 +41,20 @@ function OwnProfileCoaching({
       <div className="flex items-center gap-3">
         {signature}
         <div>
-          <h3 className="text-lg font-semibold">첫인상을 더 선명하게</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            내 문장을 바탕으로 한 표현 점검 · 나만 보기
-          </p>
+          <h3 className="text-lg font-semibold">내 소개글 점검</h3>
+          <p className="mt-1 text-xs text-muted-foreground">작성한 내용 기준 · 나만 보기</p>
         </div>
       </div>
-      {[coaching.strength, coaching.improvement]
-        .filter((item) => item !== null)
-        .map((item) => (
-          <section key={item.title}>
-            <h4 className="text-base font-semibold">{item.title}</h4>
-            {item.quote ? (
-              <blockquote className="profile-coaching-quote">“{item.quote}”</blockquote>
-            ) : null}
-            <p className="mt-2 break-keep text-sm leading-relaxed">{item.advice}</p>
-          </section>
-        ))}
+      {coaching.ready ? (
+        <p className="text-base leading-relaxed">
+          내 이야기가 충분히 담겨 있어요. 궁금한 게 있으면 편하게 물어봐 주세요.
+        </p>
+      ) : coaching.improvement ? (
+        <section>
+          <h4 className="text-base font-semibold">{coaching.improvement.title}</h4>
+          <p className="mt-2 break-keep text-sm leading-relaxed">{coaching.improvement.advice}</p>
+        </section>
+      ) : null}
       {canAsk && me ? (
         <Link
           to="/assistant"
@@ -65,7 +62,7 @@ function OwnProfileCoaching({
           className="assistant-suggestion inline-flex items-center"
           onClick={() => setAssistantDraft(me.id, ask)}
         >
-          매니저에게 코칭받기
+          매니저에게 물어보기
         </Link>
       ) : (
         <Link to="/profile-edit" className="assistant-suggestion inline-flex items-center">

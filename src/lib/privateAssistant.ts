@@ -90,10 +90,15 @@ export async function assistantRpc<T>(
 export const getAssistantFlags = () => assistantRpc<AssistantFlags>("assistant_capabilities");
 export const getPrivateAssistant = () => assistantRpc<AssistantPrivateState>("my_assistant_state");
 
-export async function askPrivateAssistant(question: string, requestId: string, revision: number) {
+export async function askPrivateAssistant(
+  question: string,
+  requestId: string,
+  revision: number,
+  purpose?: "profile_coaching",
+) {
   const { data, error } = await supabase.functions.invoke<{ code?: string; state?: string }>(
     "assistant-chat",
-    { body: { question, requestId, revision } },
+    { body: { question, requestId, revision, ...(purpose ? { purpose } : {}) } },
   );
   if (error || data?.code) {
     let code = data?.code;

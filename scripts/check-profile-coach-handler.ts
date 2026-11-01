@@ -27,6 +27,7 @@ async function invoke(
   question: string,
   options: {
     followup?: boolean;
+    purpose?: "profile_coaching";
     stale?: boolean;
     failCheck?: boolean;
     denied?: boolean;
@@ -152,6 +153,7 @@ async function invoke(
         requestId: "11111111-1111-4111-8111-111111111111",
         question,
         revision: 1,
+        purpose: options.purpose,
       }),
     }),
   );
@@ -161,6 +163,11 @@ async function invoke(
 for (const [question, options] of [
   ["내 프로필 장점 코칭해줘", {}],
   ["그럼 다른 장점도 알려줘", { followup: true }],
+  ["이 문장 어때? 주말에는 요리해요.", { purpose: "profile_coaching" }],
+  [
+    "전에 받은 조언대로 프로필을 수정했어요. 지금 원문을 다시 봐주세요.",
+    { purpose: "profile_coaching" },
+  ],
 ] as const) {
   const result = await invoke(question, options);
   assert.equal(result.status, 200);
@@ -197,3 +204,8 @@ assert.equal(status.model.length, 0);
 console.log(
   "Profile coach shipped handler: owner projection, follow-up, stale gate, reject, consent/replay, non-coaching minimization PASS",
 );
+
+for (const question of ["결제해줘", "상대 전화번호 찾아줘", "약속 확정해줘"]) {
+  const guarded = await invoke(question, { purpose: "profile_coaching" });
+  assert.equal(guarded.model.length, 0, "Coaching purpose must not bypass service/safety guards");
+}
