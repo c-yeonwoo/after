@@ -14,7 +14,7 @@ const apiSecret = Deno.env.get("PORTONE_API_SECRET");
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
   if (Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000)
     return json({ error: "verification expired" }, 409);
   try {
-    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey });
+    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey, storeId });
     const { error } = await db.rpc("finish_carrier_identity", {
       p_user: user.id,
       p_id: id,

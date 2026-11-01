@@ -13,7 +13,11 @@ const valid = {
     di: "provider-di",
   },
 };
-const config = { apiSecret: "synthetic-test-secret", channelKey: "live-channel" };
+const config = {
+  apiSecret: "synthetic-test-secret",
+  channelKey: "live-channel",
+  storeId: "store-one",
+};
 const responseFor = (value: unknown, status = 200) =>
   (async () => new Response(JSON.stringify(value), { status })) as typeof fetch;
 assert.deepEqual(await readVerifiedCarrierIdentity(id, config, responseFor(valid)), {
@@ -60,3 +64,15 @@ await assert.rejects(
   /provider verification unavailable/,
 );
 console.log(`Carrier identity: ${cases.length + 3} provider validation cases PASS`);
+
+let queried = "";
+await readVerifiedCarrierIdentity(id, config, (async (url, options) => {
+  queried = String(url);
+  assert.equal(
+    (options?.headers as Record<string, string>).Authorization,
+    "PortOne synthetic-test-secret",
+  );
+  return new Response(JSON.stringify(valid));
+}) as typeof fetch);
+assert.equal(new URL(queried).searchParams.get("storeId"), "store-one");
+assert.equal(new URL(queried).pathname, `/identity-verifications/${id}`);
