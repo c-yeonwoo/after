@@ -6,7 +6,7 @@ import { localAuthBypassAllowed } from "../_shared/local-auth.ts";
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       return json(status);
     if (attempt.consumed_at || Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000)
       throw new Error("verification expired");
-    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey });
+    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey, storeId });
     const { data, error } = await db.rpc("finish_signup_identity", {
       p_token: body.token,
       p_id: id,

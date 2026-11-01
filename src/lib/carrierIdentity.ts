@@ -1,3 +1,4 @@
+import { assertPortoneIdentityResult } from "./portoneIdentityResult";
 import { supabase } from "@/lib/supabase";
 
 /** 공급자 계약/시크릿 및 DB 게이트 검증 전에는 빌드에서 열지 않는다. */
@@ -37,6 +38,10 @@ export function carrierIdentityError(error: unknown): string {
     return "약관이 갱신됐어요. 새로고침 후 다시 확인해 주세요.";
   if (reason.includes("not configured"))
     return "본인확인 준비 중입니다. 잠시 후 다시 시도해 주세요.";
+  if (reason.includes("verification redirecting"))
+    return "인증 창에서 확인을 마친 뒤 돌아와 주세요. 돌아왔다면 다시 눌러 결과를 확인해 주세요.";
+  if (reason.includes("verification result mismatch"))
+    return "시작한 인증과 결과가 달라요. 이 화면에서 본인확인을 다시 진행해 주세요.";
   if (reason.includes("not verified")) return "본인확인을 완료하지 못했어요. 다시 시도해 주세요.";
   return "본인확인을 마치지 못했어요. 잠시 후 다시 시도해 주세요.";
 }
@@ -67,10 +72,8 @@ export async function startCarrierIdentity(): Promise<string> {
     redirectUrl: `${window.location.origin}/verify-phone`,
   });
   // 모바일은 리다이렉트되므로 이 지점에 돌아오지 않는다.
-  if (!result || result.code) {
-    sessionStorage.removeItem(PENDING_KEY);
-    throw new Error("not verified");
-  }
+  if (result?.code !== undefined) sessionStorage.removeItem(PENDING_KEY);
+  assertPortoneIdentityResult(started.identityVerificationId, result);
   return finishCarrierIdentity(started.identityVerificationId);
 }
 

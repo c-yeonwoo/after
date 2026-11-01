@@ -8,16 +8,17 @@ export type VerifiedCarrierIdentity = {
 /** Only a server-to-server LIVE response is identity evidence. */
 export async function readVerifiedCarrierIdentity(
   id: string,
-  config: { apiSecret: string; channelKey: string },
+  config: { apiSecret: string; channelKey: string; storeId: string },
   fetcher: typeof fetch = fetch,
 ): Promise<VerifiedCarrierIdentity> {
-  const response = await fetcher(
+  const endpoint = new URL(
     `https://api.portone.io/identity-verifications/${encodeURIComponent(id)}`,
-    {
-      headers: { Authorization: `PortOne ${config.apiSecret}` },
-      signal: AbortSignal.timeout(12000),
-    },
   );
+  endpoint.searchParams.set("storeId", config.storeId);
+  const response = await fetcher(endpoint.href, {
+    headers: { Authorization: `PortOne ${config.apiSecret}` },
+    signal: AbortSignal.timeout(12000),
+  });
   if (!response.ok) throw new Error("provider verification unavailable");
   const result = await response.json();
   if (!result || typeof result !== "object") throw new Error("not verified");

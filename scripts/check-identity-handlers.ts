@@ -67,7 +67,8 @@ async function invoke(
     },
     () => db,
     {},
-    async () => {
+    async (_id: string, providerConfig: { storeId: string }) => {
+      assert.equal(providerConfig.storeId, env.PORTONE_STORE_ID);
       providerCalls++;
       if (options.providerError) throw Error(options.providerError);
       return { gender: "female", birth: "1994-02-15", phone: "+821012345678", di: "synthetic-di" };

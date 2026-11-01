@@ -1,3 +1,4 @@
+import { assertPortoneIdentityResult } from "./portoneIdentityResult";
 import { supabase } from "@/lib/supabase";
 import { POLICY_VERSION } from "@/lib/policy";
 
@@ -101,10 +102,8 @@ export async function startSignupIdentity(): Promise<SignupSession> {
     ...started,
     redirectUrl: `${window.location.origin}/signup`,
   });
-  if (!result || result.code) {
-    sessionStorage.removeItem(PENDING_KEY);
-    throw new Error("not verified");
-  }
+  if (result?.code !== undefined) sessionStorage.removeItem(PENDING_KEY);
+  assertPortoneIdentityResult(started.identityVerificationId, result);
   return finishSignupIdentity(started.identityVerificationId);
 }
 
