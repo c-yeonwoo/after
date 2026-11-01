@@ -1735,17 +1735,20 @@ try {
   await adminPage.getByText("운영 홈").first().waitFor();
   await adminPage.getByText(/AI 예산 · 오늘/).waitFor();
   await checkPage(adminPage, "admin operations");
-  if (screenshotDir) {
+  if (screenshotDir)
     await adminPage.screenshot({ path: join(screenshotDir, "admin-beta-desktop.png") });
-    await adminPage.setViewportSize({ width: 390, height: 844 });
-    await checkPage(adminPage, "admin beta budget mobile");
+  await adminPage.setViewportSize({ width: 390, height: 844 });
+  await checkPage(adminPage, "admin beta budget mobile");
+  if (screenshotDir)
     await adminPage.screenshot({ path: join(screenshotDir, "admin-beta-mobile.png") });
-    await adminPage.emulateMedia({ colorScheme: "dark" });
-    await checkPage(adminPage, "admin beta budget dark");
+  await adminPage.emulateMedia({ colorScheme: "dark" });
+  await adminPage.waitForFunction(() => document.documentElement.classList.contains("dark"));
+  await checkPage(adminPage, "admin beta budget dark");
+  if (screenshotDir)
     await adminPage.screenshot({ path: join(screenshotDir, "admin-beta-dark.png") });
-    await adminPage.emulateMedia({ colorScheme: "light" });
-    await adminPage.setViewportSize({ width: 1440, height: 960 });
-  }
+  await adminPage.emulateMedia({ colorScheme: "light" });
+  await adminPage.waitForFunction(() => !document.documentElement.classList.contains("dark"));
+  await adminPage.setViewportSize({ width: 1440, height: 960 });
   await checkAdminScreens({ page: adminPage, baseUrl, checkPage, screenshotDir, male, female });
   await checkAdminReviewScreens({
     page: adminPage,
