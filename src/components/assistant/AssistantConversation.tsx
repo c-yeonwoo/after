@@ -31,11 +31,13 @@ import {
 
 function ConversationFrame({
   compact,
+  embedded,
   settingsMode,
   footer,
   children,
 }: {
   compact: boolean;
+  embedded: boolean;
   settingsMode: boolean;
   footer?: ReactNode;
   children: ReactNode;
@@ -44,6 +46,18 @@ function ConversationFrame({
   useEffect(() => {
     setHomeFooter(compact ? document.getElementById("assistant-home-composer") : null);
   }, [compact]);
+  if (embedded)
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          data-assistant-scroll
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4"
+        >
+          {children}
+        </div>
+        {footer ? <div className="shrink-0 px-3 pb-3">{footer}</div> : null}
+      </div>
+    );
   return compact ? (
     <section aria-label="나와 매니저의 대화" className="assistant-dock">
       {children}
@@ -84,7 +98,7 @@ function revealInConversation(
   element: HTMLElement | null,
   alignment: "end" | "center" | "nearest",
 ) {
-  const main = element?.closest("main");
+  const main = element?.closest<HTMLElement>("[data-assistant-scroll], main");
   if (!element || !main) return;
   const box = element.getBoundingClientRect();
   const viewport = main.getBoundingClientRect();
@@ -103,12 +117,18 @@ function revealInConversation(
 export function AssistantConversation({
   owner,
   compact = false,
+  embedded = false,
+  initialQuestion,
+  onDraftChange,
   showIdentity = true,
   panel = "chat",
   context,
 }: {
   owner: string;
   compact?: boolean;
+  embedded?: boolean;
+  initialQuestion?: string;
+  onDraftChange?: (value: string) => void;
   showIdentity?: boolean;
   panel?: "chat" | "memory";
   context?: Partial<AssistantContext>;
@@ -167,14 +187,18 @@ export function AssistantConversation({
   const shownTurns = compact
     ? visibleTurns.filter((turn) => !turn.kind || turn.kind === "conversation").slice(-1)
     : visibleTurns;
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialQuestion ?? "");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [suggestionsHidden, setSuggestionsHidden] = useState(false);
   const inputEdited = useRef(false);
   useEffect(() => {
+    if (initialQuestion !== undefined) return;
     const draft = takeAssistantDraft(owner);
     if (draft && !inputEdited.current) setInput(draft);
-  }, [owner]);
+  }, [owner, initialQuestion]);
+  useEffect(() => {
+    onDraftChange?.(input);
+  }, [input, onDraftChange]);
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState("");
   const [error, setError] = useState("");
@@ -302,9 +326,11 @@ export function AssistantConversation({
         setError(
           code === "daily_limit" || code === "limit"
             ? "오늘 이용 한도에 도달했어요. 잠시 쉬었다 다시 찾아주세요."
-            : code === "quality_failed"
-              ? "조언을 점검하는 중 표현이 맞지 않아 보여드리지 않았어요. 질문을 조금 바꿔 다시 물어봐 주세요."
-              : "요청이 완료됐는지 확인하지 못했어요. 다시 보내기 전에 ‘상태 다시 확인’을 눌러 주세요.",
+            : code === "not_configured"
+              ? "지금은 매니저 상담을 연결할 수 없어요. 입력한 내용은 그대로예요. 잠시 뒤 다시 시도해 주세요."
+              : code === "quality_failed"
+                ? "조언을 점검하는 중 표현이 맞지 않아 보여드리지 않았어요. 질문을 조금 바꿔 다시 물어봐 주세요."
+                : "요청이 완료됐는지 확인하지 못했어요. 다시 보내기 전에 ‘상태 다시 확인’을 눌러 주세요.",
         );
         await live.refetch();
       }
@@ -342,6 +368,7 @@ export function AssistantConversation({
           pendingRequest.current.text,
           pendingRequest.current.id,
           pendingRequest.current.revision,
+          embedded ? "profile_coaching" : undefined,
         );
       } catch (cause) {
         if (
@@ -401,6 +428,7 @@ export function AssistantConversation({
   return (
     <ConversationFrame
       compact={compact}
+      embedded={embedded}
       settingsMode={panel === "memory"}
       footer={
         panel === "chat" && data?.consented && data.flags.chat && !memory && !erase ? (
@@ -494,7 +522,7 @@ export function AssistantConversation({
           ) : null}
         </div>
       ) : null}
-      {panel === "chat" && !compact ? (
+      {panel === "chat" && !compact && !embedded ? (
         <>
           <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
             {(compact
@@ -624,7 +652,9 @@ export function AssistantConversation({
                   {!compact ? (
                     <ManagerMessage
                       text={
-                        "첫 만남, 어떤 점이 신경 쓰이나요?\n\n아래 질문을 골라도, 직접 물어봐도 좋아요."
+                        embedded
+                          ? "어떤 표현이 고민인가요? 다듬고 싶은 문장을 보내주면 함께 읽어볼게요."
+                          : "첫 만남, 어떤 점이 신경 쓰이나요?\n\n아래 질문을 골라도, 직접 물어봐도 좋아요."
                       }
                     />
                   ) : null}

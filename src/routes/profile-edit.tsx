@@ -1,3 +1,4 @@
+import { ProfileManagerChat } from "@/components/assistant/ProfileManagerChat";
 import { PublicSignalEditor } from "@/components/onboarding/PublicSignalEditor";
 import { publicProfileSignals } from "../../supabase/functions/_shared/profile-signals";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
@@ -195,6 +196,7 @@ function ProfileEditor({ member }: { member: Profile }) {
       <AppScreen
         title="프로필 수정"
         back="/profile"
+        action={<ProfileManagerChat owner={member.id} />}
         hideTabs
         keyboardAware
         footer={

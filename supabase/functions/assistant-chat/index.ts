@@ -23,6 +23,7 @@ const Input = z.object({
   requestId: z.string().uuid(),
   question: z.string().trim().min(1).max(1000),
   revision: z.number().int().positive(),
+  purpose: z.literal("profile_coaching").optional(),
 });
 const Output = z.object({ reply: z.string().min(10).max(1000) });
 const Check = z.object({
@@ -30,7 +31,7 @@ const Check = z.object({
   reason: z.enum(["ok", "ungrounded", "unsafe", "false_execution", "insufficient_coaching"]),
 });
 const MODEL = Deno.env.get("ASSISTANT_COACH_MODEL") || DEFAULT_TEXT_MODEL;
-const VERSION = "assistant-private-v6-personal-manager";
+const VERSION = "assistant-private-v7-actionable-coaching";
 
 Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
@@ -132,14 +133,20 @@ Deno.serve(async (req) => {
         const profile = await caller.from("profiles").select("gender").eq("id", user.id).single();
         if (!profile.error) gender = profile.data?.gender;
       }
+      // In the profile editor, “수정했는데 어때?” is a coaching request,
+      // not navigation back to the editor. Consequential intents keep their guards.
+      const editingAdvice =
+        input.purpose === "profile_coaching" && ["profile", "edit", "edit_story"].includes(intent);
       reply =
-        assistantServiceReply(input.question, state, gender) ??
+        (editingAdvice ? null : assistantServiceReply(input.question, state, gender)) ??
         privateAssistantSafety(input.question);
     }
     if (!reply) {
       const privateContext = privateAssistantModelContext(context);
       if (!privateContext) throw Error("invalid private context");
-      const coaching = isProfileCoaching(input.question, privateContext.conversation_history);
+      const coaching =
+        input.purpose === "profile_coaching" ||
+        isProfileCoaching(input.question, privateContext.conversation_history);
       const readOwnCopy = async () => {
         const result = await caller
           .from("profiles")

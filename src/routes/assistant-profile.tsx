@@ -1,3 +1,4 @@
+import { ProfileManagerChat } from "@/components/assistant/ProfileManagerChat";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AppScreen } from "@/components/app/AppScreen";
@@ -21,6 +22,7 @@ function AssistantProfilePage() {
     <AppScreen
       title="소개글 다듬기"
       back="/profile"
+      action={me ? <ProfileManagerChat key={me.id} owner={me.id} /> : undefined}
       hideTabs
       keyboardAware
       footer={<div id="profile-revision-footer" />}

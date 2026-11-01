@@ -90,13 +90,53 @@ assert.match(profileReading(rich).nextPrompt, /어색함이 풀렸던/);
 console.log(
   "profile concierge: public evidence, negation, missing data, privacy and writing guidance passed",
 );
-const coached = profileWritingCoaching(viewer);
-assert.equal(coached.strength?.quote, viewer.story!.sections[0].answer);
-assert.match(
-  profileWritingCoaching(profile("술은 싫어요")).improvement.advice,
-  /기준을 지울 필요는 없어요/,
+// No fixed praise, invented flaws, or repeated activity quotations.
+assert.equal(profileWritingCoaching(blank()).ready, false);
+assert.equal(profileWritingCoaching(blank()).score, 0);
+assert.equal(profileWritingCoaching(viewer).strength, null);
+assert.doesNotMatch(
+  JSON.stringify(profileWritingCoaching(profile("술은 싫어요"))),
+  /기준을 지울|싫은 것 뒤/,
 );
-assert.match(profileWritingCoaching(profile("산책을 해요")).improvement.advice, /소재만/);
-assert.equal(profileWritingCoaching(blank()).strength, null);
 assert.doesNotMatch(JSON.stringify(profileWritingCoaching(extra)), /ENFP|개발자|PRIVATE/);
 assert.doesNotMatch(JSON.stringify(profileWritingCoaching(fresh)), /영화를 좋아해요/);
+const complete = profile(
+  "보통 퇴근 후 회사 옆 헬스장에서 운동해요. 집으로 돌아와 좋아하는 음악을 들으며 저녁을 먹어요.",
+);
+complete.story!.sections.push(
+  {
+    id: "getting_closer",
+    question: "가까워지는 순간",
+    answer: "지난주 동료와 점심을 먹으며 요즘 본 영화 이야기를 나누니 자연스럽게 친해졌어요.",
+  },
+  {
+    id: "conversation",
+    question: "나누고 싶은 이야기",
+    answer: "최근 읽은 소설의 마지막 장면이 기억에 남아요. 각자 어떻게 읽었는지 이야기하고 싶어요.",
+  },
+);
+assert.equal(profileWritingCoaching(complete).score, 100);
+assert.equal(profileWritingCoaching(complete).improvement, null);
+complete.story!.sections[1].answer = "";
+assert.equal(profileWritingCoaching(complete).ready, false);
+assert.match(profileWritingCoaching(complete).improvement!.title, /가까워지는 순간/);
+complete.story!.sections[1].answer =
+  "낯을 많이 가려요. 술은 마시지 않지만 편한 자리에서 천천히 이야기 나누고 싶어요.";
+assert.equal(profileWritingCoaching(complete).ready, true, "An explicit boundary is not a defect");
+complete.headline = complete.story!.headline = "";
+assert.equal(profileWritingCoaching(complete).score, 85);
+assert.equal(profileWritingCoaching(complete).ready, true, "85 ends unsolicited coaching");
+console.log(
+  "Writing readiness: fresh edits, 85 threshold, sparse answers, boundaries and no invented coaching passed",
+);
+
+assert.equal(
+  profileWritingCoaching({
+    ...blank(),
+    headline: "동네의 작은 이야기",
+    intro:
+      "저녁에는 수영을 하고 집에 돌아와 저녁을 만들어요. 최근에는 친구와 함께 요리한 시간을 이야기하고 싶어요.",
+  }).ready,
+  true,
+  "Complete legacy prose does not require repeating an interview",
+);
