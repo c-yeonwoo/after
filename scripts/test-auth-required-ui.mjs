@@ -6,7 +6,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { chromium, webkit } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 
-const status = execFileSync("npx", ["supabase", "status", "--output", "env"], { encoding: "utf8" });
+const status = execFileSync("supabase", ["status", "--output", "env"], { encoding: "utf8" });
 const value = (key) => status.match(new RegExp(`^${key}="?([^"\\n]+)"?`, "m"))?.[1];
 const api = value("API_URL");
 assert.match(api, /^http:\/\/127\.0\.0\.1:\d+$/);

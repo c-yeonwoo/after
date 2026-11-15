@@ -18,7 +18,7 @@ import { checkAssistantScreens } from "./lib/assistant-screen-checks.mjs";
 
 // This test creates and removes only its own synthetic accounts. It refuses a
 // remote Supabase URL so a release job can never seed production by accident.
-const status = execFileSync("npx", ["supabase", "status", "--output", "env"], {
+const status = execFileSync("supabase", ["status", "--output", "env"], {
   encoding: "utf8",
 });
 const value = (key) => status.match(new RegExp(`^${key}="?([^"\\n]+)"?`, "m"))?.[1];

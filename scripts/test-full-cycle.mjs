@@ -9,7 +9,7 @@ import { chromium, webkit } from "playwright";
 
 // Production URLs, real payments, outbound messages and real identities are
 // deliberately excluded. Auth/SMS/PG are explicit fixtures, never release proof.
-const env = execFileSync("npx", ["supabase", "status", "--output", "env"], { encoding: "utf8" });
+const env = execFileSync("supabase", ["status", "--output", "env"], { encoding: "utf8" });
 const value = (key) => env.match(new RegExp(`^${key}="?([^"\\n]+)"?`, "m"))?.[1];
 const api = value("API_URL"),
   db = value("DB_URL");
