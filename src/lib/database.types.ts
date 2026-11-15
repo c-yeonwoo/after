@@ -882,6 +882,7 @@ export type Database = {
           id: string
           meeting_id: string
           met: boolean
+          next_preference: string | null
           result: string | null
         }
         Insert: {
@@ -891,6 +892,7 @@ export type Database = {
           id?: string
           meeting_id: string
           met: boolean
+          next_preference?: string | null
           result?: string | null
         }
         Update: {
@@ -900,6 +902,7 @@ export type Database = {
           id?: string
           meeting_id?: string
           met?: boolean
+          next_preference?: string | null
           result?: string | null
         }
         Relationships: [
@@ -3288,6 +3291,7 @@ export type Database = {
       admin_set_mfa_requirement: { Args: { p_required: boolean; p_expected_required: boolean; p_recovery_confirmed: boolean; p_request_id: string }; Returns: boolean }
       my_meeting_checkin: { Args: { p_meeting_id: string }; Returns: Json }
       confirm_meeting_attendance: { Args: { p_meeting_id: string }; Returns: Json }
+      submit_feedback_with_preference: { Args: { p_meeting_id: string; p_met: boolean; p_result: string; p_preference: string; p_body?: string }; Returns: string }
       submit_meeting_feedback: { Args: { p_meeting_id: string; p_met: boolean; p_result: string; p_body?: string }; Returns: string }
       admin_member_detail: { Args: { p_user: string }; Returns: Json }
       admin_member_timeline: {

@@ -461,6 +461,7 @@ export async function homeState(): Promise<HomeState> {
 }
 
 export type HomeStateV2 = HomeState & {
+  viewer_intro_reason?: string | null;
   introduction_resume_at?: string | null;
   schema_version: 2;
   intro_progress?: { has_likes: boolean };
@@ -1581,13 +1582,18 @@ export async function submitFeedback(
   met: boolean,
   result?: string,
   body?: string,
+  preference?: "walk" | "coffee" | "meal" | "activity",
 ) {
-  const { error } = await supabase.rpc("submit_meeting_feedback", {
+  const args = {
     p_meeting_id: meetingId,
     p_met: met,
     p_result: result ?? (met ? "again" : "noshow"),
     p_body: body,
-  });
+  };
+  const { error } =
+    preference && met
+      ? await supabase.rpc("submit_feedback_with_preference", { ...args, p_preference: preference })
+      : await supabase.rpc("submit_meeting_feedback", args);
   if (error) {
     if (error.message.includes("feedback already submitted"))
       throw new Error("이미 후기를 남기셨어요. 홈에서 확인해 주세요.");
