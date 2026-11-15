@@ -691,13 +691,17 @@ try {
         .locator(".assistant-reply")
         .getByRole("link", { name: "소개 확인하기", exact: true })
         .click();
-      await f.page.getByLabel("매니저 안내", { exact: true }).waitFor();
+      await f.page.waitForURL((url) => url.pathname === "/intro");
+      const profile = f.page.getByRole("main").getByRole("article");
       for (let n = 0; n < 2; n++) {
         await f.page.getByRole("button", { name: "좋아요", exact: true }).waitFor();
-        const current = (await f.page.getByRole("main").innerText()).includes(m1.name) ? m1 : m2;
+        const heading = profile.getByRole("heading", { level: 2 }).first();
+        await heading.waitFor();
+        const title = await heading.innerText();
+        const current = [m1, m2].find((member) => title.startsWith(member.name));
+        assert.ok(current, "the introduction opens a candidate's own profile");
         const verdict = choices[current === m1 ? 0 : 1];
-        await f.page.getByText(current.name).first().waitFor();
-        const photos = f.page.getByRole("region", {
+        const photos = profile.getByRole("region", {
           name: `${current.name} 사진 3장`,
           exact: true,
         });
