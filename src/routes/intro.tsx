@@ -137,7 +137,11 @@ function IntroPage() {
           setGate(null);
           setCandidate(existing.candidate);
           setIntroId(existing.intro.id);
-          setReason(existing.intro.reason ?? null);
+          setReason(
+            (h.candidate?.id === existing.candidate.id && h.viewer_intro_reason) ||
+              existing.intro.reason ||
+              null,
+          );
           setMeeting(pendingMeeting);
         } else {
           const teaser = await introTeaser();
@@ -156,6 +160,7 @@ function IntroPage() {
         const [next, left] = await Promise.all([myPendingCandidate(), remainingCandidates()]);
         if (current !== generation.current) return;
         setCandidate(next);
+        setReason(next && h.candidate?.id === next.id ? (h.viewer_intro_reason ?? null) : null);
         setRemaining(left);
         setMeeting(null);
       }
@@ -469,7 +474,7 @@ function IntroPage() {
         ) : null
       }
     >
-      {isMale && reason && !maleHasRequest ? (
+      {reason && !maleHasRequest ? (
         <div className="mb-5">
           <IntroductionReason reason={reason} />
         </div>
@@ -647,7 +652,7 @@ function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
       ) : null}
       {teaser.reason ? (
         <div className="mt-4 border-t border-border pt-4">
-          <p className="text-xs font-medium text-muted-foreground">애프터 운영팀이 전하는 말</p>
+          <p className="text-xs font-medium text-muted-foreground">매니저의 소개 이유</p>
           <p className="mt-1.5 text-base leading-[1.7] text-foreground">{teaser.reason}</p>
         </div>
       ) : null}

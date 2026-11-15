@@ -47,6 +47,13 @@ const NOTES = [
   "불편한 순간이 있었어요",
 ];
 
+const NEXT_MEETING = [
+  ["walk", "함께 산책"],
+  ["coffee", "가볍게 커피"],
+  ["meal", "식사하며 대화"],
+  ["activity", "함께하는 활동"],
+] as const;
+
 function FeedbackPage() {
   const { me } = useMe();
   const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
@@ -54,6 +61,7 @@ function FeedbackPage() {
   const { meetingId } = Route.useSearch();
   const [result, setResult] = useState("");
   const [notes, setNotes] = useState<string[]>([]);
+  const [preference, setPreference] = useState<(typeof NEXT_MEETING)[number][0]>();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [gate, setGate] = useState<"loading" | "ready" | "submitted" | "unavailable" | "error">(
@@ -61,9 +69,13 @@ function FeedbackPage() {
   );
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (!meetingId) return;
+    if (!meetingId || !me?.id) return;
     let alive = true;
     setGate("loading");
+    setResult("");
+    setNotes([]);
+    setText("");
+    setPreference(undefined);
     void (async () => {
       try {
         const [status, feedback] = await Promise.all([
@@ -89,7 +101,7 @@ function FeedbackPage() {
     return () => {
       alive = false;
     };
-  }, [meetingId, retry]);
+  }, [meetingId, me?.id, retry]);
 
   if (!meetingId) {
     return (
@@ -207,6 +219,26 @@ function FeedbackPage() {
         />
       </section>
 
+      {result && result !== "noshow" ? (
+        <fieldset className="mt-6">
+          <legend className="text-sm font-semibold">다음엔 어떤 만남이 좋을까요? (선택)</legend>
+          <p className="mt-1 text-sm text-muted-foreground">
+            하나를 고르면 상대 프로필과 맞을 때 내 소개 이유에 반영해요.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {NEXT_MEETING.map(([value, label]) => (
+              <Chip
+                key={value}
+                selected={preference === value}
+                onClick={() => setPreference(preference === value ? undefined : value)}
+              >
+                {label}
+              </Chip>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+
       <div className="mt-8 flex gap-2">
         <Button variant="ghost" onClick={() => navigate({ to: "/home" })}>
           건너뛰기
@@ -221,7 +253,7 @@ function FeedbackPage() {
               const met = result !== "noshow";
               const body =
                 [met ? notes.join(" · ") : "", text.trim()].filter(Boolean).join("\n") || undefined;
-              await submitFeedback(meetingId, met, result, body);
+              await submitFeedback(meetingId, met, result, body, met ? preference : undefined);
               if (met) {
                 toast.success("피드백이 저장되었습니다.");
               } else {

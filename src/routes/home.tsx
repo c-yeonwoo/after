@@ -357,6 +357,7 @@ function HomePage() {
               key={candidate.id}
               candidate={candidate}
               isMale={isMale}
+              viewerReason={serverState?.viewer_intro_reason}
               viewer={currentProfile}
             />
           ) : isMale && queued > 0 ? (
@@ -380,9 +381,7 @@ function HomePage() {
                 )
               }
             >
-              {queued > 1
-                ? `${queued}건의 소개가 기다리고 있어요. 한 분씩 확인해 보세요.`
-                : "한 분의 소개가 기다리고 있어요."}
+              {serverState?.viewer_intro_reason ?? "한 분의 소개가 기다리고 있어요."}
               {introTickets === 0 && introPaymentsEnabled !== false
                 ? introPaymentsEnabled === null
                   ? " 티켓 안내를 확인해 주세요."
@@ -459,9 +458,11 @@ function HomePage() {
 function CandidatePreview({
   candidate,
   isMale,
+  viewerReason,
   viewer,
 }: {
   candidate: PublicProfile;
+  viewerReason?: string | null;
   isMale: boolean;
   viewer: {
     interests: string[] | null;
@@ -478,7 +479,8 @@ function CandidatePreview({
     viewer?.profile_public_signals,
     candidate.profile_public_signals,
   );
-  const managerReading = visible?.connections[0]?.text ?? visible?.portrait[0]?.text;
+  const managerReading =
+    viewerReason ?? visible?.connections[0]?.text ?? visible?.portrait[0]?.text;
   useEffect(() => {
     let active = true;
     setSrc(null);
