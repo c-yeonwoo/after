@@ -474,29 +474,24 @@ function IntroPage() {
         ) : null
       }
     >
-      {reason && !maleHasRequest ? (
-        <div className="mb-5">
-          <IntroductionReason reason={reason} />
-        </div>
-      ) : null}
-
-      <div className="mb-5">
-        <GuideNote assistant>
-          {maleHasRequest
-            ? meeting?.confirmed_at
+      {maleHasRequest ? (
+        <div className="mb-4">
+          <GuideNote assistant>
+            {meeting?.confirmed_at
               ? "약속이 정해졌어요. 상세에서 시간과 장소를 확인해 주세요."
               : meeting?.prefs_submitted_at
                 ? "상대가 가능한 시간을 보냈어요. 약속할 시간을 골라주세요."
-                : "요청을 전달했어요. 아직 상대의 답변을 기다리고 있어요."
-            : isMale
-              ? "프로필을 읽어보세요. 마음이 가면 날짜와 장소를 함께 제안해요."
-              : "어떤 분인지 천천히 읽어보세요. 호감을 보내면 만남 요청이 올 때 알려드릴게요."}
-        </GuideNote>
-      </div>
+                : "요청을 전달했어요. 아직 상대의 답변을 기다리고 있어요."}
+          </GuideNote>
+        </div>
+      ) : null}
 
       <ProfileDetail
         key={candidate.id}
         p={view}
+        introductionNote={
+          reason && !maleHasRequest ? <IntroductionReason reason={reason} /> : undefined
+        }
         viewer={toProfileView(me)}
         assistantSignature={<AssistantMark />}
         introductionTarget={candidate.id ?? undefined}
@@ -651,7 +646,7 @@ function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
         </div>
       ) : null}
       {teaser.reason ? (
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="mt-5">
           <p className="text-xs font-medium text-muted-foreground">매니저의 소개 이유</p>
           <p className="mt-1.5 text-base leading-[1.7] text-foreground">{teaser.reason}</p>
         </div>

@@ -551,20 +551,20 @@ function CandidatePreview({
           ) : null}
         </div>
       ) : null}
-      <Link
-        to="/intro"
-        className="introduction-primary pressable mt-4 flex min-h-11 items-center justify-center rounded-control px-4 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        {isMale ? "프로필 이어보기" : "프로필 읽어보기"}
-      </Link>
       {managerReading ? (
-        <div className="mt-3">
+        <div className="mt-4">
           <p className="mb-1 text-xs text-muted-foreground">매니저의 한마디</p>
           <p className="line-clamp-3 break-keep break-words text-sm leading-relaxed">
             {managerReading}
           </p>
         </div>
       ) : null}
+      <Link
+        to="/intro"
+        className="introduction-primary pressable mt-4 flex min-h-11 items-center justify-center rounded-control px-4 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        {isMale ? "프로필 이어보기" : "프로필 읽어보기"}
+      </Link>
     </section>
   );
 }

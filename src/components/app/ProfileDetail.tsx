@@ -78,12 +78,14 @@ export function ProfileDetail({
   viewer,
   own = false,
   assistantSignature,
+  introductionNote,
   introductionTarget,
 }: {
   p: ProfileView;
   viewer?: ConciergeProfile;
   own?: boolean;
   assistantSignature?: ReactNode;
+  introductionNote?: ReactNode;
   introductionTarget?: string;
 }) {
   const paragraphs = (p.intro || "")
@@ -119,20 +121,21 @@ export function ProfileDetail({
             </span>
           ) : null}
         </h2>
+        {p.headline ? (
+          <blockquote className="mt-2">
+            <p
+              data-selectable
+              className="break-keep break-words text-pretty text-[1.1875rem] leading-[1.5] font-medium text-foreground"
+            >
+              {p.headline}
+            </p>
+          </blockquote>
+        ) : null}
       </header>
 
-      {p.headline ? (
-        <blockquote>
-          <p
-            data-selectable
-            className="break-keep break-words text-pretty text-[1.1875rem] leading-[1.5] font-medium text-foreground"
-          >
-            {p.headline}
-          </p>
-        </blockquote>
-      ) : null}
-
       <ProfilePhotos key={p.photos.join("|")} paths={p.photos} name={p.name} />
+
+      {introductionNote}
 
       {hasAnyFact ? (
         <dl className="profile-facts grid grid-cols-3 gap-x-3 gap-y-4">

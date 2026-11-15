@@ -354,7 +354,18 @@ function Workbench({
   };
 
   const inQueue = new Set(order);
-  const available = (pool ?? []).filter((p) => !inQueue.has(p.id));
+  const ranks = new Map(
+    (recommendationError ? [] : (recommendations?.items ?? [])).map((item, index) => [
+      item.female_id,
+      index,
+    ]),
+  );
+  const available = (pool ?? [])
+    .filter((p) => !inQueue.has(p.id))
+    .sort(
+      (a, b) =>
+        (ranks.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (ranks.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
   const recommendationById = new Map((recommendations?.items ?? []).map((r) => [r.female_id, r]));
   const overlap = (femaleId: string) => {
     const maleWindow = windows.get(maleId);
@@ -388,18 +399,7 @@ function Workbench({
   function fillDeliveryWindow() {
     const slots = Math.max(0, DELIVER_WINDOW - order.length);
     if (slots === 0) return;
-    // 교집합이 확인된 후보를 먼저 제안하고, 같은 조건에서는 오래 기다린 순서를 유지한다.
-    // 순위는 초안일 뿐이며 저장 전 운영자가 프로필과 의사를 확인한다.
-    // Server ordering includes bounded preference signals and overdue-member
-    // review priority. Unknown data is not an incompatibility or exclusion.
-    const ranks = new Map(
-      (recommendations?.items ?? []).map((item, index) => [item.female_id, index]),
-    );
-    const ranked = [...available].sort(
-      (a, b) =>
-        (ranks.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (ranks.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-    );
-    setOrder([...order, ...ranked.slice(0, slots).map((p) => p.id)]);
+    setOrder([...order, ...available.slice(0, slots).map((p) => p.id)]);
   }
 
   if (pool === null)
@@ -512,8 +512,8 @@ function Workbench({
                   />
                 </summary>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  입력된 일정과 공개한 만남 스타일·관계 기대·배려 방식을 비교합니다. 3일 이상 기다린
-                  분은 우선 검토하며, 저장 전에는 누구에게도 소개를 보내지 않습니다.
+                  3일 이상 기다린 분을 우선 검토해요. 같은 대기 그룹에서는 후기에서 고른 만남 방식을
+                  우선하고, 공개 프로필과 가능한 일정도 함께 고려해요.
                 </p>
                 <p className="mt-2 text-2xs text-muted-foreground">
                   추천 근거와 대기 시간을 기준으로 초안을 담습니다. 저장 전 프로필과 순서를
@@ -699,7 +699,9 @@ function Workbench({
               </span>
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              이 회원을 좋다고 한 사람들. 오래 기다린 순입니다.
+              {recommendations && !recommendationError
+                ? "이 회원에게 호감을 보낸 분들이에요. 추천 순서로 보여요."
+                : "이 회원에게 호감을 보낸 분들이에요. 대기 순서로 보여요."}
             </p>
             {pool === null ? (
               <p className="mt-3 text-sm text-muted-foreground">불러오는 중…</p>

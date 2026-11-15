@@ -165,11 +165,11 @@ function FeedbackPage() {
   return (
     <AppScreen title="만남 후 피드백" hideTabs back="/chats">
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        선택 사항입니다. 약속이 지켜졌는지 확인하는 데 쓰며, 내용은 상대에게 공개되지 않습니다.
+        후기는 상대에게 보이지 않아요.
       </p>
 
-      <section className="mt-7">
-        <h2 className="text-sm font-semibold">만남은 어땠나요</h2>
+      <section className="mt-5">
+        <h2 className="text-xl font-semibold">만남은 어땠나요?</h2>
         <div className="mt-3 grid gap-2">
           {RESULTS.map((r) => (
             <Chip key={r.id} selected={result === r.id} onClick={() => setResult(r.id)}>
@@ -204,13 +204,13 @@ function FeedbackPage() {
         </section>
       )}
 
-      <section className="mt-7">
+      <section className="mt-4">
         <label className="text-sm font-semibold" htmlFor="fb">
           더 하고 싶은 말 (선택)
         </label>
         <Textarea
           id="fb"
-          rows={5}
+          rows={3}
           maxLength={1500}
           className="mt-2"
           placeholder="안전과 관련된 일은 반드시 알려주세요."
@@ -220,10 +220,10 @@ function FeedbackPage() {
       </section>
 
       {result && result !== "noshow" ? (
-        <fieldset className="mt-6">
+        <fieldset className="mt-8 min-w-0">
           <legend className="text-sm font-semibold">다음엔 어떤 만남이 좋을까요? (선택)</legend>
           <p className="mt-1 text-sm text-muted-foreground">
-            하나를 고르면 상대 프로필과 맞을 때 내 소개 이유에 반영해요.
+            고른 방식이 잘 맞는 분을 다음 소개에서 먼저 살펴봐요.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {NEXT_MEETING.map(([value, label]) => (
