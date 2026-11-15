@@ -9,9 +9,8 @@ import AxeBuilder from "@axe-core/playwright";
 
 const env = JSON.parse(
   execFileSync(
-    "npx",
+    "supabase",
     [
-      "supabase",
       "status",
       "-o",
       "json",

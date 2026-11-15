@@ -8,7 +8,7 @@ import { chromium, webkit } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 
 const env = JSON.parse(
-  execFileSync("npx", ["supabase", "status", "-o", "json"], {
+  execFileSync("supabase", ["status", "-o", "json"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }),

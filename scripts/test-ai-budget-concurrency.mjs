@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-const status = execFileSync("npx", ["supabase", "status", "--output", "env"], { encoding: "utf8" });
+const status = execFileSync("supabase", ["status", "--output", "env"], { encoding: "utf8" });
 const dbUrl = status.match(/^DB_URL="?([^"\n]+)"?/m)?.[1];
 if (!dbUrl || new URL(dbUrl).hostname !== "127.0.0.1") throw new Error("Local DB only");
 const run = (sql) =>

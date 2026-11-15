@@ -1,7 +1,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 
-const status = execFileSync("npx", ["supabase", "status", "--output", "env"], {
+const status = execFileSync("supabase", ["status", "--output", "env"], {
   encoding: "utf8",
 });
 const dbUrl = status.match(/^DB_URL="?([^"\n]+)"?/m)?.[1];
