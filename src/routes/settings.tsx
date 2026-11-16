@@ -153,11 +153,32 @@ function SettingsPage() {
 
   const kakaoLinked = providers?.includes(KAKAO_PROVIDER) ?? false;
 
-  // paused_at 의 의미가 성별로 다르다 — 아래 토글의 라벨과 설명이 갈린다.
-  const isMale = me.gender === "male";
-
   return (
     <AppScreen title="환경설정" back="/me" keyboardAware>
+      <section aria-label="소개 받기" className="mt-2 rounded-surface bg-surface-subtle px-4">
+        <PreferenceToggle
+          label="새 소개 받기"
+          description={
+            me.paused_at
+              ? "지금은 쉬는 중이에요. 켜면 다시 소개를 받아요."
+              : "새 소개 받기가 켜져 있어요. 꺼도 진행 중인 약속은 유지돼요."
+          }
+          checked={me.paused_at === null}
+          disabled={busy}
+          onCheckedChange={async (next) => {
+            setBusy(true);
+            try {
+              await setPaused(!next);
+              await refresh();
+              toast.success(next ? "다시 소개를 받습니다." : "새 소개를 멈췄습니다.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+      </section>
       {me.onboarding_step >= 7 ? (
         <Link
           to="/assistant"
@@ -252,47 +273,12 @@ function SettingsPage() {
           <p className="text-sm font-medium">만남 진행 알림</p>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             소개 도착 · 최초 요청 · 답변 · 만남 확정 알림은 끌 수 없습니다. 추가 리마인드는 위에서
-            선택할 수 있어요. 당분간 소개를 받지 않으시려면 아래 잠시 쉬기를 켜 주세요.
+            선택할 수 있어요. 새 소개는 이 화면 상단에서 잠시 멈출 수 있어요.
           </p>
         </div>
       </section>
 
-      {/* ── 잠시 쉬기 ───────────────────────────
-        의미를 좁게 둔다: 새 소개만 멈춘다. 진행 중인 요청·약속은 그대로다 —
-        상대가 이미 티켓을 썼다면 그 돈이 걸려 있으므로 내가 쉬겠다고 그 약속을
-        깰 수는 없다. 그 사실을 화면에서도 분명히 말한다.
-      */}
       <MeetingContactPreference />
-      <section className="mt-6 border-b border-border pb-6">
-        {/*
-          남성 쪽에는 효과가 하나 더 붙는다(v2). paused_at 은 여성 평가 큐에서
-          빠지는 것 외에 **운영자가 세운 소개 카드도 오지 않게** 한다. 컬럼을
-          늘리지 않고 같은 값을 쓰되, 라벨과 설명을 갈라 그 사실을 말한다.
-        */}
-        <h2 className="text-sm font-semibold">{isMale ? "소개 받기" : "잠시 쉬기"}</h2>
-        <PreferenceToggle
-          label={isMale ? "소개 받지 않기" : "새 소개 받지 않기"}
-          description={
-            isMale
-              ? "새 소개만 멈춰요. 진행 중인 요청과 약속은 유지돼요."
-              : "진행 중인 요청과 약속은 유지돼요. 언제든 다시 받을 수 있어요."
-          }
-          checked={me.paused_at !== null}
-          disabled={busy}
-          onCheckedChange={async (next) => {
-            setBusy(true);
-            try {
-              await setPaused(next);
-              await refresh();
-              toast.success(next ? "새 소개를 멈췄습니다." : "다시 소개를 받습니다.");
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-      </section>
 
       {/* ── 비밀번호 ─────────────────────────── */}
       {/*

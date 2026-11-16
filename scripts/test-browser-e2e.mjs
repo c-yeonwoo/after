@@ -181,6 +181,25 @@ async function waitForHome(page) {
   await page.locator(".home-greeting h1").waitFor();
 }
 
+// Playwright click() scrolls offscreen targets into view; measure before interacting.
+async function assertInitiallyVisible(target) {
+  await target.waitFor();
+  const inside = await target.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    const container = el.closest("main")?.getBoundingClientRect();
+    return (
+      rect.top >= (container?.top ?? 0) &&
+      rect.bottom <= Math.min(container?.bottom ?? innerHeight, innerHeight) &&
+      rect.left >= 0 &&
+      rect.right <= innerWidth
+    );
+  });
+  assert.ok(
+    inside,
+    `control visible without scrolling: ${(await target.getAttribute("aria-label")) ?? (await target.textContent())}`,
+  );
+}
+
 async function checkPage(page, name, accessibility = true) {
   await page.waitForFunction(
     () =>
@@ -486,9 +505,10 @@ try {
   const availabilityBox = await availability.boundingBox();
   assert.ok(availabilityBox.width > 0 && availabilityBox.height >= 44);
   await signupPage.getByRole("link", { name: /환경설정/ }).click();
-  const waitingSwitch = signupPage.getByRole("switch", { name: "소개 받지 않기", exact: true });
+  const waitingSwitch = signupPage.getByRole("switch", { name: "새 소개 받기", exact: true });
   await waitingSwitch.waitFor();
-  await waitingSwitch.scrollIntoViewIfNeeded();
+  await signupPage.setViewportSize({ width: 320, height: 568 });
+  await assertInitiallyVisible(waitingSwitch);
   const switchBox = await waitingSwitch.boundingBox();
   assert.ok(switchBox.width >= 44 && switchBox.height >= 44, "switch has a 44px touch target");
   assert.equal(
@@ -498,10 +518,11 @@ try {
     "none",
     "switch rail respects reduced motion",
   );
+  await signupPage.setViewportSize({ width: 390, height: 844 });
   await signupPage.emulateMedia({ reducedMotion: "no-preference" });
   await waitingSwitch.click();
   await signupPage
-    .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: true })
+    .getByRole("switch", { name: "새 소개 받기", exact: true, checked: false })
     .waitFor();
   assert.equal(
     sql(`select paused_at is not null from public.profiles where id='${existing.id}'`),
@@ -509,7 +530,7 @@ try {
   );
   await waitingSwitch.click();
   await signupPage
-    .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: false })
+    .getByRole("switch", { name: "새 소개 받기", exact: true, checked: true })
     .waitFor();
   assert.equal(sql(`select paused_at is null from public.profiles where id='${existing.id}'`), "t");
   assert.equal(
@@ -1056,6 +1077,9 @@ try {
   await checkPage(femalePage, "female home");
   await femalePage.getByRole("link", { name: "만남 요청 보기" }).click();
   await femalePage.getByRole("link", { name: "요청 확인·답하기" }).click();
+  await femalePage.setViewportSize({ width: 320, height: 568 });
+  await assertInitiallyVisible(femalePage.getByRole("button", { name: /이 날로 정하기/ }).first());
+  await femalePage.setViewportSize({ width: 390, height: 844 });
   await checkPage(femalePage, "meeting request received");
   if (screenshotDir)
     await femalePage.screenshot({ path: join(screenshotDir, "meeting-received-native.png") });
@@ -1186,7 +1210,12 @@ try {
     name: "이 날짜와 장소로 확정하기",
     exact: true,
   });
-  await confirmPlan.waitFor();
+  await femalePage.setViewportSize({ width: 320, height: 568 });
+  await assertInitiallyVisible(confirmPlan);
+  await assertInitiallyVisible(
+    femalePage.getByRole("button", { name: homeTime.trim(), exact: true }),
+  );
+  await femalePage.setViewportSize({ width: 390, height: 844 });
   assert.equal(await confirmPlan.isDisabled(), true);
   await femalePage.getByRole("button", { name: homeTime.trim(), exact: true }).click();
   await femalePage.getByLabel("만날 장소").fill("강남역 근처의 조용한 카페");

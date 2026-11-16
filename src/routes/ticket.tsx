@@ -8,6 +8,7 @@ import { GuideNote } from "@/components/app/GuideNote";
 import { MeetRequestForm } from "@/components/app/MeetRequestForm";
 import { Button } from "@/components/ui/button";
 import { BRAND, MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
+import { formatMeetTime } from "@/lib/meet";
 import { haptics } from "@/lib/native";
 import {
   getOpenIntroWithCandidate,
@@ -76,54 +77,86 @@ function TicketPage() {
     );
   }
 
+  if (!meeting && introId && (!paid || tickets > 0)) {
+    return (
+      <MeetRequestForm
+        introId={introId}
+        counterpartName={counterpartName}
+        beta={!paid}
+        tickets={tickets}
+        onRequested={(m) => {
+          setMeeting(m);
+          haptics.success();
+        }}
+      />
+    );
+  }
+
   return (
     <AppScreen title={paid ? "만남 티켓" : "만남 준비"} hideTabs back="/intro">
       <div className="mt-3">
         <GuideNote introduce assistant>
-          {waiting
-            ? meeting?.proposed_slots?.length
-              ? "후보를 보냈어요. 상대가 하나를 고르면 바로 알려드릴게요."
-              : "가능한 날을 여쭤보았습니다. 답이 오면 알려드릴게요."
-            : readyToSchedule
-              ? "가능한 날짜가 도착했습니다. 하나를 정하면 대화가 열립니다."
-              : meeting?.confirmed_at
-                ? "약속이 확정되었습니다. 대화에서 세부 내용을 나눠 보세요."
-                : "평일 저녁 후보와 장소를 보내면, 상대가 하나를 고르는 순간 약속이 정해져요."}
+          {meeting?.cancelled_at
+            ? "취소된 약속이에요."
+            : meeting?.completed_at
+              ? "종료된 약속이에요."
+              : waiting
+                ? meeting?.proposed_slots?.length
+                  ? "후보를 보냈어요. 상대가 하나를 고르면 바로 알려드릴게요."
+                  : "가능한 날을 여쭤보았습니다. 답이 오면 알려드릴게요."
+                : readyToSchedule
+                  ? "가능한 날짜가 도착했습니다. 하나를 정하면 대화가 열립니다."
+                  : meeting?.confirmed_at
+                    ? "약속이 확정되었습니다. 대화에서 세부 내용을 나눠 보세요."
+                    : "평일 저녁 후보와 장소를 보내면, 상대가 하나를 고르는 순간 약속이 정해져요."}
         </GuideNote>
       </div>
 
-      <div className="app-elevated mt-6 overflow-hidden rounded-surface bg-card">
-        <div className="bg-selection px-6 py-6 text-selection-foreground">
-          <Ticket className="size-5 text-selection-foreground" aria-hidden="true" />
-          <div className="mt-3 flex items-baseline justify-between gap-3">
-            <p className="text-lg font-semibold text-selection-foreground">
-              {paid ? "만남 티켓 1장" : "만남 조율"}
-            </p>
-            <p className="text-lg font-semibold text-selection-foreground">
-              {paid ? MEETING_TICKET_PRICE_LABEL : "베타 무료"}
-            </p>
+      {!meeting ? (
+        <div className="app-elevated mt-6 overflow-hidden rounded-surface bg-card">
+          <div className="bg-selection px-6 py-6 text-selection-foreground">
+            <Ticket className="size-5 text-selection-foreground" aria-hidden="true" />
+            <div className="mt-3 flex items-baseline justify-between gap-3">
+              <p className="text-lg font-semibold text-selection-foreground">
+                {paid ? "만남 티켓 1장" : "만남 조율"}
+              </p>
+              <p className="text-lg font-semibold text-selection-foreground">
+                {paid ? MEETING_TICKET_PRICE_LABEL : "베타 무료"}
+              </p>
+            </div>
+            <p className="mt-1 text-xs text-selection-foreground">한 사람과의 만남을 조율합니다.</p>
           </div>
-          <p className="mt-1 text-xs text-selection-foreground">한 사람과의 만남을 조율합니다.</p>
+          <ul className="space-y-2.5 px-6 py-5 text-sm">
+            {[
+              paid
+                ? "상대가 거절하거나 24시간 안에 답이 없으면 티켓을 돌려드립니다"
+                : "상대가 거절하거나 24시간 안에 답이 없으면 요청이 종료됩니다",
+              "평일 저녁 후보와 장소를 한 번에 보냅니다",
+              "상대가 하나를 고르면 약속이 정해지고 대화가 열립니다",
+            ].map((t) => (
+              <li key={t} className="flex gap-2.5 text-foreground">
+                <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+                <span className="leading-relaxed">{t}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="space-y-2.5 px-6 py-5 text-sm">
-          {[
-            paid
-              ? "상대가 거절하거나 24시간 안에 답이 없으면 티켓을 돌려드립니다"
-              : "상대가 거절하거나 24시간 안에 답이 없으면 요청이 종료됩니다",
-            "평일 저녁 후보와 장소를 한 번에 보냅니다",
-            "상대가 하나를 고르면 약속이 정해지고 대화가 열립니다",
-          ].map((t) => (
-            <li key={t} className="flex gap-2.5 text-foreground">
-              <Check className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
-              <span className="leading-relaxed">{t}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      ) : null}
 
-      {waiting ? (
+      {meeting?.cancelled_at || meeting?.completed_at ? (
+        <Button className="mt-4 w-full" onClick={() => navigate({ to: "/chats" })}>
+          만남 목록으로
+        </Button>
+      ) : waiting ? (
         <div className="mt-7 rounded-surface bg-surface-subtle px-6 py-8 text-center">
           <p className="text-sm font-medium">답변을 기다리는 중입니다</p>
+          {meeting?.proposed_slots?.length ? (
+            <ul className="my-3 space-y-1 text-sm font-semibold" aria-label="보낸 날짜">
+              {meeting.proposed_slots.map((slot) => (
+                <li key={slot}>{formatMeetTime(slot)}</li>
+              ))}
+            </ul>
+          ) : null}
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {paid
               ? "상대가 후보 하나를 고르면 약속이 정해집니다. 거절하거나 24시간 안에 답이 없으면 티켓은 자동으로 반환됩니다."
@@ -142,27 +175,6 @@ function TicketPage() {
         <Button className="mt-7 w-full" size="lg" onClick={() => navigate({ to: "/chats" })}>
           대화방으로 이동
         </Button>
-      ) : (tickets > 0 || paid === false) && introId ? (
-        /*
-          D1-B(s51): 티켓을 쓰는 순간 평일 저녁 후보와 장소를 같이 보낸다. 예전엔 티켓만
-          쓰고 여성이 날짜를 보내기를 기다린 뒤 남성이 장소를 빈칸에 적었다.
-        */
-        <div className="mt-7">
-          <MeetRequestForm
-            introId={introId}
-            counterpartName={counterpartName}
-            beta={paid === false}
-            onRequested={(m) => {
-              setMeeting(m);
-              haptics.success();
-            }}
-          />
-          {paid ? (
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              보유 만남 티켓 {tickets}장
-            </p>
-          ) : null}
-        </div>
       ) : !paid && !introId ? (
         <div className="mt-7 rounded-surface bg-surface-subtle px-6 py-8 text-center">
           <p className="text-sm font-medium">먼저 소개를 확인해 주세요</p>

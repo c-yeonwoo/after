@@ -31,6 +31,13 @@ export const Route = createFileRoute("/me")({
  */
 const MENU = [
   {
+    to: "/settings",
+    icon: Settings,
+    label: "환경설정",
+    hint: "소개 받기 · 만남 지역 · 알림",
+    male: false,
+  },
+  {
     to: "/availability",
     icon: CalendarDays,
     label: "만남 가능 시간",
@@ -40,13 +47,6 @@ const MENU = [
   // 무료 베타에도 상점 진입은 유지한다. 구매 가능 여부는 상점 안에서 안내한다.
   { to: "/store", icon: Ticket, label: "티켓 상점", hint: "소개 · 만남 이용 안내", male: true },
   { to: "/orders", icon: Receipt, label: "티켓 이용 내역", hint: "발급 · 사용 · 결제", male: true },
-  {
-    to: "/settings",
-    icon: Settings,
-    label: "환경설정",
-    hint: "만남 지역 · 화면 · 알림",
-    male: false,
-  },
   {
     to: "/support",
     icon: CircleHelp,

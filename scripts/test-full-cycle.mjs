@@ -610,10 +610,10 @@ try {
     assert.equal(await m1.page.getByRole("switch").count(), 0);
     await m1.page.getByRole("link", { name: "나", exact: true }).click();
     await m1.page.getByRole("link", { name: /환경설정/ }).click();
-    const pause = m1.page.getByRole("switch", { name: "소개 받지 않기", exact: true });
+    const pause = m1.page.getByRole("switch", { name: "새 소개 받기", exact: true });
     await pause.click();
     await m1.page
-      .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: true })
+      .getByRole("switch", { name: "새 소개 받기", exact: true, checked: false })
       .waitFor();
     assert.equal(
       sql(`select (paused_at is not null)::text from profiles where id='${m1.id}'`),
@@ -621,7 +621,7 @@ try {
     );
     await pause.click();
     await m1.page
-      .getByRole("switch", { name: "소개 받지 않기", exact: true, checked: false })
+      .getByRole("switch", { name: "새 소개 받기", exact: true, checked: true })
       .waitFor();
     assert.equal(sql(`select (paused_at is null)::text from profiles where id='${m1.id}'`), "true");
     assert.equal(sql(`select count(*) from tickets where user_id='${m1.id}'`), "0");

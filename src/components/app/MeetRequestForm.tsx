@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { MapPin, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { AppScreen } from "@/components/app/AppScreen";
+import { MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { Input } from "@/components/ui/input";
@@ -62,11 +64,13 @@ export function MeetRequestForm({
   introId,
   counterpartName,
   beta,
+  tickets,
   onRequested,
 }: {
   introId: string;
   counterpartName: string | null;
   beta: boolean;
+  tickets: number;
   onRequested: (m: Meeting) => void;
 }) {
   // 달력은 클라이언트에서만 만든다(하이드레이션 — meet.ts 주석).
@@ -115,49 +119,60 @@ export function MeetRequestForm({
   }
 
   return (
-    <div className="space-y-7">
-      <section>
-        <h3 className="text-base font-semibold text-foreground">언제 만날까요?</h3>
+    <AppScreen
+      title="만남 요청"
+      back="/intro"
+      hideTabs
+      keyboardAware
+      footer={
+        <>
+          {slots.length && placeReady ? <MeetingPolicyNote /> : null}
+          {!beta ? (
+            <p className="mb-2 text-xs text-muted-foreground">
+              만남 티켓 1장 {MEETING_TICKET_PRICE_LABEL} · 보유 {tickets}장
+            </p>
+          ) : null}
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!ready}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const m = await requestMeeting(
+                  introId,
+                  sortedSlots,
+                  placeId ? { placeId } : { placeName: placeName.trim() },
+                );
+                toast.success("요청을 보냈어요. 상대가 고르면 바로 약속이 정해져요.");
+                onRequested(m);
+              } catch (err) {
+                toast.error(requestError(err));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy
+              ? "보내는 중…"
+              : slots.length && !placeReady
+                ? "만날 곳을 정해 주세요"
+                : slots.length > 0
+                  ? beta
+                    ? `후보 ${slots.length}개로 무료 요청하기`
+                    : `후보 ${slots.length}개로 요청하기 · 만남 티켓 1장`
+                  : "후보를 골라 주세요"}
+          </Button>
+        </>
+      }
+    >
+      <section className="mt-2">
+        <h2 className="headline text-xl">언제 만날까요?</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           평일 저녁 후보를 {MAX_SLOTS}개까지 고르세요.
           {counterpartName ? ` ${counterpartName}님이` : " 상대가"} 하나를 고르면 바로 약속이
           정해져요.
         </p>
-
-        {recommended.length ? (
-          <div className="mt-4 rounded-surface bg-surface-subtle p-4">
-            <p className="text-sm font-semibold">서로 편한 요일이 겹쳐요</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              평소 가능한 시간으로 고른 후보예요. 실제 날짜는 두 분이 다시 확인합니다.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {recommended.map((iso) => (
-                <button
-                  key={iso}
-                  type="button"
-                  aria-pressed={slots.includes(iso)}
-                  disabled={!slots.includes(iso) && slots.length >= MAX_SLOTS}
-                  onClick={() => toggleSlot(iso)}
-                  className={cn(
-                    "pressable min-h-11 rounded-control border px-3 text-xs font-medium disabled:opacity-40",
-                    slots.includes(iso)
-                      ? "border-selection bg-selection text-selection-foreground"
-                      : "border-border bg-card text-foreground",
-                  )}
-                >
-                  {formatMeetTime(iso)}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <p className="mt-3 text-xs text-muted-foreground">
-            <Link to="/availability" className="underline underline-offset-4">
-              내 가능 시간 설정
-            </Link>
-            을 해두면 겹치는 요일을 먼저 보여드려요. 아래에서 직접 골라도 됩니다.
-          </p>
-        )}
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="날짜">
           {days.map((k) => (
@@ -225,16 +240,50 @@ export function MeetRequestForm({
             ))}
           </ul>
         ) : null}
+        {recommended.length ? (
+          <div className="mt-4 rounded-surface bg-surface-subtle p-4">
+            <p className="text-sm font-semibold">서로 편한 요일이 겹쳐요</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              평소 가능한 시간으로 고른 후보예요. 실제 날짜는 두 분이 다시 확인합니다.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {recommended.map((iso) => (
+                <button
+                  key={iso}
+                  type="button"
+                  aria-pressed={slots.includes(iso)}
+                  disabled={!slots.includes(iso) && slots.length >= MAX_SLOTS}
+                  onClick={() => toggleSlot(iso)}
+                  className={cn(
+                    "pressable min-h-11 rounded-control border px-3 text-xs font-medium disabled:opacity-40",
+                    slots.includes(iso)
+                      ? "border-selection bg-selection text-selection-foreground"
+                      : "border-border bg-card text-foreground",
+                  )}
+                >
+                  {formatMeetTime(iso)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-muted-foreground">
+            <Link to="/availability" className="underline underline-offset-4">
+              내 가능 시간 설정
+            </Link>
+            을 해두면 두 분의 일정이 겹치는 날도 보여드려요.
+          </p>
+        )}
       </section>
 
-      <section>
-        <h3 className="text-base font-semibold text-foreground">어디서 만날까요?</h3>
+      <section className="mt-5">
+        <h2 className="text-base font-semibold text-foreground">어디서 만날까요?</h2>
         {places === null ? (
           <p className="mt-2 text-sm text-muted-foreground">장소를 불러오는 중입니다…</p>
         ) : places.length > 0 ? (
           <>
             <p className="mt-1 text-sm text-muted-foreground">
-              운영팀이 퇴근길에 들르기 좋은 곳을 골라 두었어요. 예약은 하지 않아요.
+              장소를 고르면 애프터가 상대에게 전해요. 예약이 필요하면 직접 해주세요.
             </p>
             <div className="mt-3 space-y-2" role="radiogroup" aria-label="장소">
               {places.map((p) => (
@@ -278,7 +327,7 @@ export function MeetRequestForm({
         ) : (
           <>
             <p className="mt-1 text-sm text-muted-foreground">
-              만날 곳을 적어 주세요. 회사 근처, 사람이 많은 곳이면 좋아요.
+              애프터가 상대에게 전할 장소예요. 예약이 필요하면 직접 해주세요.
             </p>
             <Input
               className="mt-3"
@@ -292,43 +341,11 @@ export function MeetRequestForm({
         )}
       </section>
 
-      <div>
-        <MeetingPolicyNote />
-        <Button
-          className="w-full"
-          size="lg"
-          disabled={!ready}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              const m = await requestMeeting(
-                introId,
-                sortedSlots,
-                placeId ? { placeId } : { placeName: placeName.trim() },
-              );
-              toast.success("요청을 보냈어요. 상대가 고르면 바로 약속이 정해져요.");
-              onRequested(m);
-            } catch (err) {
-              toast.error(requestError(err));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {busy
-            ? "보내는 중…"
-            : slots.length > 0
-              ? beta
-                ? `후보 ${slots.length}개로 무료 요청하기`
-                : `후보 ${slots.length}개로 요청하기 · 만남 티켓 1장`
-              : "후보를 골라 주세요"}
-        </Button>
-        <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-          {beta
-            ? "상대가 거절하거나 24시간 안에 답하지 않으면 요청이 종료돼요."
-            : "상대가 거절하거나 24시간 안에 답하지 않으면 티켓을 돌려드려요."}
-        </p>
-      </div>
-    </div>
+      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+        {beta
+          ? "상대가 거절하거나 24시간 안에 답하지 않으면 요청이 종료돼요."
+          : "상대가 거절하거나 24시간 안에 답하지 않으면 티켓을 돌려드려요."}
+      </p>
+    </AppScreen>
   );
 }

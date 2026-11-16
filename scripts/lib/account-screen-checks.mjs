@@ -36,9 +36,10 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
   await page.getByRole("alert").getByText("요청 리마인드 설정을 확인할 수 없습니다.").waitFor();
   await page.unroute(reminderUrl);
   await page.getByRole("button", { name: "다시 확인", exact: true }).click();
-  const reminder = page.getByRole("switch", { name: "답변 대기 리마인드", exact: true });
-  await reminder.waitFor({ state: "visible" });
-  await page.waitForFunction(() => !document.querySelector('[role="switch"]')?.disabled);
+  const reminder = page
+    .getByRole("switch", { name: "답변 대기 리마인드", exact: true })
+    .and(page.locator(":enabled"));
+  await reminder.waitFor();
   const originalReminder = await reminder.getAttribute("aria-checked");
   await page.route(reminderWrite, fail);
   await reminder.click();
@@ -55,18 +56,11 @@ export async function checkAccountScreens({ page, baseUrl, checkPage, screenshot
   await reminder.click();
   await changed;
   await page.reload();
-  await reminder.waitFor();
-  await page.waitForFunction(
-    (expected) =>
-      document.querySelector('[role="switch"]')?.getAttribute("aria-checked") === expected,
-    originalReminder === "true" ? "false" : "true",
-  );
+  await reminder
+    .and(page.locator(`[aria-checked="${originalReminder === "true" ? "false" : "true"}"]`))
+    .waitFor();
   await reminder.click();
-  await page.waitForFunction(
-    (expected) =>
-      document.querySelector('[role="switch"]')?.getAttribute("aria-checked") === expected,
-    originalReminder,
-  );
+  await reminder.and(page.locator(`[aria-checked="${originalReminder}"]`)).waitFor();
   const areaPicker = page.getByLabel("가장 편한 지역", { exact: true });
   await areaPicker.waitFor();
   await areaPicker.selectOption("pangyo");

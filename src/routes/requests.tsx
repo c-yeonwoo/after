@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { AppScreen } from "@/components/app/AppScreen";
 import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
-import { GuideNote } from "@/components/app/GuideNote";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { IntroductionReason } from "@/components/app/IntroductionReason";
 import { Button } from "@/components/ui/button";
@@ -111,22 +110,17 @@ function RequestsPage() {
   return (
     <AppScreen title="만남 요청" back="/chats">
       {refreshNotice}
-      <div className="mt-3">
-        <GuideNote assistant>
-          {requests.length > 1
-            ? `만남 요청이 ${requests.length}건 도착했어요. 각각 답하실 수 있습니다.`
-            : "만남 요청이 도착했어요. 가능한 날짜를 알려주세요."}
-        </GuideNote>
-      </div>
-
-      <ul className="mt-6 space-y-3">
+      {requests.length > 1 ? (
+        <p className="mt-2 text-sm text-muted-foreground">답변할 요청 {requests.length}건</p>
+      ) : null}
+      <ul className="mt-2 space-y-4">
         {requests.map(({ meeting, candidate, deadline_at, reason }) => {
           const left =
             now === null || !deadline_at ? null : remainingLabel(Date.parse(deadline_at), now);
           return (
             <li key={meeting.id}>
               <div className="app-elevated overflow-hidden rounded-surface bg-card">
-                <div className="px-5 pt-5 pb-4">
+                <div className="px-4 pt-4 pb-2">
                   <p className="headline text-xl">
                     {candidate.name}
                     {candidate.age !== null ? (
@@ -136,17 +130,7 @@ function RequestsPage() {
                     ) : null}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
-                  {candidate.headline ? (
-                    <p className="mt-3 line-clamp-2 text-sm leading-snug text-foreground/90">
-                      “{candidate.headline}”
-                    </p>
-                  ) : null}
-                  {reason ? (
-                    <div className="mt-4">
-                      <IntroductionReason reason={reason} embedded />
-                    </div>
-                  ) : null}
-                  <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="size-3.5" aria-hidden="true" />
                     {!deadline_at ? (
                       "답변 기한을 확인할 수 없습니다"
@@ -160,21 +144,6 @@ function RequestsPage() {
                     )}
                   </p>
                 </div>
-                {/*
-                  거절을 카드 안에 둔다. 예전에는 답하는 길만 있고 거절하는
-                  길이 없어서, 거절하려면 24시간 방치하는 수밖에 없었다.
-                  그동안 상대의 티켓도 함께 묶인다.
-                */}
-                <div className="border-t border-border px-5 pb-1">
-                  <DeclineRequest
-                    meetingId={meeting.id}
-                    candidateName={candidate.name}
-                    onInteractionStart={live.beginInteraction}
-                    onDone={() =>
-                      live.update((list) => list.filter((r) => r.meeting.id !== meeting.id))
-                    }
-                  />
-                </div>
                 {meeting.proposed_slots?.length ? (
                   <SlotChoices meeting={meeting} onInteractionStart={live.beginInteraction} />
                 ) : (
@@ -187,6 +156,31 @@ function RequestsPage() {
                     <ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 )}
+                <div className="px-4">
+                  <DeclineRequest
+                    meetingId={meeting.id}
+                    candidateName={candidate.name}
+                    onInteractionStart={live.beginInteraction}
+                    onDone={() =>
+                      live.update((list) => list.filter((r) => r.meeting.id !== meeting.id))
+                    }
+                  />
+                </div>
+                {candidate.headline || reason ? (
+                  <div className="px-4 pb-2">
+                    {" "}
+                    {candidate.headline ? (
+                      <p className="mt-3 line-clamp-2 text-sm leading-snug text-foreground/90">
+                        “{candidate.headline}”
+                      </p>
+                    ) : null}
+                    {reason ? (
+                      <div className="mt-4">
+                        <IntroductionReason reason={reason} embedded />
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <Link
                   to="/support"
                   search={{ meetingId: meeting.id }}
@@ -206,7 +200,7 @@ function RequestsPage() {
 /**
  * 남성이 보낸 평일 저녁 후보(s51). 하나를 누르면 그 자리에서 약속이 확정된다 — 날짜를
  * 다시 보내고 상대가 고르기를 기다리던 왕복이 없다. 결정은 마지막까지 그녀의 몫이다:
- * 맞는 날이 없으면 다른 날을 제안하고, 원치 않으면 위에서 거절한다.
+ * 맞는 날이 없으면 다른 날을 제안하고, 원치 않으면 거절한다.
  */
 function SlotChoices({
   meeting,
@@ -221,7 +215,7 @@ function SlotChoices({
   const slots = meeting.proposed_slots ?? [];
 
   return (
-    <div className="border-t border-border px-5 pt-4 pb-5">
+    <div className="px-4 pb-2">
       {meeting.proposed_place_name ? (
         <p className="flex items-start gap-1.5 text-sm text-foreground">
           <MapPin className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />

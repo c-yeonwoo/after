@@ -185,7 +185,7 @@ export function AppScreen({
         )}
         style={fill ? undefined : { paddingBottom: "1.5rem" }}
       >
-        {["/intro", "/chats", "/requests"].includes(pathname) ? (
+        {["/intro", "/chats"].includes(pathname) ? (
           <IntroductionNavigation meetings={pathname !== "/intro"} />
         ) : null}
         {children}
