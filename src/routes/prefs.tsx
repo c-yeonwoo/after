@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { AppScreen } from "@/components/app/AppScreen";
 import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
-import { GuideNote } from "@/components/app/GuideNote";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BRAND } from "@/lib/brand";
@@ -158,19 +157,55 @@ function PrefsPage() {
   }
 
   return (
-    <AppScreen title="만남 선호" hideTabs back="/requests">
-      <div className="mt-3">
-        <GuideNote assistant>
-          {candidateName
-            ? `${candidateName}님이 만남 티켓을 사용했어요. 가능한 날과 편한 지역만 알려 주세요.`
-            : "만남 요청이 도착했어요. 가능한 날과 편한 지역만 알려 주세요."}
-        </GuideNote>
-      </div>
-
-      <section className="mt-6">
-        <h2 className="text-sm font-semibold">가능한 날</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          편한 날을 직접 골라 주세요. 여러 날을 고르시면 상대가 그중에서 정합니다.
+    <AppScreen
+      title="가능한 날짜 보내기"
+      hideTabs
+      back="/requests"
+      keyboardAware
+      footer={
+        <>
+          {canSubmit ? <MeetingPolicyNote /> : null}
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!canSubmit || busy}
+            onClick={async () => {
+              if (!canSubmit || !meetingId) return;
+              setBusy(true);
+              try {
+                const prefs: MeetPrefs = {
+                  dates: pickedKeys.map((k) => meetingIso(k, picked[k])),
+                  stations,
+                  anywhere,
+                  note: note.trim() || undefined,
+                };
+                await submitMeetingPrefs(meetingId, prefs);
+                // S7: 여기서 대화가 열리지 않는다 — 자동 안내로 전달하고 상대가 확정해야 열린다.
+                haptics.success();
+                toast.success("전달했습니다. 상대가 날짜를 고르면 대화가 열려요.");
+                navigate({ to: "/home" });
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "전달에 실패했습니다.");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy
+              ? "보내는 중…"
+              : pickedKeys.length
+                ? `고른 날짜 ${pickedKeys.length}개 보내기`
+                : "가능한 날을 골라 주세요"}
+          </Button>
+        </>
+      }
+    >
+      <section className="mt-2">
+        <h2 className="headline text-xl">
+          {candidateName ? `${candidateName}님에게 보낼 날짜` : "상대에게 보낼 날짜"}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          편한 날을 고르면 상대가 날짜와 장소를 정해요.
         </p>
 
         <div className="mt-3 rounded-surface border border-border bg-card px-4 pt-4 pb-3">
@@ -196,7 +231,7 @@ function PrefsPage() {
                   aria-label={`${d.month}월 ${d.day}일`}
                   onClick={() => toggleDay(d.key)}
                   className={cn(
-                    "flex aspect-square items-center justify-center rounded-xl text-sm tabular-nums transition-colors",
+                    "flex min-h-11 items-center justify-center rounded-xl text-sm tabular-nums transition-colors",
                     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     !d.selectable && "text-muted-foreground/35",
                     d.selectable && !on && "text-foreground hover:bg-muted",
@@ -365,39 +400,6 @@ function PrefsPage() {
           placeholder="예) 주말엔 종로 쪽이 편해요"
         />
       </section>
-
-      <MeetingPolicyNote />
-      <Button
-        className="mt-8 w-full"
-        size="lg"
-        disabled={!canSubmit || busy}
-        onClick={async () => {
-          if (!canSubmit || !meetingId) return;
-          setBusy(true);
-          try {
-            const prefs: MeetPrefs = {
-              dates: pickedKeys.map((k) => meetingIso(k, picked[k])),
-              stations,
-              anywhere,
-              note: note.trim() || undefined,
-            };
-            await submitMeetingPrefs(meetingId, prefs);
-            // S7: 여기서 대화가 열리지 않는다 — 자동 안내로 전달하고 상대가 확정해야 열린다.
-            haptics.success();
-            toast.success("전달했습니다. 상대가 날짜를 고르면 대화가 열려요.");
-            navigate({ to: "/home" });
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "전달에 실패했습니다.");
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? "보내는 중…" : "애프터 자동 안내로 전달하기"}
-      </Button>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        애프터 자동 안내가 상대에게 그대로 전달합니다. 상대가 날짜와 장소를 정하면 대화가 열립니다.
-      </p>
 
       {/*
         답하기 화면에도 거절을 둔다. 여성이 홈에서 이 화면으로 바로 오는 경로가
