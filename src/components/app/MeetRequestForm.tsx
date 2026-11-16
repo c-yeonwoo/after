@@ -125,7 +125,7 @@ export function MeetRequestForm({
       hideTabs
       keyboardAware
       footer={
-        <>
+        <div className="meeting-response-actions">
           {slots.length && placeReady ? <MeetingPolicyNote /> : null}
           {!beta ? (
             <p className="mb-2 text-xs text-muted-foreground">
@@ -163,11 +163,16 @@ export function MeetRequestForm({
                     : `후보 ${slots.length}개로 요청하기 · 만남 티켓 1장`
                   : "후보를 골라 주세요"}
           </Button>
-        </>
+        </div>
       }
     >
-      <section className="mt-2">
-        <h2 className="headline text-xl">언제 만날까요?</h2>
+      <section
+        className="meeting-date-surface mt-2 rounded-surface p-4"
+        aria-labelledby="request-date-title"
+      >
+        <h2 id="request-date-title" className="headline text-xl">
+          언제 만날까요?
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           평일 저녁 후보를 {MAX_SLOTS}개까지 고르세요.
           {counterpartName ? ` ${counterpartName}님이` : " 상대가"} 하나를 고르면 바로 약속이
@@ -241,7 +246,7 @@ export function MeetRequestForm({
           </ul>
         ) : null}
         {recommended.length ? (
-          <div className="mt-4 rounded-surface bg-surface-subtle p-4">
+          <div className="mt-4">
             <p className="text-sm font-semibold">서로 편한 요일이 겹쳐요</p>
             <p className="mt-1 text-xs text-muted-foreground">
               평소 가능한 시간으로 고른 후보예요. 실제 날짜는 두 분이 다시 확인합니다.
@@ -276,8 +281,10 @@ export function MeetRequestForm({
         )}
       </section>
 
-      <section className="mt-5">
-        <h2 className="text-base font-semibold text-foreground">어디서 만날까요?</h2>
+      <section className="mt-6" aria-labelledby="request-place-title">
+        <h2 id="request-place-title" className="text-base font-semibold text-foreground">
+          어디서 만날까요?
+        </h2>
         {places === null ? (
           <p className="mt-2 text-sm text-muted-foreground">장소를 불러오는 중입니다…</p>
         ) : places.length > 0 ? (

@@ -38,7 +38,7 @@ export function MeetingAreaSettings({ member }: { member: Profile }) {
     };
   }, [retry]);
   return (
-    <section className="mt-6 rounded-surface bg-card p-4" aria-labelledby="meeting-area-title">
+    <section className="mt-6" aria-labelledby="meeting-area-title">
       <h2 id="meeting-area-title" className="text-base font-semibold">
         만나기 편한 곳
       </h2>
