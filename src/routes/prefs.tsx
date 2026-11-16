@@ -163,7 +163,7 @@ function PrefsPage() {
       back="/requests"
       keyboardAware
       footer={
-        <>
+        <div className="meeting-response-actions">
           {canSubmit ? <MeetingPolicyNote /> : null}
           <Button
             className="w-full"
@@ -197,7 +197,7 @@ function PrefsPage() {
                 ? `고른 날짜 ${pickedKeys.length}개 보내기`
                 : "가능한 날을 골라 주세요"}
           </Button>
-        </>
+        </div>
       }
     >
       <section className="mt-2">
@@ -208,8 +208,8 @@ function PrefsPage() {
           편한 날을 고르면 상대가 날짜와 장소를 정해요.
         </p>
 
-        <div className="mt-3 rounded-surface border border-border bg-card px-4 pt-4 pb-3">
-          <p className="text-3xs font-semibold text-muted-foreground">{monthLabel}</p>
+        <div className="meeting-date-surface mt-3 rounded-surface px-3 pt-3 pb-2">
+          <p className="text-sm font-semibold text-foreground">{monthLabel}</p>
           <div className="mt-2.5 grid grid-cols-7 gap-1">
             {WEEKDAYS.map((w) => (
               <span
@@ -232,10 +232,11 @@ function PrefsPage() {
                   onClick={() => toggleDay(d.key)}
                   className={cn(
                     "flex min-h-11 items-center justify-center rounded-xl text-sm tabular-nums transition-colors",
-                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                     !d.selectable && "text-muted-foreground/35",
-                    d.selectable && !on && "text-foreground hover:bg-muted",
-                    on && "bg-selection font-semibold text-selection-foreground",
+                    d.selectable && !on && "bg-card text-foreground hover:bg-primary-hover",
+                    on &&
+                      "bg-selection font-semibold text-selection-foreground ring-2 ring-inset ring-ring",
                   )}
                 >
                   {d.firstOfMonth ? `${d.month}/1` : d.day}

@@ -992,6 +992,39 @@
   }
 }
 
+/* The date under consideration reads as one surface; venue fields stay on the page. */
+.meeting-date-surface,
+.settings-intro-section {
+  background-color: color-mix(in oklab, var(--surface-subtle) 76%, var(--brand-taupe));
+  --muted-foreground: color-mix(in oklab, var(--ink-muted) 75%, var(--ink));
+}
+
+.dark .meeting-date-surface,
+.dark .settings-intro-section {
+  background-color: color-mix(in oklab, var(--surface-subtle) 88%, var(--brand-taupe));
+}
+
+.meeting-date-surface button[aria-pressed="true"]:not(:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.settings-intro-section {
+  box-shadow: var(--shadow-elevated);
+}
+
+.settings-section-break {
+  margin-block-start: 1.5rem;
+  padding-block-start: 1rem;
+  border-block-start: 0.375rem solid var(--surface-subtle);
+}
+
+.app-footer:has(> .meeting-response-actions) {
+  border-top: 0;
+  background: var(--card);
+  box-shadow: 0 -4px 16px -7px color-mix(in srgb, var(--brand-800) 24%, transparent);
+}
+
 .app-elevated {
   box-shadow: var(--shadow-elevated);
 }

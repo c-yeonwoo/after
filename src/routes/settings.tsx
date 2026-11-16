@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useId, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -155,41 +156,47 @@ function SettingsPage() {
 
   return (
     <AppScreen title="환경설정" back="/me" keyboardAware>
-      <section aria-label="소개 받기" className="mt-2 rounded-surface bg-surface-subtle px-4">
-        <PreferenceToggle
-          label="새 소개 받기"
-          description={
-            me.paused_at
-              ? "지금은 쉬는 중이에요. 켜면 다시 소개를 받아요."
-              : "새 소개 받기가 켜져 있어요. 꺼도 진행 중인 약속은 유지돼요."
-          }
-          checked={me.paused_at === null}
-          disabled={busy}
-          onCheckedChange={async (next) => {
-            setBusy(true);
-            try {
-              await setPaused(!next);
-              await refresh();
-              toast.success(next ? "다시 소개를 받습니다." : "새 소개를 멈췄습니다.");
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
-            } finally {
-              setBusy(false);
+      <section
+        aria-label="소개 받기"
+        className="settings-intro-section mt-2 overflow-hidden rounded-surface"
+      >
+        <div className="px-4">
+          <PreferenceToggle
+            label="새 소개 받기"
+            description={
+              me.paused_at
+                ? "지금은 쉬는 중이에요. 켜면 다시 소개를 받아요."
+                : "새 소개 받기가 켜져 있어요. 꺼도 진행 중인 약속은 유지돼요."
             }
-          }}
-        />
+            checked={me.paused_at === null}
+            disabled={busy}
+            onCheckedChange={async (next) => {
+              setBusy(true);
+              try {
+                await setPaused(!next);
+                await refresh();
+                toast.success(next ? "다시 소개를 받습니다." : "새 소개를 멈췄습니다.");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "설정을 바꾸지 못했습니다.");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        </div>
+        {me.onboarding_step >= 7 ? (
+          <Link
+            to="/assistant"
+            search={{ panel: "memory" }}
+            className="flex min-h-11 items-center justify-between bg-card px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          >
+            매니저 대화 설정
+            <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+          </Link>
+        ) : null}
       </section>
-      {me.onboarding_step >= 7 ? (
-        <Link
-          to="/assistant"
-          search={{ panel: "memory" }}
-          className="mb-4 flex min-h-12 items-center rounded-control bg-card px-4 text-sm font-semibold"
-        >
-          매니저 대화 설정
-        </Link>
-      ) : null}
       <MeetingAreaSettings key={me.id} member={me} />
-      <section className="mt-3 border-b border-border pb-6">
+      <section className="settings-section-break">
         <h2 className="text-sm font-semibold">화면</h2>
         <p className="mt-1 text-xs text-muted-foreground">기본은 기기 설정을 따릅니다.</p>
         <div className="mt-3 grid grid-cols-3 gap-1.5" role="group" aria-label="화면 테마">
@@ -213,7 +220,7 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="mt-6 border-b border-border pb-6">
+      <section className="settings-section-break">
         <h2 className="text-sm font-semibold">알림</h2>
         <div className="mt-3">
           <PushStatus />
@@ -287,7 +294,7 @@ function SettingsPage() {
         지금 값을 묻지 않는다(GoTrue updateUser 는 현재 비밀번호를 요구하지 않고,
         요구하면 애초에 없는 사람이 막힌다). 세션을 가진 사람만 닿는 화면이다.
       */}
-      <section className="mt-6 border-b border-border pb-6">
+      <section className="settings-section-break">
         <h2 className="text-sm font-semibold">
           <label htmlFor="settings-password">비밀번호</label>
         </h2>
@@ -330,7 +337,7 @@ function SettingsPage() {
         만들 수 있게 하면 기존 가입·성인 확인 경로를 우회하게 된다.
       */}
       {!APP_BUILD ? (
-        <section className="mt-6 border-b border-border pb-6">
+        <section className="settings-section-break">
           <h2 className="text-sm font-semibold">카카오</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {kakaoLinked
@@ -394,7 +401,7 @@ function SettingsPage() {
       ) : null}
 
       {/* ── 탈퇴 ─────────────────────────────── */}
-      <section className="mt-9 border-t border-border pt-6">
+      <section className="settings-section-break">
         <h2 className="text-sm font-semibold">탈퇴</h2>
         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
           프로필과 사진, 작성하신 내용이 삭제됩니다. 진행 중인 약속은 취소되고 상대의 티켓은 전액

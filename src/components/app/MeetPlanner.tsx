@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { CalendarDays, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
@@ -63,7 +63,7 @@ export function MeetPlanner({
       back="/home"
       keyboardAware
       footer={
-        <>
+        <div className="meeting-response-actions">
           {date && placeName.trim() ? <MeetingPolicyNote /> : null}
           {!date || !placeName.trim() ? (
             <p id="meeting-required" className="mb-2 text-xs text-muted-foreground">
@@ -98,67 +98,78 @@ export function MeetPlanner({
           >
             {busy ? "확정하는 중…" : "이 날짜와 장소로 확정하기"}
           </Button>
-        </>
+        </div>
       }
     >
-      <h2 className="headline mt-2 text-xl">
-        {counterpartName ? `${counterpartName}님이 보낸 날짜` : "상대가 보낸 날짜"}
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">만날 시간 하나를 골라 주세요.</p>
-      <div className="mt-2 space-y-2">
-        {(prefs?.dates ?? []).map((iso) => (
-          <button
-            key={iso}
-            type="button"
-            aria-pressed={date === iso}
-            onClick={() => setDate(iso)}
-            className={cn(
-              "pressable flex min-h-12 w-full items-center justify-between gap-3 rounded-control border px-4 py-3 text-left text-sm",
-              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              date === iso
-                ? "border-selection bg-selection font-semibold text-selection-foreground"
-                : "border-border",
-            )}
-          >
-            {formatMeetTime(iso)}
-            {date === iso ? <Check className="size-4 shrink-0" aria-hidden="true" /> : null}
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-5 text-xs font-semibold text-foreground">장소 정하기</p>
-      {prefs && (describePrefs(prefs) || prefs.note) ? (
-        <div className="mt-3 rounded-xl bg-muted/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-          {describePrefs(prefs)}
-          {prefs.note ? <span className="mt-1 block text-foreground">“{prefs.note}”</span> : null}
+      <section
+        className="meeting-date-surface mt-2 rounded-surface p-4"
+        aria-labelledby="schedule-date-title"
+      >
+        <h2 id="schedule-date-title" className="headline text-xl">
+          {counterpartName ? `${counterpartName}님이 보낸 날짜` : "상대가 보낸 날짜"}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">만날 시간 하나를 골라 주세요.</p>
+        <div className="mt-2 space-y-2">
+          {(prefs?.dates ?? []).map((iso) => (
+            <button
+              key={iso}
+              type="button"
+              aria-pressed={date === iso}
+              onClick={() => setDate(iso)}
+              className={cn(
+                "pressable flex min-h-12 w-full items-center gap-3 rounded-control border px-3 py-3 text-left text-sm",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                date === iso
+                  ? "border-selection bg-selection font-semibold text-selection-foreground"
+                  : "border-transparent bg-card font-medium",
+              )}
+            >
+              <CalendarDays className="size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+              {formatMeetTime(iso)}
+              {date === iso ? (
+                <Check className="ml-auto size-4 shrink-0" aria-hidden="true" />
+              ) : null}
+            </button>
+          ))}
         </div>
-      ) : null}
+      </section>
+      <section className="mt-6" aria-labelledby="schedule-place-title">
+        <h2 id="schedule-place-title" className="text-base font-semibold">
+          장소 정하기
+        </h2>
+        {prefs && (describePrefs(prefs) || prefs.note) ? (
+          <div className="mt-3 rounded-xl bg-muted/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+            {describePrefs(prefs)}
+            {prefs.note ? <span className="mt-1 block text-foreground">“{prefs.note}”</span> : null}
+          </div>
+        ) : null}
 
-      <Input
-        aria-label="만날 장소"
-        className="mt-2"
-        value={placeName}
-        onChange={(e) => setPlaceName(e.target.value)}
-        placeholder="예) 역삼역 근처 카페"
-      />
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {PLACE_HINTS.map((h) => (
-          <button
-            key={h}
-            type="button"
-            aria-pressed={placeKind === h}
-            onClick={() => setPlaceKind((prev) => (prev === h ? null : h))}
-            className={cn(
-              "pressable min-h-11 rounded-control border px-3 text-sm",
-              placeKind === h
-                ? "border-selection bg-selection text-selection-foreground"
-                : "border-border bg-background",
-            )}
-          >
-            {h}
-          </button>
-        ))}
-      </div>
+        <Input
+          aria-label="만날 장소"
+          className="mt-2"
+          value={placeName}
+          onChange={(e) => setPlaceName(e.target.value)}
+          placeholder="예) 역삼역 근처 카페"
+        />
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {PLACE_HINTS.map((h) => (
+            <button
+              key={h}
+              type="button"
+              aria-pressed={placeKind === h}
+              onClick={() => setPlaceKind((prev) => (prev === h ? null : h))}
+              className={cn(
+                "pressable min-h-11 rounded-control border px-3 text-sm",
+                placeKind === h
+                  ? "border-selection bg-selection text-selection-foreground"
+                  : "border-border bg-background",
+              )}
+            >
+              {h}
+            </button>
+          ))}
+        </div>
+      </section>
     </AppScreen>
   );
 }

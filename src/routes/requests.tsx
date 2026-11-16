@@ -120,15 +120,15 @@ function RequestsPage() {
           return (
             <li key={meeting.id}>
               <div className="app-elevated overflow-hidden rounded-surface bg-card">
-                <div className="px-4 pt-4 pb-2">
-                  <p className="headline text-xl">
+                <div className="px-4 pt-3 pb-3">
+                  <h2 className="headline text-xl">
                     {candidate.name}
                     {candidate.age !== null ? (
                       <span className="ml-1.5 text-base text-muted-foreground">
                         {candidate.age}
                       </span>
                     ) : null}
-                  </p>
+                  </h2>
                   <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="size-3.5" aria-hidden="true" />
@@ -168,7 +168,6 @@ function RequestsPage() {
                 </div>
                 {candidate.headline || reason ? (
                   <div className="px-4 pb-2">
-                    {" "}
                     {candidate.headline ? (
                       <p className="mt-3 line-clamp-2 text-sm leading-snug text-foreground/90">
                         “{candidate.headline}”
@@ -215,17 +214,21 @@ function SlotChoices({
   const slots = meeting.proposed_slots ?? [];
 
   return (
-    <div className="px-4 pb-2">
+    <section
+      className="meeting-date-surface px-4 pt-3 pb-1"
+      aria-labelledby={`request-dates-${meeting.id}`}
+    >
+      <h3 id={`request-dates-${meeting.id}`} className="text-base font-semibold">
+        제안받은 일정
+      </h3>
       {meeting.proposed_place_name ? (
-        <p className="flex items-start gap-1.5 text-sm text-foreground">
+        <p className="mt-1 flex items-start gap-1.5 text-sm text-foreground">
           <MapPin className="mt-0.5 size-4 shrink-0 text-primary-strong" aria-hidden="true" />
           <span>{meeting.proposed_place_name}</span>
         </p>
       ) : null}
-      <p className="mt-3 text-xs font-medium text-muted-foreground">
-        편한 시간을 하나 고르시면 바로 약속이 정해져요
-      </p>
-      <div className="mt-2 grid gap-2">
+      <p className="mt-2 text-xs font-medium text-foreground">날짜를 고르면 바로 확정돼요.</p>
+      <div className="grid gap-1.5">
         <MeetingPolicyNote />
         {slots.map((iso, i) => (
           <button
@@ -261,10 +264,10 @@ function SlotChoices({
       <Link
         to="/prefs"
         search={{ meetingId: meeting.id }}
-        className="mt-3 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
+        className="mt-1 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
       >
         다른 날이 좋아요
       </Link>
-    </div>
+    </section>
   );
 }
