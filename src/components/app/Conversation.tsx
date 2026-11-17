@@ -241,7 +241,7 @@ export function Conversation({
             <AssistantMark className="chat-manager-avatar" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2">
-                <span className="text-sm font-semibold">내 매니저</span>
+                <span className="text-sm font-medium">내 매니저</span>
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <Lock aria-hidden="true" className="size-3" />
                   나만 보기
@@ -257,7 +257,7 @@ export function Conversation({
               <div className="flex shrink-0 flex-col">
                 {feedbackDue ? (
                   <Link
-                    className="inline-flex min-h-11 items-center gap-0.5 text-sm font-semibold"
+                    className="inline-flex min-h-11 items-center gap-0.5 text-sm font-medium"
                     to="/feedback"
                     search={{ meetingId: meeting.id }}
                   >
@@ -267,7 +267,7 @@ export function Conversation({
                 ) : null}
                 {canAskManager ? (
                   <Link
-                    className="inline-flex min-h-11 items-center gap-0.5 text-sm font-semibold"
+                    className="inline-flex min-h-11 items-center gap-0.5 text-sm font-medium"
                     to="/assistant"
                     search={{ panel: "chat" }}
                     aria-label="내 매니저에게 물어보기"
@@ -366,7 +366,7 @@ export function Conversation({
             ) : (
               <div key={row.key}>
                 {!row.mine && row.firstOfGroup ? (
-                  <p className="mb-1 text-xs font-semibold text-foreground">{counterpartName}</p>
+                  <p className="mb-1 text-xs font-medium text-foreground">{counterpartName}</p>
                 ) : null}
                 <div
                   className={cn(

@@ -29,7 +29,7 @@ export function MeetingSummary({
             <CalendarDays className="size-3.5" aria-hidden="true" />
             일시
           </dt>
-          <dd className="min-w-0 break-keep break-words font-semibold">
+          <dd className="min-w-0 break-keep break-words font-medium">
             {scheduledAt ? formatMeetTime(scheduledAt) : "날짜 선택 중"}
           </dd>
         </div>
