@@ -404,7 +404,10 @@ async function verifyHome(page, width) {
 
 async function verifyProfile(page, own) {
   await page
-    .getByText(own ? "내가 들려준 이야기" : "직접 들려준 이야기", { exact: true })
+    .getByRole("heading", {
+      name: own ? "내가 들려준 이야기" : `${other.name}님의 이야기`,
+      exact: true,
+    })
     .waitFor();
   assert.equal(await page.getByText(privateSentinel, { exact: false }).count(), 0);
   if (own) {
@@ -924,21 +927,16 @@ try {
         const backendStart = summary.backendRequests.length;
         try {
           await page.goto(base + fixture.path, { waitUntil: "domcontentloaded" });
-          if (fixture.heading)
+          if (fixture.heading) {
+            const profileHeading = fixture.path === "/intro" || fixture.path === "/profile";
             await page
               .getByRole("heading", {
                 name: fixture.heading,
-                exact: ![
-                  "intro",
-                  "intro-ai",
-                  "intro-ai-failure",
-                  "intro-ai-limit",
-                  "intro-pending",
-                  "profile",
-                ].includes(fixture.name),
+                level: profileHeading ? 2 : undefined,
+                exact: !profileHeading,
               })
               .waitFor();
-          else await page.getByRole("textbox", { name: "내 답변", exact: true }).waitFor();
+          } else await page.getByRole("textbox", { name: "내 답변", exact: true }).waitFor();
           if (fixture.name === "reinterview") {
             await page.getByRole("button", { name: "이전", exact: true }).click();
             await page.waitForURL("**/profile-edit");

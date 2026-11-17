@@ -738,7 +738,7 @@ try {
             .waitFor();
           await f.page
             .getByRole("main")
-            .getByRole("heading", { name: new RegExp(current.name) })
+            .getByRole("heading", { level: 2, name: new RegExp(current.name) })
             .waitFor();
           assert.equal(
             sql(

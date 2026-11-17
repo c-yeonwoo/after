@@ -4,7 +4,7 @@
 -- 열면 B 가 열리면, 돈을 받고 다른 사람을 준 셈이다.
 
 begin;
-select plan(10);
+select plan(14);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -27,7 +27,7 @@ values
   ('50000000-0000-0000-0000-0000000000ad','male','gangnam','admin50@corp.example',now(),'운영','1990-01-01','운영',
    null, '{}', '{}', 7,now(),now(),'admin');
 
-update profiles set phone_verified_at = now(), photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where id::text like '50000000-%';
+update profiles set agreed_policy_version = '2026-10-31.1', phone_verified_at = now(), photo_paths = array[id::text || '/portrait.png', id::text || '/2.png', id::text || '/3.png'] where id::text like '50000000-%';
 update profiles set photo_state = 'approved', photo_reviewed_at = now()
  where photo_url = id::text || '/portrait.png' and id::text like '50000000-%';
 
@@ -39,6 +39,8 @@ insert into intro_queue (male_id, female_id, position, curated_by, reason)
 values ('50000000-0000-0000-0000-0000000000a1','50000000-0000-0000-0000-0000000000f1',0,'50000000-0000-0000-0000-0000000000ad','두 분 다 퇴근 후 재즈 공연을 적으셨어요.'),
        ('50000000-0000-0000-0000-0000000000a1','50000000-0000-0000-0000-0000000000f2',1,'50000000-0000-0000-0000-0000000000ad',null);
 select promote_intro_queue('50000000-0000-0000-0000-0000000000a1');
+
+update app_settings set identity_required=false;
 
 -- ─────────── 티저 ───────────
 
@@ -67,10 +69,23 @@ set local request.jwt.claims = '{"sub":"50000000-0000-0000-0000-0000000000a1","r
 
 select is((select job from intro_teaser()), '디자인',
   'T3 자격 없는 카드는 티저에서도 건너뛴다');
+create temp table expected_teaser_note as select reason from intro_teaser();
+select ok((select nullif(reason,'') is not null from expected_teaser_note), 'a card without a curated note has a public explanation');
 select is((select female_id from open_intro()), '50000000-0000-0000-0000-0000000000f2'::uuid,
   'T4 티저가 보여 준 사람이 실제로 열린다');
+reset role;
+update profiles set paused_at=null where id='50000000-0000-0000-0000-0000000000f1';
+set local role authenticated;
 select is((select count(*)::int from intro_teaser()), 0,
   'T5 이미 열린 소개가 있으면 티저는 없다 (다음 카드를 미리 보이지 않는다)');
+
+select is(home_state_v2()->>'viewer_intro_reason', (select reason from expected_teaser_note),
+  'the same viewer still sees the preview explanation after explicitly opening the card');
+select is((select reason from intros where male_id=auth.uid() and closed_at is null),null::text,
+  'viewer-specific text is never stored in the shared introduction');
+select ok(not has_function_privilege('authenticated','public.intro_reading_note(uuid,text)','execute')
+      and not has_function_privilege('anon','public.intro_reading_note(uuid,text)','execute'),
+  'the note helper cannot be used to query an arbitrary candidate');
 
 -- ─────────── 운영자 한 줄 ───────────
 
@@ -91,7 +106,6 @@ select is(
 reset role;
 
 -- 열 때 한 줄이 소개로 옮겨진다.
-update profiles set paused_at = null where id = '50000000-0000-0000-0000-0000000000f1';
 update intros set closed_at = now(), outcome = 'passed' where male_id = '50000000-0000-0000-0000-0000000000a1';
 insert into tickets (user_id, kind, price_krw) values ('50000000-0000-0000-0000-0000000000a1','intro',5000);
 set local role authenticated;

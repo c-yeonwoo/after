@@ -248,7 +248,7 @@ function IntroPage() {
               </p>
             </div>
           ) : (
-            <div className="app-elevated mt-6 rounded-surface bg-card px-5 py-6">
+            <div className="introduction-arrival mt-5">
               {/*
                 열기 전 공개(D2 ①). 예전에는 상대 정보가 0개인 채로 "소개 티켓 1장 쓰고 열기"
                 만 있었다 — 5,000원짜리 뽑기였다. 이제 무엇을 여는지 알고 연다. 이름·사진·
@@ -266,7 +266,7 @@ function IntroPage() {
                 <>
                   <Button
                     size="lg"
-                    className="mt-6 w-full"
+                    className="intro-primary-button mt-4 w-full"
                     disabled={busy}
                     onClick={async () => {
                       if (sending.current || !me) return;
@@ -627,31 +627,33 @@ function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
     .filter(Boolean)
     .join(" · ");
   return (
-    <div>
-      <p className="text-xs font-medium text-muted-foreground">
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">
         도착한 소개
-        {teaser.delivered > 1 ? ` · 한 번에 한 분씩, ${teaser.delivered}건 중 첫 번째` : ""}
-      </p>
-      {meta ? <p className="mt-3 text-base font-semibold text-foreground">{meta}</p> : null}
-      {teaser.headline ? (
-        <p className="serif mt-2 text-lg leading-[1.5] text-foreground">
-          <span className="text-primary-strong">“</span>
-          {teaser.headline}
-        </p>
+        {teaser.delivered > 1 ? (
+          <span className="ml-2 text-sm font-medium text-muted-foreground">
+            {teaser.delivered}건 중 첫 번째
+          </span>
+        ) : null}
+      </h2>
+      {meta || teaser.headline ? (
+        <div className="space-y-1">
+          {meta ? <p className="text-sm text-muted-foreground">{meta}</p> : null}
+          {teaser.headline ? (
+            <blockquote className="serif break-keep break-words text-lg leading-snug">
+              “{teaser.headline}”
+            </blockquote>
+          ) : null}
+        </div>
       ) : null}
       {teaser.shared.length > 0 ? (
-        <div className="mt-4">
+        <div>
           <p className="text-xs font-medium text-muted-foreground">두 분이 같이 적은 것</p>
           <p className="mt-1 text-sm text-foreground">{teaser.shared.join(" · ")}</p>
         </div>
       ) : null}
-      {teaser.reason ? (
-        <div className="mt-5">
-          <p className="text-xs font-medium text-muted-foreground">매니저의 소개 이유</p>
-          <p className="mt-1.5 text-base leading-[1.7] text-foreground">{teaser.reason}</p>
-        </div>
-      ) : null}
-      <p className="mt-4 text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>
+      {teaser.reason ? <IntroductionReason reason={teaser.reason} /> : null}
+      <p className="text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>
     </div>
   );
 }

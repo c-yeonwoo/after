@@ -311,7 +311,9 @@ try {
 
   await (await ask(male, "이 여자 소개시켜줘", "소개 확인하기")).click();
   await male.getByRole("button", { name: "소개 티켓 1장 쓰고 열기", exact: true }).click();
-  await male.getByRole("heading", { name: new RegExp(manifest.accounts.female.name) }).waitFor();
+  await male
+    .getByRole("heading", { level: 2, name: new RegExp(manifest.accounts.female.name) })
+    .waitFor();
   await (await ask(male, "약속 잡아줘", "만남 요청 확인")).click();
   await male.getByRole("heading", { name: "언제 만날까요?", exact: true }).waitFor();
   await male.getByRole("group", { name: "날짜", exact: true }).getByRole("button").first().click();
