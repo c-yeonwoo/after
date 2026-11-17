@@ -10,6 +10,7 @@ import { MIN_PHOTOS } from "@/components/onboarding/basics";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Button } from "@/components/ui/button";
 import { GuideNote } from "@/components/app/GuideNote";
+import { IntroductionReason } from "@/components/app/IntroductionReason";
 import { NoShowPrompt } from "@/components/app/NoShowPrompt";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { BRAND } from "@/lib/brand";
@@ -366,30 +367,33 @@ function HomePage() {
             바로 열지 않고 /intro 의 확인 화면으로 보낸다 — 돈이 빠지는 행동을
             링크 한 번으로 일으키지 않는다.
           */
-            <GuideNote
-              action={
-                introTickets > 0 || introPaymentsEnabled === false ? (
-                  <CardAction to="/intro">소개 열어보기</CardAction>
-                ) : (
-                  <CardAction to="/store" search={{ kind: "intro" }}>
+            <section aria-label="도착한 소개" className="introduction-arrival space-y-3">
+              {serverState?.viewer_intro_reason ? (
+                <IntroductionReason reason={serverState.viewer_intro_reason} preview />
+              ) : (
+                <p className="text-base font-medium">한 분의 소개가 기다리고 있어요.</p>
+              )}
+              {introTickets > 0 || introPaymentsEnabled === false ? (
+                <Link to="/intro" className="intro-preview-action pressable">
+                  소개 열어보기
+                </Link>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
                     {introPaymentsEnabled === null
-                      ? "티켓 확인하기"
-                      : introPaymentsEnabled
-                        ? "소개 티켓 구매하기"
-                        : "무료 티켓 신청하기"}
-                  </CardAction>
-                )
-              }
-            >
-              {serverState?.viewer_intro_reason ?? "한 분의 소개가 기다리고 있어요."}
-              {introTickets === 0 && introPaymentsEnabled !== false
-                ? introPaymentsEnabled === null
-                  ? " 티켓 안내를 확인해 주세요."
-                  : introPaymentsEnabled
-                    ? " 열람에는 소개 티켓 1장이 필요해요."
-                    : " 열람 전에 무료 티켓을 신청해 주세요."
-                : ""}
-            </GuideNote>
+                      ? "티켓 안내를 확인해 주세요."
+                      : "열람에는 소개 티켓 1장이 필요해요."}
+                  </p>
+                  <Link
+                    to="/store"
+                    search={{ kind: "intro" }}
+                    className="intro-preview-action pressable"
+                  >
+                    {introPaymentsEnabled === null ? "티켓 확인하기" : "소개 티켓 구매하기"}
+                  </Link>
+                </>
+              )}
+            </section>
           ) : null}
         </div>
       ) : null}
@@ -479,8 +483,8 @@ function CandidatePreview({
     viewer?.profile_public_signals,
     candidate.profile_public_signals,
   );
-  const managerReading =
-    viewerReason ?? visible?.connections[0]?.text ?? visible?.portrait[0]?.text;
+  const connection = viewerReason ?? visible?.connections[0]?.text;
+  const managerReading = connection ?? visible?.portrait[0]?.text;
   useEffect(() => {
     let active = true;
     setSrc(null);
@@ -495,7 +499,7 @@ function CandidatePreview({
     };
   }, [path]);
   return (
-    <section aria-label="도착한 소개" className="introduction-arrival rounded-surface p-4">
+    <section aria-label="도착한 소개" className="introduction-arrival">
       <div className="flex items-center gap-3.5">
         <div className="h-[108px] w-[86px] shrink-0 overflow-hidden rounded-control bg-muted">
           {src ? (
@@ -522,7 +526,7 @@ function CandidatePreview({
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
           {candidate.headline ? (
-            <p className="mt-2 line-clamp-2 break-keep text-sm leading-relaxed">
+            <p className="serif mt-2 line-clamp-2 break-keep break-words text-base leading-snug">
               {candidate.headline}
             </p>
           ) : null}
@@ -552,17 +556,11 @@ function CandidatePreview({
         </div>
       ) : null}
       {managerReading ? (
-        <div className="mt-4">
-          <p className="mb-1 text-xs text-muted-foreground">매니저의 한마디</p>
-          <p className="line-clamp-3 break-keep break-words text-sm leading-relaxed">
-            {managerReading}
-          </p>
+        <div className="mt-3">
+          <IntroductionReason reason={managerReading} portrait={!connection} preview />
         </div>
       ) : null}
-      <Link
-        to="/intro"
-        className="introduction-primary pressable mt-4 flex min-h-11 items-center justify-center rounded-control px-4 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
+      <Link to="/intro" className="intro-preview-action pressable mt-3">
         {isMale ? "프로필 이어보기" : "프로필 읽어보기"}
       </Link>
     </section>

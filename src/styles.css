@@ -432,13 +432,24 @@
   padding: 0.5rem 0 0.25rem;
 }
 .introduction-arrival {
-  background: var(--assistant-surface);
+  padding: 1rem;
+  background: var(--card);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-elevated);
 }
-.introduction-primary {
+.intro-preview-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border-radius: var(--radius-control);
+  font-size: 0.875rem;
+  font-weight: 650;
   background: var(--foreground);
   color: var(--background);
 }
-.introduction-primary:active {
+.intro-preview-action:active {
   opacity: 0.85;
 }
 .introduction-signals {
@@ -461,11 +472,10 @@
   border-radius: var(--radius-control);
   background: var(--muted);
 }
-.manager-reading {
-  padding: 1rem;
-  border: 0;
-  border-radius: var(--radius-surface);
-  background: var(--assistant-surface);
+.manager-reading,
+.intro-manager-note {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-control);
 }
 .manager-reading-text {
   font-size: 0.9375rem;
@@ -477,6 +487,17 @@
   font-size: 0.8125rem;
   font-weight: 650;
   color: var(--muted-foreground);
+}
+.peer-profile .profile-facts {
+  padding: 0;
+  background: transparent;
+}
+.peer-profile .profile-question {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+.peer-profile .profile-answer {
+  margin-top: 0.25rem;
 }
 .profile-stories .profile-interview + .profile-interview {
   padding-top: 0.25rem;
@@ -994,12 +1015,16 @@
 
 /* The date under consideration reads as one surface; venue fields stay on the page. */
 .meeting-date-surface,
+.manager-reading,
+.intro-manager-note,
 .settings-intro-section {
   background-color: color-mix(in oklab, var(--surface-subtle) 76%, var(--brand-taupe));
   --muted-foreground: color-mix(in oklab, var(--ink-muted) 75%, var(--ink));
 }
 
 .dark .meeting-date-surface,
+.dark .manager-reading,
+.dark .intro-manager-note,
 .dark .settings-intro-section {
   background-color: color-mix(in oklab, var(--surface-subtle) 88%, var(--brand-taupe));
 }

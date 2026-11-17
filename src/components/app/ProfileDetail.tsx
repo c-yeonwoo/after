@@ -2,7 +2,7 @@ import {
   publicSignalRows,
   comparePublicSignals,
 } from "../../../supabase/functions/_shared/profile-signals";
-import { Check } from "lucide-react";
+import { Check, Quote } from "lucide-react";
 import type { ReactNode } from "react";
 import { ProfilePhotos } from "@/components/app/ProfilePhotos";
 import { cn } from "@/lib/utils";
@@ -58,16 +58,12 @@ function Lines({ items }: { items: string[] }) {
   );
 }
 
-function InterviewAnswer({
-  section,
-}: {
-  section: NonNullable<ProfileView["story"]>["sections"][number];
-}) {
+function InterviewAnswer({ question, answer }: { question: string; answer: string }) {
   return (
     <section className="profile-interview">
-      <h4 className="profile-question">{section.question}</h4>
+      <h4 className="profile-question">{question}</h4>
       <p data-selectable className="profile-answer">
-        {section.answer}
+        {answer}
       </p>
     </section>
   );
@@ -110,8 +106,46 @@ export function ProfileDetail({
   const hasAnyFact = facts.some((f) => f.v);
   const styleComparison = comparePublicSignals(viewer?.publicSignals, p.publicSignals);
 
+  const signalRows = publicSignalRows(p.publicSignals);
+  const meetingStyle = signalRows.length ? (
+    <section aria-label="만남 스타일" className="rounded-surface bg-muted/60 p-4">
+      <h3 className="mb-3 text-base font-semibold">만남 스타일</h3>
+      <dl className="space-y-3">
+        {signalRows.map((row) => {
+          const different = styleComparison.differences.some((item) => item.id === row.id);
+          const shared =
+            !own && viewer?.publicSignals?.[row.id]?.some((value) => row.values.includes(value));
+          return (
+            <div key={row.id}>
+              <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+                {row.label}
+                {shared ? (
+                  <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                    <Check className="size-3" aria-hidden="true" />
+                    공통 선택
+                  </span>
+                ) : different && !own ? (
+                  <span className="font-medium text-foreground">함께 맞춰볼 점</span>
+                ) : null}
+              </dt>
+              <dd className="mt-1 text-sm leading-relaxed">{row.values.join(" · ")}</dd>
+            </div>
+          );
+        })}
+      </dl>
+    </section>
+  ) : null;
+  const interviewHeading = !own ? (
+    <h3 className="flex items-center gap-2 text-lg font-semibold leading-snug">
+      <Quote aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+      {p.name ? `${p.name}님의 이야기` : "상대의 이야기"}
+    </h3>
+  ) : (
+    <h3 className="text-base font-semibold leading-snug text-foreground">내가 들려준 이야기</h3>
+  );
+
   return (
-    <article className="profile-sheet space-y-6">
+    <article className={cn("profile-sheet space-y-6", !own && "peer-profile")}>
       <header>
         <h2 className="text-[1.875rem] leading-[1.25] font-semibold tracking-[-0.03em] text-foreground">
           {p.name}
@@ -135,8 +169,6 @@ export function ProfileDetail({
 
       <ProfilePhotos key={p.photos.join("|")} paths={p.photos} name={p.name} />
 
-      {introductionNote}
-
       {hasAnyFact ? (
         <dl className="profile-facts grid grid-cols-3 gap-x-3 gap-y-4">
           {facts.map((f) => (
@@ -155,35 +187,8 @@ export function ProfileDetail({
         </dl>
       ) : null}
 
-      {publicSignalRows(p.publicSignals).length ? (
-        <section aria-label="만남 스타일" className="rounded-surface bg-muted/60 p-4">
-          <h3 className="mb-3 text-base font-semibold">만남 스타일</h3>
-          <dl className="space-y-3">
-            {publicSignalRows(p.publicSignals).map((row) => {
-              const different = styleComparison.differences.some((item) => item.id === row.id);
-              const shared =
-                !own &&
-                viewer?.publicSignals?.[row.id]?.some((value) => row.values.includes(value));
-              return (
-                <div key={row.id}>
-                  <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {row.label}
-                    {shared ? (
-                      <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                        <Check className="size-3" aria-hidden="true" />
-                        공통 선택
-                      </span>
-                    ) : different && !own ? (
-                      <span className="font-medium text-foreground">함께 맞춰볼 점</span>
-                    ) : null}
-                  </dt>
-                  <dd className="mt-1 text-sm leading-relaxed">{row.values.join(" · ")}</dd>
-                </div>
-              );
-            })}
-          </dl>
-        </section>
-      ) : null}
+      {own ? meetingStyle : null}
+      {introductionNote}
 
       {viewer && !own ? (
         <ProfileConcierge
@@ -196,11 +201,9 @@ export function ProfileDetail({
 
       {p.story?.sections.length ? (
         <div className="profile-stories space-y-5">
-          <h3 className="text-base font-semibold leading-snug text-foreground">
-            {own ? "내가 들려준 이야기" : "직접 들려준 이야기"}
-          </h3>
+          {interviewHeading}
           {p.story.sections.map((section) => (
-            <InterviewAnswer key={section.id} section={section} />
+            <InterviewAnswer key={section.id} question={section.question} answer={section.answer} />
           ))}
         </div>
       ) : null}
@@ -212,6 +215,7 @@ export function ProfileDetail({
         p.matchTags.length ||
         p.topics.length) ? (
         <div className="space-y-5">
+          {!own ? interviewHeading : null}
           {paragraphs.map((para) => (
             <p
               key={para}
@@ -232,15 +236,7 @@ export function ProfileDetail({
             <Section title="조금 더">
               <div className="space-y-5">
                 {p.answers.map((a) => (
-                  <div key={a.q}>
-                    <p className="text-sm font-semibold text-foreground">{a.q}</p>
-                    <p
-                      data-selectable
-                      className="mt-1.5 break-keep break-words text-pretty text-base leading-[1.65] whitespace-pre-line text-foreground"
-                    >
-                      {a.a}
-                    </p>
-                  </div>
+                  <InterviewAnswer key={a.q} question={a.q} answer={a.a} />
                 ))}
               </div>
             </Section>
@@ -259,6 +255,7 @@ export function ProfileDetail({
           ) : null}
         </div>
       ) : null}
+      {own ? null : meetingStyle}
       {own ? <ProfileConcierge profile={p} own signature={assistantSignature} /> : null}
     </article>
   );
