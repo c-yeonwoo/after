@@ -696,7 +696,7 @@ try {
       await go(page, `/feedback?meetingId=${meeting}`);
       await page.getByRole("button", { name: result, exact: true }).click();
       await page.getByRole("button", { name: "대화가 편했어요", exact: true }).click();
-      await page.getByRole("button", { name: "보내기", exact: true }).click();
+      await page.getByRole("button", { name: "후기 남기기", exact: true }).click();
       await page.getByText("후기를 남겨주셨어요. 고마워요.", { exact: true }).waitFor();
       await go(page, `/feedback?meetingId=${meeting}`);
       await page.getByText("후기를 남겨주셨어요. 고마워요.", { exact: true }).waitFor();

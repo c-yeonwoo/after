@@ -1128,6 +1128,11 @@ try {
     .getByRole("log")
     .getByText("네, 좋아요. 퇴근하고 여유 있게 갈게요!", { exact: true })
     .waitFor();
+  const managerNote = femalePage.getByRole("complementary", { name: "나만 보는 매니저 안내" });
+  await managerNote.locator('img[data-assistant-avatar="male"]').waitFor();
+  const sharedLog = femalePage.getByRole("log", { name: "대화 내용" });
+  await sharedLog.getByText(male.name, { exact: true }).waitFor();
+  assert.equal(await sharedLog.locator("[data-assistant-avatar]").count(), 0);
   await checkPage(femalePage, "conversation sent and received bubbles");
   if (screenshotDir)
     await femalePage.screenshot({ path: join(screenshotDir, "meeting-summary.png") });
@@ -1135,7 +1140,7 @@ try {
     `update public.meetings set private_opens_at=now()-interval '1 minute' where id='${conversationMeetingId}'`,
   );
   await femalePage.reload();
-  await femalePage.getByRole("tab", { name: "사적인 대화", exact: true }).waitFor();
+  await femalePage.getByRole("tab", { name: "일상 대화", exact: true }).waitFor();
   for (const viewport of [
     { width: 320, height: 568 },
     { width: 390, height: 480 },
@@ -1170,6 +1175,22 @@ try {
       .getByRole("heading", { name: "약속 시간 바꾸기", exact: true })
       .waitFor();
     await femalePage.keyboard.press("Escape");
+  }
+  await femalePage.setViewportSize({ width: 320, height: 568 });
+  const frame = femalePage.locator(".app-conversation-screen");
+  await femalePage
+    .locator("html")
+    .evaluate((el) => el.style.setProperty("--keyboard-height", "300px"));
+  try {
+    await femalePage.getByLabel("메시지", { exact: true }).fill("키보드 확인");
+    const composer = femalePage.locator(".chat-composer");
+    const frameBox = await frame.boundingBox();
+    const composerBox = await composer.boundingBox();
+    assert.ok(composerBox.y + composerBox.height <= frameBox.y + frameBox.height + 1);
+    await composer.getByRole("button", { name: "보내기", exact: true }).click({ trial: true });
+    assert.ok((await sharedLog.boundingBox()).height >= 60);
+  } finally {
+    await femalePage.locator("html").evaluate((el) => el.style.removeProperty("--keyboard-height"));
   }
   await femalePage.setViewportSize({ width: 390, height: 844 });
   await femalePage
