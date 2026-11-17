@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Check, Circle, Flag, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
 import { Chip } from "@/components/onboarding/Chip";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { submitFeedback } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -19,13 +21,13 @@ export const Route = createFileRoute("/feedback")({
   }),
   head: () => ({
     meta: [
-      { title: `만남 후 피드백 — ${BRAND.name}` },
+      { title: `만남 후기 — ${BRAND.name}` },
       {
         name: "description",
         content:
           "만남이 어땠는지 남기면 약속이 지켜졌는지 확인하는 데 쓰며, 상대에게는 공개되지 않습니다.",
       },
-      { property: "og:title", content: `만남 후 피드백 — ${BRAND.name}` },
+      { property: "og:title", content: `만남 후기 — ${BRAND.name}` },
       { property: "og:description", content: "선택 사항이며 상대에게 공개되지 않습니다." },
     ],
   }),
@@ -36,7 +38,6 @@ const RESULTS = [
   { id: "again", label: "또 만나고 싶어요" },
   { id: "friend", label: "좋았지만 인연은 아니에요" },
   { id: "no", label: "잘 맞지 않았어요" },
-  { id: "noshow", label: "만나지 못했어요 (노쇼 신고)" },
 ];
 
 const NOTES = [
@@ -56,13 +57,19 @@ const NEXT_MEETING = [
 
 function FeedbackPage() {
   const { me } = useMe();
+  const { meetingId } = Route.useSearch();
+  return <MeetingFeedback key={`${me?.id ?? ""}:${meetingId ?? ""}`} meetingId={meetingId} />;
+}
+
+function MeetingFeedback({ meetingId }: { meetingId?: string }) {
+  const { me } = useMe();
   const flags = useMemberLiveQuery("assistant-capabilities", me?.id, getAssistantFlags);
   const navigate = useNavigate();
-  const { meetingId } = Route.useSearch();
   const [result, setResult] = useState("");
   const [notes, setNotes] = useState<string[]>([]);
   const [preference, setPreference] = useState<(typeof NEXT_MEETING)[number][0]>();
   const [text, setText] = useState("");
+  const [reportText, setReportText] = useState("");
   const [busy, setBusy] = useState(false);
   const [gate, setGate] = useState<"loading" | "ready" | "submitted" | "unavailable" | "error">(
     "loading",
@@ -72,15 +79,17 @@ function FeedbackPage() {
     if (!meetingId || !me?.id) return;
     let alive = true;
     setGate("loading");
-    setResult("");
-    setNotes([]);
-    setText("");
-    setPreference(undefined);
+    const authorId = me.id;
     void (async () => {
       try {
         const [status, feedback] = await Promise.all([
           supabase.rpc("my_meeting_checkin", { p_meeting_id: meetingId }),
-          supabase.from("feedbacks").select("id").eq("meeting_id", meetingId).maybeSingle(),
+          supabase
+            .from("feedbacks")
+            .select("id")
+            .eq("meeting_id", meetingId)
+            .eq("author_id", authorId)
+            .maybeSingle(),
         ]);
         if (status.error || feedback.error) throw new Error("unavailable");
         const m = status.data as unknown as {
@@ -105,7 +114,7 @@ function FeedbackPage() {
 
   if (!meetingId) {
     return (
-      <AppScreen title="만남 후 피드백" hideTabs back="/chats">
+      <AppScreen title="만남 후기" hideTabs back="/chats">
         <p className="mt-16 text-center text-sm text-muted-foreground">
           피드백을 남길 만남을 찾을 수 없습니다.
         </p>
@@ -115,7 +124,7 @@ function FeedbackPage() {
 
   if (gate !== "ready")
     return (
-      <AppScreen title="만남 후 피드백" hideTabs back="/home">
+      <AppScreen title="만남 후기" hideTabs back="/home">
         <div className="mt-16 text-center">
           <p
             role={gate === "error" ? "alert" : undefined}
@@ -162,118 +171,161 @@ function FeedbackPage() {
       </AppScreen>
     );
 
+  const noShow = result === "noshow";
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!meetingId || !result || busy) return;
+    setBusy(true);
+    try {
+      const body =
+        [noShow ? "" : notes.join(" · "), (noShow ? reportText : text).trim()]
+          .filter(Boolean)
+          .join("\n") || undefined;
+      await submitFeedback(meetingId, !noShow, result, body, noShow ? undefined : preference);
+      if (noShow) toast.success("신고를 접수했어요. 상대에게 사실 확인을 요청했어요.");
+      else toast.success("후기를 남겼어요.");
+      if (!noShow && flags.data?.memory && !flags.isError && !flags.isPaused) setGate("submitted");
+      else void navigate({ to: "/home" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <AppScreen title="만남 후 피드백" hideTabs back="/chats">
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        후기는 상대에게 보이지 않아요.
-      </p>
-
-      <section className="mt-5">
-        <h2 className="text-xl font-semibold">만남은 어땠나요?</h2>
-        <div className="mt-3 grid gap-2">
-          {RESULTS.map((r) => (
-            <Chip key={r.id} selected={result === r.id} onClick={() => setResult(r.id)}>
-              {r.label}
-            </Chip>
-          ))}
+    <AppScreen
+      title="만남 후기"
+      hideTabs
+      keyboardAware
+      back="/chats"
+      footer={
+        <div className="meeting-response-actions flex items-center gap-2">
+          <Button variant="ghost" disabled={busy} onClick={() => void navigate({ to: "/home" })}>
+            건너뛰기
+          </Button>
+          <Button
+            type="submit"
+            form="meeting-feedback"
+            className="flex-1"
+            size="lg"
+            disabled={!result || busy}
+          >
+            {busy ? "보내는 중…" : noShow ? "노쇼 신고 접수하기" : "후기 남기기"}
+          </Button>
         </div>
-      </section>
-
-      {result === "noshow" ? (
-        <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-          상대에게 사실 확인을 요청하고 운영팀이 검토해요. 신고만으로 바로 제재하지 않습니다.
-        </p>
-      ) : (
-        <section className="mt-7">
-          <h2 className="text-sm font-semibold">기억에 남은 점 (복수 선택)</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {NOTES.map((n) => (
-              <Chip
-                key={n}
-                selected={notes.includes(n)}
-                onClick={() =>
-                  setNotes((prev) =>
-                    prev.includes(n) ? prev.filter((v) => v !== n) : [...prev, n],
-                  )
-                }
-              >
-                {n}
-              </Chip>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="mt-4">
-        <label className="text-sm font-semibold" htmlFor="fb">
-          더 하고 싶은 말 (선택)
-        </label>
-        <Textarea
-          id="fb"
-          rows={3}
-          maxLength={1500}
-          className="mt-2"
-          placeholder="안전과 관련된 일은 반드시 알려주세요."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </section>
-
-      {result && result !== "noshow" ? (
-        <fieldset className="mt-8 min-w-0">
-          <legend className="text-sm font-semibold">다음엔 어떤 만남이 좋을까요? (선택)</legend>
-          <p className="mt-1 text-sm text-muted-foreground">
-            고른 방식이 잘 맞는 분을 다음 소개에서 먼저 살펴봐요.
+      }
+    >
+      <form id="meeting-feedback" onSubmit={submit} className="space-y-6">
+        <section aria-labelledby="meeting-impression">
+          <h2 id="meeting-impression" className="text-xl font-semibold tracking-tight">
+            만남은 어땠나요?
+          </h2>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <LockKeyhole aria-hidden="true" className="size-3.5" />
+            후기는 상대에게 보이지 않아요.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {NEXT_MEETING.map(([value, label]) => (
-              <Chip
-                key={value}
-                selected={preference === value}
-                onClick={() => setPreference(preference === value ? undefined : value)}
+          <div
+            role="group"
+            aria-labelledby="meeting-impression"
+            className="mt-4 grid gap-1 rounded-surface bg-muted p-2"
+          >
+            {RESULTS.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                aria-pressed={result === r.id}
+                onClick={() => setResult(r.id)}
+                className={cn(
+                  "pressable flex min-h-11 items-center justify-between gap-2 rounded-control px-3 text-left text-base leading-snug focus-visible:ring-2 focus-visible:ring-ring",
+                  result === r.id && "bg-card font-semibold shadow-sm",
+                )}
               >
-                {label}
-              </Chip>
+                {r.label}
+                {result === r.id ? (
+                  <Check className="size-4 shrink-0 text-primary-strong" aria-hidden="true" />
+                ) : (
+                  <Circle className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                )}
+              </button>
             ))}
           </div>
-        </fieldset>
-      ) : null}
-
-      <div className="mt-8 flex gap-2">
-        <Button variant="ghost" onClick={() => navigate({ to: "/home" })}>
-          건너뛰기
-        </Button>
-        <Button
-          className="flex-1"
-          size="lg"
-          disabled={!result || busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              const met = result !== "noshow";
-              const body =
-                [met ? notes.join(" · ") : "", text.trim()].filter(Boolean).join("\n") || undefined;
-              await submitFeedback(meetingId, met, result, body, met ? preference : undefined);
-              if (met) {
-                toast.success("피드백이 저장되었습니다.");
-              } else {
-                // "만나지 못했어요" = 노쇼 신고. 신고만으로는 제재가 없고
-                // 상대 확인(24시간)을 거친다 — P4.
-                toast.success("신고가 접수되었습니다. 상대 확인을 요청했습니다.");
-              }
-              if (met && flags.data?.memory && !flags.isError && !flags.isPaused)
-                setGate("submitted");
-              else navigate({ to: "/home" });
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {busy ? "저장하는 중…" : "보내기"}
-        </Button>
-      </div>
+          <button
+            type="button"
+            aria-pressed={noShow}
+            onClick={() => setResult("noshow")}
+            className={cn(
+              "pressable mt-1 flex min-h-11 w-full items-center gap-2 rounded-control px-2 text-left text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring",
+              noShow ? "bg-muted text-foreground" : "text-muted-foreground",
+            )}
+          >
+            <Flag aria-hidden="true" className="size-4" />
+            만나지 못했어요 (노쇼 신고)
+            {noShow ? <Check aria-hidden="true" className="ml-auto size-4" /> : null}
+          </button>
+        </section>
+        {noShow ? (
+          <p role="status" className="rounded-control bg-muted p-3 text-sm leading-relaxed">
+            신고를 보내면 상대에게 사실 확인을 요청해요. 운영팀이 양쪽의 이야기를 확인해요.
+          </p>
+        ) : null}
+        {result && !noShow ? (
+          <>
+            <fieldset className="min-w-0">
+              <legend className="font-semibold">기억에 남은 점</legend>
+              <p className="mt-1 text-sm text-muted-foreground">여러 개 골라도 좋아요.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {NOTES.map((n) => (
+                  <Chip
+                    key={n}
+                    selected={notes.includes(n)}
+                    onClick={() =>
+                      setNotes((prev) =>
+                        prev.includes(n) ? prev.filter((v) => v !== n) : [...prev, n],
+                      )
+                    }
+                  >
+                    {n}
+                  </Chip>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="min-w-0">
+              <legend className="font-semibold">다음엔 어떤 만남이 좋을까요?</legend>
+              <p className="mt-1 text-sm text-muted-foreground">
+                고르면 다음 소개 순서에 참고해요.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {NEXT_MEETING.map(([value, label]) => (
+                  <Chip
+                    key={value}
+                    selected={preference === value}
+                    onClick={() => setPreference(preference === value ? undefined : value)}
+                  >
+                    {label}
+                  </Chip>
+                ))}
+              </div>
+            </fieldset>
+          </>
+        ) : null}
+        {result ? (
+          <div>
+            <label className="font-semibold" htmlFor="fb">
+              {noShow ? "어떤 일이 있었나요?" : "더 하고 싶은 말"}{" "}
+              <span className="text-sm font-normal text-muted-foreground">(선택)</span>
+            </label>
+            <Textarea
+              id="fb"
+              rows={3}
+              maxLength={1500}
+              className="mt-2"
+              value={noShow ? reportText : text}
+              onChange={(e) => (noShow ? setReportText : setText)(e.target.value)}
+            />
+          </div>
+        ) : null}
+      </form>
     </AppScreen>
   );
 }

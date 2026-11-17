@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Lock, Send } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ChevronRight, Lock, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { Button } from "@/components/ui/button";
 import { MeetingCheckin } from "@/components/app/MeetingCheckin";
 import { MeetingChange } from "@/components/app/MeetingChange";
@@ -51,7 +52,14 @@ const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
 type Row =
   | { kind: "day"; key: string; iso: string }
-  | { kind: "msg"; key: string; msg: Message; mine: boolean; lastOfGroup: boolean };
+  | {
+      kind: "msg";
+      key: string;
+      msg: Message;
+      mine: boolean;
+      firstOfGroup: boolean;
+      lastOfGroup: boolean;
+    };
 
 function buildRows(messages: Message[], myId: string | undefined): Row[] {
   const rows: Row[] = [];
@@ -69,8 +77,10 @@ function buildRows(messages: Message[], myId: string | undefined): Row[] {
       new Date(next.created_at).getTime() - new Date(msg.created_at).getTime() < GROUP_WINDOW_MS;
     const sameDayNext = next && dayKey(next.created_at) === dayKey(msg.created_at);
 
+    const previous = rows.at(-1);
     rows.push({
       kind: "msg",
+      firstOfGroup: previous?.kind !== "msg" || previous.lastOfGroup,
       key: msg.id,
       msg,
       mine: msg.sender_id === myId,
@@ -82,14 +92,15 @@ function buildRows(messages: Message[], myId: string | undefined): Row[] {
 
 export function Conversation({
   meeting,
+  counterpartName,
   onMeetingChange,
 }: {
   meeting: Meeting;
+  counterpartName: string;
   onMeetingChange?: (m: Meeting) => void;
 }) {
   const { me } = useMe();
   const assistantFlags = useAssistantFlags(me?.id);
-  const navigate = useNavigate();
 
   const [channel, setChannel] = useState<MsgChannel>("coord");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -109,6 +120,15 @@ export function Conversation({
 
   const channelOpen = isChannelOpenNow(meeting, channel);
   const privateOpen = isChannelOpenNow(meeting, "private");
+  const canAskManager =
+    assistantFlags.data?.chat && !assistantFlags.isError && !assistantFlags.isPaused;
+  const feedbackDue = Boolean(
+    meeting.confirmed_at &&
+    meeting.scheduled_at &&
+    !meeting.cancelled_at &&
+    now !== null &&
+    Date.parse(meeting.scheduled_at) <= now,
+  );
   const rows = useMemo(() => buildRows(messages, me?.id), [messages, me?.id]);
   const lastMessageId = messages.at(-1)?.id;
   useEffect(() => {
@@ -194,70 +214,119 @@ export function Conversation({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* 약속 요약 — 대화 중 계속 보여야 하는 맥락이라 위에 고정한다 */}
-      {meeting.confirmed_at ? (
-        <section
-          aria-label="약속 정보와 참석 확인"
-          tabIndex={0}
-          className="app-elevated max-h-[50%] min-h-0 overflow-y-auto overscroll-contain rounded-surface bg-card focus-visible:outline-2 focus-visible:outline-ring"
-        >
-          {meeting.scheduled_at ? (
-            <div className="bg-selection px-4 py-4 text-selection-foreground">
-              <MeetingSummary scheduledAt={meeting.scheduled_at} placeName={meeting.place_name} />
+      <div className="chat-context">
+        {/* 약속 요약 — 대화 중 계속 보여야 하는 맥락이라 위에 고정한다 */}
+        {meeting.confirmed_at ? (
+          <section
+            aria-label="약속 정보와 참석 확인"
+            tabIndex={0}
+            className="max-h-[38%] min-h-0 overflow-y-auto overscroll-contain rounded-surface bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            {meeting.scheduled_at ? (
+              <div className="px-4 py-3">
+                <MeetingSummary scheduledAt={meeting.scheduled_at} placeName={meeting.place_name} />
+              </div>
+            ) : null}
+            <div className="px-4 pb-3 empty:hidden">
+              <MeetingCheckin key={meeting.scheduled_at} meetingId={meeting.id} embedded />
+              <MeetingChange meeting={meeting} onChange={onMeetingChange} />
             </div>
-          ) : null}
-          <div className="px-4 py-3">
-            <MeetingCheckin key={meeting.scheduled_at} meetingId={meeting.id} embedded />
-            <MeetingChange meeting={meeting} onChange={onMeetingChange} />
+          </section>
+        ) : null}
+        {channelOpen ? (
+          <aside
+            aria-label="나만 보는 매니저 안내"
+            className="chat-manager-note mt-2 flex shrink-0 items-center gap-2.5 rounded-control px-3 py-2"
+          >
+            <AssistantMark className="chat-manager-avatar" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2">
+                <span className="text-sm font-semibold">내 매니저</span>
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Lock aria-hidden="true" className="size-3" />
+                  나만 보기
+                </span>
+              </div>
+              <p className="mt-0.5 break-keep text-sm leading-snug">
+                {feedbackDue
+                  ? "만남 후기는 상대에게 보이지 않아요."
+                  : "만날 땐 어느 입구인지도 정해 두세요."}
+              </p>
+            </div>
+            {feedbackDue || canAskManager ? (
+              <div className="flex shrink-0 flex-col">
+                {feedbackDue ? (
+                  <Link
+                    className="inline-flex min-h-11 items-center gap-0.5 text-sm font-semibold"
+                    to="/feedback"
+                    search={{ meetingId: meeting.id }}
+                  >
+                    만남 후기
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </Link>
+                ) : null}
+                {canAskManager ? (
+                  <Link
+                    className="inline-flex min-h-11 items-center gap-0.5 text-sm font-semibold"
+                    to="/assistant"
+                    search={{ panel: "chat" }}
+                    aria-label="내 매니저에게 물어보기"
+                  >
+                    물어보기
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+          </aside>
+        ) : null}
+        {privateOpen ? (
+          <div
+            className="mt-2 flex shrink-0 gap-1 rounded-control bg-muted p-1"
+            role="tablist"
+            aria-label="대화 채널"
+          >
+            {(
+              [
+                { id: "coord", label: "약속 이야기" },
+                { id: "private", label: "일상 대화" },
+              ] as const
+            ).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                role="tab"
+                aria-selected={channel === c.id}
+                onClick={() => setChannel(c.id)}
+                className={cn(
+                  "pressable min-h-11 flex-1 rounded-control px-3.5 text-sm font-medium",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  channel === c.id
+                    ? "bg-selection text-selection-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
+                {c.label}
+              </button>
+            ))}
           </div>
-        </section>
-      ) : null}
-      {privateOpen ? (
-        <div
-          className="mt-3 flex shrink-0 gap-1 rounded-control bg-muted p-1"
-          role="tablist"
-          aria-label="대화 채널"
-        >
-          {(
-            [
-              { id: "coord", label: "약속 이야기" },
-              { id: "private", label: "사적인 대화" },
-            ] as const
-          ).map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              role="tab"
-              aria-selected={channel === c.id}
-              onClick={() => setChannel(c.id)}
-              className={cn(
-                "pressable min-h-11 flex-1 rounded-control px-3.5 text-sm font-medium",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                channel === c.id
-                  ? "bg-selection text-selection-foreground"
-                  : "text-muted-foreground",
-              )}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+        ) : null}
 
-      {/* 로그 — 아래에 붙어 있고 여기만 스크롤된다 */}
-      {chatError ? (
-        <p role="alert" className="mt-2 shrink-0 text-xs text-destructive">
-          대화를 새로 불러오지 못했어요.{" "}
-          <Button variant="ghost" size="sm" onClick={() => setChatRetry((v) => v + 1)}>
-            대화 다시 불러오기
-          </Button>
-        </p>
-      ) : null}
-      {messages.length === 1000 ? (
-        <p className="mt-1 shrink-0 text-xs text-muted-foreground">
-          최근 메시지 1,000개를 표시하고 있어요.
-        </p>
-      ) : null}
+        {/* 로그 — 아래에 붙어 있고 여기만 스크롤된다 */}
+        {chatError ? (
+          <p role="alert" className="mt-2 shrink-0 text-xs text-destructive">
+            대화를 새로 불러오지 못했어요.{" "}
+            <Button variant="ghost" size="sm" onClick={() => setChatRetry((v) => v + 1)}>
+              대화 다시 불러오기
+            </Button>
+          </p>
+        ) : null}
+        {messages.length === 1000 ? (
+          <p className="mt-1 shrink-0 text-xs text-muted-foreground">
+            최근 메시지 1,000개를 표시하고 있어요.
+          </p>
+        ) : null}
+      </div>
       <div
         ref={logRef}
         role="log"
@@ -271,7 +340,7 @@ export function Conversation({
             if (bottom.current) setNewBelow(false);
           }
         }}
-        className="-mx-1 min-h-20 flex-1 overflow-y-auto overscroll-contain px-1 pt-4 focus-visible:outline-2 focus-visible:outline-ring"
+        className="chat-transcript -mx-1 min-h-20 flex-1 overflow-y-auto overscroll-contain px-1 pt-4 focus-visible:outline-2 focus-visible:outline-ring"
       >
         <div className="flex min-h-full flex-col justify-end gap-1">
           {rows.length === 0 ? (
@@ -281,7 +350,7 @@ export function Conversation({
                 : chatError
                   ? "연결을 다시 확인해 주세요."
                   : channelOpen
-                    ? "먼저 인사를 건네 보세요."
+                    ? "아직 주고받은 메시지가 없어요."
                     : "아직 열리지 않은 대화입니다."}
             </p>
           ) : null}
@@ -295,62 +364,52 @@ export function Conversation({
                 {formatDay(row.iso)}
               </p>
             ) : (
-              <div
-                key={row.key}
-                className={cn(
-                  "flex items-end gap-1.5",
-                  row.mine ? "justify-end" : "justify-start",
-                  row.lastOfGroup ? "mb-2" : "mb-0.5",
-                )}
-              >
-                {row.mine && row.lastOfGroup ? (
-                  <time
-                    dateTime={row.msg.created_at}
-                    className="mb-0.5 shrink-0 text-3xs text-muted-foreground"
-                  >
-                    {formatTime(row.msg.created_at)}
-                  </time>
+              <div key={row.key}>
+                {!row.mine && row.firstOfGroup ? (
+                  <p className="mb-1 text-xs font-semibold text-foreground">{counterpartName}</p>
                 ) : null}
-                <span
-                  // 대화 내용은 베껴 쓸 수 있어야 한다 — 장소·시간이 여기서 오간다.
-                  data-selectable
-                  data-sent={row.msg.id === sentMessageId.current ? "true" : undefined}
+                <div
                   className={cn(
-                    "chat-message min-w-0 max-w-[76%] px-4 py-3 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]",
-                    row.mine
-                      ? "rounded-2xl bg-bubble-mine text-bubble-mine-foreground"
-                      : "rounded-2xl bg-card text-foreground shadow-sm",
-                    // 덩어리의 마지막만 꼬리를 뾰족하게 — 이어진 말은 둥글게 둔다
-                    row.lastOfGroup && (row.mine ? "rounded-br-sm" : "rounded-bl-sm"),
+                    "flex items-end gap-1.5",
+                    row.mine ? "justify-end" : "justify-start",
+                    row.lastOfGroup ? "mb-2" : "mb-0.5",
                   )}
                 >
-                  {row.msg.body}
-                </span>
-                {!row.mine && row.lastOfGroup ? (
-                  <time
-                    dateTime={row.msg.created_at}
-                    className="mb-0.5 shrink-0 text-3xs text-muted-foreground"
+                  {row.mine && row.lastOfGroup ? (
+                    <time
+                      dateTime={row.msg.created_at}
+                      className="mb-0.5 shrink-0 text-3xs text-muted-foreground"
+                    >
+                      {formatTime(row.msg.created_at)}
+                    </time>
+                  ) : null}
+                  <span
+                    // 대화 내용은 베껴 쓸 수 있어야 한다 — 장소·시간이 여기서 오간다.
+                    data-selectable
+                    data-sent={row.msg.id === sentMessageId.current ? "true" : undefined}
+                    className={cn(
+                      "chat-message min-w-0 max-w-[76%] px-3.5 py-2.5 text-base leading-snug whitespace-pre-wrap [overflow-wrap:anywhere]",
+                      row.mine
+                        ? "rounded-2xl bg-bubble-mine text-bubble-mine-foreground"
+                        : "rounded-2xl bg-muted text-foreground",
+                      // 덩어리의 마지막만 꼬리를 뾰족하게 — 이어진 말은 둥글게 둔다
+                      row.lastOfGroup && (row.mine ? "rounded-br-sm" : "rounded-bl-sm"),
+                    )}
                   >
-                    {formatTime(row.msg.created_at)}
-                  </time>
-                ) : null}
+                    {row.msg.body}
+                  </span>
+                  {!row.mine && row.lastOfGroup ? (
+                    <time
+                      dateTime={row.msg.created_at}
+                      className="mb-0.5 shrink-0 text-3xs text-muted-foreground"
+                    >
+                      {formatTime(row.msg.created_at)}
+                    </time>
+                  ) : null}
+                </div>
               </div>
             ),
           )}
-
-          {meeting.confirmed_at &&
-          meeting.scheduled_at &&
-          !meeting.cancelled_at &&
-          now !== null &&
-          Date.parse(meeting.scheduled_at) <= now ? (
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/feedback", search: { meetingId: meeting.id } })}
-              className="mt-6 mb-1 min-h-11 w-full text-xs text-muted-foreground underline underline-offset-4"
-            >
-              만남 후 피드백 남기기
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -367,16 +426,6 @@ export function Conversation({
         >
           최근 메시지 보기
         </Button>
-      ) : null}
-      {assistantFlags.data?.chat && !assistantFlags.isError && !assistantFlags.isPaused ? (
-        <Link
-          to="/assistant"
-          search={{ panel: "chat" }}
-          className="inline-flex min-h-11 shrink-0 items-center justify-between gap-3 text-sm font-medium"
-        >
-          <span>내 매니저에게 물어보기</span>
-          <span className="text-xs font-normal text-muted-foreground">상대에게는 안 보여요</span>
-        </Link>
       ) : null}
       {/* 입력 — fixed 가 아니라 플렉스 흐름의 마지막. 탭바 계산이 필요 없다. */}
       <form
@@ -396,7 +445,9 @@ export function Conversation({
           id="msg"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={channelOpen ? "메시지 입력" : "아직 열리지 않은 대화입니다"}
+          placeholder={
+            channelOpen ? `${counterpartName}님께 메시지` : "아직 열리지 않은 대화입니다"
+          }
           disabled={!channelOpen}
           autoComplete="off"
           maxLength={2000}

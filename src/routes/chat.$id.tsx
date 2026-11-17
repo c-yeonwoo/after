@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { Conversation } from "@/components/app/Conversation";
 import { SafetyMenu } from "@/components/app/SafetyMenu";
+import { Button } from "@/components/ui/button";
+import { useMe } from "@/lib/me";
 import { BRAND } from "@/lib/brand";
 import { getMeeting, getMeetingCounterpart, type Meeting, type PublicProfile } from "@/lib/api";
 
@@ -17,22 +19,26 @@ export const Route = createFileRoute("/chat/$id")({
   component: ChatRoom,
 });
 
-/**
- * 특정 만남의 대화로 직접 들어오는 경로(딥링크·알림용).
- * 평소 진입은 `/chats` 탭이며, 본문은 같은 <Conversation> 을 공유한다.
- */
 function ChatRoom() {
-  // 라우트 파라미터는 상대 프로필 id 가 아니라 meeting id 다.
-  const { id: meetingId } = Route.useParams();
+  const { id } = Route.useParams();
+  const { me } = useMe();
+  return <MeetingRoom key={`${me?.id ?? ""}:${id}`} meetingId={id} />;
+}
+
+function MeetingRoom({ meetingId }: { meetingId: string }) {
   const navigate = useNavigate();
 
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [counterpart, setCounterpart] = useState<PublicProfile | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    setLoading(true);
+    setFailed(false);
+    void (async () => {
       const m = await getMeeting(meetingId);
       if (cancelled) return;
       setMeeting(m);
@@ -40,17 +46,39 @@ function ChatRoom() {
         const c = await getMeetingCounterpart(m);
         if (!cancelled) setCounterpart(c);
       }
-      if (!cancelled) setLoading(false);
-    })();
+    })()
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [meetingId]);
+  }, [meetingId, attempt]);
 
   if (loading) {
     return (
       <AppScreen title="대화" hideTabs back="/chats">
         <p className="mt-16 text-center text-sm text-muted-foreground">불러오는 중입니다…</p>
+      </AppScreen>
+    );
+  }
+
+  if (failed) {
+    return (
+      <AppScreen title="대화" hideTabs back="/chats">
+        <p role="alert" className="mt-12 text-center text-sm">
+          대화를 불러오지 못했어요.
+        </p>
+        <Button
+          variant="outline"
+          className="mx-auto mt-3 flex"
+          onClick={() => setAttempt((v) => v + 1)}
+        >
+          다시 확인하기
+        </Button>
       </AppScreen>
     );
   }
@@ -84,7 +112,11 @@ function ChatRoom() {
         ) : null
       }
     >
-      <Conversation meeting={meeting} onMeetingChange={setMeeting} />
+      <Conversation
+        counterpartName={counterpart?.name || "상대"}
+        meeting={meeting}
+        onMeetingChange={setMeeting}
+      />
     </AppScreen>
   );
 }

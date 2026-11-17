@@ -1124,7 +1124,10 @@ try {
     await m1.page
       .getByText("예정된 만남이 지난 뒤 후기를 남길 수 있어요.", { exact: false })
       .waitFor();
-    assert.equal(await m1.page.getByRole("button", { name: "보내기", exact: true }).count(), 0);
+    assert.equal(
+      await m1.page.getByRole("button", { name: "후기 남기기", exact: true }).count(),
+      0,
+    );
   });
   await check("m2 unanswered request cancels once and restores one meeting ticket", async () => {
     unanswered = await openAndRequest(m2);
@@ -1246,8 +1249,15 @@ try {
     await m1.page.goto(`${base}/feedback?meetingId=${success.id}`);
     await m1.page.getByRole("button", { name: "또 만나고 싶어요", exact: true }).click();
     await m1.page.getByRole("button", { name: "대화가 편했어요", exact: true }).click();
+    const comment = m1.page.locator("#fb");
+    await comment.fill("둘이서 나눈 대화가 편했어요.");
+    await m1.page.getByRole("button", { name: "만나지 못했어요 (노쇼 신고)", exact: true }).click();
+    assert.equal(await comment.inputValue(), "");
+    await comment.fill("신고용 초안");
+    await m1.page.getByRole("button", { name: "또 만나고 싶어요", exact: true }).click();
+    assert.equal(await comment.inputValue(), "둘이서 나눈 대화가 편했어요.");
     await screen(m1.page, "survey-mobile");
-    await m1.page.getByRole("button", { name: "보내기", exact: true }).click();
+    await m1.page.getByRole("button", { name: "후기 남기기", exact: true }).click();
     await finishFeedback(m1.page);
     await m1.page.goto(`${base}/feedback?meetingId=${success.id}`);
     await m1.page.getByText("후기를 남겨주셨어요. 고마워요.", { exact: true }).waitFor();
@@ -1281,7 +1291,7 @@ try {
     await success.female.page
       .getByRole("button", { name: "좋았지만 인연은 아니에요", exact: true })
       .click();
-    await success.female.page.getByRole("button", { name: "보내기", exact: true }).click();
+    await success.female.page.getByRole("button", { name: "후기 남기기", exact: true }).click();
     await finishFeedback(success.female.page);
     assert.equal(sql(`select count(*) from feedbacks where meeting_id='${success.id}'`), "2");
     assert.equal(

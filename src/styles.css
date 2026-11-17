@@ -1015,6 +1015,7 @@
 
 /* The date under consideration reads as one surface; venue fields stay on the page. */
 .meeting-date-surface,
+.chat-manager-note,
 .manager-reading,
 .intro-manager-note,
 .settings-intro-section {
@@ -1023,6 +1024,7 @@
 }
 
 .dark .meeting-date-surface,
+.dark .chat-manager-note,
 .dark .manager-reading,
 .dark .intro-manager-note,
 .dark .settings-intro-section {
@@ -1052,6 +1054,45 @@
 
 .app-elevated {
   box-shadow: var(--shadow-elevated);
+}
+
+.app-conversation-screen {
+  container: conversation / size;
+}
+
+.chat-context {
+  display: contents;
+}
+
+/* The native keyboard reduces the app frame without resizing the CSS viewport. */
+@container conversation (max-height: 28rem) {
+  .chat-context {
+    display: block;
+    max-height: 45%;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .chat-context > section {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .chat-transcript {
+    min-height: 3.75rem;
+    padding-top: 0.25rem;
+  }
+
+  .app-conversation-screen .chat-composer {
+    margin-block: 0.25rem;
+    padding: 0.25rem;
+  }
+}
+
+.chat-manager-note .chat-manager-avatar {
+  width: 2rem;
+  height: 2rem;
 }
 
 .chat-composer {
