@@ -153,7 +153,7 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
           ) : null}
           {gate === "submitted" && flags.data?.memory && !flags.isError && !flags.isPaused ? (
             <div className="assistant-reply mt-6 text-left">
-              <h2 className="font-semibold">다음 만남에 기억하고 싶은 점은?</h2>
+              <h2 className="font-medium">다음 만남에 기억하고 싶은 점은?</h2>
               <p className="mt-2 text-sm leading-relaxed">
                 편했던 대화 속도나 장소처럼, 내 선호만 따로 남길 수 있어요. 방금 쓴 후기는
                 매니저에게 자동으로 보내지 않아요.
@@ -218,7 +218,7 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
     >
       <form id="meeting-feedback" onSubmit={submit} className="space-y-6">
         <section aria-labelledby="meeting-impression">
-          <h2 id="meeting-impression" className="text-xl font-semibold tracking-tight">
+          <h2 id="meeting-impression" className="text-xl font-medium tracking-tight">
             만남은 어땠나요?
           </h2>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -238,7 +238,7 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
                 onClick={() => setResult(r.id)}
                 className={cn(
                   "pressable flex min-h-11 items-center justify-between gap-2 rounded-control px-3 text-left text-base leading-snug focus-visible:ring-2 focus-visible:ring-ring",
-                  result === r.id && "bg-card font-semibold shadow-sm",
+                  result === r.id && "bg-card shadow-sm",
                 )}
               >
                 {r.label}
@@ -272,11 +272,12 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
         {result && !noShow ? (
           <>
             <fieldset className="min-w-0">
-              <legend className="font-semibold">기억에 남은 점</legend>
+              <legend className="font-medium">기억에 남은 점</legend>
               <p className="mt-1 text-sm text-muted-foreground">여러 개 골라도 좋아요.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {NOTES.map((n) => (
                   <Chip
+                    className="font-medium"
                     key={n}
                     selected={notes.includes(n)}
                     onClick={() =>
@@ -291,13 +292,14 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
               </div>
             </fieldset>
             <fieldset className="min-w-0">
-              <legend className="font-semibold">다음엔 어떤 만남이 좋을까요?</legend>
+              <legend className="font-medium">다음엔 어떤 만남이 좋을까요?</legend>
               <p className="mt-1 text-sm text-muted-foreground">
                 고르면 다음 소개 순서에 참고해요.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {NEXT_MEETING.map(([value, label]) => (
                   <Chip
+                    className="font-medium"
                     key={value}
                     selected={preference === value}
                     onClick={() => setPreference(preference === value ? undefined : value)}
@@ -311,7 +313,7 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
         ) : null}
         {result ? (
           <div>
-            <label className="font-semibold" htmlFor="fb">
+            <label className="font-medium" htmlFor="fb">
               {noShow ? "어떤 일이 있었나요?" : "더 하고 싶은 말"}{" "}
               <span className="text-sm font-normal text-muted-foreground">(선택)</span>
             </label>
