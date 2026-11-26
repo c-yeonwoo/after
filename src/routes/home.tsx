@@ -43,6 +43,22 @@ export const Route = createFileRoute("/home")({
   component: HomePage,
 });
 
+function WaitCheck({ at }: { at?: string | null }) {
+  if (!at) return null;
+  const when = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(at));
+  return (
+    <span className="mt-1 block text-sm text-muted-foreground">
+      {Date.parse(at) > Date.now() ? "매니저 재확인 예정" : "매니저 재확인 대기"} · {when}
+    </span>
+  );
+}
+
 function formatWhen(iso: string) {
   const d = new Date(iso);
   const date = d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" });
@@ -225,9 +241,13 @@ function HomePage() {
                       ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
                       : !isMale && serverState?.intro_progress?.has_likes
                         ? "상대의 만남 요청을 기다리고 있어요."
-                        : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
+                        : serverState?.first_intro_wait
+                          ? "다음은 매니저 차례예요. 첫 소개가 도착하면 여기서 알려드릴게요."
+                          : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
                   </p>
-                  {capabilities.data?.chat ? (
+                  {serverState?.first_intro_wait ? (
+                    <WaitCheck at={serverState.first_intro_wait.next_check_at} />
+                  ) : capabilities.data?.chat ? (
                     <p>궁금한 점은 편하게 물어봐 주세요.</p>
                   ) : (
                     <p>기다리는 동안 내 프로필과 만남 가능 시간을 확인해 주세요.</p>
@@ -334,7 +354,7 @@ function HomePage() {
             primaryState === "photos_pending" ? (
               <GuideNote>
                 사진을 먼저 확인한 뒤 소개를 준비해요. 24시간 안에 1차 검토를 목표로 하고 있어요.
-                검토가 늦어지면 고객센터에서 진행 상황을 확인할 수 있어요.
+                <WaitCheck at={serverState?.first_intro_wait?.next_check_at} />
                 <Link to="/support" className="mt-2 block font-semibold text-foreground">
                   검토 문의하기
                 </Link>
@@ -359,6 +379,8 @@ function HomePage() {
               candidate={candidate}
               isMale={isMale}
               viewerReason={serverState?.viewer_intro_reason}
+              evidence={serverState?.intro_evidence}
+              priority={serverState?.intro_priority}
               viewer={currentProfile}
             />
           ) : isMale && queued > 0 ? (
@@ -369,7 +391,12 @@ function HomePage() {
           */
             <section aria-label="도착한 소개" className="introduction-arrival space-y-3">
               {serverState?.viewer_intro_reason ? (
-                <IntroductionReason reason={serverState.viewer_intro_reason} preview />
+                <IntroductionReason
+                  reason={serverState.intro_evidence?.reason ?? serverState.viewer_intro_reason}
+                  evidence={serverState.intro_evidence}
+                  priority={serverState.intro_priority}
+                  preview
+                />
               ) : (
                 <p className="text-base font-medium">한 분의 소개가 기다리고 있어요.</p>
               )}
@@ -463,10 +490,14 @@ function CandidatePreview({
   candidate,
   isMale,
   viewerReason,
+  evidence,
+  priority,
   viewer,
 }: {
   candidate: PublicProfile;
   viewerReason?: string | null;
+  evidence: HomeStateV2["intro_evidence"];
+  priority: HomeStateV2["intro_priority"];
   isMale: boolean;
   viewer: {
     interests: string[] | null;
@@ -483,8 +514,27 @@ function CandidatePreview({
     viewer?.profile_public_signals,
     candidate.profile_public_signals,
   );
-  const connection = viewerReason ?? visible?.connections[0]?.text;
-  const managerReading = connection ?? visible?.portrait[0]?.text;
+  const aiConnection = visible?.connections[0];
+  const portrait = visible?.portrait[0];
+  const useAi =
+    !viewerReason &&
+    (evidence?.source === "selection" || !evidence) &&
+    Boolean(aiConnection || portrait);
+  const quotation =
+    aiConnection?.otherSources[0]?.quote ??
+    portrait?.sources.find((source) => source.person === "other")?.quote;
+  const managerReading = useAi
+    ? (aiConnection?.text ?? portrait?.text)
+    : (evidence?.reason ?? viewerReason);
+  const readingEvidence =
+    useAi && managerReading
+      ? {
+          reason: managerReading,
+          source: "reading",
+          label: "소개 후 매니저가 읽은 상대의 공개 답변",
+          quote: quotation ?? null,
+        }
+      : evidence;
   useEffect(() => {
     let active = true;
     setSrc(null);
@@ -557,7 +607,13 @@ function CandidatePreview({
       ) : null}
       {managerReading ? (
         <div className="mt-3">
-          <IntroductionReason reason={managerReading} portrait={!connection} preview />
+          <IntroductionReason
+            reason={managerReading}
+            portrait={useAi && !aiConnection}
+            evidence={readingEvidence}
+            priority={priority}
+            preview
+          />
         </div>
       ) : null}
       <Link to="/intro" className="intro-preview-action pressable mt-3">

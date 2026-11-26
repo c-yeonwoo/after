@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { FirstIntroWaitlist } from "@/components/app/FirstIntroWaitlist";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -91,6 +93,7 @@ function dateTime(iso: string) {
 }
 
 function TasksTab() {
+  const queryClient = useQueryClient();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [rows, setRows] = useState<OpsCaseItem[] | null>(null);
@@ -335,13 +338,18 @@ function TasksTab() {
         </div>
         <button
           type="button"
-          onClick={() => void load(false)}
+          onClick={() => {
+            void load(false);
+            void queryClient.invalidateQueries({ queryKey: ["first-intro-waits"] });
+          }}
           disabled={loading}
           className="rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
         >
           새로고침
         </button>
       </div>
+
+      {!search.caseId && <FirstIntroWaitlist />}
 
       {preview && preview.missing_total > 0 ? (
         <div className="flex flex-wrap items-center gap-3 rounded-surface border border-brand-200 bg-selection px-4 py-3 text-sm">
