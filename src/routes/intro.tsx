@@ -501,6 +501,7 @@ function IntroPage() {
             <IntroductionReason
               reason={evidence?.reason ?? reason!}
               evidence={evidence}
+              pair={{ self: me, other: candidate }}
               priority={priority}
               onSaved={setPriority}
             />
