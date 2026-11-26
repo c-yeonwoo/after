@@ -30,14 +30,31 @@ export type NotificationKind =
 
 export type NotificationCopy = { title: string; body: string; path: string };
 
+const deadlineFormat = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+export function requestDeadlineLabel(deadline: number) {
+  return deadlineFormat.format(deadline);
+}
+
 export function notificationCopy(
   kind: NotificationKind,
-  ctx: { counterpart?: string | null; meetingId?: string | null },
+  ctx: { counterpart?: string | null; meetingId?: string | null; requestUsedAt?: string | null },
 ): NotificationCopy {
   // "님" 은 받침이 있어 "이·과" 를, 이름이 없을 때의 "상대" 는 "가·와" 를 받는다.
   const whoGa = ctx.counterpart ? `${ctx.counterpart}님이` : "상대가";
   const whoWa = ctx.counterpart ? `${ctx.counterpart}님과` : "상대와";
   const m = ctx.meetingId;
+
+  const usedAt = ctx.requestUsedAt ? Date.parse(ctx.requestUsedAt) : NaN;
+  const replyBy = Number.isFinite(usedAt)
+    ? `답변 기한은 ${requestDeadlineLabel(usedAt + 24 * 60 * 60_000)}까지예요.`
+    : "만남 요청에서 답변 기한을 확인해 주세요.";
 
   switch (kind) {
     case "meeting_change_requested":
@@ -61,7 +78,7 @@ export function notificationCopy(
     case "candidates_refilled":
       return {
         title: "새로 살펴볼 프로필이 있어요",
-        body: "같은 퇴근권에 새 프로필이 준비됐어요.",
+        body: "선택한 만남 지역에 새 프로필이 있어요.",
         path: "/intro",
       };
     case "no_show_response_required":
@@ -73,13 +90,13 @@ export function notificationCopy(
     case "meeting_requested":
       return {
         title: `${whoGa} 만나고 싶어 해요`,
-        body: "보내 준 시간 중 하나만 고르면 약속이 정해져요. 24시간 안에 답해 주세요.",
+        body: `보내 준 시간 중 하나만 고르면 약속이 정해져요. ${replyBy}`,
         path: "/requests",
       };
     case "meeting_request_reminder":
       return {
         title: "아직 답변하지 않은 만남 요청이 있어요",
-        body: "가능한 시간을 고르거나, 어려우시면 거절할 수 있어요. 요청은 24시간 뒤 종료됩니다.",
+        body: `가능한 시간을 고르거나, 어려우시면 거절할 수 있어요. ${replyBy}`,
         path: "/requests",
       };
     case "prefs_submitted":

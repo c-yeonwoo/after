@@ -122,6 +122,7 @@ function NotificationsPage() {
             const copy = notificationCopy(n.kind as NotificationKind, {
               counterpart: n.counterpart_name,
               meetingId: n.meeting_id,
+              requestUsedAt: n.request_used_at,
             });
             const target = splitAppPath(copy.path);
             return (

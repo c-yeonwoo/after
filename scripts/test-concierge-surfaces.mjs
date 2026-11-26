@@ -411,8 +411,15 @@ async function verifyProfile(page, own) {
     .waitFor();
   assert.equal(await page.getByText(privateSentinel, { exact: false }).count(), 0);
   if (own) {
-    await page.getByRole("heading", { name: "첫인상을 더 선명하게" }).waitFor();
-    await page.getByRole("heading", { name: "싫은 것 뒤에, 편한 방식도" }).waitFor();
+    const coaching = page.getByRole("complementary", { name: "내 프로필 표현 점검" });
+    await coaching.getByRole("heading", { name: "내 소개글 점검" }).waitFor();
+    await coaching.getByText("작성한 내용 기준 · 나만 보기", { exact: true }).waitFor();
+    await coaching.getByRole("heading", { level: 4 }).waitFor();
+    assert.ok(
+      ["/profile-edit", "/assistant?panel=chat"].includes(
+        await coaching.getByRole("link").getAttribute("href"),
+      ),
+    );
     assert.equal(await page.getByText("프로필에 담긴 요약", { exact: true }).count(), 0);
     assert.ok((await page.locator(".profile-answer").allTextContents()).includes(ownAnswer));
     return;

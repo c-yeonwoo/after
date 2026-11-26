@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
@@ -7,6 +7,7 @@ import { CarrierIdentityForm } from "@/components/app/CarrierIdentityForm";
 import { PhoneVerifyForm } from "@/components/app/PhoneVerifyForm";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/api";
+import { splitAppPath, takeNotificationReturn } from "@/lib/appPath";
 import { BRAND } from "@/lib/brand";
 import {
   carrierIdentityEnabled,
@@ -28,12 +29,17 @@ export const Route = createFileRoute("/verify-phone")({
 function VerifyPhone() {
   const navigate = useNavigate();
   const { me, refresh } = useMe();
+  const finishNavigation = useCallback(() => {
+    const next = me && takeNotificationReturn(`identity.${me.id}`);
+    const path = me && me.onboarding_step < 7 ? "/signup" : (next ?? "/home");
+    return navigate({ ...splitAppPath(path), replace: true });
+  }, [me, navigate]);
   const processedReturn = useRef(false);
   const [returning, setReturning] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!carrierIdentityEnabled || processedReturn.current) return;
+    if (!me || !carrierIdentityEnabled || processedReturn.current) return;
     const query = new URLSearchParams(window.location.search);
     const id = query.get("identityVerificationId");
     const code = query.get("code");
@@ -49,11 +55,11 @@ function VerifyPhone() {
       .then(async () => {
         await refresh();
         toast.success("본인·성인 확인을 마쳤어요.");
-        void navigate({ to: me && me.onboarding_step < 7 ? "/signup" : "/home", replace: true });
+        void finishNavigation();
       })
       .catch((error: unknown) => setReturnError(carrierIdentityError(error)))
       .finally(() => setReturning(false));
-  }, [me, navigate, refresh]);
+  }, [me, finishNavigation, refresh]);
 
   const title = carrierIdentityEnabled ? "본인·성인 확인" : "휴대폰 인증";
   return (
@@ -77,7 +83,7 @@ function VerifyPhone() {
             onVerified={async () => {
               await refresh();
               toast.success("본인·성인 확인을 마쳤어요.");
-              navigate({ to: me && me.onboarding_step < 7 ? "/signup" : "/home" });
+              await finishNavigation();
             }}
           />
         ) : (

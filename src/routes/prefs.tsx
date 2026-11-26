@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { BRAND } from "@/lib/brand";
 import {
   calendarDays,
+  expiredMeetingMessage,
+  isExpiredMeetingRequest,
   DEFAULT_MEET_TIME,
   formatDayKey,
   isWeekendKey,
@@ -92,21 +94,38 @@ function PrefsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const pending = await listMeetingsAwaitingMyPrefs();
-      if (cancelled) return;
-      // 지정된 요청이 있으면 그것, 없으면 가장 오래 기다린 것(환불 기한이 먼저 온다).
-      const target = meetingIdParam
-        ? pending.find((r) => r.meeting.id === meetingIdParam)
-        : pending[0];
-      setMeetingId(target?.meeting.id ?? null);
-      setCandidateName(target?.candidate.name ?? null);
-      setLoading(false);
-    })();
+    let timer: number | undefined;
+    setLoading(true);
+    const close = (message: string) => {
+      toast(message);
+      void navigate({ to: "/requests", replace: true });
+    };
+    void listMeetingsAwaitingMyPrefs(userId)
+      .then((pending) => {
+        if (cancelled) return;
+        const target = meetingIdParam
+          ? pending.find((r) => r.meeting.id === meetingIdParam)
+          : pending.find((r) => r.localDeadline > Date.now());
+        if (target) {
+          const remaining = target.localDeadline - Date.now();
+          if (remaining <= 0) {
+            close(expiredMeetingMessage);
+            return;
+          }
+          timer = window.setTimeout(() => close(expiredMeetingMessage), remaining);
+        }
+        setMeetingId(target?.meeting.id ?? null);
+        setCandidateName(target?.candidate.name ?? null);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) close("요청을 불러오지 못했어요. 다시 확인해 주세요.");
+      });
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
-  }, [meetingIdParam]);
+  }, [meetingIdParam, navigate, userId]);
 
   // 날짜 키가 YYYY-MM-DD 라 사전순 정렬이 곧 시간순이다.
   const pickedKeys = useMemo(() => Object.keys(picked).sort(), [picked]);
@@ -185,6 +204,11 @@ function PrefsPage() {
                 toast.success("전달했습니다. 상대가 날짜를 고르면 대화가 열려요.");
                 navigate({ to: "/home" });
               } catch (err) {
+                if (isExpiredMeetingRequest(err)) {
+                  toast(expiredMeetingMessage);
+                  void navigate({ to: "/requests", replace: true });
+                  return;
+                }
                 toast.error(err instanceof Error ? err.message : "전달에 실패했습니다.");
               } finally {
                 setBusy(false);

@@ -1386,8 +1386,8 @@ export type MeetingRequest = {
   meeting: Meeting;
   candidate: PublicProfile;
   reason: string | null;
-  deadline_at: string | null;
-  server_as_of: string | null;
+  deadline_at: string;
+  localDeadline: number;
 };
 
 /**
@@ -1445,6 +1445,7 @@ export async function listMeetingsAwaitingMyPrefs(
     supabase.rpc("my_request_deadlines"),
   ]);
   if (deadlineResult.error) throw deadlineResult.error;
+  const receivedAt = Date.now();
   const deadlineByMeeting = new Map(
     (deadlineResult.data ?? []).map((row) => [row.meeting_id, row]),
   );
@@ -1453,14 +1454,18 @@ export async function listMeetingsAwaitingMyPrefs(
     const maleId = maleByIntro.get(meeting.intro_id);
     const candidate = maleId ? profiles.get(maleId) : undefined;
     const deadline = deadlineByMeeting.get(meeting.id);
-    return candidate
+    // A concurrent reply/cancellation can remove the authoritative deadline after the first read.
+    if (!deadline?.deadline_at || !deadline.as_of) return [];
+    const localDeadline =
+      receivedAt + (Date.parse(deadline.deadline_at) - Date.parse(deadline.as_of));
+    return candidate && Number.isFinite(localDeadline)
       ? [
           {
             meeting,
             candidate,
             reason: reasonByIntro.get(meeting.intro_id) ?? null,
-            deadline_at: deadline?.deadline_at ?? null,
-            server_as_of: deadline?.as_of ?? null,
+            deadline_at: deadline.deadline_at,
+            localDeadline,
           },
         ]
       : [];

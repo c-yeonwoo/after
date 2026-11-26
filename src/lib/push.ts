@@ -40,20 +40,14 @@ export async function enablePush(): Promise<PushPermission> {
 
 /**
  * 로그인한 동안 붙여 둔다. 돌려주는 함수로 뗀다.
- * onOpen 은 알림을 눌러 앱이 열렸을 때 갈 경로를 받는다.
  */
-export function watchPush(onOpen: (path: string) => void): () => void {
+export function watchPushRegistration(): () => void {
   if (!isNative) return () => undefined;
 
   const subs = [
     PushNotifications.addListener("registration", async ({ value }) => {
       rememberToken(value);
       await supabase.rpc("register_device_token", { p_token: value });
-    }),
-    PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
-      const path = (notification.data as { path?: unknown } | undefined)?.path;
-      // 서버가 정한 앱 안 경로만 따른다. 외부 주소로 나가는 일은 없다.
-      if (typeof path === "string" && path.startsWith("/")) onOpen(path);
     }),
   ];
 
@@ -78,4 +72,18 @@ export async function forgetPushToken(): Promise<void> {
   }
   if (token) await supabase.rpc("unregister_device_token", { p_token: token });
   rememberToken(null);
+}
+
+/** Tapping a delivered notification must also work after the session has expired. */
+export function watchPushOpens(onOpen: (path: string) => void): () => void {
+  if (!isNative) return () => undefined;
+  const subscription = PushNotifications.addListener(
+    "pushNotificationActionPerformed",
+    ({ notification }) => {
+      const path = (notification.data as { path?: unknown } | undefined)?.path;
+      // 서버가 정한 앱 안 경로만 따른다. 외부 주소로 나가는 일은 없다.
+      if (typeof path === "string" && path.startsWith("/")) onOpen(path);
+    },
+  );
+  return () => void subscription.then((handle) => handle.remove());
 }

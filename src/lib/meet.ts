@@ -1,6 +1,16 @@
 /** 만남 조율에 쓰이는 선택지 */
 import { HUBS } from "@/lib/brand";
 
+export function isExpiredMeetingRequest(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    error.message === "meeting_request_expired"
+  );
+}
+export const expiredMeetingMessage = "답변 기한이 지났어요. 받은 요청을 다시 확인해 주세요.";
+
 export type MeetPrefs = {
   /** 가능한 저녁 (ISO datetime) */
   dates: string[];

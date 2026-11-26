@@ -404,8 +404,8 @@ function SettingsPage() {
       <section className="settings-section-break">
         <h2 className="text-sm font-semibold">탈퇴</h2>
         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-          프로필과 사진, 작성하신 내용이 삭제됩니다. 진행 중인 약속은 취소되고 상대의 티켓은 전액
-          환불됩니다. 결제·환불 기록은 법령상 보존 기간까지 남습니다.
+          프로필과 사진, 작성하신 내용이 삭제됩니다. 진행 중인 약속은 취소되고 상대가 사용한 만남
+          티켓을 돌려드립니다. 결제·환불 기록은 법령상 보존 기간까지 남습니다.
         </p>
         <button
           type="button"

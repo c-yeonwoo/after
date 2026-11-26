@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(31);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 values
@@ -136,6 +136,24 @@ select is(public.notification_push_still_relevant(
   (select lease_token from s64_claim where kind='meeting_request_reminder')),false,
  'revoked reminder is blocked immediately before push');
 reset role;
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"64000000-0000-0000-0000-000000000002","role":"authenticated"}';
+select is((select request_used_at + interval '24 hours' from public.my_notifications() where kind='meeting_request_reminder'),
+  (select deadline_at from public.my_request_deadlines() limit 1),
+  'the reminder and response card have the same deadline');
+reset role;
+
+update public.tickets set used_at=now()-interval '24 hours' where id='64000000-0000-0000-0000-000000000005';
+select throws_ok($$update public.meetings set prefs_submitted_at=now()
+  where id='64000000-0000-0000-0000-000000000006'$$,'PT409','meeting_request_expired',
+  'the first reply is closed at the deadline before the expiry worker runs');
+select throws_ok($$update public.meetings set cancelled_at=now(),cancel_reason='declined'
+  where id='64000000-0000-0000-0000-000000000006'$$,'PT409','meeting_request_expired',
+  'expired requests cannot be changed to a decline');
+update public.tickets set used_at=now()-interval '25 hours' where id='64000000-0000-0000-0000-000000000005';
+select is(public.expire_unanswered_meetings(),1,'the expiry worker still cancels the unanswered request');
 
 select * from finish();
 rollback;

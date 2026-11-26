@@ -8,10 +8,11 @@ import { MeetingPolicyNote } from "@/components/app/MeetingPolicyNote";
 import { DeclineRequest } from "@/components/app/DeclineRequest";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { IntroductionReason } from "@/components/app/IntroductionReason";
+import { requestDeadlineLabel } from "../../supabase/functions/_shared/notification-copy";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { acceptMeetingSlot, listMeetingsAwaitingMyPrefs, type Meeting } from "@/lib/api";
-import { formatMeetTime } from "@/lib/meet";
+import { expiredMeetingMessage, formatMeetTime, isExpiredMeetingRequest } from "@/lib/meet";
 import { useMe } from "@/lib/me";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 
@@ -24,14 +25,6 @@ export const Route = createFileRoute("/requests")({
   }),
   component: RequestsPage,
 });
-
-function remainingLabel(deadline: number, now: number) {
-  const left = deadline - now;
-  if (left <= 0) return null;
-  const h = Math.floor(left / 3_600_000);
-  const m = Math.floor((left % 3_600_000) / 60_000);
-  return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
-}
 
 /**
  * 만남 요청 목록 (여성 전용).
@@ -50,23 +43,19 @@ function RequestsPage() {
   const requests = live.data ?? [];
   const loading = live.isPending && !live.isPaused;
   const loadError = (live.isError || live.isPaused) && !live.data;
-  const [now, setNow] = useState<number | null>(null);
-  const serverClockOffset = useRef(0);
-
+  const [clock, setClock] = useState(Date.now);
+  const nextCutoff = Math.min(
+    ...requests.map((request) => request.localDeadline).filter((time) => time > clock),
+  );
   useEffect(() => {
-    setNow(Date.now() + serverClockOffset.current);
-    const t = window.setInterval(() => setNow(Date.now() + serverClockOffset.current), 60_000);
-    return () => window.clearInterval(t);
-  }, []);
+    if (!Number.isFinite(nextCutoff)) return;
+    const timer = window.setTimeout(
+      () => setClock(Date.now()),
+      Math.max(0, nextCutoff - Date.now()) + 1,
+    );
+    return () => window.clearTimeout(timer);
+  }, [nextCutoff]);
 
-  const asOf = live.data?.[0]?.server_as_of;
-  useEffect(() => {
-    const serverTime = asOf ? Date.parse(asOf) : NaN;
-    if (Number.isFinite(serverTime)) {
-      serverClockOffset.current = serverTime - Date.now();
-      setNow(Date.now() + serverClockOffset.current);
-    }
-  }, [asOf]);
   const refreshNotice =
     (live.isError || live.isPaused) && live.data ? (
       <LiveRefreshNotice retry={() => void live.refetch()} />
@@ -114,9 +103,9 @@ function RequestsPage() {
         <p className="mt-2 text-sm text-muted-foreground">답변할 요청 {requests.length}건</p>
       ) : null}
       <ul className="mt-2 space-y-4">
-        {requests.map(({ meeting, candidate, deadline_at, reason }) => {
-          const left =
-            now === null || !deadline_at ? null : remainingLabel(Date.parse(deadline_at), now);
+        {requests.map(({ meeting, candidate, deadline_at, localDeadline, reason }) => {
+          const deadline = Date.parse(deadline_at ?? "");
+          const expired = localDeadline <= clock;
           return (
             <li key={meeting.id}>
               <div className="app-elevated overflow-hidden rounded-surface bg-card">
@@ -132,40 +121,37 @@ function RequestsPage() {
                   <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="size-3.5" aria-hidden="true" />
-                    {!deadline_at ? (
-                      "답변 기한을 확인할 수 없습니다"
-                    ) : left ? (
-                      <>
-                        <span className="font-semibold text-foreground">{left}</span> 안에 답해
-                        주세요
-                      </>
-                    ) : (
-                      "곧 만료됩니다"
-                    )}
+                    {expired
+                      ? "답변 기한이 지났어요."
+                      : `${requestDeadlineLabel(deadline)}까지 답해 주세요`}
                   </p>
                 </div>
-                {meeting.proposed_slots?.length ? (
-                  <SlotChoices meeting={meeting} onInteractionStart={live.beginInteraction} />
-                ) : (
-                  <Link
-                    to="/prefs"
-                    search={{ meetingId: meeting.id }}
-                    className="app-primary-button pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    가능한 날짜 보내기
-                    <ArrowRight className="size-4" aria-hidden="true" />
-                  </Link>
+                {!expired && (
+                  <>
+                    {meeting.proposed_slots?.length ? (
+                      <SlotChoices meeting={meeting} onInteractionStart={live.beginInteraction} />
+                    ) : (
+                      <Link
+                        to="/prefs"
+                        search={{ meetingId: meeting.id }}
+                        className="app-primary-button pressable flex min-h-14 items-center justify-center gap-2 bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      >
+                        가능한 날짜 보내기
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                      </Link>
+                    )}
+                    <div className="px-4">
+                      <DeclineRequest
+                        meetingId={meeting.id}
+                        candidateName={candidate.name}
+                        onInteractionStart={live.beginInteraction}
+                        onDone={() =>
+                          live.update((list) => list.filter((r) => r.meeting.id !== meeting.id))
+                        }
+                      />
+                    </div>
+                  </>
                 )}
-                <div className="px-4">
-                  <DeclineRequest
-                    meetingId={meeting.id}
-                    candidateName={candidate.name}
-                    onInteractionStart={live.beginInteraction}
-                    onDone={() =>
-                      live.update((list) => list.filter((r) => r.meeting.id !== meeting.id))
-                    }
-                  />
-                </div>
                 {candidate.headline || reason ? (
                   <div className="px-4 pb-2">
                     {candidate.headline ? (
@@ -244,8 +230,12 @@ function SlotChoices({
                 await acceptMeetingSlot(meeting.id, i);
                 toast.success("약속이 정해졌어요. 대화가 열렸습니다.");
                 navigate({ to: "/home" });
-              } catch {
-                toast.error("이 시간으로 정하지 못했습니다. 다시 시도해 주세요.");
+              } catch (error) {
+                toast.error(
+                  isExpiredMeetingRequest(error)
+                    ? expiredMeetingMessage
+                    : "이 시간으로 정하지 못했습니다. 다시 시도해 주세요.",
+                );
                 setBusy(null);
                 busyRef.current = false;
               } finally {

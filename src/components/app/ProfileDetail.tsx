@@ -170,7 +170,7 @@ export function ProfileDetail({
       <ProfilePhotos key={p.photos.join("|")} paths={p.photos} name={p.name} />
 
       {hasAnyFact ? (
-        <dl className="profile-facts grid grid-cols-3 gap-x-3 gap-y-4">
+        <dl className="profile-facts grid grid-cols-2 min-[360px]:grid-cols-3 gap-x-3 gap-y-4">
           {facts.map((f) => (
             <div key={f.k}>
               <dt className="text-xs text-muted-foreground">{f.k}</dt>

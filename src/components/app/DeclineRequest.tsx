@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { expiredMeetingMessage, isExpiredMeetingRequest } from "@/lib/meet";
 import { toast } from "sonner";
 
 import {
@@ -105,8 +106,15 @@ export function DeclineRequest({
                   setOpen(false);
                   finish();
                   onDone?.();
-                } catch {
-                  toast.error("처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                } catch (error) {
+                  if (isExpiredMeetingRequest(error)) {
+                    toast.error(expiredMeetingMessage);
+                    setOpen(false);
+                    finish();
+                    onDone?.();
+                  } else {
+                    toast.error("처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                  }
                 } finally {
                   sending.current = false;
                   setBusy(false);
