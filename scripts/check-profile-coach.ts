@@ -74,10 +74,10 @@ assert.deepEqual(profileCoachSources(null), []);
 assert.deepEqual(profileCoachSources({ intro: "x".repeat(1501) }), []);
 assert.match(PROFILE_COACH_SYSTEM, /부정·빈도·시점·경계/);
 assert.match(PROFILE_COACH_CHECK, /요약만 하면 pass=false/);
-assert.equal(assistantSuggestions("").length, 3);
-assert.ok(assistantSuggestions("프로필").every((s) => /프로필/.test(s)));
+assert.deepEqual(assistantSuggestions(""), []);
+assert.deepEqual(assistantSuggestions("　 "), []);
+assert.deepEqual(assistantSuggestions("프로필"), ["내 프로필의 장점과 아쉬운 표현을 코칭해줘"]);
 assert.deepEqual(assistantSuggestions("x".repeat(81)), []);
-assert.ok(!assistantSuggestions("", false).some((s) => /코칭/.test(s)));
 console.log(
   "Profile coaching: intent, bounded owner sources, privacy, no fabricated facts, local suggestions passed",
 );

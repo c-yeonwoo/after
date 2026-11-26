@@ -62,7 +62,7 @@ export function IntroductionReason({
         {label}
         {evidence && me && (
           <span className="ml-auto inline-flex items-center gap-0.5 font-medium">
-            근거 보기 <ChevronRight className="size-3.5" aria-hidden="true" />
+            소개 이유 자세히 <ChevronRight className="size-3.5" aria-hidden="true" />
           </span>
         )}
       </span>

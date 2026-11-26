@@ -648,27 +648,15 @@ export function AssistantConversation({
                 </Button>
               ) : null}
               {shownTurns.length === 0 ? (
-                <div>
-                  {!compact ? (
-                    <ManagerMessage
-                      text={
-                        embedded
-                          ? "어떤 표현이 고민인가요? 다듬고 싶은 문장을 보내주면 함께 읽어볼게요."
-                          : "첫 만남, 어떤 점이 신경 쓰이나요?\n\n아래 질문을 골라도, 직접 물어봐도 좋아요."
-                      }
-                    />
-                  ) : null}
-                  <AssistantPrompts
-                    input=""
-                    disabled={busy || navigating || !data.flags.chat}
-                    onChoose={(text) => {
-                      inputEdited.current = true;
-                      setInput(text);
-                      setSuggestionsHidden(true);
-                      inputRef.current?.focus();
-                    }}
+                !compact && data.flags.chat ? (
+                  <ManagerMessage
+                    text={
+                      embedded
+                        ? "어떤 표현이 고민인가요? 다듬고 싶은 문장을 보내주면 함께 읽어볼게요."
+                        : "첫 만남, 어떤 점이 신경 쓰이나요?"
+                    }
                   />
-                </div>
+                ) : null
               ) : (
                 <ol className="assistant-transcript mt-4 space-y-4" aria-label="나만의 상담 기록">
                   {shownTurns.map((turn) => (

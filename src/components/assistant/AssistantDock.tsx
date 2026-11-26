@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentProps } from "react";
+import { useState, type ComponentProps } from "react";
 import { AssistantConversation } from "./AssistantConversation";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUp } from "lucide-react";
@@ -11,7 +11,6 @@ import { privateAssistantSafety } from "../../../supabase/functions/_shared/assi
 import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { useMe } from "@/lib/me";
 import { setAssistantDraft } from "@/lib/assistantDraft";
-import { AssistantPrompts } from "./AssistantPrompts";
 
 export function AssistantDock(props: Omit<ComponentProps<typeof LegacyAssistantDock>, "flags">) {
   const { me } = useMe();
@@ -68,7 +67,6 @@ function LegacyAssistantDock({
   const { me } = useMe();
   const navigate = useNavigate();
   const [input, setInput] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [safety, setSafety] = useState<string | null>(null);
@@ -100,9 +98,6 @@ function LegacyAssistantDock({
           </div>
         </div>
       ) : null}
-      <p className="text-sm text-muted-foreground">
-        지금은 이용 안내를 도와드려요. AI 맞춤 상담은 준비 중이에요.
-      </p>
       <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
         {(
           [
@@ -144,27 +139,6 @@ function LegacyAssistantDock({
             />
           ) : null}
         </ManagerMessage>
-      ) : null}
-      {!reply && !safety ? (
-        <AssistantPrompts
-          input={input}
-          canCoach={false}
-          canChat={false}
-          onChoose={(text) => {
-            setInput(text);
-            inputRef.current?.focus();
-          }}
-        />
-      ) : input ? (
-        <AssistantPrompts
-          input={input}
-          canCoach={false}
-          canChat={false}
-          onChoose={(text) => {
-            setInput(text);
-            inputRef.current?.focus();
-          }}
-        />
       ) : null}
       <form
         className="assistant-composer mt-4 flex items-center gap-2"
@@ -217,9 +191,8 @@ function LegacyAssistantDock({
         }}
       >
         <input
-          ref={inputRef}
           aria-label="매니저에게 물어볼 내용"
-          placeholder="소개·프로필·약속 이용을 물어보세요"
+          placeholder="애프터 이용 방법을 물어보세요"
           value={input}
           maxLength={300}
           enterKeyHint="send"
