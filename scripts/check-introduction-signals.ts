@@ -170,3 +170,30 @@ const legacyNote = introReasonCopy(
 );
 assert.match(legacyNote, /프로필에는 ‘여행’/);
 assert.doesNotMatch(legacyNote, /골랐|대화 소재/);
+
+const coffeeAnswer = "창가에서 커피 한 잔 나누는 걸 좋아해요";
+const coffeeChoice = {
+  quote: "짧게 커피",
+  source: "priority",
+  label: "상대가 고른 첫 만남",
+  reason: "매니저 메모",
+};
+function opening(change: Partial<import("../src/lib/api").IntroEvidence>) {
+  return introReasonCopy(coffeeChoice.reason, { ...coffeeChoice, ...change });
+}
+assert.match(
+  opening({ priority_origin: "feedback", peer_excerpt: coffeeAnswer }),
+  /지난 후기.*커피 한 잔.*“창가에서 커피 한 잔 나누는 걸 좋아해요”/,
+);
+assert.doesNotMatch(opening({ priority_origin: "edit", peer_excerpt: coffeeAnswer }), /후기/);
+assert.doesNotMatch(opening({ priority_origin: "feedback" }), /“|적었|썼/);
+for (const source of ["shared", "public"]) {
+  const note = opening({ source, peer_excerpt: coffeeAnswer });
+  assert.ok(note.includes(coffeeAnswer));
+  assert.doesNotMatch(note, /지난|후기|다음 소개/);
+}
+assert.doesNotMatch(
+  opening({ source: "shared", discounted: true, peer_excerpt: coffeeAnswer }),
+  /창가/,
+);
+assert.equal(opening({ source: "curated", peer_excerpt: coffeeAnswer }), "매니저 메모");

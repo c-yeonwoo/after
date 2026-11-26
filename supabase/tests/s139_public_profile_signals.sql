@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select no_plan();
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
  ('13900000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','signals@verify.local','',now(),now(),now());
 insert into profiles(id,gender,hub_id,company_email,email_verified_at,name,birth,job,onboarding_step,role,profile_preferences)
@@ -30,8 +30,26 @@ select is(save_profile_interview_draft((select draft from signal_test_data),0),1
 select lives_ok($$select publish_profile_interview_v3(1,(select conditions from signal_test_data))$$,'same prose can publish new choice approvals');
 select is((select profile_story->>'publishedRevision' from profiles where id=auth.uid()),'2','public revision advances even when prose is identical');
 select is((select profile_public_signals from profiles where id=auth.uid()),'{"first_date":["함께 걷기"]}'::jsonb,'removed approval disappears and changed choice is refreshed');
+select is((select verified_intro_answer_ids from profiles where id=auth.uid()),array['daily_life:1'],'typing an original in a published interview establishes its source');
+-- Simulate a cached profile editor putting untouched AI prose back in answers on a job-only edit.
+update signal_test_data set draft=jsonb_set(draft,'{answers,daily_life}',draft#>'{story,sections,0,answer}'),
+  conditions=jsonb_set(conditions,'{job}','"새 직업"');
+select save_profile_interview_draft((select draft from signal_test_data),0);
+select lives_ok($$select publish_profile_interview_v3(1,(select conditions from signal_test_data))$$,'old basic-only editor can still publish');
+select is((select verified_intro_answer_ids from profiles where id=auth.uid()),'{}'::text[],'copying a generated public answer back never certifies authorship');
+-- Retain a previous AI sentence and edit only its neighbor.
+update signal_test_data set draft=jsonb_set(jsonb_set(draft,'{answers,daily_life}',to_jsonb((draft#>>'{story,sections,0,answer}')||' 집 앞 카페가 편해요.')),
+  '{story,sections,0,answer}',to_jsonb((draft#>>'{story,sections,0,answer}')||' 집 앞 카페가 편해요.'));
+select save_profile_interview_draft((select draft from signal_test_data),0);
+select lives_ok($$select publish_profile_interview_v3(1,(select conditions from signal_test_data))$$,'mixed authorship in one section can be published');
+select is((select verified_intro_answer_ids from profiles where id=auth.uid()),array['daily_life:2'],'only the new second sentence belongs to the member');
+update signal_test_data set draft=jsonb_set(jsonb_set(draft,'{answers,daily_life}','"동네 카페에서 커피를 즐겨요."'),'{story,sections,0,answer}','"동네 카페에서 커피를 즐겨요."');
+select save_profile_interview_draft((select draft from signal_test_data),0);
+select lives_ok($$select publish_profile_interview_v3(1,(select conditions from signal_test_data))$$,'the member can still write a new answer themselves');
+select is((select verified_intro_answer_ids from profiles where id=auth.uid()),array['daily_life:1'],'newly authored and published answer is identifiable');
 reset role;
 update profiles set account_state='withdrawn' where id='13900000-0000-4000-8000-000000000001';
 select is((select profile_public_signals from profiles where id='13900000-0000-4000-8000-000000000001'),'{}'::jsonb,'withdrawal clears public signals');
+select is((select verified_intro_answer_ids from profiles where id='13900000-0000-4000-8000-000000000001'),'{}'::text[],'withdrawal clears source markers');
 select * from finish();
 rollback;

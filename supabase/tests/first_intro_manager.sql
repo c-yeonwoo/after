@@ -54,6 +54,7 @@ select is(jsonb_array_length(admin_curation_recommendations(pg_temp.member(1))->
 select admin_set_queue(pg_temp.member(1),array[pg_temp.member(3),pg_temp.member(2)],'QA');
 select pg_temp.as_member(1);
 select is(intro_teaser_with_evidence()#>>'{evidence,source}','priority','teaser explains current preference');
+select is(intro_teaser_with_evidence()#>>'{evidence,priority_origin}','edit','a changed preference is not attributed to a meeting review');
 select ok(not(intro_teaser_with_evidence() ?| array['id','name','photo_paths','female_id']),'teaser stays anonymous');
 reset role;
 update profiles set profile_public_signals='{}',interests=array['산책'] where id=pg_temp.member(3);

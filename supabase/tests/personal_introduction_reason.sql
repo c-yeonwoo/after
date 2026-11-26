@@ -54,6 +54,8 @@ reset role;
 update profiles set profile_public_signals='{"first_date":["짧게 커피"]}' where id='51000000-0000-0000-0000-0000000000f1';
 set local role authenticated;
 select alike((select reason from intro_teaser()),'지난 후기에서 커피 한 잔%','own preference and candidate public choice agree');
+select is(intro_teaser_with_evidence()#>>'{evidence,priority_origin}','feedback','only the author sees their own feedback as the reason');
+select ok(not (intro_teaser_with_evidence()->'evidence' ? 'peer_excerpt'),'a chip alone cannot become a verbatim interview answer');
 select unalike((select reason from intro_teaser()),'%비공개%','raw feedback never enters the introduction');
 select ok(not has_function_privilege('authenticated','public.feedback_intro_reason(uuid)','execute'),'cannot probe an arbitrary profile using helper');
 set local request.jwt.claims='{"sub":"51000000-0000-0000-0000-0000000000f2","role":"authenticated"}';
@@ -74,5 +76,6 @@ update profiles set profile_story='{"version":3,"sections":[{"question":"주말�
 set local role authenticated;
 select is((select shared from intro_teaser()),'{}'::text[],'superseded profile interests are excluded');
 select alike((select reason from intro_teaser()),'%나란히 걷는%','unmatched preference can only describe the public answer');
+select ok(not (intro_teaser_with_evidence()->'evidence' ? 'priority_origin'),'an unmatched preference is never cited');
 select * from finish();
 rollback;

@@ -44,6 +44,7 @@ export function profileEditDraft(
   selected: Record<string, string[]> = publicProfileSignals(member.profile_public_signals),
 ) {
   const draft = newProfileInterviewV3(member, basics);
+  const published = editableStory(member);
   const preferences = member.profile_preferences as {
     choices?: Record<string, string[]>;
     choiceCustom?: Record<string, string>;
@@ -63,10 +64,11 @@ export function profileEditDraft(
     mode: "manual" as const,
     story,
     answers: Object.fromEntries(
-      STORY_QUESTIONS.map((question) => [
-        question.id,
-        story.sections.find((section) => section.id === question.id)?.answer ?? "",
-      ]),
+      STORY_QUESTIONS.map(({ id }) => {
+        const answer = story.sections.find((section) => section.id === id)?.answer ?? "";
+        const oldAnswer = published.sections.find((section) => section.id === id)?.answer;
+        return [id, answer === oldAnswer ? draft.answers[id] : answer];
+      }),
     ) as typeof draft.answers,
     publicIds: [...story.sections.map((section) => `answer:${section.id}`), ...choiceScope],
     sourceRevision: 0,

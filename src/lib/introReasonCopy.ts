@@ -90,16 +90,41 @@ function publicSentences(profile: PublicCopy): string[] {
     );
 }
 
-/** A locked teaser supplies only its server-approved signal, never a profile. */
+const datePhrases = new Map([
+  ["함께 걷기", "산책을"],
+  ["산책", "산책을"],
+  ["짧게 커피", "커피 한 잔을"],
+  ["식사하며 대화", "함께하는 식사를"],
+  ["활동이나 체험", "함께하는 활동을"],
+]);
+
+/** Before opening, the server can attest only words already visible in the teaser. */
 export function introReasonCopy(
   original: string,
   evidence?: IntroEvidence | null,
   pair?: ReadablePair,
 ): string {
-  if (evidence?.source !== "shared" || !evidence.quote) return original;
-  if (evidence.discounted)
+  if (!evidence?.quote) return original;
+  if (evidence.source === "shared" && evidence.discounted)
     return "두 분이 겹쳐 고른 항목이 있지만, 소개에서 덜 중요하게 봐 달라고 하셨어요.";
   const signal = evidence.quote;
+  const date = datePhrases.get(signal);
+  const excerpt = evidence.peer_excerpt;
+  if (date && evidence.source === "priority" && evidence.priority_origin) {
+    const choice =
+      evidence.priority_origin === "feedback"
+        ? `지난 후기에서 ${date} 고르셔서`
+        : `다음 소개에서는 ${date} 먼저 봐 달라고 하셔서`;
+    if (excerpt) return `${choice}, “${excerpt}”라는 답이 눈에 들어왔어요.`;
+    return `${choice} ${signal === "산책" ? "산책을 관심사에 담은" : "같은 첫 만남을 고른"} 이분을 소개해요.`;
+  }
+  if (date && excerpt && evidence.source === "shared")
+    return `“${excerpt}”라는 답을 먼저 보여드리고 싶었어요. 두 분 모두 첫 만남으로 ${date} 고르셨거든요.`;
+  if (date && excerpt && evidence.source === "public")
+    return `“${excerpt}”라는 답에서 이분이 그리고 있는 첫 만남이 보였어요.`;
+  if (evidence.source !== "shared") return original;
+  if (excerpt)
+    return `두 분의 공통점인 ‘${signal}’ 이야기를 읽다가, “${excerpt}”라는 답에서 잠시 멈췄어요.`;
   const topic = Object.hasOwn(topics, signal) ? topics[signal] : undefined;
   // The server does not distinguish legacy interest tags from questionnaire
   // selections here. Do not invent the question the member answered.

@@ -2432,6 +2432,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         Insert: {
           account_state?: Database["public"]["Enums"]["account_state"]
@@ -2482,6 +2483,7 @@ export type Database = {
           topic_note?: string | null
           topics?: string[]
           updated_at?: string
+          verified_intro_answer_ids?: string[]
         }
         Update: {
           account_state?: Database["public"]["Enums"]["account_state"]
@@ -2532,6 +2534,7 @@ export type Database = {
           topic_note?: string | null
           topics?: string[]
           updated_at?: string
+          verified_intro_answer_ids?: string[]
         }
         Relationships: [
           {
@@ -3547,6 +3550,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -3611,6 +3615,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -3969,6 +3974,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -4105,6 +4111,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -4579,6 +4586,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -4638,6 +4646,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -4697,6 +4706,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -5000,6 +5010,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -5104,6 +5115,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"
@@ -5220,6 +5232,7 @@ export type Database = {
           topic_note: string | null
           topics: string[]
           updated_at: string
+          verified_intro_answer_ids: string[]
         }
         SetofOptions: {
           from: "*"

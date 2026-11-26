@@ -77,9 +77,11 @@ export function IntroductionReason({
       </span>
       <span
         className={
-          preview
+          preview && !evidence?.peer_excerpt
             ? "mt-1.5 line-clamp-3 break-keep text-sm leading-relaxed"
-            : "mt-2 block break-keep text-base leading-relaxed"
+            : preview
+              ? "mt-1.5 block break-keep text-sm leading-relaxed"
+              : "mt-2 block break-keep text-base leading-relaxed"
         }
       >
         {reason}
