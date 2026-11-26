@@ -111,6 +111,28 @@ async function screen(page, name) {
     name,
   );
 }
+async function approvePhotos(page, person) {
+  const card = page
+    .locator("li")
+    .filter({ has: page.getByRole("link", { name: person.name, exact: true }) });
+  await card.getByRole("button", { name: "승인", exact: true }).click();
+  const dialog = page.getByRole("alertdialog");
+  const [response] = await Promise.all([
+    page.waitForResponse((response) => {
+      const req = response.request();
+      return (
+        req.method() === "POST" &&
+        new URL(req.url()).pathname.endsWith("/rpc/admin_review_photo_set") &&
+        req.postDataJSON()?.p_user === person.id
+      );
+    }),
+    dialog.getByRole("button", { name: "확인하고 처리", exact: true }).click(),
+  ]);
+  assert.ok(response.ok(), `photo approval returned HTTP ${response.status()}`);
+  await dialog.waitFor({ state: "hidden" });
+  await card.waitFor({ state: "detached" });
+}
+
 async function login(page, person) {
   await page.goto(`${base}/login`);
   for (let n = 0; n < 20; n++) {
@@ -519,15 +541,7 @@ try {
   await check("operator approves all five photo sets in UI", async () => {
     await ap.goto(`${base}/admin/photos`);
     for (const p of personas) {
-      const card = ap
-        .locator("li")
-        .filter({ has: ap.getByRole("link", { name: p.name, exact: true }) });
-      await card.getByRole("button", { name: "승인", exact: true }).click();
-      await ap
-        .getByRole("alertdialog")
-        .getByRole("button", { name: "확인하고 처리", exact: true })
-        .click();
-      await card.waitFor({ state: "detached" });
+      await approvePhotos(ap, p);
     }
     assert.equal(
       sql(
@@ -1433,15 +1447,7 @@ try {
     sql(`update profiles set hub_id='${cohortHub}' where id='${extra.id}';
       update member_meeting_areas set area_ids=array['${cohortHub}'] where user_id='${extra.id}'`);
     await ap.goto(`${base}/admin/photos`);
-    const card = ap
-      .locator("li")
-      .filter({ has: ap.getByRole("link", { name: extra.name, exact: true }) });
-    await card.getByRole("button", { name: "승인", exact: true }).click();
-    await ap
-      .getByRole("alertdialog")
-      .getByRole("button", { name: "확인하고 처리", exact: true })
-      .click();
-    await card.waitFor({ state: "detached" });
+    await approvePhotos(ap, extra);
     await extra.page.goto(`${base}/intro`);
     for (let n = 0; n < 2; n++) {
       await extra.page.getByRole("button", { name: "좋아요", exact: true }).waitFor();
