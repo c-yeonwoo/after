@@ -206,34 +206,38 @@ function RootComponent() {
   );
 }
 
+const identityOptionalPaths = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/verify-phone",
+  "/support",
+  "/terms",
+  "/privacy",
+  "/settings",
+  "/delete-account",
+  "/orders",
+]);
+
 /** 인증 전 회원에게는 기존 소개·채팅 화면을 먼저 그리지 않는다. DB 게이트의 UX 보조다. */
 function IdentityGate({ children }: { children: ReactNode }) {
   const { me, ready } = useMe();
   const navigate = useNavigate();
-  // During navigation the next URL can be set before the previous Outlet unmounts.
-  const { pathname: path, href } = useRouterState({
-    select: (state) => state.resolvedLocation ?? state.location,
-  });
-  const returnPath = notificationReturnPath(href);
-  const allowed = [
-    "/",
-    "/login",
-    "/signup",
-    "/verify-phone",
-    "/support",
-    "/terms",
-    "/privacy",
-    "/settings",
-    "/delete-account",
-    "/orders",
-  ];
-  const needsIdentity =
+  const location = useRouterState({ select: (state) => state.location });
+  const displayed = useRouterState({ select: (state) => state.resolvedLocation ?? state.location });
+  const returnPath = notificationReturnPath(location.href);
+  const requiresIdentity = (path: string) =>
     carrierIdentityEnabled &&
     ready &&
     me?.role === "member" &&
     !me.identity_verified_at &&
-    !allowed.includes(path) &&
+    !identityOptionalPaths.has(path) &&
     !path.startsWith("/admin");
+  const needsIdentity = requiresIdentity(location.pathname);
+  // The router can commit the next URL before swapping Outlets. Protect both
+  // sides of that transition, but redirect only according to the incoming URL.
+  const waitingForMember =
+    (!ready || !me) && (returnPath || notificationReturnPath(displayed.href));
   useEffect(() => {
     if (returnPath && ready && !me) {
       void navigate({ to: "/login", search: { next: returnPath }, replace: true });
@@ -242,7 +246,7 @@ function IdentityGate({ children }: { children: ReactNode }) {
       void navigate({ to: "/verify-phone", replace: true });
     }
   }, [me, ready, needsIdentity, navigate, returnPath]);
-  if (needsIdentity || (returnPath && (!ready || !me))) {
+  if (needsIdentity || requiresIdentity(displayed.pathname) || waitingForMember) {
     return (
       <p role="status" className="p-6 text-center text-sm text-muted-foreground">
         계정을 확인하고 있어요…

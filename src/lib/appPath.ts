@@ -11,7 +11,8 @@ export function splitAppPath(path: string): { to: string; search: Record<string,
 /** Only the membership screens that support resuming an incoming notification. */
 export function notificationReturnPath(raw: unknown): string | undefined {
   if (typeof raw !== "string") return;
-  const [path, query] = raw.split("?");
+  const [pathname, query] = raw.split("#", 1)[0].split("?");
+  const path = pathname.replace(/\/+$/, "");
   const search = new URLSearchParams(query);
   if (["/requests", "/intro", "/chats"].includes(path)) return path;
   if (/^\/chat\/[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(path)) return path;
