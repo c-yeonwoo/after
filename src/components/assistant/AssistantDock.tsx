@@ -108,7 +108,8 @@ function LegacyAssistantDock({
         )
           .filter(
             ([key]) =>
-              key !== "prepare" || (state === "meeting_confirmed" && flags.data?.introduction),
+              (key !== "schedule" || hasMeeting === true) &&
+              (key !== "prepare" || (state === "meeting_confirmed" && flags.data?.introduction)),
           )
           .map(([key, label]) => (
             <button

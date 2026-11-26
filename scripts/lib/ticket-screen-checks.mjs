@@ -302,5 +302,5 @@ export async function checkTicketScreens({ page, baseUrl, checkPage, screenshotD
   }
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
   await page.goto(`${baseUrl}/home`);
-  await page.getByRole("link", { name: "소개 열어보기", exact: true }).waitFor();
+  await page.getByRole("link", { name: "소개 미리보기", exact: true }).waitFor();
 }

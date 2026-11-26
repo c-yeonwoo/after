@@ -131,9 +131,7 @@ for (const [engine, browserType] of [
       page.setDefaultTimeout(15000);
       await page.goto(base + "/profile");
       await page.waitForLoadState("networkidle");
-      const ready = page.getByText(
-        "내 이야기가 충분히 담겨 있어요. 궁금한 게 있으면 편하게 물어봐 주세요.",
-      );
+      const ready = page.getByText("지금 소개해도 좋아요.");
       await ready.waitFor();
       await ready.scrollIntoViewIfNeeded();
       assert.equal(await page.getByText("이 소재는 앞에 두세요").count(), 0);

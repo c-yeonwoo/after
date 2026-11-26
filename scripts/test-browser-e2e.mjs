@@ -992,7 +992,8 @@ try {
   await login(malePage, male);
   await checkTicketScreens({ page: malePage, baseUrl, checkPage, screenshotDir });
   await checkPaymentScreens({ page: malePage, baseUrl, checkPage, screenshotDir, userId: male.id });
-  await malePage.getByRole("link", { name: "소개 열어보기" }).click();
+  await malePage.getByRole("link", { name: "소개 미리보기" }).click();
+  await assertInitiallyVisible(malePage.getByRole("button", { name: "소개 티켓 1장 쓰고 열기" }));
   await malePage.getByRole("button", { name: "소개 티켓 1장 쓰고 열기" }).click();
   await malePage.getByText(female.name).first().waitFor({ timeout: 15_000 });
   assert.equal(
@@ -1103,9 +1104,15 @@ try {
   await waitForHome(femalePage);
   await checkPage(femalePage, "female home");
   await femalePage.getByRole("link", { name: "만남 요청 보기" }).click();
-  await femalePage.getByRole("link", { name: "요청 확인·답하기" }).click();
+  await femalePage.waitForURL("**/requests");
   await femalePage.setViewportSize({ width: 320, height: 568 });
-  await assertInitiallyVisible(femalePage.getByRole("button", { name: /이 날로 정하기/ }).first());
+  await assertInitiallyVisible(femalePage.getByText(/약속 2시간 전까지 두 분 모두/).first());
+  for (const slot of (await femalePage.getByRole("button", { name: /이 날로 정하기/ }).all()).slice(
+    0,
+    2,
+  )) {
+    await assertInitiallyVisible(slot);
+  }
   await femalePage.setViewportSize({ width: 390, height: 844 });
   await checkPage(femalePage, "meeting request received");
   await femalePage.getByText(/까지 답해 주세요/).waitFor();
@@ -2027,8 +2034,11 @@ try {
       "2",
       "both beta members saved private meeting windows",
     );
-    await betaMalePage.getByRole("link", { name: "소개 열어보기" }).click();
-    await betaMalePage.getByRole("button", { name: "베타 무료로 열기" }).click();
+    await betaMalePage.getByRole("link", { name: "소개 미리보기" }).click();
+    await betaMalePage.setViewportSize({ width: 320, height: 568 });
+    await assertInitiallyVisible(betaMalePage.getByRole("button", { name: "무료로 프로필 열기" }));
+    await betaMalePage.getByRole("button", { name: "무료로 프로필 열기" }).click();
+    await betaMalePage.setViewportSize({ width: 390, height: 844 });
     await betaMalePage.getByText(betaFemale.name).first().waitFor({ timeout: 15_000 });
     await betaMalePage.getByRole("button", { name: "만남 요청하기" }).click();
     await betaMalePage.getByText("서로 편한 요일이 겹쳐요").waitFor();

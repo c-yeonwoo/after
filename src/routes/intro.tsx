@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppScreen } from "@/components/app/AppScreen";
+import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
 import { SafetyMenu } from "@/components/app/SafetyMenu";
 import { GuideNote } from "@/components/app/GuideNote";
 import { ProfileDetail } from "@/components/app/ProfileDetail";
@@ -34,6 +35,7 @@ import {
   paymentsEnabled,
   remainingCandidates,
   submitAffinity,
+  type HomeStateV2,
   type IntroTeaser,
   type IntroEvidence,
   type IntroPriority,
@@ -81,7 +83,6 @@ function IntroPage() {
     male: boolean;
     accountId: string;
   } | null>(null);
-  const [hasLikes, setHasLikes] = useState(false);
   /** 여성 평가 큐에 남은 사람 수. 소진이 다가오는 걸 미리 알 수 있어야 한다. */
   const [remaining, setRemaining] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,7 +112,6 @@ function IntroPage() {
       const h = await homeStateV2();
       if (current !== generation.current) return;
       if (h.me?.id && h.me.id !== me.id) throw new Error("account changed");
-      setHasLikes(Boolean(h.intro_progress?.has_likes));
       setPriority(h.intro_priority ?? null);
       setEvidence(null);
       if (!h.readiness.ready && !h.has_open_intro && !h.meeting) {
@@ -169,6 +169,11 @@ function IntroPage() {
         // 후보와 남은 수를 함께 받는다 — 화면이 "이번이 마지막"을 말할 수 있어야 한다.
         const [next, left] = await Promise.all([myPendingCandidate(), remainingCandidates()]);
         if (current !== generation.current) return;
+        if (!next)
+          queryClient.setQueryData(["intro-inbox", me.id], {
+            ...inboxStatus(h),
+            hasCandidate: false,
+          });
         setCandidate(next);
         setEvidence(next?.evidence ?? null);
         setReason(next && h.candidate?.id === next.id ? (h.viewer_intro_reason ?? null) : null);
@@ -186,7 +191,6 @@ function IntroPage() {
     accountEpoch.current += 1;
     generation.current += 1;
     setPassTarget(null);
-    setHasLikes(false);
     sending.current = false;
     setBusy(false);
     if (!ready || !me) return;
@@ -234,122 +238,93 @@ function IntroPage() {
   }
 
   if (!candidate) {
-    return (
-      <AppScreen title="이번 소개">
-        {/*
-          남성은 원인이 셋이라 문장도 셋이어야 한다(v2).
-
-            ① 큐에 카드가 있고 티켓도 있다 → 열 수 있다. 확인을 받고 차감한다.
-            ② 카드는 있는데 티켓이 없다     → 살 수 있다. 상점으로 보낸다.
-            ③ 카드가 없다                  → 운영자를 기다린다. 할 일이 없다.
-
-          하나로 뭉개면 티켓만 사면 볼 수 있는 사람에게 "기다려 주세요" 라고
-          말하거나, 큐가 빈 사람에게 결제를 권하게 된다.
-        */}
-        {isMale && gate ? (
-          gate.queued === 0 ? (
-            <div className="app-elevated mt-10 rounded-surface bg-card px-6 py-10 text-center">
-              <p className="text-sm font-medium">아직 도착한 소개가 없습니다</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                소개가 준비되면 알려드릴게요.
-              </p>
-            </div>
-          ) : (
-            <div className="introduction-arrival mt-5">
-              {/*
-                열기 전 공개(D2 ①). 예전에는 상대 정보가 0개인 채로 "소개 티켓 1장 쓰고 열기"
-                만 있었다 — 5,000원짜리 뽑기였다. 이제 무엇을 여는지 알고 연다. 이름·사진·
-                소개글은 열어야 보인다. "먼저 관심" 같은 말은 쓰지 않는다(D4).
-              */}
-              {gate.teaser ? (
-                <TeaserCard teaser={gate.teaser} priority={priority} onSaved={setPriority} />
-              ) : (
-                <p className="text-center text-sm font-medium">
-                  소개 {gate.queued}건이 도착했습니다
-                </p>
-              )}
-
-              {gate.tickets > 0 || paid === false ? (
-                <>
-                  <Button
-                    size="lg"
-                    className="intro-primary-button mt-4 w-full"
-                    disabled={busy}
-                    onClick={async () => {
-                      if (sending.current || !me) return;
-                      sending.current = true;
-                      const account = accountEpoch.current;
-                      setBusy(true);
-                      try {
-                        const r = await ensureOpenIntro();
-                        if (account !== accountEpoch.current) return;
-                        queryClient.removeQueries({
-                          queryKey: ["member-home", me.id],
-                          exact: true,
-                        });
-                        if (r.ok) {
-                          await load();
-                        } else if (r.reason === "no_intro_ticket") {
-                          toast.error("소개 티켓이 없습니다.");
-                          await load();
-                        } else {
-                          toast.error("지금은 열 수 있는 소개가 없습니다.");
-                          await load();
-                        }
-                      } catch {
-                        if (account === accountEpoch.current) {
-                          toast.error("열람 결과를 확인하지 못했어요. 상태를 다시 확인할게요.");
-                          await load();
-                        }
-                      } finally {
-                        if (account === accountEpoch.current) {
-                          sending.current = false;
-                          setBusy(false);
-                        }
-                      }
-                    }}
-                  >
-                    <Ticket className="size-4" aria-hidden="true" />
-                    {paid === false ? "베타 무료로 열기" : "소개 티켓 1장 쓰고 열기"}
-                  </Button>
-                  {/* 소멸이라는 사실을 누르기 전에 말한다 — 열고 나서 알면 늦다. */}
-                  <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
-                    {paid === false
-                      ? "베타 기간에는 소개 열람에 결제한 티켓을 사용하지 않습니다."
-                      : `보유 ${gate.tickets}장 · 열람에 1장이 사용되며 되돌릴 수 없습니다.`}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Button
-                    size="lg"
-                    className="intro-primary-button mt-4 w-full"
-                    onClick={() => navigate({ to: "/store", search: { kind: "intro" as const } })}
-                  >
-                    소개 티켓 신청하기
-                  </Button>
-                  <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
-                    소개 프로필을 열려면 소개 티켓 1장이 필요합니다.
-                  </p>
-                </>
-              )}
-            </div>
-          )
-        ) : (
+    if (!isMale) {
+      return <FemaleIntroInbox owner={me.id} onRead={() => void load()} />;
+    }
+    if (!gate || gate.queued === 0) {
+      return (
+        <AppScreen title="이번 소개">
           <div className="app-elevated mt-10 rounded-surface bg-card px-6 py-10 text-center">
-            <p className="text-sm font-medium">
-              {hasLikes ? "마음을 남겼어요" : "지금 살펴볼 소개를 모두 확인했어요"}
-            </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              {hasLikes
-                ? "애프터가 소개를 살펴봐요. 만남 요청이 오면 홈에서 확인할 수 있어요."
-                : "새 소개가 준비되면 이어서 보여드릴게요."}
-            </p>
-            <Button asChild variant="outline" className="mt-5">
-              <Link to="/home">홈에서 진행 확인</Link>
-            </Button>
+            <p className="text-sm font-medium">아직 도착한 소개가 없습니다</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">소개가 준비되면 알려드릴게요.</p>
           </div>
-        )}
+        </AppScreen>
+      );
+    }
+    const free = paid === false;
+    const canOpen = free || gate.tickets > 0;
+    return (
+      <AppScreen
+        title="이번 소개"
+        footer={
+          <div className="space-y-2">
+            {!free && (
+              <p className="text-center text-xs leading-snug text-muted-foreground">
+                {canOpen
+                  ? `보유 ${gate.tickets}장 · 열람에 1장이 사용되며 되돌릴 수 없습니다.`
+                  : "소개 프로필을 열려면 소개 티켓 1장이 필요합니다."}
+              </p>
+            )}
+            {canOpen ? (
+              <Button
+                size="lg"
+                className="intro-primary-button w-full"
+                disabled={busy}
+                onClick={async () => {
+                  if (sending.current || !me) return;
+                  sending.current = true;
+                  const account = accountEpoch.current;
+                  setBusy(true);
+                  try {
+                    const r = await ensureOpenIntro();
+                    if (account !== accountEpoch.current) return;
+                    queryClient.removeQueries({
+                      queryKey: ["member-home", me.id],
+                      exact: true,
+                    });
+                    if (r.ok) {
+                      await load();
+                    } else if (r.reason === "no_intro_ticket") {
+                      toast.error("소개 티켓이 없습니다.");
+                      await load();
+                    } else {
+                      toast.error("지금은 열 수 있는 소개가 없습니다.");
+                      await load();
+                    }
+                  } catch {
+                    if (account === accountEpoch.current) {
+                      toast.error("열람 결과를 확인하지 못했어요. 상태를 다시 확인할게요.");
+                      await load();
+                    }
+                  } finally {
+                    if (account === accountEpoch.current) {
+                      sending.current = false;
+                      setBusy(false);
+                    }
+                  }
+                }}
+              >
+                {free ? "무료로 프로필 열기" : "소개 티켓 1장 쓰고 열기"}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="intro-primary-button w-full"
+                onClick={() => navigate({ to: "/store", search: { kind: "intro" } })}
+              >
+                소개 티켓 신청하기
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <div className="introduction-arrival mt-5">
+          {gate.teaser ? (
+            <TeaserCard teaser={gate.teaser} priority={priority} onSaved={setPriority} />
+          ) : (
+            <p className="text-center text-sm font-medium">소개 {gate.queued}건이 도착했습니다</p>
+          )}
+        </div>
       </AppScreen>
     );
   }
@@ -636,6 +611,78 @@ function IntroPage() {
   );
 }
 
+function inboxStatus(home: HomeStateV2) {
+  return {
+    hasRequests: home.request_count > 0,
+    hasMeeting: Boolean(home.meeting && !home.meeting.cancelled_at && !home.meeting.completed_at),
+    hasCandidate: home.primary_state === "intro_available",
+    hasLikes: Boolean(home.intro_progress?.has_likes),
+  };
+}
+
+function FemaleIntroInbox({ owner, onRead }: { owner: string; onRead: () => void }) {
+  const inbox = useQuery({
+    queryKey: ["intro-inbox", owner],
+    queryFn: async ({ signal }) => {
+      const home = await homeStateV2(signal);
+      if (home.me?.id !== owner) throw new Error("로그인한 계정이 바뀌었어요.");
+      return inboxStatus(home);
+    },
+    staleTime: 15_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: "always",
+    retry: false,
+  });
+  const state = inbox.data;
+  return (
+    <AppScreen title="이번 소개">
+      {(inbox.isError || inbox.isPaused) && state && (
+        <LiveRefreshNotice retry={() => void inbox.refetch()} />
+      )}
+      <section className="mt-8 space-y-2" aria-live="polite">
+        {!state ? (
+          <Button variant="outline" onClick={() => void inbox.refetch()}>
+            소개 상태 다시 확인
+          </Button>
+        ) : state.hasRequests || state.hasMeeting ? (
+          <>
+            <h2 className="text-lg font-semibold">
+              {state.hasRequests ? "만남 요청이 왔어요." : "진행 중인 만남이 있어요."}
+            </h2>
+            <Link
+              className="intro-preview-action pressable"
+              to={state.hasRequests ? "/requests" : "/chats"}
+            >
+              {state.hasRequests ? "만남 요청 보기" : "약속 보기"}
+            </Link>
+          </>
+        ) : state.hasCandidate ? (
+          <>
+            <h2 className="text-lg font-semibold">새 소개가 왔어요.</h2>
+            <Button className="intro-primary-button w-full" onClick={onRead}>
+              프로필 읽어보기
+            </Button>
+          </>
+        ) : (
+          <div className="flex items-start gap-3">
+            <AssistantMark className="manager-message-avatar" />
+            <div>
+              <h2 className="text-lg font-semibold">
+                {state.hasLikes ? "호감을 보냈어요." : "지금 살펴볼 소개를 모두 확인했어요"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {state.hasLikes
+                  ? "만남 요청이 오면 알려드릴게요."
+                  : "새 소개가 준비되면 이어서 보여드릴게요."}
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
+    </AppScreen>
+  );
+}
+
 /** 열기 전 공개 — 나이·직업·한 줄 소개·같이 적은 것·운영팀 한 줄. */
 function TeaserCard({
   teaser,
@@ -651,24 +698,15 @@ function TeaserCard({
     .join(" · ");
   return (
     <div className="space-y-4">
-      <h2 className="text-xl leading-tight font-semibold tracking-tight">
-        도착한 소개
-        {teaser.delivered > 1 ? (
-          <span className="ml-2 text-sm font-medium text-muted-foreground">
-            {teaser.delivered}건 중 첫 번째
-          </span>
-        ) : null}
-      </h2>
-      {meta || teaser.headline ? (
-        <div className="space-y-2">
-          {meta ? <p className="text-sm text-muted-foreground">{meta}</p> : null}
-          {teaser.headline ? (
-            <blockquote className="serif break-keep break-words text-lg leading-normal">
-              “{teaser.headline}”
-            </blockquote>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="space-y-2">
+        <h2 className="serif break-keep text-xl leading-snug [overflow-wrap:anywhere]">
+          {teaser.headline ? `“${teaser.headline}”` : "도착한 소개"}
+        </h2>
+        {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
+        {teaser.delivered > 1 && (
+          <p className="text-xs text-muted-foreground">{teaser.delivered}건 중 첫 번째 소개</p>
+        )}
+      </div>
       {teaser.shared.length > 0 ? (
         <div>
           <p className="text-xs font-medium text-muted-foreground">두 분이 같이 적은 것</p>
@@ -681,6 +719,7 @@ function TeaserCard({
           evidence={teaser.evidence}
           priority={priority}
           onSaved={onSaved}
+          detailsOnly
         />
       ) : null}
       <p className="text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>

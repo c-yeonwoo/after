@@ -159,7 +159,7 @@ export function meetingIso(key: string, time: string) {
  * 때(오전·낮·오후·저녁)와 시각을 모두 ISO 에서 읽는다. 예전에는 "저녁 7시"를
  * 문자열에 박아 뒀는데, 주말 낮 약속이 생기면 사실과 다른 시각을 보여주게 된다.
  */
-export function formatMeetTime(iso: string) {
+export function formatMeetTimeParts(iso: string) {
   const d = new Date(iso);
   const date = d.toLocaleDateString("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -178,5 +178,10 @@ export function formatMeetTime(iso: string) {
   const half = minutes === 30 ? " 반" : minutes ? ` ${minutes}분` : "";
   const period = h >= 18 ? "저녁" : h >= 13 ? "오후" : h >= 11 ? "낮" : "오전";
   const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-  return `${date} ${period} ${hour}시${half}`;
+  return { date, time: `${period} ${hour}시${half}` };
+}
+
+export function formatMeetTime(iso: string) {
+  const { date, time } = formatMeetTimeParts(iso);
+  return `${date} ${time}`;
 }

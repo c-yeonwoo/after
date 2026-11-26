@@ -23,6 +23,7 @@ type ReasonProps = {
   onSaved?: (choice: IntroPriority) => void;
   embedded?: boolean;
   preview?: boolean;
+  detailsOnly?: boolean;
   portrait?: boolean;
 };
 
@@ -34,6 +35,7 @@ export function IntroductionReason({
   onSaved,
   embedded,
   preview,
+  detailsOnly,
   portrait,
 }: ReasonProps) {
   const { me } = useMe();
@@ -55,7 +57,14 @@ export function IntroductionReason({
   const [error, setError] = useState("");
   const reason = introReasonCopy(original, evidence && { ...evidence, discounted }, pair);
   const label = portrait ? "매니저가 본 이분" : "매니저의 소개 이유";
-  const words = (
+  const collapsed = Boolean(detailsOnly && evidence && me);
+  const words = collapsed ? (
+    <span className="flex items-center gap-2 text-sm font-medium">
+      <NotebookPen className="size-4 text-muted-foreground" aria-hidden="true" />
+      소개 이유 자세히
+      <ChevronRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+    </span>
+  ) : (
     <>
       <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-semibold text-muted-foreground">
         <NotebookPen className="size-4 shrink-0" strokeWidth={1.7} aria-hidden="true" />

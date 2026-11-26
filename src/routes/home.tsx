@@ -191,6 +191,11 @@ function HomePage() {
   );
 
   const holding = Boolean(serverState?.introduction_resume_at);
+  const waitingForRequest =
+    primaryState === "waiting" &&
+    !holding &&
+    !isMale &&
+    Boolean(serverState?.intro_progress?.has_likes);
   const headline = loadError
     ? "상태를 확인할 수 없어요."
     : live.isError || live.isPaused
@@ -198,7 +203,7 @@ function HomePage() {
       : primaryState
         ? primaryState === "waiting" && holding
           ? "오늘의 만남에 집중해 보세요."
-          : primaryState === "waiting" && !isMale && serverState?.intro_progress?.has_likes
+          : waitingForRequest
             ? "호감을 보냈어요."
             : stateHeadline(primaryState, isMale)
         : "지금 상태를 확인하고 있어요.";
@@ -244,13 +249,13 @@ function HomePage() {
                 <p>
                   {holding
                     ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
-                    : !isMale && serverState?.intro_progress?.has_likes
-                      ? "상대의 만남 요청을 기다리고 있어요."
+                    : waitingForRequest
+                      ? "만남 요청이 오면 알려드릴게요."
                       : serverState?.first_intro_wait
                         ? "다음은 매니저 차례예요. 첫 소개가 도착하면 여기서 알려드릴게요."
                         : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
                 </p>
-                {serverState?.first_intro_wait ? (
+                {waitingForRequest ? null : serverState?.first_intro_wait ? (
                   <WaitCheck at={serverState.first_intro_wait.next_check_at} />
                 ) : capabilities.data?.chat ? (
                   <p>궁금한 점은 편하게 물어봐 주세요.</p>
@@ -334,7 +339,7 @@ function HomePage() {
           ) : !isMale && requestCount > 0 ? (
             // 여러 남성이 동시에 티켓을 쓸 수 있다 — 한 건만 보여주면 나머지는
             // 답을 못 받고 24시간 뒤 자동 환불된다.
-            <GuideNote action={<CardAction to="/chats">만남 요청 보기</CardAction>}>
+            <GuideNote action={<CardAction to="/requests">만남 요청 보기</CardAction>}>
               {requestCount > 1
                 ? `만나고 싶다는 요청이 ${requestCount}건 도착했어요. 각각 따로 답하실 수 있습니다.`
                 : "날짜를 확인하고 답해 주세요."}
@@ -406,7 +411,7 @@ function HomePage() {
               )}
               {introTickets > 0 || introPaymentsEnabled === false ? (
                 <Link to="/intro" className="intro-preview-action pressable">
-                  소개 열어보기
+                  소개 미리보기
                 </Link>
               ) : (
                 <>
