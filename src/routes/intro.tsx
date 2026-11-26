@@ -35,6 +35,8 @@ import {
   remainingCandidates,
   submitAffinity,
   type IntroTeaser,
+  type IntroEvidence,
+  type IntroPriority,
   type Meeting,
   type PublicProfile,
 } from "@/lib/api";
@@ -96,6 +98,9 @@ function IntroPage() {
   /** 연 소개에 운영팀이 남긴 한 줄(s50). */
   const [reason, setReason] = useState<string | null>(null);
 
+  const [evidence, setEvidence] = useState<IntroEvidence | null>(null);
+  const [priority, setPriority] = useState<IntroPriority | null>(null);
+
   async function load() {
     if (!me) return;
     const current = ++generation.current;
@@ -107,6 +112,8 @@ function IntroPage() {
       if (current !== generation.current) return;
       if (h.me?.id && h.me.id !== me.id) throw new Error("account changed");
       setHasLikes(Boolean(h.intro_progress?.has_likes));
+      setPriority(h.intro_priority ?? null);
+      setEvidence(null);
       if (!h.readiness.ready && !h.has_open_intro && !h.meeting) {
         setPreparationMessage(
           h.primary_state === "paused"
@@ -137,6 +144,9 @@ function IntroPage() {
           setGate(null);
           setCandidate(existing.candidate);
           setIntroId(existing.intro.id);
+          setEvidence(
+            h.candidate?.id === existing.candidate.id ? (h.intro_evidence ?? null) : null,
+          );
           setReason(
             (h.candidate?.id === existing.candidate.id && h.viewer_intro_reason) ||
               existing.intro.reason ||
@@ -160,6 +170,7 @@ function IntroPage() {
         const [next, left] = await Promise.all([myPendingCandidate(), remainingCandidates()]);
         if (current !== generation.current) return;
         setCandidate(next);
+        setEvidence(next?.evidence ?? null);
         setReason(next && h.candidate?.id === next.id ? (h.viewer_intro_reason ?? null) : null);
         setRemaining(left);
         setMeeting(null);
@@ -251,7 +262,7 @@ function IntroPage() {
                 소개글은 열어야 보인다. "먼저 관심" 같은 말은 쓰지 않는다(D4).
               */}
               {gate.teaser ? (
-                <TeaserCard teaser={gate.teaser} />
+                <TeaserCard teaser={gate.teaser} priority={priority} onSaved={setPriority} />
               ) : (
                 <p className="text-center text-sm font-medium">
                   소개 {gate.queued}건이 도착했습니다
@@ -486,7 +497,14 @@ function IntroPage() {
         key={candidate.id}
         p={view}
         introductionNote={
-          reason && !maleHasRequest ? <IntroductionReason reason={reason} /> : undefined
+          (evidence || reason) && !maleHasRequest ? (
+            <IntroductionReason
+              reason={evidence?.reason ?? reason!}
+              evidence={evidence}
+              priority={priority}
+              onSaved={setPriority}
+            />
+          ) : undefined
         }
         viewer={toProfileView(me)}
         assistantSignature={<AssistantMark />}
@@ -618,7 +636,15 @@ function IntroPage() {
 }
 
 /** 열기 전 공개 — 나이·직업·한 줄 소개·같이 적은 것·운영팀 한 줄. */
-function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
+function TeaserCard({
+  teaser,
+  priority,
+  onSaved,
+}: {
+  teaser: IntroTeaser;
+  priority: IntroPriority | null;
+  onSaved: (choice: IntroPriority) => void;
+}) {
   const meta = [teaser.age !== null ? `${teaser.age}세` : null, teaser.job]
     .filter(Boolean)
     .join(" · ");
@@ -648,7 +674,14 @@ function TeaserCard({ teaser }: { teaser: IntroTeaser }) {
           <p className="mt-1 text-sm text-foreground">{teaser.shared.join(" · ")}</p>
         </div>
       ) : null}
-      {teaser.reason ? <IntroductionReason reason={teaser.reason} /> : null}
+      {teaser.reason ? (
+        <IntroductionReason
+          reason={teaser.evidence?.reason ?? teaser.reason}
+          evidence={teaser.evidence}
+          priority={priority}
+          onSaved={onSaved}
+        />
+      ) : null}
       <p className="text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>
     </div>
   );

@@ -558,6 +558,22 @@ try {
   )
     throw Error("Photo review failed; dependent cycles cannot be trusted");
   const [m1, m2, f1, f2, f3] = personas;
+  await check(
+    "first introduction worklist schedules the same check on the member home",
+    async () => {
+      await ap.goto(base + "/admin/tasks");
+      await ap.getByRole("button", { name: /첫 소개 대기/ }).click();
+      const row = ap
+        .getByRole("listitem")
+        .filter({ hasText: m1.name })
+        .filter({ hasText: "후보 대기" });
+      await row.getByRole("button", { name: "1시간 뒤 재확인" }).click();
+      await row.getByText(/재확인 \d/).waitFor();
+      await m1.page.goto(base + "/home");
+      await m1.page.getByText(/매니저 재확인 예정/).waitFor();
+      await screen(m1.page, "male-first-intro-wait");
+    },
+  );
   let mfaSecret;
   await check(
     "operator enrolls real local TOTP and explicitly enables sensitive-action MFA",
@@ -706,6 +722,18 @@ try {
         .getByRole("link", { name: "소개 확인하기", exact: true })
         .click();
       await f.page.waitForURL((url) => url.pathname === "/intro");
+      if (f === f1) {
+        await f.page.getByRole("button", { name: "매니저의 소개 이유 근거 보기" }).click();
+        const panel = f.page.getByRole("dialog");
+        await panel.getByRole("radio", { name: "짧게 커피" }).check();
+        await screen(f.page, "female-first-intro-evidence");
+        await panel.getByRole("button", { name: "다음 소개에 반영" }).click();
+        await panel.waitFor({ state: "hidden" });
+        assert.equal(
+          sql("select choice from intro_priority_choices where member_id='" + f.id + "'"),
+          "coffee",
+        );
+      }
       const profile = f.page.getByRole("main").getByRole("article");
       for (let n = 0; n < 2; n++) {
         await f.page.getByRole("button", { name: "좋아요", exact: true }).waitFor();
@@ -978,6 +1006,28 @@ try {
       );
       await ap.unroute("**/functions/v1/compose-pair-brief");
       await screen(ap, "operator-approved-pair-reason");
+    },
+  );
+  await check(
+    "male reads reason and changes priority before opening, preserving tickets and queue",
+    async () => {
+      await m1.page.goto(base + "/intro");
+      const queued = () =>
+        sql(
+          "select string_agg(female_id::text,',' order by position) from intro_queue where male_id='" +
+            m1.id +
+            "'",
+        );
+      const before = queued();
+      await m1.page.getByRole("button", { name: "매니저의 소개 이유 근거 보기" }).click();
+      const panel = m1.page.getByRole("dialog");
+      await panel.getByText("운영 매니저가 두 프로필을 검토해 남긴 소개예요.").waitFor();
+      await panel.getByRole("radio", { name: "가리지 않아요" }).check();
+      await screen(m1.page, "male-first-intro-evidence");
+      await panel.getByRole("button", { name: "다음 소개에 반영" }).click();
+      await panel.waitFor({ state: "hidden" });
+      assert.equal(queued(), before);
+      assert.equal(sql("select count(*) from intros where male_id='" + m1.id + "'"), "0");
     },
   );
   await setPaymentsInUI(ap, true);

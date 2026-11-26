@@ -4194,6 +4194,12 @@ export type Database = {
       save_onboarding_draft: { Args: { p_owner: string; p_data: Json; p_revision: number }; Returns: number }
       home_state_v2: { Args: never; Returns: Json }
       home_state_v2_base: { Args: never; Returns: Json }
+      next_candidate_with_evidence: { Args: never; Returns: Json }
+      intro_teaser_with_evidence: { Args: never; Returns: Json }
+      save_intro_signal_weight: { Args: { p_owner: string; p_signal: string; p_less: boolean }; Returns: undefined }
+      save_intro_priority: { Args: { p_owner: string; p_choice: string }; Returns: undefined }
+      admin_first_intro_waits: { Args: { p_limit: number; p_offset: number }; Returns: Json }
+      admin_set_first_intro_check: { Args: { p_member: string; p_stage: string; p_previous: string | null; p_next: string | null }; Returns: undefined }
       intro_teaser: {
         Args: never
         Returns: {

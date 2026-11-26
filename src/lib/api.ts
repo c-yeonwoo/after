@@ -460,7 +460,29 @@ export async function homeState(): Promise<HomeState> {
   return data as unknown as HomeState;
 }
 
+export const introPriorityLabels = {
+  walk: "함께 걷기",
+  coffee: "짧게 커피",
+  meal: "식사하며 대화",
+  activity: "활동이나 체험",
+  any: "가리지 않아요",
+} as const;
+export type IntroPriority = keyof typeof introPriorityLabels;
+export type IntroEvidence = {
+  reason: string;
+  source: string;
+  discounted?: boolean;
+  label: string;
+  quote: string | null;
+};
+export type FirstIntroWait = {
+  stage: "photo" | "reply" | "supply" | "curation";
+  next_check_at: string | null;
+};
 export type HomeStateV2 = HomeState & {
+  first_intro_wait?: FirstIntroWait | null;
+  intro_evidence?: IntroEvidence | null;
+  intro_priority?: IntroPriority | null;
   viewer_intro_reason?: string | null;
   introduction_resume_at?: string | null;
   schema_version: 2;
@@ -646,10 +668,12 @@ export async function submitAffinity(
  * 덤으로 "훑어보는 피드 없음"(F3)이 UI 에만 있고 데이터는 전부 브라우저에
  * 내려와 있던 문제도 함께 없어진다.
  */
-export async function myPendingCandidate(): Promise<PublicProfile | null> {
-  const { data, error } = await supabase.rpc("next_candidate");
+export async function myPendingCandidate(): Promise<
+  (PublicProfile & { evidence: IntroEvidence | null }) | null
+> {
+  const { data, error } = await supabase.rpc("next_candidate_with_evidence");
   if (error) throw error;
-  return data?.[0] ?? null;
+  return data as unknown as (PublicProfile & { evidence: IntroEvidence | null }) | null;
 }
 
 /** 남은 후보 수. "이번이 마지막"인지 화면이 알 수 있어야 한다. */
@@ -736,12 +760,14 @@ export async function getOpenIntroWithCandidate(): Promise<{
  * 서버가 open_intro 와 같은 규칙(next_openable_card)으로 고르므로, 여기서 본 사람이
  * 실제로 열린다. 열 카드가 없으면 null.
  */
-export type IntroTeaser = Database["public"]["Functions"]["intro_teaser"]["Returns"][number];
+export type IntroTeaser = Database["public"]["Functions"]["intro_teaser"]["Returns"][number] & {
+  evidence?: IntroEvidence | null;
+};
 
 export async function introTeaser(): Promise<IntroTeaser | null> {
-  const { data, error } = await supabase.rpc("intro_teaser");
+  const { data, error } = await supabase.rpc("intro_teaser_with_evidence");
   if (error) throw error;
-  return data?.[0] ?? null;
+  return data as unknown as IntroTeaser | null;
 }
 
 /**

@@ -822,7 +822,8 @@ try {
             });
           }
           if (path.endsWith("/rpc/my_meet_window")) return fulfill(null);
-          if (path.endsWith("/rpc/next_candidate")) return fulfill([other]);
+          if (path.endsWith("/rpc/next_candidate_with_evidence"))
+            return fulfill({ ...other, evidence: null });
           if (path.endsWith("/rpc/remaining_candidates")) return fulfill(1);
           if (current.name === "intro-pending") {
             if (path.endsWith("/rest/v1/intros") && request.method() === "GET")
