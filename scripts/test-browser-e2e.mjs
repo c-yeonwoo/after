@@ -1085,10 +1085,18 @@ try {
     `/chat/${requestMeetingId}`,
     `/schedule?meetingId=${requestMeetingId}`,
   ]) {
-    await femalePage.goto(baseUrl + path);
-    await femalePage.waitForURL(
-      (url) => url.pathname === "/login" && url.searchParams.get("next") === path.split("#")[0],
-    );
+    const entry = await femalePage.context().newPage();
+    try {
+      // Each notification opens independently. WebKit can update the URL before the login document is ready.
+      await entry.goto(baseUrl + path, { waitUntil: "commit" });
+      await entry.waitForURL(
+        (url) => url.pathname === "/login" && url.searchParams.get("next") === path.split("#")[0],
+      );
+      await entry.getByText("로그인하면 알림에서 열었던 화면으로 돌아가요.").waitFor();
+      await entry.getByLabel("가입한 이메일").waitFor();
+    } finally {
+      await entry.close();
+    }
   }
   await login(femalePage, female, `/feedback?meetingId=${requestMeetingId}`);
   await femalePage.goto(baseUrl + "/home");
