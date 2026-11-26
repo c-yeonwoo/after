@@ -12,7 +12,7 @@ import { requestDeadlineLabel } from "../../supabase/functions/_shared/notificat
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { acceptMeetingSlot, listMeetingsAwaitingMyPrefs, type Meeting } from "@/lib/api";
-import { expiredMeetingMessage, formatMeetTime, isExpiredMeetingRequest } from "@/lib/meet";
+import { expiredMeetingMessage, formatMeetTimeParts, isExpiredMeetingRequest } from "@/lib/meet";
 import { useMe } from "@/lib/me";
 import { useMemberLiveQuery } from "@/lib/useMemberLiveQuery";
 
@@ -110,15 +110,17 @@ function RequestsPage() {
             <li key={meeting.id}>
               <div className="app-elevated overflow-hidden rounded-surface bg-card">
                 <div className="px-4 pt-3 pb-3">
-                  <h2 className="headline text-xl">
-                    {candidate.name}
-                    {candidate.age !== null ? (
-                      <span className="ml-1.5 text-base text-muted-foreground">
-                        {candidate.age}
-                      </span>
-                    ) : null}
-                  </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <h2 className="headline text-xl">
+                      {candidate.name}
+                      {candidate.age !== null ? (
+                        <span className="ml-1.5 text-base text-muted-foreground">
+                          {candidate.age}
+                        </span>
+                      ) : null}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{candidate.job}</p>
+                  </div>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="size-3.5" aria-hidden="true" />
                     {expired
@@ -213,43 +215,47 @@ function SlotChoices({
           <span>{meeting.proposed_place_name}</span>
         </p>
       ) : null}
-      <p className="mt-2 text-xs font-medium text-foreground">날짜를 고르면 바로 확정돼요.</p>
-      <div className="grid gap-1.5">
-        <MeetingPolicyNote />
-        {slots.map((iso, i) => (
-          <button
-            key={iso}
-            type="button"
-            disabled={busy !== null}
-            onClick={async () => {
-              if (busyRef.current) return;
-              busyRef.current = true;
-              const release = onInteractionStart();
-              setBusy(i);
-              try {
-                await acceptMeetingSlot(meeting.id, i);
-                toast.success("약속이 정해졌어요. 대화가 열렸습니다.");
-                navigate({ to: "/home" });
-              } catch (error) {
-                toast.error(
-                  isExpiredMeetingRequest(error)
-                    ? expiredMeetingMessage
-                    : "이 시간으로 정하지 못했습니다. 다시 시도해 주세요.",
-                );
-                setBusy(null);
-                busyRef.current = false;
-              } finally {
-                release();
-              }
-            }}
-            className="pressable flex min-h-12 items-center justify-between gap-3 rounded-control border border-border bg-card px-4 py-3 text-left text-sm font-semibold text-foreground hover:border-brand-signature focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
-          >
-            <span>{formatMeetTime(iso)}</span>
-            <span className="shrink-0 text-xs font-medium text-primary-strong">
-              {busy === i ? "정하는 중…" : "이 날로 정하기"}
-            </span>
-          </button>
-        ))}
+      <p className="mt-2 text-sm font-medium">날짜를 고르면 바로 확정돼요.</p>
+      <MeetingPolicyNote />
+      <div className="grid grid-cols-2 gap-2">
+        {slots.map((iso, i) => {
+          const { date, time } = formatMeetTimeParts(iso);
+          return (
+            <button
+              key={iso}
+              type="button"
+              disabled={busy !== null}
+              onClick={async () => {
+                if (busyRef.current) return;
+                busyRef.current = true;
+                const release = onInteractionStart();
+                setBusy(i);
+                try {
+                  await acceptMeetingSlot(meeting.id, i);
+                  toast.success("약속이 정해졌어요. 대화가 열렸습니다.");
+                  navigate({ to: "/home" });
+                } catch (error) {
+                  toast.error(
+                    isExpiredMeetingRequest(error)
+                      ? expiredMeetingMessage
+                      : "이 시간으로 정하지 못했습니다. 다시 시도해 주세요.",
+                  );
+                  setBusy(null);
+                  busyRef.current = false;
+                } finally {
+                  release();
+                }
+              }}
+              className="pressable grid min-h-12 content-start gap-0.5 rounded-control border border-border bg-card px-3 py-2 text-left only:col-span-full hover:border-brand-signature focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+            >
+              <span className="text-sm font-semibold">{date}</span>
+              <span className="text-sm">{time}</span>
+              <span className="mt-1 text-xs font-medium text-primary-strong">
+                {busy === i ? "정하는 중…" : "이 날로 정하기"}
+              </span>
+            </button>
+          );
+        })}
       </div>
       <Link
         to="/prefs"

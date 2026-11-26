@@ -525,11 +525,12 @@ export function AssistantConversation({
       {panel === "chat" && !compact && !embedded ? (
         <>
           <div className="assistant-quick-actions" role="group" aria-label="빠른 도움">
-            {(compact
-              ? ["소개 확인", "내 프로필 수정", "일정 정리"]
-              : ["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리", "티켓 가격"]
-            )
-              .filter((text) => text !== "대화 팁" || actionContext.state === "meeting_confirmed")
+            {["내 상태", "소개 확인", "내 프로필 수정", "대화 팁", "일정 정리", "티켓 가격"]
+              .filter(
+                (text) =>
+                  (text !== "대화 팁" || actionContext.state === "meeting_confirmed") &&
+                  (text !== "일정 정리" || actionContext.hasMeeting === true),
+              )
               .map((text) => (
                 <button
                   type="button"

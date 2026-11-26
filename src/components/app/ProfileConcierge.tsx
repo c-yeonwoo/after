@@ -46,9 +46,7 @@ function OwnProfileCoaching({
         </div>
       </div>
       {coaching.ready ? (
-        <p className="text-base leading-relaxed">
-          내 이야기가 충분히 담겨 있어요. 궁금한 게 있으면 편하게 물어봐 주세요.
-        </p>
+        <p className="text-base leading-relaxed">지금 소개해도 좋아요.</p>
       ) : coaching.improvement ? (
         <section>
           <h4 className="text-base font-semibold">{coaching.improvement.title}</h4>
@@ -64,11 +62,11 @@ function OwnProfileCoaching({
         >
           매니저에게 물어보기
         </Link>
-      ) : (
+      ) : coaching.improvement ? (
         <Link to="/profile-edit" className="assistant-suggestion inline-flex items-center">
           직접 수정하기
         </Link>
-      )}
+      ) : null}
       {canAsk ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
           현재 공개 글로 AI 조언을 받아요. 대화에서 직접 보내면 시작해요.

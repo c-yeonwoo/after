@@ -348,13 +348,13 @@ async function verifyHome(page, width) {
     "compact 32px chip visuals",
   );
   assert.equal(metrics.overflow, "auto");
-  assert.equal(metrics.tops.length, 2, "pre-meeting home omits conversation preparation");
+  assert.equal(metrics.tops.length, 1, "before a meeting only the profile shortcut is useful");
   await input.fill("진행 상태");
   await page.getByRole("button", { name: "매니저에게 질문하기" }).click();
   await page.locator(".assistant-reply").waitFor();
   assert.equal(await page.getByRole("link", { name: "홈에서 확인", exact: true }).count(), 0);
   assert.equal(await page.locator('.assistant-reply a[href="/home"]').count(), 0);
-  await page.getByRole("button", { name: "일정 정리", exact: true }).focus();
+  await page.getByRole("button", { name: "내 프로필", exact: true }).focus();
   assert.equal(
     await page
       .locator(".assistant-quick-chip")
@@ -1056,8 +1056,11 @@ try {
             );
           }
           if (fixture.name === "home-liked") {
-            await page.getByText("상대의 만남 요청을 기다리고 있어요.", { exact: true }).waitFor();
-            await page.getByText("궁금한 점은 편하게 물어봐 주세요.", { exact: true }).waitFor();
+            await page.getByText("만남 요청이 오면 알려드릴게요.", { exact: true }).waitFor();
+            assert.equal(
+              await page.getByRole("button", { name: "일정 정리", exact: true }).count(),
+              0,
+            );
             assert.equal(await page.locator(".home-greeting .assistant-mark").count(), 1);
           }
           if (fixture.name === "signup-consent") {

@@ -97,7 +97,7 @@ export function AssistantActions({
             );
           case "requests":
             return (
-              <Link key={action} className={style} to="/chats">
+              <Link key={action} className={style} to="/requests">
                 {content("만남 요청 보기")}
               </Link>
             );

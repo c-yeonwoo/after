@@ -155,7 +155,7 @@ assert.deepEqual(
 assert.equal(assistantIntent("이 여자 소개시켜줘"), "intro");
 assert.deepEqual(
   assistantReply("schedule", { ...ctx, gender: "female", hasMeeting: false }).actions,
-  ["requests", "intro"],
+  ["availability"],
 );
 assert.deepEqual(
   assistantReply("schedule", { ...ctx, complete: false, hasMeeting: false }).actions,

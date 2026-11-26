@@ -424,7 +424,7 @@ async function openAndRequest(male, beta = false, expectedReason) {
     .click();
   await page
     .getByRole("button", {
-      name: beta ? "베타 무료로 열기" : "소개 티켓 1장 쓰고 열기",
+      name: beta ? "무료로 프로필 열기" : "소개 티켓 1장 쓰고 열기",
       exact: true,
     })
     .click();
@@ -859,7 +859,7 @@ try {
       );
       await f.page.goto(`${base}/home`);
       await f.page.getByRole("heading", { name: "호감을 보냈어요.", exact: true }).waitFor();
-      await f.page.getByText("상대의 만남 요청을 기다리고 있어요.", { exact: true }).waitFor();
+      await f.page.getByText("만남 요청이 오면 알려드릴게요.", { exact: true }).waitFor();
       await f.page
         .getByRole("navigation", { name: "주요 메뉴", exact: true })
         .getByRole("link", { name: "소개", exact: true })
@@ -1031,7 +1031,7 @@ try {
             "'",
         );
       const before = queued();
-      await m1.page.getByRole("button", { name: /매니저의 소개 이유.*소개 이유 자세히/s }).click();
+      await m1.page.getByRole("button", { name: "소개 이유 자세히", exact: true }).click();
       const panel = m1.page.getByRole("dialog");
       await panel.getByText("운영 매니저가 두 프로필을 검토해 남긴 소개예요.").waitFor();
       await panel.getByRole("radio", { name: "가리지 않아요" }).check();
@@ -1054,14 +1054,24 @@ try {
       `select female_id from intro_queue where male_id='${m1.id}' and delivered_at is not null and opened_at is null order by position limit 1`,
     );
     const waitingFemale = personas.find((p) => p.id === firstId);
-    await waitingFemale.page.goto(`${base}/requests`);
-    await waitingFemale.page.getByText("아직 받은 요청이 없습니다", { exact: true }).waitFor();
+    await waitingFemale.page.goto(`${base}/intro`);
+    await waitingFemale.page.getByText("만남 요청이 오면 알려드릴게요.", { exact: true }).waitFor();
+    assert.equal(
+      await waitingFemale.page.getByRole("link", { name: "만남 요청 보기", exact: true }).count(),
+      0,
+    );
     const homeObserver = await pageFor();
     await login(homeObserver, waitingFemale);
     await homeObserver.getByRole("heading", { name: "호감을 보냈어요.", exact: true }).waitFor();
     success = await openAndRequest(m1, false, approvedReason);
     const f = personas.find((p) => p.id === success.female_id);
     success.female = f;
+    await f.page.bringToFront();
+    const incoming = f.page.getByRole("link", { name: "만남 요청 보기", exact: true });
+    await incoming.waitFor({ timeout: 25000 });
+    await incoming.click();
+    await f.page.waitForURL("**/requests");
+    await homeObserver.bringToFront();
     await homeObserver
       .getByRole("link", { name: "만남 요청 보기", exact: true })
       .waitFor({ timeout: 25000 });
@@ -1464,7 +1474,7 @@ try {
     "male can pass next introduction and permanent exclusion prevents requeue",
     async () => {
       await m2.page.goto(`${base}/intro`);
-      await m2.page.getByRole("button", { name: "베타 무료로 열기", exact: true }).click();
+      await m2.page.getByRole("button", { name: "무료로 프로필 열기", exact: true }).click();
       await m2.page.getByRole("button", { name: "이 소개 넘기기", exact: true }).click();
       await m2.page
         .getByRole("alertdialog")
