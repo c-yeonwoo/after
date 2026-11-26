@@ -139,9 +139,9 @@ export function IntroductionReason({
             <button
               type="button"
               className="block min-h-11 w-full rounded-control text-left focus-visible:outline-2"
-              aria-label={label + " 근거 보기"}
             >
               {words}
+              <span className="sr-only">근거 보기</span>
             </button>
           </SheetTrigger>
           <SheetContent
