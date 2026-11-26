@@ -267,7 +267,7 @@ The official font's Unicode-range WOFF2 subsets are self-hosted with `font-displ
 ### Hierarchy
 
 - **Display:** the profile-preparation welcome title.
-- **Headline:** the personal home greeting and conversation-preparation title. The home greeting uses 24px; current status follows as a 16px semibold heading.
+- **Headline:** the personal home greeting and conversation-preparation title. The home greeting uses 22px at weight 650 beside the manager avatar; current status follows as a 16px semibold heading.
 - **Onboarding headline:** responsive question titles, using the existing clamp rather than a fixed headline size.
 - **Title:** topic-card headings; chrome uses the same size with semibold weight and slightly tighter tracking.
 - **Body / Supporting:** substantial human answers / assistant context and controls.
@@ -358,7 +358,7 @@ The default signature is a 40px circular crop of the user-approved detailed adul
 
 Preserve the supplied detailed v2 character artwork. Cropping and sizing may serve the interface; do not redraw, simplify, stylize, or artistically transform the approved character. The profile-preparation welcome currently overrides the default mark to 56px; it is a local welcome treatment, not a larger appointment portrait.
 
-The home greeting stays portrait-free; the assistant identity sits at the conversation start. The compact identity row includes the single full-conversation link. Home exposes three quick actions after consent; the full conversation retains the complete action set and memory navigation. Deterministic quick help and the shared private conversation reflect actual member state; home and full-page conversation reuse the same record and feature gates. The counterpart chat offers a separate personal-assistant link only when enabled; private answers never become shared chat messages.
+The compact home greeting pairs the manager portrait with the salutation. The compact identity row includes the single full-conversation link. Home exposes three quick actions after consent; the full conversation retains the complete action set and memory navigation. Deterministic quick help and the shared private conversation reflect actual member state; home and full-page conversation reuse the same record and feature gates. The counterpart chat offers a separate personal-assistant link only when enabled; private answers never become shared chat messages.
 
 ### Profile Question and Answer
 
@@ -388,8 +388,10 @@ Questions are compact neutral-ink prompts at supporting size, 700 weight, and ke
 
 The home uses a white base and a warm neutral assistant surface, with pink limited to
 brand details, light user messages, and short evidence highlights. The introduction
-preview is a compact image-and-copy composition: 86×108 thumbnail, 18px name,
-14px summary, 12px metadata. Its single main action uses foreground ink over the
+preview is a compact image-and-copy composition: a 4:5 thumbnail scales from 88 to 112px wide, beside a 20px name,
+16px personal quotation and 14px job line. A warm surface holds the introduction,
+with the manager’s reason set directly on it. Its evidence sheet uses the theme
+scrim, scrollable reading space and a fixed action above the bottom safe area. Its single main action uses foreground ink over the
 page background color (inverted in dark mode), without the pink outline treatment.
 The active bottom tab uses a neutral selected segment. Preserve all photo permissions;
 a man’s unopened paid teaser still does not reveal a name or photo.

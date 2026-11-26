@@ -53,8 +53,12 @@ function WaitCheck({ at }: { at?: string | null }) {
     minute: "2-digit",
   }).format(new Date(at));
   return (
-    <span className="mt-1 block text-sm text-muted-foreground">
-      {Date.parse(at) > Date.now() ? "매니저 재확인 예정" : "매니저 재확인 대기"} · {when}
+    <span className="home-check-time">
+      <Clock size={15} strokeWidth={1.7} aria-hidden="true" />
+      <span>
+        {Date.parse(at) > Date.now() ? "매니저 재확인 예정" : "매니저 재확인 대기"} ·{" "}
+        <time dateTime={at}>{when}</time>
+      </span>
     </span>
   );
 }
@@ -223,40 +227,40 @@ function HomePage() {
   return (
     <AppScreen keyboardAware footer={<div id="assistant-home-composer" />}>
       <section className="home-greeting assistant-home-greeting" aria-label="애프터 매니저 안내">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <AssistantMark />
-          <span className="text-sm font-semibold">애프터 매니저</span>
+          <div className="min-w-0">
+            <span className="text-xs font-medium text-muted-foreground">애프터 매니저</span>
+            <h1 className="text-xl leading-tight font-semibold tracking-[-0.025em] break-keep [overflow-wrap:anywhere]">
+              {welcome.greeting}
+            </h1>
+          </div>
         </div>
-        <div className="assistant-home-status min-w-0 mt-3">
-          <h1 className="text-xl leading-snug font-semibold tracking-[-0.025em] break-keep">
-            <span className="[overflow-wrap:anywhere]">{welcome.greeting}</span>
-          </h1>
-          {!loading && !loadError ? (
-            <div className="home-progress mt-3">
-              <h2 className="break-keep text-base font-semibold leading-snug">{headline}</h2>
-              {!live.isError && !live.isPaused && primaryState === "waiting" ? (
-                <div className="mt-0.5 text-sm leading-normal text-muted-foreground">
-                  <p>
-                    {holding
-                      ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
-                      : !isMale && serverState?.intro_progress?.has_likes
-                        ? "상대의 만남 요청을 기다리고 있어요."
-                        : serverState?.first_intro_wait
-                          ? "다음은 매니저 차례예요. 첫 소개가 도착하면 여기서 알려드릴게요."
-                          : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
-                  </p>
-                  {serverState?.first_intro_wait ? (
-                    <WaitCheck at={serverState.first_intro_wait.next_check_at} />
-                  ) : capabilities.data?.chat ? (
-                    <p>궁금한 점은 편하게 물어봐 주세요.</p>
-                  ) : (
-                    <p>기다리는 동안 내 프로필과 만남 가능 시간을 확인해 주세요.</p>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+        {!loading && !loadError ? (
+          <div className="home-progress">
+            <h2 className="break-keep text-base font-semibold leading-snug">{headline}</h2>
+            {!live.isError && !live.isPaused && primaryState === "waiting" ? (
+              <div className="mt-0.5 text-sm leading-normal text-muted-foreground">
+                <p>
+                  {holding
+                    ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
+                    : !isMale && serverState?.intro_progress?.has_likes
+                      ? "상대의 만남 요청을 기다리고 있어요."
+                      : serverState?.first_intro_wait
+                        ? "다음은 매니저 차례예요. 첫 소개가 도착하면 여기서 알려드릴게요."
+                        : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
+                </p>
+                {serverState?.first_intro_wait ? (
+                  <WaitCheck at={serverState.first_intro_wait.next_check_at} />
+                ) : capabilities.data?.chat ? (
+                  <p>궁금한 점은 편하게 물어봐 주세요.</p>
+                ) : (
+                  <p>기다리는 동안 내 프로필과 만남 가능 시간을 확인해 주세요.</p>
+                )}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       {(live.isError || live.isPaused) && live.data ? (
@@ -550,8 +554,8 @@ function CandidatePreview({
   }, [path]);
   return (
     <section aria-label="도착한 소개" className="introduction-arrival">
-      <div className="flex items-center gap-3.5">
-        <div className="h-[108px] w-[86px] shrink-0 overflow-hidden rounded-control bg-muted">
+      <div className="intro-portrait-line">
+        <div className="intro-portrait">
           {src ? (
             <img
               src={src}
@@ -566,7 +570,7 @@ function CandidatePreview({
           )}
         </div>
         <div className="min-w-0">
-          <h2 className="text-lg leading-snug font-semibold">
+          <h2 className="text-xl leading-tight font-semibold tracking-tight">
             {candidate.name}
             {candidate.age !== null ? (
               <span className="ml-2 text-sm font-normal text-muted-foreground">
@@ -574,9 +578,9 @@ function CandidatePreview({
               </span>
             ) : null}
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">{candidate.job}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{candidate.job}</p>
           {candidate.headline ? (
-            <p className="serif mt-2 line-clamp-2 break-keep break-words text-base leading-snug">
+            <p className="serif mt-2.5 line-clamp-3 break-keep break-words text-base leading-snug">
               {candidate.headline}
             </p>
           ) : null}
@@ -584,7 +588,7 @@ function CandidatePreview({
       </div>
       {styles.common.length || signals.interests.length || signals.topics.length ? (
         <div
-          className="introduction-signals mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+          className="introduction-signals mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs"
           aria-label="공개 프로필의 접점"
         >
           {styles.common.length ? (

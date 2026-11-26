@@ -323,7 +323,7 @@ function IntroPage() {
                 <>
                   <Button
                     size="lg"
-                    className="mt-6 w-full"
+                    className="intro-primary-button mt-4 w-full"
                     onClick={() => navigate({ to: "/store", search: { kind: "intro" as const } })}
                   >
                     소개 티켓 신청하기
@@ -650,7 +650,7 @@ function TeaserCard({
     .join(" · ");
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">
+      <h2 className="text-xl leading-tight font-semibold tracking-tight">
         도착한 소개
         {teaser.delivered > 1 ? (
           <span className="ml-2 text-sm font-medium text-muted-foreground">
@@ -659,10 +659,10 @@ function TeaserCard({
         ) : null}
       </h2>
       {meta || teaser.headline ? (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {meta ? <p className="text-sm text-muted-foreground">{meta}</p> : null}
           {teaser.headline ? (
-            <blockquote className="serif break-keep break-words text-lg leading-snug">
+            <blockquote className="serif break-keep break-words text-lg leading-normal">
               “{teaser.headline}”
             </blockquote>
           ) : null}
