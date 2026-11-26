@@ -131,18 +131,23 @@ Deno.serve(async (req) => {
       }
 
       let counterpartId = row.payload?.counterpart_id;
-      if (!counterpartId && row.meeting_id) {
+      const requestNotice =
+        row.kind === "meeting_requested" || row.kind === "meeting_request_reminder";
+      let requestUsedAt: string | null = null;
+      if (row.meeting_id && (!counterpartId || requestNotice)) {
         const { data: meeting } = await db
           .from("meetings")
-          .select("intros!inner(male_id, female_id)")
+          .select("intros!inner(male_id, female_id), tickets!meetings_ticket_id_fkey(used_at)")
           .eq("id", row.meeting_id)
           .maybeSingle();
-        const pair = (
-          meeting as unknown as {
-            intros: { male_id: string; female_id: string };
-          } | null
-        )?.intros;
-        if (pair) counterpartId = pair.male_id === row.user_id ? pair.female_id : pair.male_id;
+        const details = meeting as unknown as {
+          intros: { male_id: string; female_id: string };
+          tickets: { used_at: string | null } | null;
+        } | null;
+        const pair = details?.intros;
+        if (!counterpartId && pair)
+          counterpartId = pair.male_id === row.user_id ? pair.female_id : pair.male_id;
+        if (requestNotice) requestUsedAt = details?.tickets?.used_at ?? null;
       }
       const { data: counterpart } = counterpartId
         ? await db.from("profiles").select("name").eq("id", counterpartId).maybeSingle()
@@ -150,6 +155,7 @@ Deno.serve(async (req) => {
       const copy = notificationCopy(row.kind, {
         counterpart: counterpart?.name ?? null,
         meetingId: row.meeting_id,
+        requestUsedAt,
       });
 
       for (const device of targets as Device[]) {

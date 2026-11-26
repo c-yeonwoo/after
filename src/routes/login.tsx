@@ -6,6 +6,12 @@ import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  notificationReturnPath,
+  saveNotificationReturn,
+  splitAppPath,
+  takeNotificationReturn,
+} from "@/lib/appPath";
 import { BRAND } from "@/lib/brand";
 import {
   authErrorMessage,
@@ -37,6 +43,9 @@ import {
 const APP_BUILD = import.meta.env.VITE_APP_BUILD === "true";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
+    next: notificationReturnPath(search.next),
+  }),
   head: () => ({
     meta: [
       { title: `로그인 — ${BRAND.name}` },
@@ -51,6 +60,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { me, ready } = useMe();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -71,11 +81,11 @@ function LoginPage() {
   const [oauthBusy, setOauthBusy] = useState(false);
   const leaving = useRef(false);
   const goTo = useCallback(
-    async (to: "/home" | "/signup") => {
+    async (path: string) => {
       if (leaving.current) return;
       leaving.current = true;
       try {
-        await navigate({ to, replace: true });
+        await navigate({ ...splitAppPath(path), replace: true });
       } catch (err) {
         leaving.current = false;
         throw err;
@@ -89,7 +99,7 @@ function LoginPage() {
 
   /** 로그인 성공 뒤 갈 곳. 세 경로(코드·비밀번호·카카오)가 같은 판정을 써야 한다. */
   const land = useCallback(
-    async (result: SignInResult) => {
+    async (result: SignInResult, destination = next) => {
       if (result.kind === "closed") {
         setError(
           result.state === "withdrawn"
@@ -115,22 +125,30 @@ function LoginPage() {
         await goTo(checked ? "/home" : "/signup");
         return;
       }
-      await goTo("/home");
+      await goTo(destination ?? "/home");
     },
-    [goTo],
+    [goTo, next],
   );
 
   // 이미 로그인돼 있으면 가입 완료 여부에 맞는 화면으로 보낸다.
   // 카카오에 다녀오는 중에는 판정(land)이 끝나기 전이라 잠가 둔다.
   useEffect(() => {
-    if (ready && me && !oauthBusy && !busy) {
+    if (
+      ready &&
+      me &&
+      !oauthBusy &&
+      !busy &&
+      !new URLSearchParams(window.location.search).has("code")
+    ) {
       void goTo(
-        me.onboarding_step >= 7 || accountChecksComplete(me, carrierIdentityEnabled)
-          ? "/home"
-          : "/signup",
+        me.onboarding_step >= 7
+          ? (next ?? "/home")
+          : accountChecksComplete(me, carrierIdentityEnabled)
+            ? "/home"
+            : "/signup",
       ).catch(() => setError("화면을 열지 못했어요. 다시 로그인해 주세요."));
     }
-  }, [ready, me, goTo, oauthBusy, busy]);
+  }, [ready, me, goTo, oauthBusy, busy, next]);
 
   /*
     카카오에서 돌아왔다. 두 경로가 여기로 온다.
@@ -144,7 +162,8 @@ function LoginPage() {
     const finish = async () => {
       if (!alive) return;
       try {
-        await land(await landAfterOAuth());
+        const pending = takeNotificationReturn("oauth");
+        await land(await landAfterOAuth(), next ?? pending);
       } catch (err) {
         setError(authErrorMessage(err));
       } finally {
@@ -175,7 +194,7 @@ function LoginPage() {
       alive = false;
       stop();
     };
-  }, [land]);
+  }, [land, next]);
 
   /*
     키보드가 뜨면 버튼 줄을 화면 안으로 끌어온다.
@@ -201,9 +220,11 @@ function LoginPage() {
         <h1 className="headline text-3xl">다시 오셨네요</h1>
         {!codeSent ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {onCode
-              ? "가입할 때 인증한 이메일로 코드를 보내드립니다."
-              : "가입할 때 정하신 비밀번호로 들어오세요."}
+            {next
+              ? "로그인하면 알림에서 열었던 화면으로 돌아가요."
+              : onCode
+                ? "가입할 때 인증한 이메일로 코드를 보내드립니다."
+                : "가입할 때 정하신 비밀번호로 들어오세요."}
           </p>
         ) : null}
 
@@ -395,6 +416,7 @@ function LoginPage() {
                     const redirectTo = isNative
                       ? NATIVE_REDIRECT
                       : `${window.location.origin}/login`;
+                    saveNotificationReturn("oauth", next);
                     await openAuthUrl(await kakaoAuthorizeUrl(redirectTo));
                   } catch (err) {
                     setError(authErrorMessage(err));

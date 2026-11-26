@@ -25,7 +25,7 @@ function DeleteAccountPage() {
       <InfoSection title="앱에서 바로 삭제하기">
         <ol className="list-decimal space-y-2 pl-5">
           <li>가입한 이메일과 비밀번호로 로그인합니다.</li>
-          <li>아래 탭에서 나를 누르고 환경설정으로 이동합니다.</li>
+          <li>홈 오른쪽 위에서 ‘나’를 누르고 ‘환경설정’으로 이동합니다.</li>
           <li>화면 맨 아래 탈퇴하기를 누른 뒤 한 번 더 확인합니다.</li>
         </ol>
         <Link

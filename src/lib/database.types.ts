@@ -4364,6 +4364,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["notification_kind"]
           meeting_id: string
           read_at: string
+          request_used_at: string
         }[]
       }
       my_policy_status: { Args: never; Returns: Json }

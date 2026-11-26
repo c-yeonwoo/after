@@ -19,8 +19,8 @@ import { carrierIdentityEnabled } from "@/lib/carrierIdentity";
 import { MobileFrame } from "@/components/MobileFrame";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 import { MeProvider, useMe } from "@/lib/me";
-import { splitAppPath } from "@/lib/appPath";
-import { watchPush } from "@/lib/push";
+import { notificationReturnPath, saveNotificationReturn, splitAppPath } from "@/lib/appPath";
+import { watchPushOpens, watchPushRegistration } from "@/lib/push";
 import { watchKeyboard } from "@/lib/keyboard";
 import { hideSplash } from "@/lib/native";
 import { APP_VERSION } from "@/lib/version";
@@ -211,6 +211,8 @@ function IdentityGate({ children }: { children: ReactNode }) {
   const { me, ready } = useMe();
   const navigate = useNavigate();
   const path = useRouterState({ select: (state) => state.location.pathname });
+  const href = useRouterState({ select: (state) => state.location.href });
+  const returnPath = notificationReturnPath(href);
   const allowed = [
     "/",
     "/login",
@@ -231,9 +233,20 @@ function IdentityGate({ children }: { children: ReactNode }) {
     !allowed.includes(path) &&
     !path.startsWith("/admin");
   useEffect(() => {
-    if (needsIdentity) void navigate({ to: "/verify-phone", replace: true });
-  }, [needsIdentity, navigate]);
-  if (needsIdentity) return null;
+    if (returnPath && ready && !me) {
+      void navigate({ to: "/login", search: { next: returnPath }, replace: true });
+    } else if (needsIdentity && me) {
+      saveNotificationReturn(`identity.${me.id}`, returnPath);
+      void navigate({ to: "/verify-phone", replace: true });
+    }
+  }, [me, ready, needsIdentity, navigate, returnPath]);
+  if (needsIdentity || (returnPath && (!ready || !me))) {
+    return (
+      <p role="status" className="p-6 text-center text-sm text-muted-foreground">
+        계정을 확인하고 있어요…
+      </p>
+    );
+  }
   return children;
 }
 
@@ -246,11 +259,13 @@ function PushBridge() {
   const navigate = useNavigate();
   const signedIn = Boolean(me?.id);
   useEffect(() => {
-    if (!signedIn) return;
-    return watchPush((path) => {
+    if (signedIn) return watchPushRegistration();
+  }, [signedIn]);
+  useEffect(() => {
+    return watchPushOpens((path) => {
       const { to, search } = splitAppPath(path);
       void navigate({ to, search });
     });
-  }, [signedIn, navigate]);
+  }, [navigate]);
   return null;
 }

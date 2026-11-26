@@ -1386,8 +1386,8 @@ export type MeetingRequest = {
   meeting: Meeting;
   candidate: PublicProfile;
   reason: string | null;
-  deadline_at: string | null;
-  server_as_of: string | null;
+  deadline_at: string;
+  localDeadline: number;
 };
 
 /**
@@ -1435,14 +1435,16 @@ export async function listMeetingsAwaitingMyPrefs(
   const maleByIntro = new Map(intros.map((i) => [i.id, i.male_id]));
   const reasonByIntro = new Map(intros.map((i) => [i.id, i.reason]));
   // 건별로 getProfile 을 돌면 N+1 이 된다(진단 PERF-3). 한 번에 모아 온다.
-  const [profiles, deadlineResult] = await Promise.all([
+  const [profiles, { deadlineResult, receivedAt }] = await Promise.all([
     getProfiles(
       meetings.flatMap((m) => {
         const id = maleByIntro.get(m.intro_id);
         return id ? [id] : [];
       }),
     ),
-    supabase.rpc("my_request_deadlines"),
+    supabase
+      .rpc("my_request_deadlines")
+      .then((deadlineResult) => ({ deadlineResult, receivedAt: Date.now() })),
   ]);
   if (deadlineResult.error) throw deadlineResult.error;
   const deadlineByMeeting = new Map(
@@ -1453,14 +1455,18 @@ export async function listMeetingsAwaitingMyPrefs(
     const maleId = maleByIntro.get(meeting.intro_id);
     const candidate = maleId ? profiles.get(maleId) : undefined;
     const deadline = deadlineByMeeting.get(meeting.id);
-    return candidate
+    // A concurrent reply/cancellation can remove the authoritative deadline after the first read.
+    if (!deadline?.deadline_at || !deadline.as_of) return [];
+    const localDeadline =
+      receivedAt + (Date.parse(deadline.deadline_at) - Date.parse(deadline.as_of));
+    return candidate && Number.isFinite(localDeadline)
       ? [
           {
             meeting,
             candidate,
             reason: reasonByIntro.get(meeting.intro_id) ?? null,
-            deadline_at: deadline?.deadline_at ?? null,
-            server_as_of: deadline?.as_of ?? null,
+            deadline_at: deadline.deadline_at,
+            localDeadline,
           },
         ]
       : [];

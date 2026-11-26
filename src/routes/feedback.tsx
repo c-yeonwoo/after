@@ -71,9 +71,9 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
   const [text, setText] = useState("");
   const [reportText, setReportText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [gate, setGate] = useState<"loading" | "ready" | "submitted" | "unavailable" | "error">(
-    "loading",
-  );
+  const [gate, setGate] = useState<
+    "loading" | "ready" | "submitted" | "unavailable" | "missing" | "error"
+  >("loading");
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     if (!meetingId || !me?.id) return;
@@ -91,6 +91,10 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
             .eq("author_id", authorId)
             .maybeSingle(),
         ]);
+        if (status.error?.code === "42501") {
+          if (alive) setGate("missing");
+          return;
+        }
         if (status.error || feedback.error) throw new Error("unavailable");
         const m = status.data as unknown as {
           scheduledAt: string | null;
@@ -134,9 +138,11 @@ function MeetingFeedback({ meetingId }: { meetingId?: string }) {
               ? "만남을 확인하고 있어요…"
               : gate === "submitted"
                 ? "후기를 남겨주셨어요. 고마워요."
-                : gate === "unavailable"
-                  ? "예정된 만남이 지난 뒤 후기를 남길 수 있어요. 취소된 약속에는 후기를 받지 않아요."
-                  : "만남 정보를 불러오지 못했어요."}
+                : gate === "missing"
+                  ? "이 계정에서 확인할 수 있는 만남이 없어요."
+                  : gate === "unavailable"
+                    ? "예정된 만남이 지난 뒤 후기를 남길 수 있어요. 취소된 약속에는 후기를 받지 않아요."
+                    : "만남 정보를 불러오지 못했어요."}
           </p>
           {gate === "error" ? (
             <Button variant="outline" className="mt-4" onClick={() => setRetry((v) => v + 1)}>

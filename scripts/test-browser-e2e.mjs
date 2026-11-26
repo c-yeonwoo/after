@@ -153,10 +153,11 @@ async function createPerson(kind, gender, role, password) {
   return { id, email, password, name, photoPaths: paths };
 }
 
-async function login(page, person) {
+async function login(page, person, destination) {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.goto(`${baseUrl}/login`);
+  await page.goto(baseUrl + (destination ?? "/login"));
+  if (destination) await page.getByText("로그인하면 알림에서 열었던 화면으로 돌아가요.").waitFor();
   // SSR can paint fields before React attaches handlers. Filling at that point
   // changes the DOM but not form state, leaving the submit button disabled.
   const submit = page.getByRole("button", { name: "로그인", exact: true });
@@ -172,7 +173,8 @@ async function login(page, person) {
     `login form did not hydrate: ${pageErrors.join(" | ") || "no page error"}`,
   );
   await submit.click();
-  await waitForHome(page);
+  if (destination) await page.waitForURL(baseUrl + destination);
+  else await waitForHome(page);
 }
 
 async function waitForHome(page) {
@@ -1073,7 +1075,23 @@ try {
   const femalePage = await (
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
-  await login(femalePage, female);
+  const requestMeetingId = sql(`select m.id from meetings m join intros i on i.id=m.intro_id
+    where i.male_id='${male.id}' and i.female_id='${female.id}'`);
+  for (const path of [
+    "/requests",
+    "/notifications?from=me",
+    "/intro",
+    `/chat/${requestMeetingId}`,
+    `/schedule?meetingId=${requestMeetingId}`,
+  ]) {
+    await femalePage.goto(baseUrl + path);
+    await femalePage.waitForURL(
+      (url) => url.pathname === "/login" && url.searchParams.get("next") === path,
+    );
+  }
+  await login(femalePage, female, `/feedback?meetingId=${requestMeetingId}`);
+  await femalePage.goto(baseUrl + "/home");
+  await waitForHome(femalePage);
   await checkPage(femalePage, "female home");
   await femalePage.getByRole("link", { name: "만남 요청 보기" }).click();
   await femalePage.getByRole("link", { name: "요청 확인·답하기" }).click();
@@ -1081,6 +1099,40 @@ try {
   await assertInitiallyVisible(femalePage.getByRole("button", { name: /이 날로 정하기/ }).first());
   await femalePage.setViewportSize({ width: 390, height: 844 });
   await checkPage(femalePage, "meeting request received");
+  await femalePage.getByText(/까지 답해 주세요/).waitFor();
+  const deadlineRpc = "**/rest/v1/rpc/my_request_deadlines";
+  await femalePage.route(deadlineRpc, (route) =>
+    route.fulfill({
+      json: [
+        {
+          meeting_id: requestMeetingId,
+          deadline_at: new Date(Date.now() - 1000).toISOString(),
+          as_of: new Date().toISOString(),
+        },
+      ],
+    }),
+  );
+  await femalePage.reload();
+  await femalePage.getByText("답변 기한이 지났어요.").waitFor();
+  assert.equal(
+    await femalePage
+      .getByRole("button", { name: /이 날로 정하기|이번엔 정중히 거절할게요/ })
+      .count(),
+    0,
+  );
+  assert.equal(await femalePage.getByRole("link", { name: "다른 날이 좋아요" }).count(), 0);
+  await femalePage.goto(baseUrl + "/prefs?meetingId=" + requestMeetingId);
+  await femalePage.waitForURL(baseUrl + "/requests");
+  await femalePage.unroute(deadlineRpc);
+  await femalePage.route(deadlineRpc, (route) => route.fulfill({ json: [] }));
+  await femalePage.reload();
+  await femalePage.getByText("아직 받은 요청이 없습니다").waitFor();
+  await femalePage.unroute(deadlineRpc);
+  await femalePage.reload();
+  await femalePage
+    .getByRole("button", { name: /이 날로 정하기/ })
+    .first()
+    .waitFor();
   if (screenshotDir)
     await femalePage.screenshot({ path: join(screenshotDir, "meeting-received-native.png") });
   await femalePage
