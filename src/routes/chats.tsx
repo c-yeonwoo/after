@@ -1,5 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, CalendarCheck } from "lucide-react";
 import { AppScreen } from "@/components/app/AppScreen";
 import { LiveRefreshNotice } from "@/components/app/LiveRefreshNotice";
@@ -17,16 +16,12 @@ export const Route = createFileRoute("/chats")({
 /** One overview for requests, scheduling and confirmed conversations. */
 function MeetingsPage() {
   const { me, ready } = useMe();
-  const navigate = useNavigate();
   const live = useMemberLiveQuery(
     "member-meetings",
     me?.id,
     () => listMyActiveMeetings(false, me?.id),
     ready,
   );
-  useEffect(() => {
-    if (ready && !me) void navigate({ to: "/login" });
-  }, [ready, me, navigate]);
   return (
     <AppScreen title="소개">
       <h1 className="text-lg font-semibold">함께할 약속</h1>

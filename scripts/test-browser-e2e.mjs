@@ -1080,13 +1080,14 @@ try {
   for (const path of [
     "/requests",
     "/notifications?from=me",
-    "/intro",
+    "/intro#top",
+    "/chats",
     `/chat/${requestMeetingId}`,
     `/schedule?meetingId=${requestMeetingId}`,
   ]) {
     await femalePage.goto(baseUrl + path);
     await femalePage.waitForURL(
-      (url) => url.pathname === "/login" && url.searchParams.get("next") === path,
+      (url) => url.pathname === "/login" && url.searchParams.get("next") === path.split("#")[0],
     );
   }
   await login(femalePage, female, `/feedback?meetingId=${requestMeetingId}`);

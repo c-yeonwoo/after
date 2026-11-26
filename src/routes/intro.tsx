@@ -178,11 +178,7 @@ function IntroPage() {
     setHasLikes(false);
     sending.current = false;
     setBusy(false);
-    if (!ready) return;
-    if (!me) {
-      navigate({ to: "/" });
-      return;
-    }
+    if (!ready || !me) return;
     setLoading(true);
     void load();
     return () => {
