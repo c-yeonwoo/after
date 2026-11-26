@@ -471,6 +471,8 @@ export type IntroPriority = keyof typeof introPriorityLabels;
 export type IntroEvidence = {
   reason: string;
   source: string;
+  priority_origin?: "feedback" | "edit";
+  peer_excerpt?: string;
   discounted?: boolean;
   label: string;
   quote: string | null;
