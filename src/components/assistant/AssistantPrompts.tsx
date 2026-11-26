@@ -4,23 +4,15 @@ export function AssistantPrompts({
   input,
   onChoose,
   disabled,
-  canCoach = true,
-  canChat = true,
 }: {
   input: string;
   onChoose: (text: string) => void;
   disabled?: boolean;
-  canCoach?: boolean;
-  canChat?: boolean;
 }) {
-  const suggestions = assistantSuggestions(input, canCoach, canChat);
+  const suggestions = assistantSuggestions(input);
   if (!suggestions.length) return null;
   return (
-    <div
-      className="assistant-prompts"
-      role="group"
-      aria-label={input.trim() ? "입력에 맞는 추천 질문" : "질문 예시"}
-    >
+    <div className="assistant-prompts" role="group" aria-label="입력에 맞는 추천 질문">
       {suggestions.map((text) => (
         <button
           key={text}

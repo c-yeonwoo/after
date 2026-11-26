@@ -321,14 +321,10 @@ async function verifyHome(page, width) {
     "manager starts the home conversation",
   );
   const input = page.getByLabel("매니저에게 물어볼 내용");
-  await page
-    .getByRole("button", { name: "첫 만남에서 어색하면 어떻게 말문을 열까요?", exact: true })
-    .click();
-  assert.match(await input.inputValue(), /첫 만남/);
-  await input.fill("답장");
-  await page
-    .getByRole("button", { name: "답장이 늦을 때 부담 없이 어떻게 물어볼까요?", exact: true })
-    .waitFor();
+  await input.waitFor();
+  assert.equal(await page.locator(".assistant-prompt").count(), 0);
+  await input.fill("프로필");
+  assert.equal(await page.locator(".assistant-prompt").count(), 0);
   await input.fill("");
   assert.equal(await page.locator('img[src*="after-first-conversation"]').count(), 0);
   const metrics = await page.locator(".assistant-quick-actions").evaluate((row) => {
@@ -1329,13 +1325,7 @@ try {
                 .evaluate((el) => getComputedStyle(el).borderTopWidth),
               "0px",
             );
-            assert.ok(
-              (
-                await page
-                  .locator(".assistant-prompt")
-                  .evaluateAll((els) => els.map((el) => getComputedStyle(el).borderTopWidth))
-              ).every((width) => width === "0px"),
-            );
+            assert.equal(await page.locator(".assistant-prompt").count(), 0);
             assert.equal(
               await page
                 .locator(".assistant-composer")
@@ -1370,6 +1360,8 @@ try {
             await capture(page, `${name}-expanded`);
             await field.fill("");
             assert.equal((await field.boundingBox()).height, emptyHeight, "clearing shrinks input");
+            assert.equal(await page.locator(".assistant-prompt").count(), 0);
+            await field.fill("프로필");
             await page
               .getByRole("button", {
                 name: "내 프로필의 장점과 아쉬운 표현을 코칭해줘",

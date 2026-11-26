@@ -728,7 +728,7 @@ try {
         .click();
       await f.page.waitForURL((url) => url.pathname === "/intro");
       if (f === f1) {
-        await f.page.getByRole("button", { name: /매니저의 소개 이유.*근거 보기/s }).click();
+        await f.page.getByRole("button", { name: /매니저의 소개 이유.*소개 이유 자세히/s }).click();
         const panel = f.page.getByRole("dialog");
         await panel.getByText("“영화·드라마”", { exact: true }).waitFor();
         await panel.getByRole("button", { name: "이 공통점은 덜 중요해요" }).click();
@@ -1031,7 +1031,7 @@ try {
             "'",
         );
       const before = queued();
-      await m1.page.getByRole("button", { name: /매니저의 소개 이유.*근거 보기/s }).click();
+      await m1.page.getByRole("button", { name: /매니저의 소개 이유.*소개 이유 자세히/s }).click();
       const panel = m1.page.getByRole("dialog");
       await panel.getByText("운영 매니저가 두 프로필을 검토해 남긴 소개예요.").waitFor();
       await panel.getByRole("radio", { name: "가리지 않아요" }).check();
