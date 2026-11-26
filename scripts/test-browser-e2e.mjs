@@ -1081,6 +1081,7 @@ try {
     "/requests",
     "/notifications?from=me",
     "/intro",
+    "/chats",
     `/chat/${requestMeetingId}`,
     `/schedule?meetingId=${requestMeetingId}`,
   ]) {

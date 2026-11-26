@@ -210,8 +210,10 @@ function RootComponent() {
 function IdentityGate({ children }: { children: ReactNode }) {
   const { me, ready } = useMe();
   const navigate = useNavigate();
-  const path = useRouterState({ select: (state) => state.location.pathname });
-  const href = useRouterState({ select: (state) => state.location.href });
+  // During navigation the next URL can be set before the previous Outlet unmounts.
+  const { pathname: path, href } = useRouterState({
+    select: (state) => state.resolvedLocation ?? state.location,
+  });
   const returnPath = notificationReturnPath(href);
   const allowed = [
     "/",
