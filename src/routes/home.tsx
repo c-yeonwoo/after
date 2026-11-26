@@ -508,6 +508,8 @@ function CandidatePreview({
     topics: string[] | null;
     profile_public_signals?: unknown;
     profile_story?: unknown;
+    headline?: string | null;
+    intro?: string | null;
   } | null;
 }) {
   const [src, setSrc] = useState<string | null>(null);
@@ -615,6 +617,7 @@ function CandidatePreview({
             reason={managerReading}
             portrait={useAi && !aiConnection}
             evidence={readingEvidence}
+            pair={viewer ? { self: viewer, other: candidate } : undefined}
             priority={priority}
             preview
           />

@@ -11,11 +11,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { introPriorityLabels, type IntroEvidence, type IntroPriority } from "@/lib/api";
+import { introReasonCopy, type ReadablePair } from "@/lib/introReasonCopy";
 import { useMe } from "@/lib/me";
 import { supabase } from "@/lib/supabase";
 
 type ReasonProps = {
   reason: string;
+  pair?: ReadablePair;
   evidence?: IntroEvidence | null;
   priority?: IntroPriority | null;
   onSaved?: (choice: IntroPriority) => void;
@@ -25,7 +27,8 @@ type ReasonProps = {
 };
 
 export function IntroductionReason({
-  reason,
+  reason: original,
+  pair,
   evidence,
   priority,
   onSaved,
@@ -50,6 +53,7 @@ export function IntroductionReason({
       ? weightOverride.value
       : Boolean(evidence?.discounted);
   const [error, setError] = useState("");
+  const reason = introReasonCopy(original, evidence && { ...evidence, discounted }, pair);
   const label = portrait ? "매니저가 본 이분" : "매니저의 소개 이유";
   const words = (
     <>
