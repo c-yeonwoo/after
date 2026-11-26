@@ -521,7 +521,12 @@ try {
   if (personas.some((p) => !p.id || !paths.some((x) => x.startsWith(p.id))))
     throw new Error("A signup failed; dependent scenarios cannot be trusted");
   sql(
-    `update profiles set hub_id='${cohortHub}' where id in (${personas.map((p) => `'${p.id}'`).join(",")});
+    `update profiles set profile_public_signals='{"topics":["영화·드라마"]}'
+       where id in (${personas
+         .slice(0, 3)
+         .map((p) => "'" + p.id + "'")
+         .join(",")});
+     update profiles set hub_id='${cohortHub}' where id in (${personas.map((p) => `'${p.id}'`).join(",")});
      update member_meeting_areas set area_ids=array['${cohortHub}'] where user_id in (${personas.map((p) => `'${p.id}'`).join(",")})`,
   );
   const adminEmail = `cycle-${run}-admin@verify.local`;
@@ -725,6 +730,13 @@ try {
       if (f === f1) {
         await f.page.getByRole("button", { name: "매니저의 소개 이유 근거 보기" }).click();
         const panel = f.page.getByRole("dialog");
+        await panel.getByText("“영화·드라마”", { exact: true }).waitFor();
+        await panel.getByRole("button", { name: "이 공통점은 덜 중요해요" }).click();
+        await panel.getByRole("button", { name: "다시 공통점으로 고려하기" }).waitFor();
+        assert.equal(
+          sql("select count(*) from intro_signal_discounts where member_id='" + f.id + "'"),
+          "1",
+        );
         await panel.getByRole("radio", { name: "짧게 커피" }).check();
         await screen(f.page, "female-first-intro-evidence");
         await panel.getByRole("button", { name: "다음 소개에 반영" }).click();
