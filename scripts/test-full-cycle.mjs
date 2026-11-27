@@ -576,6 +576,8 @@ try {
       await row.getByText(/재확인 \d/).waitFor();
       await m1.page.goto(base + "/home");
       await m1.page.getByText(/매니저 재확인 예정/).waitFor();
+      await m1.page.getByText("첫 인사, 어디서 시작할까요?", { exact: true }).click();
+      await m1.page.getByText(/요즘 자주 가는 산책길 있어요/).waitFor();
       await screen(m1.page, "male-first-intro-wait");
     },
   );
@@ -730,6 +732,8 @@ try {
       if (f === f1) {
         await f.page.getByRole("button", { name: /매니저의 소개 이유.*소개 이유 자세히/s }).click();
         const panel = f.page.getByRole("dialog");
+        await panel.getByRole("button", { name: "와닿았어요", exact: true }).click();
+        await panel.getByText("의견을 남겼어요.").waitFor();
         await panel.getByText("“영화·드라마”", { exact: true }).waitFor();
         await panel.getByRole("button", { name: "이 공통점은 덜 중요해요" }).click();
         await panel.getByRole("button", { name: "다시 공통점으로 고려하기" }).waitFor();
@@ -1034,12 +1038,58 @@ try {
       await m1.page.getByRole("button", { name: "소개 이유 자세히", exact: true }).click();
       const panel = m1.page.getByRole("dialog");
       await panel.getByText("운영 매니저가 두 프로필을 검토해 남긴 소개예요.").waitFor();
+      await panel.getByRole("button", { name: "잘 모르겠어요", exact: true }).click();
+      await panel.getByText("의견을 남겼어요.").waitFor();
       await panel.getByRole("radio", { name: "가리지 않아요" }).check();
       await screen(m1.page, "male-first-intro-evidence");
       await panel.getByRole("button", { name: "다음 소개에 반영" }).click();
       await panel.waitFor({ state: "hidden" });
       assert.equal(queued(), before);
       assert.equal(sql("select count(*) from intros where male_id='" + m1.id + "'"), "0");
+    },
+  );
+  await check(
+    "operator sees both first-card clocks, explicit reason votes and intervention stages",
+    async () => {
+      assert.equal(
+        sql(
+          `select count(*) from intro_reason_reactions where (reader_id='${f1.id}' and resonated) or (reader_id='${m1.id}' and not resonated)`,
+        ),
+        "2",
+      );
+      const summary = () =>
+        JSON.parse(
+          sql(
+            `begin; set local request.jwt.claims='{"sub":"${admin.id}","role":"authenticated","aal":"aal2"}'; select admin_invite_beta_observations(); rollback;`,
+          )
+            .split("\n")
+            .find((line) => line.startsWith("{")),
+        );
+      const before = summary();
+      await ap.goto(base + "/admin");
+      const board = ap.getByRole("region", { name: "초대 베타 관찰" });
+      await board
+        .getByText(
+          `와닿았어요 ${before.reactions.yes}건 · 잘 모르겠어요 ${before.reactions.total - before.reactions.yes}건`,
+        )
+        .waitFor();
+      assert.ok(before.waits.female.intro_n >= 3 && before.waits.male.intro_n >= 2);
+      assert.ok(before.actions.intro.logged >= 2);
+      await board.getByText("별도 안내 기록", { exact: true }).click();
+      await board.getByLabel("개별 안내 단계").selectOption("feedback");
+      await board.getByRole("button", { name: "안내 1건 기록" }).click();
+      await board.getByText("만남 후기 안내 1건을 기록했어요.").waitFor();
+      const next = (before.actions.feedback?.manual ?? 0) + 1;
+      await board
+        .getByRole("row", { name: /만남 후기/ })
+        .getByRole("cell")
+        .last()
+        .getByText(next + "건", { exact: true })
+        .waitFor();
+      assert.equal(summary().actions.feedback.manual, next);
+      await ap.setViewportSize({ width: 390, height: 844 });
+      await screen(ap, "invite-beta-observations-mobile");
+      await ap.setViewportSize({ width: 1440, height: 900 });
     },
   );
   await setPaymentsInUI(ap, true);

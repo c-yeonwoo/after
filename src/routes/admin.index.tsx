@@ -1,3 +1,5 @@
+import { InviteBetaObservations } from "@/components/admin/InviteBetaObservations";
+import { fetchInviteBetaObservations } from "@/lib/betaObservations";
 import { BetaReadiness } from "@/components/admin/BetaReadiness";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, RefreshCw } from "lucide-react";
@@ -42,6 +44,9 @@ function OperationsHome() {
   const [cases, setCases] = useState<OpsCaseItem[] | null>(null);
   const [health, setHealth] = useState<AdminOperationalHealth | null>(null);
   const [market, setMarket] = useState<AdminMarketplaceHealth | null>(null);
+  const [beta, setBeta] = useState<Awaited<ReturnType<typeof fetchInviteBetaObservations>> | null>(
+    null,
+  );
   const [errors, setErrors] = useState<string[]>([]);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,6 +66,7 @@ function OperationsHome() {
         fetchOpsCases({ limit: 5 }),
         fetchOperationalHealth(),
         fetchMarketplaceHealth(),
+        fetchInviteBetaObservations(),
       ]);
       if (!active.current || id !== request.current) return;
       const failed: string[] = [];
@@ -72,6 +78,8 @@ function OperationsHome() {
       else failed.push("운영 상태");
       if (result[3].status === "fulfilled") setMarket(result[3].value);
       else failed.push("수급");
+      if (result[4].status === "fulfilled") setBeta(result[4].value);
+      else failed.push("초대 베타 관찰");
       setErrors(failed);
       if (failed.length < result.length) setCheckedAt(new Date());
       setNow(Date.now());
@@ -130,8 +138,9 @@ function OperationsHome() {
         </Button>
       </div>
 
+      <InviteBetaObservations data={beta} reload={load} />
       <BetaReadiness />
-      {errors.length === 4 ? (
+      {errors.length === 5 ? (
         <p className="rounded-surface border border-destructive/30 px-4 py-3 text-sm" role="alert">
           운영 현황을 확인할 수 없습니다. 마지막 성공 자료가 있다면 아래에 표시됩니다.
         </p>

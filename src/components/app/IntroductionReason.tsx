@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, NotebookPen } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -201,6 +201,13 @@ export function IntroductionReason({
                   </button>
                 )}
               </div>
+              {evidence.reaction_ref && (
+                <ReasonReaction
+                  key={me.id + evidence.reaction_ref}
+                  card={evidence.reaction_ref}
+                  initial={evidence.resonated}
+                />
+              )}
               <fieldset className="mt-5 min-w-0" disabled={saving}>
                 <legend className="text-base font-semibold">다음엔 어떤 첫 만남이 좋으세요?</legend>
                 <p className="mt-1 text-sm text-muted-foreground">다음 소개부터 우선해서 볼게요.</p>
@@ -249,5 +256,68 @@ export function IntroductionReason({
         <div>{words}</div>
       )}
     </aside>
+  );
+}
+
+function ReasonReaction({ card, initial }: { card: string; initial?: boolean | null }) {
+  const { me } = useMe();
+  const client = useQueryClient();
+  const queryKey = ["intro-reaction", me?.id, card];
+  const current = useQuery({
+    queryKey,
+    initialData: initial ?? null,
+    initialDataUpdatedAt: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("my_intro_reason_reaction", { p_ref: card });
+      if (error) throw error;
+      return data as boolean | null;
+    },
+    retry: false,
+  });
+  const value = current.data;
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const pending = useRef(false);
+  async function rate(next: boolean) {
+    if (pending.current || (value === next && !current.isError)) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("rate_intro_reason", { p_ref: card, p_resonated: next });
+      if (error) throw error;
+      await client.cancelQueries({ queryKey, exact: true });
+      client.setQueryData(queryKey, next);
+      setNotice("의견을 남겼어요.");
+      void client.invalidateQueries({ queryKey: ["member-home", me?.id], exact: true });
+    } catch {
+      setNotice("저장하지 못했어요. 다시 눌러 주세요.");
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
+  return (
+    <fieldset className="mt-4" disabled={busy}>
+      <legend className="text-sm font-medium">소개 이유가 와닿았나요?</legend>
+      <div className="mt-1 flex flex-wrap gap-2">
+        {([true, false] as const).map((option) => (
+          <Button
+            key={String(option)}
+            type="button"
+            size="sm"
+            variant="outline"
+            aria-pressed={value === option}
+            className="min-h-11 aria-pressed:border-foreground"
+            onClick={() => void rate(option)}
+          >
+            {value === option && <Check size={14} aria-hidden="true" />}
+            {option ? "와닿았어요" : "잘 모르겠어요"}
+          </Button>
+        ))}
+      </div>
+      <p role="status" className="text-xs text-muted-foreground">
+        {notice}
+      </p>
+    </fieldset>
   );
 }
