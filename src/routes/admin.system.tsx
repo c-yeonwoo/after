@@ -47,6 +47,8 @@ const ACTION_LABELS: Record<string, string> = {
   fulfill_order: "주문 발급",
   retry_notification: "알림 재시도",
   automation_rule: "자동화 설정",
+  first_intro_check: "첫 소개 재확인",
+  beta_manual: "베타 개별 안내",
   admin_security: "관리자 MFA 설정",
   automation_approval: "알림 승인",
   policy_activation: "정책 재동의 예약",

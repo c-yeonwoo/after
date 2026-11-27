@@ -4196,6 +4196,10 @@ export type Database = {
         }
       }
       home_state: { Args: never; Returns: Json }
+      admin_invite_beta_observations: { Args: never; Returns: Json }
+      admin_log_beta_help: { Args: { p_stage: string; p_request: string }; Returns: undefined }
+      my_intro_reason_reaction: { Args: { p_ref: string }; Returns: boolean | null }
+      rate_intro_reason: { Args: { p_ref: string; p_resonated: boolean }; Returns: undefined }
       admin_beta_readiness: { Args: never; Returns: Json }
       my_onboarding_draft: { Args: { p_owner: string }; Returns: Json }
       save_onboarding_draft: { Args: { p_owner: string; p_data: Json; p_revision: number }; Returns: number }

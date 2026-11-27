@@ -2,7 +2,7 @@ import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { comparePublicSignals } from "../../supabase/functions/_shared/profile-signals";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Clock, UserRound } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Clock, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { MeetingSummary } from "@/components/app/MeetingSummary";
@@ -434,6 +434,36 @@ function HomePage() {
         </div>
       ) : null}
 
+      {!hasPriorityContent &&
+      !live.isError &&
+      !live.isPaused &&
+      !holding &&
+      !waitingForRequest &&
+      primaryState === "waiting" &&
+      serverState?.first_intro_wait?.stage === "supply" ? (
+        <details className="group mt-4 rounded-surface bg-muted px-4">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium">
+            첫 인사, 어디서 시작할까요?
+            <ChevronDown
+              className="size-4 text-muted-foreground group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <div className="space-y-2 pb-4 text-sm leading-relaxed">
+            <p>
+              프로필에서 눈길이 간 장면 하나를 골라 보세요. 산책 이야기가 있었다면 이렇게 말을 꺼낼
+              수 있어요.
+            </p>
+            <p className="font-medium">
+              “저도 저녁에 걷는 걸 좋아해요. 요즘 자주 가는 산책길 있어요?”
+            </p>
+            <p className="text-muted-foreground">
+              내 얘기 한 줄에 상대가 편하게 답할 질문 하나면 충분해요.
+            </p>
+          </div>
+        </details>
+      ) : null}
+
       {(needsPhone || needsPhotos) && !loading && !loadError && blocksNewIntro ? (
         <section className="mt-8 rounded-surface bg-muted p-4" aria-labelledby="home-ready-title">
           <h2 id="home-ready-title" className="text-sm font-semibold text-foreground">
@@ -540,6 +570,8 @@ function CandidatePreview({
   const readingEvidence =
     useAi && managerReading
       ? {
+          reaction_ref: evidence?.reaction_ref,
+          resonated: evidence?.resonated,
           reason: managerReading,
           source: "reading",
           label: "소개 후 매니저가 읽은 상대의 공개 답변",

@@ -469,6 +469,8 @@ export const introPriorityLabels = {
 } as const;
 export type IntroPriority = keyof typeof introPriorityLabels;
 export type IntroEvidence = {
+  reaction_ref?: string;
+  resonated?: boolean | null;
   reason: string;
   source: string;
   priority_origin?: "feedback" | "edit";
