@@ -200,7 +200,7 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
         // 존재하지 않으므로 이 경로도 존재하지 않는다. 인증을 우회하는 것이 아니라
         // 실제로 발송된 코드를 읽어와 정상 검증을 태우기 위한 것이다.
         "/__dev/mail": {
-          target: "http://127.0.0.1:55324",
+          target: `http://127.0.0.1:${Number(process.env.AFTER_LOCAL_MAILPIT_PORT ?? 55324)}`,
           changeOrigin: true,
           rewrite: (path: string) => path.replace(/^\/__dev\/mail/, ""),
         },

@@ -70,6 +70,7 @@ jobs:
         browser: [chromium, webkit]
     env:
       AFTER_TEST_BROWSER: ${{ matrix.browser }}
+      AFTER_LOCAL_MAILPIT_PORT: "15324"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
