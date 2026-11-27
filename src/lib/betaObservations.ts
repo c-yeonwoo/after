@@ -10,6 +10,15 @@ export type BetaWait = {
   intro_n: number;
 };
 export type InviteBetaObservationsData = {
+  pool?: {
+    week_start: string;
+    week_end: string;
+    women: number;
+    men: number;
+    women_with_slot: number;
+    men_with_slot: number;
+  };
+  followup?: { reviewed: number; shown: number; reflected: number };
   waits: Record<"female" | "male", BetaWait>;
   reactions: { yes: number; total: number };
   actions: Partial<Record<string, { logged: number; manual: number }>>;

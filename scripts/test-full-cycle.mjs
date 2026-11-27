@@ -1105,6 +1105,21 @@ try {
       const before = summary();
       await ap.goto(base + "/admin");
       const board = ap.getByRole("region", { name: "초대 베타 관찰" });
+      const pool = board.getByRole("region", { name: "모집 현황" });
+      for (const [label, key] of [
+        ["여성", "women"],
+        ["남성", "men"],
+      ]) {
+        const metric = pool
+          .locator("dl > div")
+          .filter({ has: ap.getByText(label, { exact: true }) });
+        await metric.getByText(before.pool[key] + "명", { exact: true }).waitFor();
+        await metric
+          .getByText("이번 주 시간도 겹침 " + before.pool[key + "_with_slot"] + "명")
+          .waitFor();
+      }
+      const loop = pool.locator("dl > div").filter({ hasText: "후기가 반영된 두 번째 소개" });
+      await loop.getByText(before.followup.reflected + "명", { exact: true }).waitFor();
       await board
         .getByText(
           `와닿았어요 ${before.reactions.yes}건 · 잘 모르겠어요 ${before.reactions.total - before.reactions.yes}건`,

@@ -76,6 +76,56 @@ export function InviteBetaObservations({
         <p className="mt-2 text-sm text-muted-foreground">아직 집계 결과가 없습니다.</p>
       ) : (
         <div className="mt-4 grid gap-6 lg:grid-cols-2">
+          {data.pool && data.followup && (
+            <section
+              className="rounded-control bg-muted/60 p-4 lg:col-span-2"
+              aria-label="모집 현황"
+            >
+              <h3 className="font-medium">이번 주 소개 가능</h3>
+              <p className="text-xs text-muted-foreground">
+                {data.pool.week_start.slice(5).replace("-", ".")}–
+                {data.pool.week_end.slice(5).replace("-", ".")} · 한국 시간 · 현재 기준
+              </p>
+              <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3">
+                {(
+                  [
+                    ["여성", data.pool.women, data.pool.women_with_slot],
+                    ["남성", data.pool.men, data.pool.men_with_slot],
+                  ] as const
+                ).map(([label, count, scheduled]) => (
+                  <div key={label}>
+                    <dt className="text-sm">{label}</dt>
+                    <dd className="text-xl font-semibold tabular-nums">{count}명</dd>
+                    <dd className="text-xs text-muted-foreground">
+                      이번 주 시간도 겹침 {scheduled}명
+                    </dd>
+                  </div>
+                ))}
+                <div className="col-span-2 sm:col-span-1">
+                  <dt className="text-sm">후기가 반영된 두 번째 소개</dt>
+                  <dd className="text-xl font-semibold tabular-nums">
+                    {data.followup.reflected}명
+                  </dd>
+                  <dd className="text-xs text-muted-foreground">
+                    누적 · 후기 선호 선택 {data.followup.reviewed}명 · 다음 소개 확인{" "}
+                    {data.followup.shown}명
+                  </dd>
+                </div>
+              </dl>
+              <details className="mt-3 text-xs text-muted-foreground">
+                <summary className="w-fit cursor-pointer py-2">집계 기준</summary>
+                <p className="max-w-prose leading-relaxed">
+                  여성은 결정할 상대가 있는 분, 남성은 받은 호감 중 카드를 전달하거나 열 수 있는
+                  분이에요. 후보가 여럿이어도 한 명으로 세요. 시간은 두 분이 등록한 요일이 이번 주
+                  남은 추천 일정에서 겹칠 때만 표시해요.
+                </p>
+                <p className="mt-2 max-w-prose leading-relaxed">
+                  두 번째 소개는 집계 시작 후 첫 만남 후기에서 선호를 고르고, 처음 보는 다음 상대의
+                  카드에서 그 선호가 소개 이유로 전달된 회원 수예요.
+                </p>
+              </details>
+            </section>
+          )}
           <div>
             <h3 className="text-base font-medium">첫 소개까지</h3>
             <table className="mt-2 w-full text-left text-sm tabular-nums">
