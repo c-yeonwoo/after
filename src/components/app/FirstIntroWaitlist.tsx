@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import type { FirstIntroWait } from "@/lib/api";
+import type { FirstIntroReviewStep, FirstIntroWait } from "@/lib/api";
 import { useMe } from "@/lib/me";
 
 type Row = {
@@ -28,6 +28,61 @@ const date = (value: string) =>
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+const reviewLabels = {
+  profile: "공개 프로필",
+  preferences: "만남 선호",
+};
+
+function ReviewForm({
+  busy,
+  onRecord,
+}: {
+  busy: boolean;
+  onRecord: (step: FirstIntroReviewStep, hours: number) => Promise<void>;
+}) {
+  return (
+    <form
+      className="mt-2 flex flex-wrap items-end gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        void onRecord(form.get("step") as FirstIntroReviewStep, Number(form.get("hours")));
+      }}
+    >
+      <label className="grid gap-1 text-xs">
+        확인한 내용
+        <select
+          name="step"
+          required
+          defaultValue=""
+          className="min-h-11 rounded-control bg-card px-2 text-sm"
+        >
+          <option value="" disabled>
+            항목 선택
+          </option>
+          <option value="profile">공개 프로필</option>
+          <option value="preferences">만남 선호</option>
+        </select>
+      </label>
+      <label className="grid gap-1 text-xs">
+        다음 확인
+        <select
+          name="hours"
+          defaultValue="1"
+          className="min-h-11 rounded-control bg-card px-2 text-sm"
+        >
+          <option value="1">1시간 뒤</option>
+          <option value="3">3시간 뒤</option>
+          <option value="24">24시간 뒤</option>
+        </select>
+      </label>
+      <Button type="submit" size="sm" disabled={busy}>
+        회원 홈에 반영
+      </Button>
+    </form>
+  );
+}
+
 export function FirstIntroWaitlist() {
   const { me } = useMe();
   const [open, setOpen] = useState(false);
@@ -48,16 +103,26 @@ export function FirstIntroWaitlist() {
       return data as unknown as { items: Row[]; total: number };
     },
   });
-  async function schedule(row: Row, hours: number | null) {
+  async function schedule(row: Row, hours: number | null, step?: FirstIntroReviewStep) {
     setBusy(true);
     setError("");
     try {
-      const { error } = await supabase.rpc("admin_set_first_intro_check", {
+      const target = {
         p_member: row.id,
         p_stage: row.wait.stage,
         p_previous: row.wait.next_check_at,
-        p_next: hours === null ? null : new Date(Date.now() + hours * 3600000).toISOString(),
-      });
+      };
+      const { error } =
+        step && hours !== null
+          ? await supabase.rpc("admin_review_first_intro_wait", {
+              ...target,
+              p_step: step,
+              p_hours: hours,
+            })
+          : await supabase.rpc("admin_set_first_intro_check", {
+              ...target,
+              p_next: hours === null ? null : new Date(Date.now() + hours * 3600000).toISOString(),
+            });
       if (error) throw error;
     } catch {
       setError("저장하지 못했어요. 최신 대기 상태를 확인해 주세요.");
@@ -107,7 +172,20 @@ export function FirstIntroWaitlist() {
                       · {stages[row.wait.stage]}
                     </p>
                     {row.ready_at && <p>소개 준비 완료 {date(row.ready_at)}</p>}
-                    {row.wait.next_check_at && <p>재확인 {date(row.wait.next_check_at)}</p>}
+                    {row.wait.review_step && row.wait.reviewed_at && (
+                      <p>
+                        최근 확인 · {reviewLabels[row.wait.review_step]} ·{" "}
+                        {date(row.wait.reviewed_at)}
+                      </p>
+                    )}
+                    {row.wait.next_check_at && (
+                      <p>
+                        재확인{" "}
+                        <time dateTime={row.wait.next_check_at}>
+                          {date(row.wait.next_check_at)}
+                        </time>
+                      </p>
+                    )}
                     <div className="mt-1 flex flex-wrap items-center gap-x-3">
                       {row.wait.stage === "photo" ? (
                         row.photo_case_id ? (
@@ -135,14 +213,22 @@ export function FirstIntroWaitlist() {
                               소개 준비하기
                             </Link>
                           )}
-                          <button
-                            type="button"
-                            className="min-h-11"
-                            disabled={busy}
-                            onClick={() => void schedule(row, 1)}
-                          >
-                            1시간 뒤 재확인
-                          </button>
+                          {row.wait.stage === "reply" ? (
+                            <button
+                              type="button"
+                              className="min-h-11"
+                              disabled={busy}
+                              onClick={() => void schedule(row, 1)}
+                            >
+                              1시간 뒤 재확인
+                            </button>
+                          ) : (
+                            <ReviewForm
+                              key={`${row.wait.stage}:${row.wait.next_check_at}:${row.wait.reviewed_at}`}
+                              busy={busy}
+                              onRecord={(step, hours) => schedule(row, hours, step)}
+                            />
+                          )}
                           {row.wait.next_check_at && (
                             <button
                               type="button"

@@ -37,6 +37,38 @@ select throws_ok(format('select admin_set_first_intro_check(%L,%L,now()+interval
 select pg_temp.as_member(1);
 select is(home_state_v2()#>>'{first_intro_wait,stage}','supply','home does not reveal inbound likes');
 select is((home_state_v2()#>>'{first_intro_wait,next_check_at}')::timestamptz,now()+interval '1 hour','member and operator see same follow-up');
+select is(home_state_v2()#>>'{first_intro_wait,reviewed_at}',null,'legacy reminders are not a completed review');
+select throws_ok(format('select admin_review_first_intro_wait(%L,%L,%L,1,null)',pg_temp.member(1),'curation','profile'),'42501',null,'member cannot claim a review');
+select pg_temp.as_member(4);
+select throws_ok(format('select admin_review_first_intro_wait(%L,%L,%L,1,null)',pg_temp.member(1),'curation','preferences'),'PT409',null,'stale review is rejected');
+select throws_ok(format('select admin_review_first_intro_wait(%L,%L,%L,1,null)',pg_temp.member(1),'curation','private note'),'22023',null,'only approved public labels accepted');
+select admin_review_first_intro_wait(pg_temp.member(1),'curation','preferences',3,now()+interval '1 hour');
+select pg_temp.as_member(1);
+select is(home_state_v2()#>>'{first_intro_wait,review_step}','preferences','member can see the confirmed review');
+select is(home_state_v2()#>>'{first_intro_wait,stage}','supply','review does not reveal private curation');
+select is((home_state_v2()#>>'{first_intro_wait,next_check_at}')::timestamptz -
+          (home_state_v2()#>>'{first_intro_wait,reviewed_at}')::timestamptz,interval '3 hours','server schedules from review time');
+-- Switching between internal supply and curation must not reveal an incoming like or erase a promise.
+reset role;
+update affinities set verdict='pass' where to_id=pg_temp.member(1) and from_id in(pg_temp.member(2),pg_temp.member(3));
+set local role authenticated;
+select is(home_state_v2()#>>'{first_intro_wait,review_step}','preferences','internal curation to supply retains the last check');
+select pg_temp.as_member(4);
+select admin_review_first_intro_wait(pg_temp.member(1),'supply','preferences',1,
+  (select (value#>>'{wait,next_check_at}')::timestamptz from jsonb_array_elements(admin_first_intro_waits()->'items') where value->>'id'=pg_temp.member(1)::text));
+reset role;
+update affinities set verdict='like' where to_id=pg_temp.member(1) and from_id in(pg_temp.member(2),pg_temp.member(3));
+set local role authenticated;
+select pg_temp.as_member(1);
+select is(home_state_v2()#>>'{first_intro_wait,review_step}','preferences','incoming likes do not erase the member-visible review');
+select is((home_state_v2()#>>'{first_intro_wait,next_check_at}')::timestamptz -
+          (home_state_v2()#>>'{first_intro_wait,reviewed_at}')::timestamptz,interval '1 hour','incoming likes preserve the promised time');
+select pg_temp.as_member(4);
+select admin_set_first_intro_check(pg_temp.member(1),'curation',null,
+  (select (value#>>'{wait,next_check_at}')::timestamptz from jsonb_array_elements(admin_first_intro_waits()->'items') where value->>'id'=pg_temp.member(1)::text));
+select pg_temp.as_member(1);
+select is(home_state_v2()#>>'{first_intro_wait,next_check_at}',null,'clearing a reminder does not invent another time');
+select is(home_state_v2()#>>'{first_intro_wait,review_step}','preferences','clearing a reminder preserves the last review');
 select throws_ok('select admin_first_intro_waits()','42501',null,'worklist admin only');
 select throws_ok(format('select save_intro_priority(%L,%L)',pg_temp.member(2),'coffee'),'42501',null,'edits are private to owner');
 select pg_temp.as_member(4);
