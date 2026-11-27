@@ -543,14 +543,42 @@ try {
   );
   const ap = await pageFor(1440);
   await login(ap, admin);
+  const [m1, m2, f1, f2, f3] = personas;
+  async function revisitFirstWait(person, step, message, image) {
+    const page = person.page;
+    await page.goto(base + "/home");
+    await page.getByText("다음 확인 시각은 아직 정해지지 않았어요.").waitFor();
+    await page.goto(base + "/me");
+    await ap.goto(base + "/admin/tasks");
+    await ap.getByRole("button", { name: /첫 소개 대기/ }).click();
+    const row = ap
+      .getByRole("listitem")
+      .filter({ hasText: person.name })
+      .filter({ hasText: "후보 대기" });
+    await row.getByLabel("확인한 내용").selectOption(step);
+    await row.getByLabel("다음 확인").selectOption("3");
+    await row.getByRole("button", { name: "회원 홈에 반영" }).click();
+    const scheduled = row.locator("time");
+    await scheduled.waitFor();
+    await page.goto(base + "/home");
+    const update = page.getByRole("region", { name: "매니저 확인 소식" });
+    await update.getByText(message, { exact: true }).waitFor();
+    const time = update.locator(".home-check-time time");
+    assert.equal(await time.getAttribute("datetime"), await scheduled.getAttribute("datetime"));
+    assert.ok(await update.getByText(/최근 확인/).isVisible());
+    await screen(page, image);
+  }
+  await check("woman revisits after the worklist records her public profile review", async () => {
+    await ap.goto(base + "/admin/photos");
+    await approvePhotos(ap, f1);
+    await revisitFirstWait(f1, "profile", "공개 프로필을 읽어봤어요.", "female-first-intro-wait");
+  });
   await check("operator approves all five photo sets in UI", async () => {
-    await ap.goto(`${base}/admin/photos`);
-    for (const p of personas) {
-      await approvePhotos(ap, p);
-    }
+    await ap.goto(base + "/admin/photos");
+    for (const p of [m1, m2, f2, f3]) await approvePhotos(ap, p);
     assert.equal(
       sql(
-        `select count(*) from profiles where id in (${personas.map((p) => `'${p.id}'`).join(",")}) and photo_state='approved'`,
+        `select count(*) from profiles where id in (${personas.map((p) => "'" + p.id + "'").join(",")}) and photo_state='approved'`,
       ),
       "5",
     );
@@ -558,29 +586,37 @@ try {
   });
   if (
     sql(
-      `select count(*) from profiles where id in (${personas.map((p) => `'${p.id}'`).join(",")}) and photo_state='approved'`,
+      `select count(*) from profiles where id in (${personas.map((p) => "'" + p.id + "'").join(",")}) and photo_state='approved'`,
     ) !== "5"
   )
     throw Error("Photo review failed; dependent cycles cannot be trusted");
-  const [m1, m2, f1, f2, f3] = personas;
-  await check(
-    "first introduction worklist schedules the same check on the member home",
-    async () => {
-      await ap.goto(base + "/admin/tasks");
-      await ap.getByRole("button", { name: /첫 소개 대기/ }).click();
-      const row = ap
-        .getByRole("listitem")
-        .filter({ hasText: m1.name })
-        .filter({ hasText: "후보 대기" });
-      await row.getByRole("button", { name: "1시간 뒤 재확인" }).click();
-      await row.getByText(/재확인 \d/).waitFor();
-      await m1.page.goto(base + "/home");
-      await m1.page.getByText(/매니저 재확인 예정/).waitFor();
-      await m1.page.getByText("첫 인사, 어디서 시작할까요?", { exact: true }).click();
-      await m1.page.getByText(/요즘 자주 가는 산책길 있어요/).waitFor();
-      await screen(m1.page, "male-first-intro-wait");
-    },
-  );
+  await check("man revisits after the worklist records his preferences review", async () => {
+    await revisitFirstWait(
+      m1,
+      "preferences",
+      "어떤 만남을 선호하는지 살펴봤어요.",
+      "male-first-intro-wait",
+    );
+    await m1.page.getByText("첫 인사, 어디서 시작할까요?", { exact: true }).click();
+    await m1.page.getByText(/요즘 자주 가는 산책길 있어요/).waitFor();
+    // Advance only this fixture's reminder to exercise the overdue and cancellation states.
+    sql(
+      `update first_intro_checks set next_check_at=now()-interval '5 minutes' where member_id='${m1.id}'`,
+    );
+    await m1.page.reload();
+    await m1.page.getByText(/재확인 대기 중 · 예정 시각/).waitFor();
+    await ap.reload();
+    await ap.getByRole("button", { name: /첫 소개 대기/ }).click();
+    const row = ap
+      .getByRole("listitem")
+      .filter({ hasText: m1.name })
+      .filter({ hasText: "후보 대기" });
+    await row.getByRole("button", { name: "예약 해제" }).click();
+    await row.getByRole("button", { name: "예약 해제" }).waitFor({ state: "hidden" });
+    await m1.page.reload();
+    await m1.page.getByText("다음 확인 시각은 아직 정해지지 않았어요.").waitFor();
+    await m1.page.getByText("어떤 만남을 선호하는지 살펴봤어요.").waitFor();
+  });
   let mfaSecret;
   await check(
     "operator enrolls real local TOTP and explicitly enables sensitive-action MFA",
@@ -710,6 +746,7 @@ try {
     await check(`${f.key} evaluates both men with explicit like/pass`, async () => {
       await f.page.goto(`${base}/home`);
       await waitForHome(f.page);
+      assert.equal(await f.page.getByRole("region", { name: "매니저 확인 소식" }).count(), 0);
       await f.page.getByLabel("매니저에게 물어볼 내용").fill("티켓 구매하고 싶어");
       await f.page.getByRole("button", { name: "매니저에게 질문하기" }).click();
       await f.page

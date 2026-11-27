@@ -17,6 +17,7 @@ import { BRAND } from "@/lib/brand";
 import {
   markMet,
   meetPlacesForMe,
+  type FirstIntroWait,
   type Meeting,
   type PublicProfile,
   type HomeStateV2,
@@ -43,23 +44,51 @@ export const Route = createFileRoute("/home")({
   component: HomePage,
 });
 
-function WaitCheck({ at }: { at?: string | null }) {
-  if (!at) return null;
-  const when = new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(at));
+const checkDate = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function ManagerWaitUpdate({ wait, now }: { wait: FirstIntroWait; now: number | null }) {
+  const next = wait.next_check_at;
+  const overdue = next && now !== null && Date.parse(next) <= now;
+  const reviewed = wait.reviewed_at && wait.review_step;
+  const message =
+    reviewed === "profile"
+      ? "공개 프로필을 읽어봤어요."
+      : reviewed === "preferences"
+        ? "어떤 만남을 선호하는지 살펴봤어요."
+        : wait.stage === "photo"
+          ? "사진을 접수했어요. 24시간 안에 첫 검토를 목표로 해요."
+          : "프로필 준비가 끝났어요. 이제 매니저가 첫 소개를 살펴볼 차례예요.";
   return (
-    <span className="home-check-time">
-      <Clock size={15} strokeWidth={1.7} aria-hidden="true" />
-      <span>
-        {Date.parse(at) > Date.now() ? "매니저 재확인 예정" : "매니저 재확인 대기"} ·{" "}
-        <time dateTime={at}>{when}</time>
-      </span>
-    </span>
+    <div
+      className="text-sm leading-normal text-muted-foreground"
+      role="region"
+      aria-label="매니저 확인 소식"
+    >
+      <p>{message}</p>
+      {reviewed && wait.reviewed_at && (
+        <p className="mt-0.5 text-xs">
+          최근 확인 ·{" "}
+          <time dateTime={wait.reviewed_at}>{checkDate.format(new Date(wait.reviewed_at))}</time>
+        </p>
+      )}
+      {next ? (
+        <div className="home-check-time">
+          <Clock size={15} strokeWidth={1.7} aria-hidden="true" />
+          <span>
+            {overdue ? "재확인 대기 중 · 예정 시각" : "다음 확인"}{" "}
+            <time dateTime={next}>{checkDate.format(new Date(next))}</time>
+          </span>
+        </div>
+      ) : (
+        <p className="mt-1">다음 확인 시각은 아직 정해지지 않았어요.</p>
+      )}
+    </div>
   );
 }
 
@@ -79,7 +108,11 @@ function remaining(deadlineIso: string, now: number) {
   return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
 }
 
-function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): string {
+function stateHeadline(
+  state: HomeStateV2["primary_state"],
+  isMale: boolean,
+  firstWait?: FirstIntroWait | null,
+): string {
   switch (state) {
     case "account_unavailable":
       return "계정 상태를 확인해주세요.";
@@ -100,7 +133,7 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
     case "photos_required":
       return "사진을 다시 확인해주세요.";
     case "photos_pending":
-      return "사진을 확인하고 있어요.";
+      return "사진 검토 단계예요.";
     case "schedule_selection":
       return "언제 만나볼까요?";
     case "schedule_waiting":
@@ -116,7 +149,9 @@ function stateHeadline(state: HomeStateV2["primary_state"], isMale: boolean): st
     case "paused":
       return "소개를 잠시 쉬고 있어요.";
     case "waiting":
-      return "아직 새 소개가 없어요.";
+      return firstWait?.stage === "supply"
+        ? "첫 소개를 준비하고 있어요."
+        : "아직 새 소개가 없어요.";
   }
 }
 
@@ -205,7 +240,7 @@ function HomePage() {
           ? "오늘의 만남에 집중해 보세요."
           : waitingForRequest
             ? "호감을 보냈어요."
-            : stateHeadline(primaryState, isMale)
+            : stateHeadline(primaryState, isMale, serverState?.first_intro_wait)
         : "지금 상태를 확인하고 있어요.";
   const hasPriorityContent = Boolean(
     loading ||
@@ -245,24 +280,29 @@ function HomePage() {
           <div className="home-progress">
             <h2 className="break-keep text-base font-semibold leading-snug">{headline}</h2>
             {!live.isError && !live.isPaused && primaryState === "waiting" ? (
-              <div className="mt-0.5 text-sm leading-normal text-muted-foreground">
-                <p>
-                  {holding
-                    ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
-                    : waitingForRequest
-                      ? "만남 요청이 오면 알려드릴게요."
-                      : serverState?.first_intro_wait
-                        ? "다음은 매니저 차례예요. 첫 소개가 도착하면 여기서 알려드릴게요."
+              !holding &&
+              !waitingForRequest &&
+              !hasPriorityContent &&
+              serverState?.first_intro_wait ? (
+                <ManagerWaitUpdate wait={serverState.first_intro_wait} now={now} />
+              ) : (
+                <div className="mt-0.5 text-sm leading-normal text-muted-foreground">
+                  <p>
+                    {holding
+                      ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
+                      : waitingForRequest
+                        ? "만남 요청이 오면 알려드릴게요."
                         : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
-                </p>
-                {waitingForRequest ? null : serverState?.first_intro_wait ? (
-                  <WaitCheck at={serverState.first_intro_wait.next_check_at} />
-                ) : capabilities.data?.chat ? (
-                  <p>궁금한 점은 편하게 물어봐 주세요.</p>
-                ) : (
-                  <p>기다리는 동안 내 프로필과 만남 가능 시간을 확인해 주세요.</p>
-                )}
-              </div>
+                  </p>
+                  {!waitingForRequest && !holding && (
+                    <p>
+                      {capabilities.data?.chat
+                        ? "궁금한 점은 편하게 물어봐 주세요."
+                        : "기다리는 동안 내 프로필과 만남 가능 시간을 확인해 주세요."}
+                    </p>
+                  )}
+                </div>
+              )
             ) : null}
           </div>
         ) : null}
@@ -361,13 +401,16 @@ function HomePage() {
             </>
           ) : blocksNewIntro ? (
             primaryState === "photos_pending" ? (
-              <GuideNote>
-                사진을 먼저 확인한 뒤 소개를 준비해요. 24시간 안에 1차 검토를 목표로 하고 있어요.
-                <WaitCheck at={serverState?.first_intro_wait?.next_check_at} />
+              <div className="text-sm leading-relaxed">
+                {serverState?.first_intro_wait && !live.isError && !live.isPaused ? (
+                  <ManagerWaitUpdate wait={serverState.first_intro_wait} now={now} />
+                ) : (
+                  "사진을 먼저 확인한 뒤 소개를 준비해요. 24시간 안에 1차 검토를 목표로 하고 있어요."
+                )}
                 <Link to="/support" className="mt-2 block font-semibold text-foreground">
                   검토 문의하기
                 </Link>
-              </GuideNote>
+              </div>
             ) : primaryState === "profile_incomplete" ? (
               <GuideNote action={<CardAction to="/profile-edit">프로필 확인하기</CardAction>}>
                 아직 확인할 정보가 있어요.

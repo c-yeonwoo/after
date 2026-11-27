@@ -479,7 +479,10 @@ export type IntroEvidence = {
   label: string;
   quote: string | null;
 };
+export type FirstIntroReviewStep = "profile" | "preferences";
 export type FirstIntroWait = {
+  review_step?: FirstIntroReviewStep | null;
+  reviewed_at?: string | null;
   stage: "photo" | "reply" | "supply" | "curation";
   next_check_at: string | null;
 };
