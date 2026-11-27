@@ -306,6 +306,11 @@ try {
     },
   );
   await waitForServer();
+  if (process.env.AFTER_LOCAL_MAILPIT_PORT) {
+    const inbox = await fetch(`${baseUrl}/__dev/mail/api/v1/messages?limit=1`);
+    assert.ok(inbox.ok, "CI dev mail proxy must reach the local test inbox");
+    assert.ok(Array.isArray((await inbox.json()).messages), "expected a Mailpit response");
+  }
   browser = await (process.env.AFTER_TEST_BROWSER === "webkit" ? webkit : chromium).launch({
     headless: true,
   });

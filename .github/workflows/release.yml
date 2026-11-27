@@ -52,7 +52,7 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=moderate
       # Core runs DB and concurrency checks. Only browser jobs need a test inbox.
-      - run: supabase start --exclude mailpit
+      - run: bash .github/scripts/start-ci-supabase.sh --exclude mailpit
       - run: npm run release:check
 
   # Each matrix entry owns a separate runner AND local Supabase. The browser
@@ -70,6 +70,7 @@ jobs:
         browser: [chromium, webkit]
     env:
       AFTER_TEST_BROWSER: ${{ matrix.browser }}
+      AFTER_LOCAL_MAILPIT_PORT: "15324"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -80,7 +81,7 @@ jobs:
         with:
           version: 2.117.0
       - run: npm ci
-      - run: supabase start
+      - run: bash .github/scripts/start-ci-supabase.sh
       # The Azure mirror downloaded OS packages for 26 minutes in run 39805018907.
       # Change only the hosted runner's mirror URL; Ubuntu signature checks stay intact.
       - name: Prefer the Ubuntu archive for browser dependencies
