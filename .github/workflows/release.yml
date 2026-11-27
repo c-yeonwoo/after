@@ -52,7 +52,7 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=moderate
       # Core runs DB and concurrency checks. Only browser jobs need a test inbox.
-      - run: supabase start --exclude inbucket
+      - run: supabase start --exclude mailpit
       - run: npm run release:check
 
   # Each matrix entry owns a separate runner AND local Supabase. The browser
