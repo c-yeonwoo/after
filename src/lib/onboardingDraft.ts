@@ -83,7 +83,9 @@ export function useOnboardingDraft(
       }
       const row = data as { data: unknown; revision: number } | null;
       revision.current = row?.revision ?? 0;
-      let draft = parseOnboardingDraft(row?.data, owner);
+      const serverDraft = parseOnboardingDraft(row?.data, owner);
+      const serverSnapshot = serverDraft ? JSON.stringify(serverDraft) : "";
+      let draft = serverDraft;
       let conflict = false;
       try {
         const local = JSON.parse(localStorage.getItem(PREFIX + owner) ?? "null");
@@ -92,8 +94,7 @@ export function useOnboardingDraft(
           const pending = parseOnboardingDraft(local.data, owner);
           if (pending) {
             conflict =
-              local.revision !== revision.current &&
-              JSON.stringify(pending) !== JSON.stringify(row?.data);
+              local.revision !== revision.current && JSON.stringify(pending) !== serverSnapshot;
             draft = pending;
             if (Object.hasOwn(local.data.basics, "religion")) {
               localStorage.setItem(PREFIX + owner, JSON.stringify({ ...local, data: pending }));
@@ -107,12 +108,12 @@ export function useOnboardingDraft(
         current.current = draft;
         restore.current(draft);
       }
-      last.current = row ? JSON.stringify(row.data) : "";
+      last.current = serverSnapshot;
       setStatus(conflict ? "conflict" : "saved");
       setReady(true);
     })();
     return () => {
-      if (generation.current === gen) generation.current = gen + 1;
+      generation.current += 1;
     };
   }, [owner, active, retry]);
   const serialized = JSON.stringify(snapshot);
@@ -206,8 +207,11 @@ export function useOnboardingDraft(
         }
         const row = data as { data: unknown; revision: number } | null;
         revision.current = row?.revision ?? 0;
-        last.current = row ? JSON.stringify(row.data) : "";
-        setStatus("saved");
+        const serverDraft = parseOnboardingDraft(row?.data, owner);
+        last.current = serverDraft ? JSON.stringify(serverDraft) : "";
+        // Refreshing a conflicting revision only prepares the write. Acknowledge
+        // the local draft here only if the server already holds the same data.
+        setStatus(JSON.stringify(current.current) === last.current ? "saved" : "saving");
         setSaveTick((n) => n + 1);
       } catch {
         if (gen === generation.current) setStatus("error");
