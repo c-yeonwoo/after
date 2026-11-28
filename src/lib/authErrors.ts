@@ -37,6 +37,15 @@ export function authErrorMessage(error: unknown): string {
     }
   }
   const m = message.toLowerCase();
+  if (m === "invite unavailable")
+    return "이미 사용됐거나 유효하지 않은 초대장이에요. 초대한 분에게 링크를 확인해 주세요.";
+  if (m === "invite audience mismatch")
+    return "이 계정의 모집 구분과 초대장이 달라요. 초대한 분에게 맞는 링크를 요청해 주세요.";
+  if (m === "already joined this wave")
+    return "이 계정은 이미 다른 초대장으로 첫 베타에 참여 중이에요.";
+  if (m === "different invite session")
+    return "다른 초대장으로 시작한 가입이 있어요. 처음 받은 링크에서 이어가 주세요.";
+
   if (
     code === "user_already_exists" ||
     code === "email_exists" ||

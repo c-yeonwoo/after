@@ -4196,6 +4196,10 @@ export type Database = {
         }
       }
       home_state: { Args: never; Returns: Json }
+      open_wave_invite: { Args: { p_code: string }; Returns: string }
+      start_wave_signup: { Args: { p_code: string; p_token?: string }; Returns: undefined }
+      begin_wave_signup: { Args: { p_code: string; p_token: string; p_policy_version: string; p_manager_policy_version?: string | null }; Returns: Json }
+      join_wave_invite: { Args: { p_code: string }; Returns: undefined }
       admin_invite_beta_observations: { Args: never; Returns: Json }
       admin_log_beta_help: { Args: { p_stage: string; p_request: string }; Returns: undefined }
       my_intro_reason_reaction: { Args: { p_ref: string }; Returns: boolean | null }

@@ -23,6 +23,7 @@ import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -127,6 +128,11 @@ const HomeRoute = HomeRouteImport.update({
 const IntroRoute = IntroRouteImport.update({
   id: '/intro',
   path: '/intro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/notifications': typeof NotificationsRoute
@@ -370,6 +377,7 @@ export interface FileRoutesByTo {
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/notifications': typeof NotificationsRoute
@@ -422,6 +430,7 @@ export interface FileRoutesById {
   '/feedback': typeof FeedbackRoute
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/notifications': typeof NotificationsRoute
@@ -475,6 +484,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/home'
     | '/intro'
+    | '/invite'
     | '/login'
     | '/me'
     | '/notifications'
@@ -525,6 +535,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/home'
     | '/intro'
+    | '/invite'
     | '/login'
     | '/me'
     | '/notifications'
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/home'
     | '/intro'
+    | '/invite'
     | '/login'
     | '/me'
     | '/notifications'
@@ -628,6 +640,7 @@ export interface RootRouteChildren {
   FeedbackRoute: typeof FeedbackRoute
   HomeRoute: typeof HomeRoute
   IntroRoute: typeof IntroRoute
+  InviteRoute: typeof InviteRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -749,6 +762,13 @@ declare module '@tanstack/react-router' {
       path: '/intro'
       fullPath: '/intro'
       preLoaderRoute: typeof IntroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1060,6 +1080,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackRoute: FeedbackRoute,
   HomeRoute: HomeRoute,
   IntroRoute: IntroRoute,
+  InviteRoute: InviteRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
   NotificationsRoute: NotificationsRoute,

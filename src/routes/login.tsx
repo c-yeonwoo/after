@@ -44,7 +44,7 @@ const APP_BUILD = import.meta.env.VITE_APP_BUILD === "true";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): { next?: string } => ({
-    next: notificationReturnPath(search.next),
+    next: search.next === "/invite" ? "/invite" : notificationReturnPath(search.next),
   }),
   head: () => ({
     meta: [
@@ -116,7 +116,11 @@ function LoginPage() {
         */
         await supabase.auth.signOut();
         toast("아직 연결된 계정이 없어요. 이메일로 가입한 뒤 설정에서 카카오를 연결해 주세요.");
-        await goTo("/signup");
+        await goTo(destination === "/invite" ? "/invite" : "/signup");
+        return;
+      }
+      if (destination === "/invite") {
+        await goTo(destination);
         return;
       }
       if (result.kind === "incomplete") {
@@ -141,11 +145,13 @@ function LoginPage() {
       !new URLSearchParams(window.location.search).has("code")
     ) {
       void goTo(
-        me.onboarding_step >= 7
-          ? (next ?? "/home")
-          : accountChecksComplete(me, carrierIdentityEnabled)
-            ? "/home"
-            : "/signup",
+        next === "/invite"
+          ? next
+          : me.onboarding_step >= 7
+            ? (next ?? "/home")
+            : accountChecksComplete(me, carrierIdentityEnabled)
+              ? "/home"
+              : "/signup",
       ).catch(() => setError("화면을 열지 못했어요. 다시 로그인해 주세요."));
     }
   }, [ready, me, goTo, oauthBusy, busy, next]);
@@ -220,11 +226,13 @@ function LoginPage() {
         <h1 className="headline text-3xl">다시 오셨네요</h1>
         {!codeSent ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {next
-              ? "로그인하면 알림에서 열었던 화면으로 돌아가요."
-              : onCode
-                ? "가입할 때 인증한 이메일로 코드를 보내드립니다."
-                : "가입할 때 정하신 비밀번호로 들어오세요."}
+            {next === "/invite"
+              ? "로그인 후 이 계정으로 초대에 참여할 수 있어요."
+              : next
+                ? "로그인하면 알림에서 열었던 화면으로 돌아가요."
+                : onCode
+                  ? "가입할 때 인증한 이메일로 코드를 보내드립니다."
+                  : "가입할 때 정하신 비밀번호로 들어오세요."}
           </p>
         ) : null}
 

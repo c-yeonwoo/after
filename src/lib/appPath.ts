@@ -43,7 +43,10 @@ export function takeNotificationReturn(flow: string) {
     const raw = sessionStorage.getItem(key);
     sessionStorage.removeItem(key);
     const entry = raw && JSON.parse(raw);
-    if (entry?.until > Date.now()) return notificationReturnPath(entry.path);
+    if (entry?.until > Date.now())
+      return flow === "oauth" && entry.path === "/invite"
+        ? "/invite"
+        : notificationReturnPath(entry.path);
   } catch {
     /* An absent or stale destination falls back to home. */
   }

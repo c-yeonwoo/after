@@ -9,7 +9,14 @@ export type BetaWait = {
   intro_seconds: number | null;
   intro_n: number;
 };
+export type WaveSeat = {
+  gender: "female" | "male";
+  seat: number;
+  code: string | null;
+  stage: string;
+};
 export type InviteBetaObservationsData = {
+  wave_one?: WaveSeat[];
   pool?: {
     week_start: string;
     week_end: string;
