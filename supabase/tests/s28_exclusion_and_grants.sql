@@ -54,8 +54,11 @@ select is_empty(
         and has_function_privilege('anon', p.oid, 'EXECUTE')
         and p.oid not in ('public.begin_signup(text,text)'::regprocedure,
                           'public.begin_signup_with_manager(text,text,text)'::regprocedure,
-                          'public.signup_session_status(text)'::regprocedure) $$,
-  'T1 사전 가입 세션 외에는 anon이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
+                          'public.signup_session_status(text)'::regprocedure,
+                          'public.open_wave_invite(uuid)'::regprocedure,
+                          'public.start_wave_signup(uuid,text)'::regprocedure,
+                          'public.begin_wave_signup(uuid,text,text,text)'::regprocedure) $$,
+  'T1 사전 가입 세션과 초대 링크 외에는 anon이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
 );
 
 select ok(
