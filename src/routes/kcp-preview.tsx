@@ -40,6 +40,19 @@ let tab: ReturnType<typeof createDeviceClient> | undefined;
 const device = () => (tab ??= createDeviceClient());
 type Step = "loading" | "email" | "code" | "consent" | "done";
 
+async function emailRequestMessage(error: unknown) {
+  const response = (error as { context?: Response } | null)?.context;
+  if (!(response instanceof Response))
+    return "요청 결과를 확인하지 못했어요. 받은 메일을 먼저 확인해 주세요.";
+  if (response.status === 429)
+    return "메일 요청 횟수를 초과했어요. 이미 받은 코드가 있다면 그대로 입력해 주세요.";
+  if (response.status === 403) return "현재 비공개 테스트가 닫혀 있어요.";
+  const payload = await response.json().catch(() => null);
+  if (payload?.error === "email unavailable")
+    return "인증 메일을 보내지 못했어요. 계속되면 운영자에게 알려주세요.";
+  return "이메일 인증 서비스에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.";
+}
+
 function DevicePreview() {
   const [step, setStep] = useState<Step>("loading");
   const [email, setEmail] = useState("");
@@ -114,7 +127,10 @@ function DevicePreview() {
         const sent = await client.functions.invoke("signup-identity", {
           body: { action: "preview-email", email: email.trim() },
         });
-        if (sent.error || !sent.data?.requested) throw new Error("email unavailable");
+        if (sent.error || !sent.data?.requested) {
+          setError(await emailRequestMessage(sent.error));
+          return;
+        }
         setCode("");
         setStep("code");
       } else if (step === "code") {
@@ -144,11 +160,9 @@ function DevicePreview() {
       const message = e instanceof Error ? e.message : "";
       if (message === "verification redirecting") return;
       setError(
-        message === "email unavailable"
-          ? "코드를 요청할 수 없어요. 잠시 후 다시 시도해 주세요."
-          : message === "email code"
-            ? "코드가 만료됐거나 일치하지 않아요. 이메일을 다시 확인해 주세요."
-            : carrierIdentityError(e),
+        message === "email code"
+          ? "코드가 만료됐거나 일치하지 않아요. 이메일을 다시 확인해 주세요."
+          : carrierIdentityError(e),
       );
     } finally {
       setBusy(false);
@@ -205,16 +219,31 @@ function DevicePreview() {
         }}
       >
         {step === "email" && (
-          <label className="grid gap-2">
-            이메일
-            <Input
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
+          <>
+            <label className="grid gap-2">
+              이메일
+              <Input
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy || !email.trim()}
+              onClick={(event) => {
+                if (!event.currentTarget.form?.reportValidity()) return;
+                setError("");
+                setCode("");
+                setStep("code");
+              }}
+            >
+              이미 받은 코드 입력
+            </Button>
+          </>
         )}
         {step === "code" && (
           <>

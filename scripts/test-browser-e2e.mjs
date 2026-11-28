@@ -318,6 +318,25 @@ try {
   const publicPage = await (
     await browser.newContext({ ...koreanBrowser, viewport: { width: 390, height: 844 } })
   ).newPage();
+  const emailPreviewRoute = "**/functions/v1/signup-identity";
+  let previewEmailRequests = 0;
+  await publicPage.route(emailPreviewRoute, (route) => {
+    assert.equal(route.request().postDataJSON().action, "preview-email");
+    previewEmailRequests++;
+    return route.fulfill({
+      status: 429,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      json: { error: "email unavailable" },
+    });
+  });
+  await publicPage.goto(baseUrl + "/kcp-preview");
+  await publicPage.getByLabel("이메일", { exact: true }).fill("preview@example.test");
+  await publicPage.getByRole("button", { name: "인증 코드 받기" }).click();
+  await publicPage.getByRole("alert").filter({ hasText: "메일 요청 횟수" }).waitFor();
+  await publicPage.getByRole("button", { name: "이미 받은 코드 입력" }).click();
+  await publicPage.getByLabel("인증 코드", { exact: true }).waitFor();
+  assert.equal(previewEmailRequests, 1, "entering an existing code must not request another");
+  await publicPage.unroute(emailPreviewRoute);
   await publicPage.goto(baseUrl);
   await publicPage.getByRole("link", { name: "로그인" }).waitFor();
   const landingPhoto = publicPage.locator(
