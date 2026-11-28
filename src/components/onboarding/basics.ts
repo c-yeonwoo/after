@@ -20,14 +20,6 @@ export const DRINKING_OPTIONS = [
   { id: "often", label: "자주" },
 ] as const;
 
-export const RELIGION_OPTIONS = [
-  { id: "none", label: "무교" },
-  { id: "christian", label: "기독교" },
-  { id: "catholic", label: "천주교" },
-  { id: "buddhist", label: "불교" },
-  { id: "other", label: "기타" },
-] as const;
-
 /** 사진 장수. 서버 CHECK(s53)는 최대 6장, 자격은 승인된 3장 이상이다. */
 export const MIN_PHOTOS = 3;
 export const MAX_PHOTOS = 6;
@@ -41,7 +33,6 @@ export type Basics = {
   mbti: string;
   smoking: string;
   drinking: string;
-  religion: string;
 };
 
 export const emptyBasics: Basics = {
@@ -52,7 +43,6 @@ export const emptyBasics: Basics = {
   mbti: "",
   smoking: "",
   drinking: "",
-  religion: "",
 };
 
 /** 서버와 같은 한국 날짜 기준. 날짜 문자열의 자동 보정(예: 2월 30일)은 허용하지 않는다. */
@@ -93,7 +83,7 @@ export function basicsValid(b: Basics) {
 /**
  * 흡연·음주는 인터뷰 뒤 "만나기 전에 알아 두면 좋은 것" 화면에서 받는다(리부팅 C).
  * 조건을 먼저 물으면 가입이 스펙 비교로 시작한다. 그래도 흡연은 실제로 많은 사람이
- * 거르는 조건이라 필수로 둔다. MBTI·종교는 선택.
+ * 거르는 조건이라 필수로 둔다. MBTI는 선택.
  */
 export function conditionsValid(b: Basics) {
   return Boolean(b.smoking) && Boolean(b.drinking);

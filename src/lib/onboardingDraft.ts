@@ -47,7 +47,7 @@ export function parseOnboardingDraft(value: unknown, owner: string): OnboardingD
     typeof v.hubId !== "string"
   )
     return null;
-  return { ...v, basics };
+  return { basics, step: v.step, meetingAreas: v.meetingAreas, hubId: v.hubId };
 }
 /** Private unpublished drafts. Local pending writes survive reload; server owns revision. */
 export function useOnboardingDraft(
@@ -95,6 +95,9 @@ export function useOnboardingDraft(
               local.revision !== revision.current &&
               JSON.stringify(pending) !== JSON.stringify(row?.data);
             draft = pending;
+            if (Object.hasOwn(local.data.basics, "religion")) {
+              localStorage.setItem(PREFIX + owner, JSON.stringify({ ...local, data: pending }));
+            }
           }
         }
       } catch {

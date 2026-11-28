@@ -191,7 +191,6 @@ export async function checkAdminScreens({ page, baseUrl, checkPage, screenshotDi
     mbti: "ENFP",
     smoking: null,
     drinking: null,
-    religion: null,
     headline: "서로의 하루가 궁금한 사람이에요.",
     intro: "동네를 걸으며 하루를 정리하고 편안한 대화를 나누는 시간을 좋아해요.",
     interests: ["산책"],

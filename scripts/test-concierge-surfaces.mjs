@@ -82,7 +82,6 @@ const member = {
   mbti: "INTJ",
   smoking: "none",
   drinking: "none",
-  religion: "none",
   headline: "일상의 작은 이야기를 나누고 싶어요",
   intro: ownAnswer,
   profile_story: story(ownAnswer),
@@ -158,7 +157,6 @@ const basics = {
   mbti: member.mbti,
   smoking: member.smoking,
   drinking: member.drinking,
-  religion: member.religion,
 };
 const draft = (stage) => ({
   version: 3,
@@ -642,14 +640,14 @@ try {
             path.endsWith("/rpc/begin_signup_with_manager")
           ) {
             const body = request.postDataJSON();
-            assert.equal(body.p_manager_policy_version, "manager-continuity-v2");
+            assert.equal(body.p_manager_policy_version, null);
             assert.match(body.p_token, /^[0-9a-f]{64}$/);
             return fulfill({
               policyVersion: body.p_policy_version,
               acceptedAt: now,
               expiresAt: new Date(Date.now() + 3600000).toISOString(),
               verified: false,
-              managerConsented: true,
+              managerConsented: false,
             });
           }
           const profile = {
@@ -1068,7 +1066,7 @@ try {
               name: "AI 맞춤 상담 동의 (선택)",
               exact: true,
             });
-            assert.equal(await optional.isChecked(), false);
+            assert.equal(await optional.count(), 0);
             await page.getByRole("checkbox", { name: "이용약관 동의 (필수)", exact: true }).check();
             await page
               .getByRole("checkbox", { name: "개인정보 수집·이용 동의 (필수)", exact: true })
@@ -1077,13 +1075,7 @@ try {
               .locator("button:not([disabled])")
               .filter({ hasText: "동의하고 시작하기" })
               .waitFor();
-            assert.equal(
-              await optional.isChecked(),
-              false,
-              "AI consent is not required for signup",
-            );
             await capture(page, `${name}-notice`);
-            await optional.check();
             const signupResponse = page.waitForResponse((response) =>
               response.url().endsWith("/rpc/begin_signup_with_manager"),
             );

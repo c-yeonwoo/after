@@ -142,7 +142,7 @@ try render("post-06-know-the-person.png") {
     circle(822, 234, 142, color: apricot.withAlphaComponent(0.18))
     text("어디 다니는지 다음으로,\n어떤 사람인지.", x: 76, top: 280, width: 920, size: 78, color: ink, bold: true, lineHeight: 13)
     text("사진과 짧은 답변이\n첫 대화의 실마리가 돼요.", x: 80, top: 528, width: 900, size: 34, color: ink, bold: true, lineHeight: 8)
-    footer("회사 이메일은 상대에게 공개되지 않아요.", color: white)
+    footer("가입 이메일은 상대에게 공개되지 않아요.", color: white)
 }
 
 try render("post-07-one-at-a-time.png") {

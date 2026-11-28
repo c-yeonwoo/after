@@ -557,7 +557,6 @@ export async function completeOnboarding(
       mbti: basics.mbti,
       smoking: basics.smoking,
       drinking: basics.drinking,
-      religion: basics.religion,
       headline: profile.headline,
       intro,
       evening_note: profile.eveningNote.trim() || null,
@@ -614,7 +613,6 @@ export async function publishProfileInterview(revision: number, conditions: Basi
       mbti: conditions.mbti,
       smoking: conditions.smoking,
       drinking: conditions.drinking,
-      religion: conditions.religion,
     },
   });
   if (error) throw error;
@@ -636,7 +634,6 @@ export async function publishProfileInterviewV3(
       mbti: conditions.mbti,
       smoking: conditions.smoking,
       drinking: conditions.drinking,
-      religion: conditions.religion,
     },
   });
   if (accessToken) request.setHeader("Authorization", `Bearer ${accessToken}`);

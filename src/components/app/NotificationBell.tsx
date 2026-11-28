@@ -35,7 +35,7 @@ export function NotificationBell({ from = "home" }: { from?: "home" | "me" }) {
       to="/notifications"
       search={{ from }}
       aria-label={count > 0 ? `읽지 않은 알림 ${count > 9 ? "9+" : count}` : "알림"}
-      className="pressable relative -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="pressable relative inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <Bell className="size-5" aria-hidden="true" />
       {count > 0 ? (

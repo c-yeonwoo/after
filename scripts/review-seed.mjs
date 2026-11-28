@@ -217,7 +217,6 @@ const profiles = people.map((person) => ({
   mbti: person.mbti,
   smoking: "none",
   drinking: "social",
-  religion: "none",
   headline: person.headline,
   intro: person.intro,
   interests: person.interests,

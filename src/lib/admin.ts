@@ -93,7 +93,6 @@ export type AdminMemberDetail = {
     | "mbti"
     | "smoking"
     | "drinking"
-    | "religion"
     | "headline"
     | "interests"
     | "match_tags"

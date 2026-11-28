@@ -22,7 +22,6 @@ export function editableBasics(member: Profile): Basics {
     mbti: member.mbti ?? "",
     smoking: member.smoking ?? "",
     drinking: member.drinking ?? "",
-    religion: member.religion ?? "",
   };
 }
 

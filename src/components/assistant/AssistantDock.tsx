@@ -1,4 +1,5 @@
-import { useState, type ComponentProps } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
+import { HomeComposer } from "./HomeComposer";
 import { AssistantConversation } from "./AssistantConversation";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUp } from "lucide-react";
@@ -70,6 +71,10 @@ function LegacyAssistantDock({
   const [intent, setIntent] = useState<AssistantIntent | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [safety, setSafety] = useState<string | null>(null);
+  const replyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (intent || safety) replyRef.current?.scrollIntoView({ block: "nearest" });
+  }, [intent, safety, lastQuestion]);
   const inputIntent = assistantIntent(input.trim());
   const awaitingCapabilities =
     flags.isPending && ["unknown", "edit", "edit_story", "coach_profile"].includes(inputIntent);
@@ -131,84 +136,88 @@ function LegacyAssistantDock({
           ))}
       </div>
       {safety || reply ? (
-        <ManagerMessage text={safety ?? reply?.text ?? ""} className="mt-4" role="status">
-          {!safety && reply ? (
-            <AssistantActions
-              actions={reply.actions}
-              counterpartId={counterpartId}
-              draft={me && lastQuestion ? { owner: me.id, text: lastQuestion } : undefined}
-            />
-          ) : null}
-        </ManagerMessage>
+        <div ref={replyRef}>
+          <ManagerMessage text={safety ?? reply?.text ?? ""} className="mt-4" role="status">
+            {!safety && reply ? (
+              <AssistantActions
+                actions={reply.actions}
+                counterpartId={counterpartId}
+                draft={me && lastQuestion ? { owner: me.id, text: lastQuestion } : undefined}
+              />
+            ) : null}
+          </ManagerMessage>
+        </div>
       ) : null}
-      <form
-        className="assistant-composer mt-4 flex items-center gap-2"
-        aria-busy={awaitingCapabilities}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const text = input.trim();
-          if (text) {
-            // Harm/privacy checks precede navigation. Transaction requests still
-            // lead to explicit structured confirmation, never an automatic write.
-            const refusal = privateAssistantSafety(text, { execution: false });
-            if (refusal) {
-              setSafety(refusal);
-              setIntent(null);
+      <HomeComposer>
+        <form
+          className="assistant-composer flex items-center gap-2"
+          aria-busy={awaitingCapabilities}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const text = input.trim();
+            if (text) {
+              // Harm/privacy checks precede navigation. Transaction requests still
+              // lead to explicit structured confirmation, never an automatic write.
+              const refusal = privateAssistantSafety(text, { execution: false });
+              if (refusal) {
+                setSafety(refusal);
+                setIntent(null);
+                setInput("");
+                return;
+              }
+              const next = assistantIntent(text);
+              if (
+                ["unknown", "coach_profile", "edit", "edit_story"].includes(next) &&
+                flags.isPending
+              )
+                return;
+              if (
+                next === "edit_story" &&
+                me?.onboarding_step &&
+                me.onboarding_step >= 7 &&
+                flags.data?.profileEdit &&
+                !flags.isError &&
+                !flags.isPaused
+              ) {
+                setAssistantDraft(me.id, text);
+                void navigate({ to: "/assistant-profile" });
+              } else if (
+                (next === "unknown" || next === "coach_profile") &&
+                me &&
+                flags.data?.chat &&
+                !flags.isError &&
+                !flags.isPaused
+              ) {
+                setAssistantDraft(me.id, text);
+                void navigate({ to: "/assistant", search: { panel: "chat" } });
+              } else {
+                setSafety(null);
+                setLastQuestion(text);
+                setIntent(next);
+              }
               setInput("");
-              return;
             }
-            const next = assistantIntent(text);
-            if (
-              ["unknown", "coach_profile", "edit", "edit_story"].includes(next) &&
-              flags.isPending
-            )
-              return;
-            if (
-              next === "edit_story" &&
-              me?.onboarding_step &&
-              me.onboarding_step >= 7 &&
-              flags.data?.profileEdit &&
-              !flags.isError &&
-              !flags.isPaused
-            ) {
-              setAssistantDraft(me.id, text);
-              void navigate({ to: "/assistant-profile" });
-            } else if (
-              (next === "unknown" || next === "coach_profile") &&
-              me &&
-              flags.data?.chat &&
-              !flags.isError &&
-              !flags.isPaused
-            ) {
-              setAssistantDraft(me.id, text);
-              void navigate({ to: "/assistant", search: { panel: "chat" } });
-            } else {
-              setSafety(null);
-              setLastQuestion(text);
-              setIntent(next);
-            }
-            setInput("");
-          }
-        }}
-      >
-        <input
-          aria-label="매니저에게 물어볼 내용"
-          placeholder="애프터 이용 방법을 물어보세요"
-          value={input}
-          maxLength={300}
-          enterKeyHint="send"
-          onChange={(event) => setInput(event.target.value)}
-          className="min-w-0 flex-1 rounded-control bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || awaitingCapabilities}
-          aria-label="매니저에게 질문하기"
-          className="app-primary-button pressable flex size-11 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:bg-muted disabled:text-muted-foreground"
+          }}
         >
-          <ArrowUp className="size-5" />
-        </button>
-      </form>
+          <input
+            aria-label="매니저에게 물어볼 내용"
+            placeholder="애프터 이용 방법을 물어보세요"
+            value={input}
+            maxLength={300}
+            enterKeyHint="send"
+            onChange={(event) => setInput(event.target.value)}
+            className="min-w-0 flex-1 rounded-control bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || awaitingCapabilities}
+            aria-label="매니저에게 질문하기"
+            className="app-primary-button pressable flex size-11 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:bg-muted disabled:text-muted-foreground"
+          >
+            <ArrowUp className="size-5" />
+          </button>
+        </form>
+      </HomeComposer>
     </section>
   );
 }
