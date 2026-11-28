@@ -9,6 +9,17 @@
 
 개발용 KCP 테스트는 loopback Supabase에서만 `KCP_TEST_MODE=true`, `KCP_TEST_RETURN_ORIGIN`(KCP가 접근 가능한 HTTPS 로컬 터널), `KCP_TEST_APP_ORIGIN`(처음 진입한 웹 origin)을 설정한다. 로그인·세션 복원에는 같은 브라우저 탭과 origin이 필요하다.
 
-KCP 배포 PDF는 제공 라이브러리의 `encryptJson`과 `decryptJson`을 안내한다. 현재 Edge는 같은 암호문 형식을 Web Crypto로 처리한다. 테스트 서버에서 거래등록을 확인했고, 결과 복호화는 합성 응답으로 검사했다. LIVE 개통 전에 KCP 제공 샘플 또는 담당자에게 이 런타임의 호환 구현 사용을 확인하고 실제 결과 복호화까지 검증한다.
+## 공식 Node.js 샘플과의 대조
+
+2026-11-28에 운영 버전 `3a421ceda208`의 Edge 구현과 NHN KCP가 제공한 Node.js V2 샘플 `utils/Crypto.js`(SHA-256 앞 12자리 `cb13ecba5893`)를 대조했다. 로컬에서 임의로 만든 키와 합성 데이터만 사용했다.
+
+| 검증 | 결과 |
+| --- | --- |
+| 가입·기존 회원 거래등록 | 애프터의 실제 요청 본문을 공식 `decryptJson`으로 복호화해 사이트코드, 주문번호, 복귀 주소와 부가값을 대조했다. |
+| 인증 결과 조회 | 공식 `encryptJson`으로 만든 남녀 응답을 애프터의 결과조회 함수가 읽었다. 성별·생년월일·전화번호·DI가 기대값과 일치했고, 다른 키로 만든 복호화 시도는 거절됐다. |
+| 암호문 형식 | 한글·이모지를 포함한 48가지 길이의 JSON에 같은 키와 난수를 사용했을 때 암호문 바이트가 모두 일치했다. |
+| 모바일 브라우저 | Chromium과 WebKit에서 합성 인증창으로 폼을 POST한 뒤 가입·기존 회원 모두 시작한 탭으로 복귀했다. |
+
+운영 서버는 Web Crypto를 사용한다. 위 결과는 제공 모듈과의 기술적 호환성을 확인한 기록이다. KCP 테스트 서버에서 거래등록과 통신사 선택 화면을 확인했고, **운영 계약으로 실휴대폰 인증을 끝내고 서버가 결과를 조회해 가입을 재개하는 단계는 미검증**이다. 일반 가입을 전환하기 전, 제한된 미리보기에서 취소와 성공을 각각 확인한다.
 
 [거래등록](https://developer.kcp.co.kr/reference/cert-regist) · [결과조회](https://developer.kcp.co.kr/reference/cert-result) · [본인확인 V2 가이드](https://developer.kcp.co.kr/guide/cert)
