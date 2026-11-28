@@ -831,13 +831,49 @@ try {
        set data=jsonb_set(data,'{basics,job}','"다른 기기에서 수정"'),revision=revision+1
        where user_id='${freshId}'`);
   await freshPage.getByLabel("직업", { exact: true }).fill("서비스 기획자 · 로컬 수정");
-  await freshPage.getByRole("button", { name: "이 화면 내용 저장", exact: true }).click();
+  const keepLocal = freshPage.getByRole("button", { name: "이 화면 내용 저장", exact: true });
+  await keepLocal.waitFor();
+  const draftSaveRoute = "**/rest/v1/rpc/save_onboarding_draft";
+  let allowDraftSave;
+  const held = new Promise((resolve) => {
+    allowDraftSave = resolve;
+  });
+  await freshPage.route(draftSaveRoute, async (route) => {
+    await held;
+    await route.continue();
+  });
+  // Record even a one-frame false acknowledgement before the debounced write starts.
+  await freshPage.evaluate(() => {
+    window.draftReportedSaved = false;
+    const status = Array.from(document.querySelectorAll('[role="status"]')).find((el) =>
+      el.textContent.includes("이 화면 내용 저장"),
+    );
+    window.draftObserver = new MutationObserver(() => {
+      if (status.textContent.includes("임시저장됨")) window.draftReportedSaved = true;
+    });
+    window.draftObserver.observe(status, { subtree: true, childList: true, characterData: true });
+  });
+  try {
+    await Promise.all([freshPage.waitForRequest(draftSaveRoute), keepLocal.click()]);
+    assert.equal(
+      await freshPage.evaluate(() => {
+        window.draftObserver.disconnect();
+        return window.draftReportedSaved;
+      }),
+      false,
+      "a revision read must not acknowledge an uncommitted draft",
+    );
+    await freshPage.getByText("저장 중…", { exact: true }).waitFor();
+  } finally {
+    allowDraftSave();
+  }
   await freshPage.getByText("임시저장됨", { exact: true }).waitFor();
   assert.equal(
     sql(`select data->'basics'->>'job' from public.onboarding_drafts where user_id='${freshId}'`),
     "서비스 기획자 · 로컬 수정",
     "explicit conflict recovery preserves local input and uses the latest revision",
   );
+  await freshPage.unroute(draftSaveRoute);
   await freshPage.reload();
   assert.equal(
     await freshPage.getByLabel("직업", { exact: true }).inputValue(),

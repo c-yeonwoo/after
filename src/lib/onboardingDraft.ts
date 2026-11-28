@@ -112,7 +112,7 @@ export function useOnboardingDraft(
       setReady(true);
     })();
     return () => {
-      if (generation.current === gen) generation.current = gen + 1;
+      generation.current += 1;
     };
   }, [owner, active, retry]);
   const serialized = JSON.stringify(snapshot);
@@ -207,7 +207,9 @@ export function useOnboardingDraft(
         const row = data as { data: unknown; revision: number } | null;
         revision.current = row?.revision ?? 0;
         last.current = row ? JSON.stringify(row.data) : "";
-        setStatus("saved");
+        // Refreshing a conflicting revision only prepares the write. Acknowledge
+        // the local draft here only if the server already holds the same data.
+        setStatus(JSON.stringify(current.current) === last.current ? "saved" : "saving");
         setSaveTick((n) => n + 1);
       } catch {
         if (gen === generation.current) setStatus("error");
