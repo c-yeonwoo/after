@@ -12,12 +12,14 @@ import {
   splitAppPath,
   takeNotificationReturn,
 } from "@/lib/appPath";
+import { BUSINESS } from "@/lib/policy";
 import { BRAND } from "@/lib/brand";
 import {
   authErrorMessage,
   devFetchLatestOtp,
   kakaoAuthorizeUrl,
   landAfterOAuth,
+  loginPhone,
   OTP_MAX_LENGTH,
   OTP_MIN_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -43,7 +45,8 @@ import {
 const APP_BUILD = import.meta.env.VITE_APP_BUILD === "true";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { next?: string; method?: "kakao" } => ({
+    ...(search.method === "kakao" ? { method: "kakao" as const } : {}),
     next: search.next === "/invite" ? "/invite" : notificationReturnPath(search.next),
   }),
   head: () => ({
@@ -51,7 +54,7 @@ export const Route = createFileRoute("/login")({
       { title: `로그인 — ${BRAND.name}` },
       {
         name: "description",
-        content: "가입한 이메일로 인증 코드를 받아 다시 로그인합니다.",
+        content: "가입한 계정으로 다시 로그인합니다.",
       },
     ],
   }),
@@ -60,7 +63,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { next } = Route.useSearch();
+  const { next, method } = Route.useSearch();
   const { me, ready } = useMe();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -69,13 +72,6 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [autoFilled, setAutoFilled] = useState(false);
   const [password, setPassword] = useState("");
-  /*
-    기본은 비밀번호다. 코드는 **잊었을 때의 길**로 남긴다.
-
-    가입에서 이메일 주소를 인증하는 것은 서비스의 근거라 한 번은 반드시
-    거쳐야 하지만, 그 뒤 재로그인까지 매번 메일을 오가게 하면 기기를 바꾸거나
-    앱을 다시 깔 때마다 메일함을 뒤져야 한다. 확인은 한 번, 이후는 비밀번호다.
-  */
   const [mode, setMode] = useState<"password" | "code">("password");
   /** 카카오에 다녀오는 동안. 자동 이동(아래 useEffect)을 잠가 둔다. */
   const [oauthBusy, setOauthBusy] = useState(false);
@@ -99,7 +95,7 @@ function LoginPage() {
 
   /** 로그인 성공 뒤 갈 곳. 세 경로(코드·비밀번호·카카오)가 같은 판정을 써야 한다. */
   const land = useCallback(
-    async (result: SignInResult, destination = next) => {
+    async (result: SignInResult, destination = next, carrierLogin = false) => {
       if (result.kind === "closed") {
         setError(
           result.state === "withdrawn"
@@ -109,13 +105,16 @@ function LoginPage() {
         return;
       }
       if (result.kind === "no-profile") {
-        /*
-          카카오로 처음 들어온 경우가 대부분이다. Supabase 는 그 카카오 이메일로
-          **새 auth 유저**를 만들어 두므로, 여기서 로그아웃시키지 않으면 프로필도
-          없는 계정에 세션만 남아 앱이 빈 화면을 돈다.
-        */
+        if (carrierIdentityEnabled && carrierLogin) {
+          await goTo(destination === "/invite" ? "/signup?wave=true" : "/signup");
+          return;
+        }
         await supabase.auth.signOut();
-        toast("아직 연결된 계정이 없어요. 이메일로 가입한 뒤 설정에서 카카오를 연결해 주세요.");
+        toast(
+          carrierIdentityEnabled
+            ? "가입을 시작해 휴대폰 본인확인을 마쳐 주세요."
+            : "아직 연결된 계정이 없어요. 이메일로 가입한 뒤 설정에서 카카오를 연결해 주세요.",
+        );
         await goTo(destination === "/invite" ? "/invite" : "/signup");
         return;
       }
@@ -133,6 +132,35 @@ function LoginPage() {
     },
     [goTo, next],
   );
+
+  const startKakao = useCallback(async () => {
+    setError(null);
+    setOauthBusy(true);
+    try {
+      saveNotificationReturn("oauth", next);
+      const redirectTo = isNative ? NATIVE_REDIRECT : window.location.origin + "/login";
+      await openAuthUrl(await kakaoAuthorizeUrl(redirectTo));
+    } catch (err) {
+      setError(authErrorMessage(err));
+      setOauthBusy(false);
+    }
+  }, [next]);
+  const startedKakao = useRef(false);
+  useEffect(() => {
+    if (
+      method !== "kakao" ||
+      APP_BUILD ||
+      !ready ||
+      me ||
+      startedKakao.current ||
+      new URLSearchParams(location.search).has("code")
+    )
+      return;
+    startedKakao.current = true;
+    // The browser Back button must return to login without automatically reopening Kakao.
+    window.history.replaceState(null, "", next === "/invite" ? "/login?next=%2Finvite" : "/login");
+    void startKakao();
+  }, [method, ready, me, next, startKakao]);
 
   // 이미 로그인돼 있으면 가입 완료 여부에 맞는 화면으로 보낸다.
   // 카카오에 다녀오는 중에는 판정(land)이 끝나기 전이라 잠가 둔다.
@@ -169,7 +197,7 @@ function LoginPage() {
       if (!alive) return;
       try {
         const pending = takeNotificationReturn("oauth");
-        await land(await landAfterOAuth(), next ?? pending);
+        await land(await landAfterOAuth(), next ?? pending, true);
       } catch (err) {
         setError(authErrorMessage(err));
       } finally {
@@ -215,6 +243,7 @@ function LoginPage() {
   const emailValid = /.+@.+\..+/.test(email.trim());
 
   const onCode = mode === "code";
+  const allowPhone = carrierIdentityEnabled && !onCode;
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background px-6">
@@ -249,14 +278,15 @@ function LoginPage() {
         ) : (
           <div className="mt-8">
             <label className="text-sm font-semibold" htmlFor="login-email">
-              가입한 이메일
+              {allowPhone ? "휴대폰 번호 또는 기존 이메일" : "가입한 이메일"}
             </label>
             <Input
               id="login-email"
-              type="email"
-              autoComplete="email"
+              disabled={!ready}
+              type={allowPhone ? "text" : "email"}
+              autoComplete={allowPhone ? "username" : "email"}
               className="mt-2"
-              placeholder="name@example.com"
+              placeholder={allowPhone ? "010-0000-0000 또는 이메일" : "name@example.com"}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -273,6 +303,7 @@ function LoginPage() {
             </label>
             <Input
               id="login-password"
+              disabled={!ready}
               type="password"
               autoComplete="current-password"
               className="mt-2"
@@ -331,12 +362,20 @@ function LoginPage() {
             <Button
               className="w-full"
               size="lg"
-              disabled={!emailValid || password.length < PASSWORD_MIN_LENGTH || busy}
+              disabled={
+                (!emailValid && !(allowPhone && loginPhone(email))) ||
+                password.length < PASSWORD_MIN_LENGTH ||
+                busy
+              }
               onClick={async () => {
                 setError(null);
                 setBusy(true);
                 try {
-                  await land(await signInWithPassword(email, password));
+                  await land(
+                    await signInWithPassword(email, password),
+                    next,
+                    Boolean(loginPhone(email)),
+                  );
                 } catch (err) {
                   setError(authErrorMessage(err));
                 } finally {
@@ -393,15 +432,6 @@ function LoginPage() {
             </Button>
           )}
 
-          {/*
-            ── 카카오 ──
-            코드를 기다리는 중에는 감춘다. 그 화면은 "지금 받은 숫자를 넣는" 한
-            가지 일만 하는 자리라, 다른 로그인 수단이 끼면 방금 온 메일을 두고
-            길을 잃는다.
-
-            카카오는 **연결해 둔 사람만** 들어온다(설정 → 카카오 연결). 안 한
-            계정으로 누르면 프로필이 없어 land() 가 가입으로 돌려보낸다.
-          */}
           {!codeSent && !APP_BUILD ? (
             <>
               <div className="mt-6 flex items-center gap-3" aria-hidden="true">
@@ -413,24 +443,7 @@ function LoginPage() {
               <button
                 type="button"
                 disabled={busy || oauthBusy}
-                onClick={async () => {
-                  setError(null);
-                  setOauthBusy(true);
-                  try {
-                    /*
-                      웹은 이 주소로 되돌아오고, 앱은 커스텀 스킴으로 되돌아온다.
-                      어느 쪽이든 위의 useEffect 가 받아 같은 판정을 지난다.
-                    */
-                    const redirectTo = isNative
-                      ? NATIVE_REDIRECT
-                      : `${window.location.origin}/login`;
-                    saveNotificationReturn("oauth", next);
-                    await openAuthUrl(await kakaoAuthorizeUrl(redirectTo));
-                  } catch (err) {
-                    setError(authErrorMessage(err));
-                    setOauthBusy(false);
-                  }
-                }}
+                onClick={startKakao}
                 className="mt-4 flex min-h-13 w-full items-center justify-center gap-2 rounded-control bg-[#FEE500] text-sm font-semibold text-[#191600] transition-opacity focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
               >
                 <KakaoMark />
@@ -457,8 +470,20 @@ function LoginPage() {
               setMode(onCode ? "password" : "code");
             }}
           >
-            {onCode ? "비밀번호로 로그인" : "비밀번호를 잊으셨나요? 코드로 로그인"}
+            {onCode
+              ? "비밀번호로 로그인"
+              : carrierIdentityEnabled
+                ? "기존 이메일 계정으로 코드 받기"
+                : "비밀번호를 잊으셨나요? 코드로 로그인"}
           </Button>
+          {allowPhone && loginPhone(email) ? (
+            <a
+              href={`mailto:${BUSINESS.contactEmail}?subject=휴대폰%20계정%20복구%20문의`}
+              className="block py-3 text-center text-sm text-primary-strong"
+            >
+              휴대폰 계정 복구 문의
+            </a>
+          ) : null}
         </div>
       </main>
 

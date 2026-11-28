@@ -9,7 +9,7 @@ export function accountChecksComplete(profile: Profile, carrier: boolean): boole
   return Boolean(
     profile.terms_agreed_at &&
     profile.privacy_agreed_at &&
-    profile.company_email &&
-    (carrier ? profile.identity_verified_at : profile.phone_verified_at),
+    (profile.identity_verified_at ||
+      (!carrier && profile.company_email && profile.phone_verified_at)),
   );
 }

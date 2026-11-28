@@ -75,6 +75,12 @@ export function createSignupSession(client: typeof supabase, prefix: string) {
     return data as T;
   }
 
+  async function signInWithVerifiedPhone(password: string) {
+    const { phone } = await invoke<{ phone: string }>({ action: "phone-account", password });
+    const { error } = await client.auth.signInWithPassword({ phone, password });
+    if (error) throw error;
+  }
+
   async function startSignupIdentity(): Promise<SignupSession> {
     const current = await loadSignupSession();
     if (current?.verified) return current;
@@ -103,6 +109,7 @@ export function createSignupSession(client: typeof supabase, prefix: string) {
 
   return {
     signupToken,
+    signInWithVerifiedPhone,
     pendingSignupIdentity,
     clearSignupSession,
     beginSignup,
@@ -114,6 +121,7 @@ export function createSignupSession(client: typeof supabase, prefix: string) {
 
 export const {
   signupToken,
+  signInWithVerifiedPhone,
   pendingSignupIdentity,
   clearSignupSession,
   beginSignup,
