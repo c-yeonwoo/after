@@ -2,6 +2,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import {
   carrierConfig,
+  isKcpDevicePreview,
+  isDeviceTester,
   startCarrierProvider,
   finishCarrierProvider,
 } from "../_shared/carrier-provider.ts";
@@ -21,7 +23,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
   if (Number(req.headers.get("content-length") ?? 0) > 4096)
     return json({ error: "invalid request" }, 413);
-  let body: { action?: string; token?: string; identityVerificationId?: string };
+  let body: { action?: string; email?: string; token?: string; identityVerificationId?: string };
   try {
     const raw = await req.text();
     if (raw.length > 4096) return json({ error: "invalid request" }, 413);
@@ -42,17 +44,46 @@ Deno.serve(async (req) => {
       enabled ? 200 : 403,
     );
   }
-  if (
-    typeof body.token !== "string" ||
-    !/^[0-9a-f]{64}$/.test(body.token) ||
-    !["start", "complete"].includes(body.action ?? "")
-  ) {
-    return json({ error: "invalid request" }, 400);
-  }
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const config = carrierConfig();
   if (!url || !serviceKey || !config) return json({ error: "not configured" }, 503);
+  const preview = isKcpDevicePreview(config);
+  const isPreviewAction = body.action === "preview-email" || body.action === "preview-access";
+  if (isPreviewAction && !preview) return json({ error: "preview closed" }, 403);
+  if (preview) {
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!anon || !Deno.env.get("KCP_DEVICE_TESTER_EMAIL")?.trim())
+      return json({ error: "preview closed" }, 403);
+    const auth = createClient(url, anon, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }).auth;
+    if (body.action === "preview-email") {
+      if (typeof body.email !== "string" || body.email.length > 254)
+        return json({ error: "invalid request" }, 400);
+      // Send only after an explicit user action, and only to the server allowlist.
+      if (isDeviceTester(body.email)) {
+        const { error } = await auth.signInWithOtp({ email: body.email.trim().toLowerCase() });
+        if (error) return json({ error: "email unavailable" }, error.status === 429 ? 429 : 503);
+      }
+      return json({ requested: true });
+    }
+    const bearer = req.headers.get("Authorization")?.match(/^Bearer ([^ ]+)$/i)?.[1];
+    if (!bearer || bearer === anon) return json({ error: "preview denied" }, 403);
+    const {
+      data: { user },
+      error,
+    } = await auth.getUser(bearer);
+    if (error || !user?.email_confirmed_at || !isDeviceTester(user.email))
+      return json({ error: "preview denied" }, 403);
+    if (body.action === "preview-access") return json({ allowed: true });
+  }
+  if (
+    typeof body.token !== "string" ||
+    !/^[0-9a-f]{64}$/.test(body.token) ||
+    !["start", "complete"].includes(body.action ?? "")
+  )
+    return json({ error: "invalid request" }, 400);
   const db = createClient(url, serviceKey);
   try {
     if (body.action === "start") {

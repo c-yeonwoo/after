@@ -47,7 +47,9 @@ export async function handleKcpReturn(
       status: 410,
       headers,
     });
-  const dest = new URL(flow === "signup" ? "/signup" : "/verify-phone", receipt.appOrigin);
+  const path =
+    flow === "member" ? "/verify-phone" : query.get("preview") === "1" ? "/kcp-preview" : "/signup";
+  const dest = new URL(path, receipt.appOrigin);
   dest.searchParams.set("identityVerificationId", id);
   if (!valid || !receipt.accepted) dest.searchParams.set("code", "NOT_VERIFIED");
   return new Response(null, { status: 303, headers: { ...headers, Location: dest.href } });

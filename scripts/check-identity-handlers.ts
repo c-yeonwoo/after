@@ -23,6 +23,8 @@ async function invoke(
     tables?: Record<string, unknown[]>;
     rpc?: Record<string, unknown>;
     user?: boolean;
+    email?: string;
+    confirmed?: boolean;
     providerError?: string;
   } = {},
 ) {
@@ -31,7 +33,22 @@ async function invoke(
   let handler: (req: Request) => Promise<Response>;
   const db = {
     auth: {
-      getUser: async () => ({ data: { user: options.user === false ? null : { id: "user-a" } } }),
+      getUser: async () => ({
+        data: {
+          user:
+            options.user === false
+              ? null
+              : {
+                  id: "user-a",
+                  email: options.email,
+                  email_confirmed_at: options.confirmed ? "confirmed" : null,
+                },
+        },
+      }),
+      signInWithOtp: async (args: unknown) => {
+        calls.push({ name: "send-email", args });
+        return { error: null };
+      },
     },
     rpc: async (name: string, args: unknown) => {
       calls.push({ name, args });
@@ -217,11 +234,87 @@ assert.equal(
 );
 
 const directEnv = {
+  KCP_LIVE_ACCESS: "public",
   CARRIER_IDENTITY_PROVIDER: "kcp_direct",
   KCP_SITE_CODE: "Z9999",
   KCP_ENC_KEY: "fixture",
   SUPABASE_URL: "https://project.supabase.co",
 };
+const previewEnv = {
+  ...directEnv,
+  KCP_LIVE_ACCESS: undefined,
+  KCP_DEVICE_TESTER_EMAIL: "tester@example.test",
+};
+for (const [email, confirmed, expected] of [
+  ["other@example.test", true, 403],
+  ["tester@example.test", false, 403],
+  ["Tester@example.test", true, 200],
+] as const) {
+  for (const action of ["preview-access", "start", "complete"]) {
+    const r = await invoke(
+      "signup-identity",
+      { ...signupBody, action, email: "tester@example.test" },
+      {
+        env: previewEnv,
+        email,
+        confirmed,
+        tables: owned(),
+        rpc: { signup_session_status: { verified: false } },
+      },
+    );
+    assert.equal(r.status, expected === 200 && action === "complete" ? 409 : expected);
+    if (expected === 403 || action === "preview-access") {
+      assert.equal(r.providerCalls, 0);
+      assert.equal(r.calls.length, 0);
+    }
+  }
+}
+for (const email of ["tester@example.test", "other@example.test"]) {
+  const r = await invoke(
+    "signup-identity",
+    { action: "preview-email", email },
+    { env: previewEnv, user: false },
+  );
+  assert.equal(r.status, 200);
+  assert.equal(
+    r.calls.filter((c) => c.name === "send-email").length,
+    email === "tester@example.test" ? 1 : 0,
+  );
+  assert.equal(r.providerCalls, 0);
+}
+for (const name of ["carrier-identity", "signup-identity"]) {
+  const r = await invoke(
+    name,
+    { action: "start", token },
+    {
+      env: { ...previewEnv, KCP_DEVICE_TESTER_EMAIL: undefined },
+      confirmed: true,
+      email: "tester@example.test",
+    },
+  );
+  assert.equal(r.status, 403);
+  assert.equal(r.providerCalls, 0);
+}
+assert.equal(
+  (
+    await invoke(
+      "carrier-identity",
+      { action: "start" },
+      { env: previewEnv, confirmed: true, email: "tester@example.test" },
+    )
+  ).status,
+  403,
+);
+assert.equal(
+  (
+    await invoke(
+      "signup-identity",
+      { action: "preview-email", email: "tester@example.test" },
+      { env: directEnv },
+    )
+  ).status,
+  403,
+);
 for (const isSignup of [true, false]) {
   const name = isSignup ? "signup-identity" : "carrier-identity";
   const rpc = {

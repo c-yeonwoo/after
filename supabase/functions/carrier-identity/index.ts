@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import {
   carrierConfig,
+  isKcpDevicePreview,
   startCarrierProvider,
   finishCarrierProvider,
 } from "../_shared/carrier-provider.ts";
@@ -35,6 +36,9 @@ Deno.serve(async (req) => {
   if (!serviceKey || !config) {
     return json({ error: "not configured" }, 503);
   }
+
+  // The private test exercises signup only; it must never modify a member profile.
+  if (isKcpDevicePreview(config)) return json({ error: "preview only" }, 403);
 
   let body: { action?: string; identityVerificationId?: string };
   try {

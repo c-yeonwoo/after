@@ -24,6 +24,7 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as InviteRouteImport } from './routes/invite'
+import { Route as KcpPreviewRouteImport } from './routes/kcp-preview'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -133,6 +134,11 @@ const IntroRoute = IntroRouteImport.update({
 const InviteRoute = InviteRouteImport.update({
   id: '/invite',
   path: '/invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KcpPreviewRoute = KcpPreviewRouteImport.update({
+  id: '/kcp-preview',
+  path: '/kcp-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/invite': typeof InviteRoute
+  '/kcp-preview': typeof KcpPreviewRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/notifications': typeof NotificationsRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/invite': typeof InviteRoute
+  '/kcp-preview': typeof KcpPreviewRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/notifications': typeof NotificationsRoute
@@ -431,6 +439,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/intro': typeof IntroRoute
   '/invite': typeof InviteRoute
+  '/kcp-preview': typeof KcpPreviewRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/notifications': typeof NotificationsRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/intro'
     | '/invite'
+    | '/kcp-preview'
     | '/login'
     | '/me'
     | '/notifications'
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/intro'
     | '/invite'
+    | '/kcp-preview'
     | '/login'
     | '/me'
     | '/notifications'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/intro'
     | '/invite'
+    | '/kcp-preview'
     | '/login'
     | '/me'
     | '/notifications'
@@ -641,6 +653,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   IntroRoute: typeof IntroRoute
   InviteRoute: typeof InviteRoute
+  KcpPreviewRoute: typeof KcpPreviewRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -769,6 +782,13 @@ declare module '@tanstack/react-router' {
       path: '/invite'
       fullPath: '/invite'
       preLoaderRoute: typeof InviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kcp-preview': {
+      id: '/kcp-preview'
+      path: '/kcp-preview'
+      fullPath: '/kcp-preview'
+      preLoaderRoute: typeof KcpPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1081,6 +1101,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   IntroRoute: IntroRoute,
   InviteRoute: InviteRoute,
+  KcpPreviewRoute: KcpPreviewRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
   NotificationsRoute: NotificationsRoute,

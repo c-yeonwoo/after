@@ -99,11 +99,15 @@ async function back(
   fields: Record<string, string>,
   flow = "signup",
   appOrigin = "https://aftersunset.kr",
+  preview = false,
 ) {
-  const req = new Request(config.callback + "?flow=" + flow + "&id=" + id, {
-    method: "POST",
-    body: new URLSearchParams(fields),
-  });
+  const req = new Request(
+    config.callback + "?flow=" + flow + "&id=" + id + (preview ? "&preview=1" : ""),
+    {
+      method: "POST",
+      body: new URLSearchParams(fields),
+    },
+  );
   return handleKcpReturn(req, async (order, kind, key) => {
     if (key) accepts++;
     return { appOrigin, accepted: id === order && kind === flow && key === reg.reg_cert_key };
@@ -119,6 +123,13 @@ for (const flow of ["signup", "member"]) {
       "?identityVerificationId=" +
       id,
   );
+}
+for (const result of [body, { ...body, res_cd: "cancel" }]) {
+  const returned = new URL(
+    (await back(result, "signup", "https://aftersunset.kr", true)).headers.get("location")!,
+  );
+  assert.equal(returned.pathname, "/kcp-preview");
+  assert.equal(returned.searchParams.has("code"), result.res_cd !== "0000");
 }
 for (const changes of [{ res_cd: "cancel" }, { reg_cert_key: "" }, { param_opt_1: "other" }]) {
   const before = accepts;
