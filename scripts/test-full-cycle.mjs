@@ -266,6 +266,10 @@ async function signup(person, i) {
     assert.ok(free, "QA needs an untouched local invitation");
     testInvites.push(free);
     await page.goto(`${base}/invite#${free}`);
+    await page.getByRole("heading", { name: "애프터 베타에 초대해요" }).waitFor();
+    await page
+      .getByText("프로필이 승인되면 매니저가 첫 소개를 준비해요.", { exact: false })
+      .waitFor();
     await page.getByRole("button", { name: "초대로 가입하기" }).click();
   } else {
     await page.goto(`${base}/signup`);
@@ -589,6 +593,7 @@ try {
     await p.getByLabel("비밀번호", { exact: true }).fill(password);
     await p.getByRole("button", { name: "로그인", exact: true }).click();
     await p.getByRole("heading", { name: "첫 베타에 참여 중이에요" }).waitFor();
+    await p.getByText("홈에서 내 진행 상황을 확인해 보세요.").waitFor();
     await p.getByRole("button", { name: "홈으로 가기" }).click();
     await p.waitForURL("**/home");
     assert.equal(await p.evaluate(() => sessionStorage.getItem("after-signup-session")), null);
