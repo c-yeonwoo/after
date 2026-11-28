@@ -21,7 +21,7 @@ const cases: [unknown, string][] = [
   ],
   [
     { code: "invalid_credentials", message: "Invalid login credentials" },
-    "이메일이나 비밀번호를 다시 확인해 주세요. 비밀번호를 잊었다면 코드로 로그인할 수 있어요.",
+    "로그인 정보와 비밀번호를 다시 확인해 주세요.",
   ],
   [
     new Error("Token has expired or is invalid"),

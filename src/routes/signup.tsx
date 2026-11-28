@@ -26,6 +26,7 @@ import {
 } from "@/components/onboarding/basics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase";
 import { BRAND } from "@/lib/brand";
 import { carrierIdentityEnabled, carrierIdentityError } from "@/lib/carrierIdentity";
 import {
@@ -35,6 +36,7 @@ import {
   loadSignupSession,
   pendingSignupIdentity,
   signupToken,
+  signInWithVerifiedPhone,
   startSignupIdentity,
   type SignupSession,
 } from "@/lib/signupSession";
@@ -80,12 +82,12 @@ export const Route = createFileRoute("/signup")({
       { title: `가입 — ${BRAND.name}` },
       {
         name: "description",
-        content: "이메일을 확인하고, 내 이야기를 담은 프로필을 함께 써요.",
+        content: "가입을 마치고 내 이야기를 담은 프로필을 준비해요.",
       },
       { property: "og:title", content: `가입 — ${BRAND.name}` },
       {
         property: "og:description",
-        content: "이메일 인증 · 프로필 인터뷰",
+        content: "계정 확인 · 프로필 인터뷰",
       },
     ],
   }),
@@ -96,7 +98,7 @@ export const Route = createFileRoute("/signup")({
   단계 id 와 보이는 순서는 다르다. id 는 저장·재개 코드가 오래 써 온 번호라 그대로
   두고, 순서는 여기 한 곳에서 정한다(리부팅 C, 2026-10-10).
 
-    동의 → 본인·성인 확인 → 이메일 → 기본 정보 → 생활 정보 → 인터뷰
+    동의 → 본인·성인 확인 → 계정 연결 → 기본 정보 → 생활 정보 → 인터뷰
     통신사 미개통 베타에서만 성별 수기 입력·가입 후 문자 OTP 경로를 유지한다.
 
   생활 정보는 소개장 생성 전에 받는다. 성격을 추측하는 근거로 쓰지 않고,
@@ -155,6 +157,7 @@ function Onboarding() {
     다음 로그인에 쓸 비밀번호. 인증 직후 같은 화면에서 받는다 — 이메일 확인은
     여기서 딱 한 번 하고, 그 뒤로는 메일함을 오갈 일이 없어야 한다.
   */
+  const [kakaoAccount, setKakaoAccount] = useState(false);
   const [pw, setPw] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -186,6 +189,16 @@ function Onboarding() {
       const id = query.get("identityVerificationId");
       const code = query.get("code");
       try {
+        if (carrierIdentityEnabled) {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            setSignupRestoreError(true);
+            throw error;
+          }
+          setKakaoAccount(
+            data.session?.user.identities?.some((i) => i.provider === "kakao") ?? false,
+          );
+        }
         if (id || code) {
           window.history.replaceState(null, "", "/signup");
           if (code || !id || pendingSignupIdentity() !== id) throw new Error("not verified");
@@ -235,7 +248,7 @@ function Onboarding() {
     savedStep.current = me.onboarding_step;
     setGender(me.gender);
     setHubId(me.hub_id === "undecided" ? "" : me.hub_id);
-    setEmail(me.company_email);
+    setEmail(me.company_email ?? "");
     const nextBasics: Basics = {
       name: me.name ?? "",
       // 예전 회원(한 장)은 photo_paths 가 [photo_url] 로 옮겨져 있다(s53 백필).
@@ -352,16 +365,20 @@ function Onboarding() {
     setAuthBusy(true);
     setAuthError(null);
     try {
+      if (carrierIdentityEnabled && !kakaoAccount) await signInWithVerifiedPhone(pw);
       const created = await createSignupProfile(
         "undecided",
         token,
         carrierIdentityEnabled ? undefined : (gender ?? undefined),
       );
-      try {
-        await setPassword(pw);
-      } catch {
-        toast("비밀번호는 나중에 설정에서 정해 주세요.");
+      if (!carrierIdentityEnabled) {
+        try {
+          await setPassword(pw);
+        } catch {
+          toast("비밀번호는 나중에 설정에서 정해 주세요.");
+        }
       }
+      setPw("");
       clearSignupSession();
       forgetWaveInvite();
       setMe(created);
@@ -566,7 +583,11 @@ function Onboarding() {
         total={TOTAL}
         eyebrow="가입"
         title="시작하기 전에, 확인해 주세요"
-        description="서비스 이용과 개인정보 처리에 대한 동의가 필요해요."
+        description={
+          carrierIdentityEnabled && kakaoAccount
+            ? "카카오로 연결했어요. 동의 후 휴대폰으로 본인과 성인 여부를 확인해요."
+            : "서비스 이용과 개인정보 처리에 대한 동의가 필요해요."
+        }
         assistant={false}
         eyebrowAction={
           <Link
@@ -608,6 +629,18 @@ function Onboarding() {
           </Button>
         }
       >
+        {carrierIdentityEnabled &&
+        !kakaoAccount &&
+        !me &&
+        import.meta.env.VITE_APP_BUILD !== "true" ? (
+          <Link
+            to="/login"
+            search={{ method: "kakao", ...(wave ? { next: "/invite" } : {}) }}
+            className="mb-4 flex min-h-12 items-center justify-center rounded-control bg-[#FEE500] text-sm font-semibold text-[#191600]"
+          >
+            카카오로 시작하기
+          </Link>
+        ) : null}
         <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
           <label className="flex min-h-16 cursor-pointer items-center gap-3 py-4">
             <input
@@ -918,6 +951,59 @@ function Onboarding() {
             {photosUploading ? "사진을 올리는 중…" : saving ? "저장 중…" : "다음"}
           </Button>
         </div>
+      </StepShell>
+    );
+  }
+
+  if (step === 4 && carrierIdentityEnabled) {
+    return (
+      <StepShell
+        step={shown(4)}
+        total={TOTAL}
+        eyebrow="계정 연결"
+        title={kakaoAccount ? "카카오 계정으로 가입할게요" : "로그인 비밀번호를 정해 주세요"}
+        description={
+          kakaoAccount
+            ? "본인확인을 마쳤어요. 다음부터 카카오로 로그인하세요."
+            : "다음부터 인증한 휴대폰 번호와 비밀번호로 로그인하세요."
+        }
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!authBusy) void completeSignup();
+          }}
+        >
+          {!kakaoAccount ? (
+            <label className="block text-sm font-semibold" htmlFor="phone-account-password">
+              비밀번호
+              <Input
+                id="phone-account-password"
+                type="password"
+                autoComplete="new-password"
+                minLength={PASSWORD_MIN_LENGTH}
+                required
+                value={pw}
+                placeholder="8자 이상"
+                className="mt-2"
+                onChange={(event) => setPw(event.target.value)}
+              />
+            </label>
+          ) : null}
+          {authError ? (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {authError}
+            </p>
+          ) : null}
+          <Button
+            type="submit"
+            size="lg"
+            className="mt-6 w-full"
+            disabled={authBusy || (!kakaoAccount && pw.length < PASSWORD_MIN_LENGTH)}
+          >
+            {authBusy ? "가입 중…" : "가입 계속하기"}
+          </Button>
+        </form>
       </StepShell>
     );
   }

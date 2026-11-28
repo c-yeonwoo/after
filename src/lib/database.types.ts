@@ -2388,7 +2388,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -2439,7 +2439,7 @@ export type Database = {
           agreed_policy_version?: string | null
           banned_reason?: string | null
           birth?: string | null
-          company_email: string
+          company_email?: string | null
           created_at?: string
           details?: Json
           drinking?: string | null
@@ -2490,7 +2490,7 @@ export type Database = {
           agreed_policy_version?: string | null
           banned_reason?: string | null
           birth?: string | null
-          company_email?: string
+          company_email?: string | null
           created_at?: string
           details?: Json
           drinking?: string | null
@@ -3311,7 +3311,7 @@ export type Database = {
         }
         Returns: {
           account_state: Database["public"]["Enums"]["account_state"]
-          company_email: string
+          company_email: string | null
           created_at: string
           gender: Database["public"]["Enums"]["gender"]
           has_active_meeting: boolean
@@ -3506,7 +3506,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -3571,7 +3571,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -3930,7 +3930,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -4067,7 +4067,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -4551,7 +4551,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -4611,7 +4611,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -4671,7 +4671,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -4975,7 +4975,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -5080,7 +5080,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null
@@ -5197,7 +5197,7 @@ export type Database = {
           agreed_policy_version: string | null
           banned_reason: string | null
           birth: string | null
-          company_email: string
+          company_email: string | null
           created_at: string
           details: Json
           drinking: string | null

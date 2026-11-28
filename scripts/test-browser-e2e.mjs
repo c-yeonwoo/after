@@ -59,6 +59,8 @@ const objectPaths = [];
 let browser;
 let server;
 let carrierServer;
+let syntheticCarrierId;
+const carrierPhone = "+8210" + Date.now().toString().slice(-8);
 
 function sql(statement) {
   return execFileSync("psql", [dbUrl, "-v", "ON_ERROR_STOP=1", "-Atc", statement], {
@@ -66,6 +68,7 @@ function sql(statement) {
   }).trim();
 }
 
+const originalIdentityRequired = sql("select identity_required from public.app_settings");
 const originalPaymentsEnabled = sql("select payments_enabled from public.app_settings");
 const originalAssistantFlags = JSON.parse(
   sql(`select json_build_object(
@@ -908,6 +911,7 @@ try {
   // Exercise the identity-first UI with a trusted-provider fixture. The HTTP
   // response is simulated, but proof transfer and profile creation use real DB
   // functions. No test result is presented as a live KCP verification.
+  sql("update public.app_settings set identity_required=true");
   const carrierBase = "http://127.0.0.1:4176";
   carrierServer = spawn(
     process.execPath,
@@ -939,7 +943,7 @@ try {
   assert.equal(
     await carrierPage.getByLabel("이메일").count(),
     0,
-    "company email follows identity verification",
+    "email is absent before identity verification",
   );
   const signupProof = await carrierPage.evaluate(() =>
     sessionStorage.getItem("after-signup-session"),
@@ -962,7 +966,7 @@ try {
   );
   await carrierPage.route("**/functions/v1/signup-identity", async (route) => {
     const body = route.request().postDataJSON();
-    if (body.action === "dev-status") return route.fallback();
+    if (body.action === "dev-status" || body.action === "phone-account") return route.fallback();
     assert.equal(body.action, "complete");
     assert.equal(body.token, signupProof);
     assert.equal(body.identityVerificationId, verificationId);
@@ -971,7 +975,7 @@ try {
       p_id: verificationId,
       p_gender: "female",
       p_birth: "1994-02-15",
-      p_phone: `+8210${Date.now().toString().slice(-8)}`,
+      p_phone: carrierPhone,
       p_di: `e2e-${randomUUID()}`,
     });
     if (error) throw error;
@@ -983,10 +987,10 @@ try {
     });
   });
   await carrierPage.goto(`${carrierBase}/signup?identityVerificationId=${verificationId}`);
-  await carrierPage.getByRole("heading", { name: "이메일로 인증해 주세요" }).waitFor();
+  await carrierPage.getByRole("heading", { name: "로그인 비밀번호를 정해 주세요" }).waitFor();
   assert.equal(new URL(carrierPage.url()).searchParams.has("identityVerificationId"), false);
   assert.equal(await carrierPage.getByRole("heading", { name: "성별을 알려주세요" }).count(), 0);
-  const carrierEmail = `after-e2e-carrier-${randomUUID()}@verify.local`;
+  assert.equal(await carrierPage.getByLabel("이메일").count(), 0);
   await carrierPage.route("**/rest/v1/rpc/signup_session_status", (route) => route.abort());
   await carrierPage.reload();
   await carrierPage.getByRole("heading", { name: "가입 정보를 확인하지 못했어요" }).waitFor();
@@ -999,18 +1003,16 @@ try {
   await carrierPage.getByRole("button", { name: "다시 확인하기" }).click();
   await carrierPage.getByRole("heading", { name: "진행 중인 가입이 있어요" }).waitFor();
   await carrierPage.getByRole("button", { name: "가입 이어하기" }).click();
-  await carrierPage.getByRole("heading", { name: "이메일로 인증해 주세요" }).waitFor();
-  await carrierPage.getByLabel("이메일").fill(carrierEmail);
-  await carrierPage.getByRole("button", { name: "개발 계정 만들기" }).click();
-  await carrierPage.getByText("로컬 개발 환경").waitFor();
-  const carrierUserId = sql(`select id from auth.users where email='${carrierEmail}'`);
-  assert.ok(carrierUserId);
-  ids.push(carrierUserId);
-  await carrierPage.getByRole("button", { name: "계속하기" }).click();
   await carrierPage.getByRole("heading", { name: "로그인 비밀번호를 정해 주세요" }).waitFor();
   await carrierPage.getByLabel("비밀번호").fill(password);
   await carrierPage.getByRole("button", { name: "가입 계속하기" }).click();
   await carrierPage.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
+  const carrierUserId = sql(
+    `select id from auth.users where phone='${carrierPhone.slice(1)}' and nullif(email,'') is null`,
+  );
+  assert.ok(carrierUserId);
+  syntheticCarrierId = carrierUserId;
+  ids.push(carrierUserId);
   await carrierPage.getByRole("button", { name: "프로필 준비 시작" }).click();
   await carrierPage.getByRole("heading", { name: "어떤 모습으로 소개할까요?" }).waitFor();
   assert.equal(await carrierPage.getByLabel("생년월일").inputValue(), "1994-02-15");
@@ -1026,9 +1028,84 @@ try {
       `select (p.terms_agreed_at=s.accepted_at and p.privacy_agreed_at=s.accepted_at)::text from public.profiles p join public.signup_sessions s on s.claimed_by=p.id where p.id='${carrierUserId}'`,
     ),
     "true",
-    "the first consent timestamp survives company authentication",
+    "the first consent timestamp survives phone signup",
   );
+  // A fresh browser session logs back in with the actual phone credential.
+  const returning = await browser.newPage();
+  await returning.goto(carrierBase + "/login");
+  await returning.getByLabel("휴대폰 번호 또는 기존 이메일").fill("0" + carrierPhone.slice(3));
+  await returning.getByLabel("비밀번호", { exact: true }).fill(password);
+  await returning.getByRole("button", { name: "로그인", exact: true }).click();
+  await returning.waitForURL("**/home");
+  await returning.close();
+  // Only the external OAuth exchange and carrier UI are fixtures. Auth sessions,
+  // account ownership, signup consent and the final profile are checked by the local services.
+  const kakaoEmail = `after-e2e-kakao-${randomUUID()}@verify.local`;
+  const kakaoUser = await service.auth.admin.createUser({
+    email: kakaoEmail,
+    password,
+    email_confirm: true,
+  });
+  if (kakaoUser.error) throw kakaoUser.error;
+  const kakaoId = kakaoUser.data.user.id;
+  ids.push(kakaoId);
+  sql(`insert into auth.identities(created_at,updated_at,last_sign_in_at,id,user_id,identity_data,provider,provider_id)
+    values(now(),now(),now(),gen_random_uuid(),'${kakaoId}',jsonb_build_object('sub','${kakaoId}'),'kakao','${kakaoId}')`);
+  const kakaoClient = createClient(apiUrl, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const signed = await kakaoClient.auth.signInWithPassword({ email: kakaoEmail, password });
+  if (signed.error) throw signed.error;
+  const kakaoPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await kakaoPage.route("**/auth/v1/authorize?**", (route) =>
+    route.fulfill({
+      status: 302,
+      headers: { location: carrierBase + "/login?code=local-kakao-fixture" },
+    }),
+  );
+  await kakaoPage.route("**/auth/v1/token?grant_type=pkce", (route) =>
+    route.fulfill({
+      json: signed.data.session,
+    }),
+  );
+  await kakaoPage.goto(carrierBase + "/signup");
+  await kakaoPage.getByRole("link", { name: "카카오로 시작하기" }).click();
+  await kakaoPage.getByText("카카오로 연결했어요.", { exact: false }).waitFor();
+  await acceptSignupConsent(kakaoPage);
+  await kakaoPage.getByRole("heading", { name: "본인과 성인 여부를 확인할게요" }).waitFor();
+  const socialProof = await kakaoPage.evaluate(() =>
+    sessionStorage.getItem("after-signup-session"),
+  );
+  const socialVerification = "av" + randomUUID().replaceAll("-", "");
+  const started = await service.rpc("start_signup_identity", {
+    p_token: socialProof,
+    p_id: socialVerification,
+  });
+  if (started.error) throw started.error;
+  const completed = await service.rpc("finish_signup_identity", {
+    p_token: socialProof,
+    p_id: socialVerification,
+    p_gender: "male",
+    p_birth: "1995-06-15",
+    p_phone: "+8211" + Date.now().toString().slice(-8),
+    p_di: randomUUID(),
+  });
+  if (completed.error) throw completed.error;
+  await kakaoPage.reload();
+  await kakaoPage.getByRole("button", { name: "가입 이어하기" }).click();
+  await kakaoPage.getByRole("heading", { name: "카카오 계정으로 가입할게요" }).waitFor();
+  assert.equal(await kakaoPage.locator("input[type=email], input[type=password]").count(), 0);
+  await kakaoPage.getByRole("button", { name: "가입 계속하기" }).click();
+  await kakaoPage.getByRole("heading", { name: "내 매니저가 생겼어요." }).waitFor();
+  assert.equal(
+    sql(
+      `select (identity_verified_at is not null)::text from public.profiles where id='${kakaoId}'`,
+    ),
+    "true",
+  );
+  await kakaoPage.close();
   await carrierPage.close();
+  sql(`update public.app_settings set identity_required=${originalIdentityRequired === "t"}`);
   carrierServer.kill("SIGTERM");
   carrierServer = null;
 
@@ -2145,6 +2222,7 @@ try {
     "Browser E2E: consent/identity-first and beta signup, paid and beta intro/meeting, availability, meeting help, interview, admin PASS\n",
   );
 } finally {
+  sql(`update public.app_settings set identity_required=${originalIdentityRequired === "t"}`);
   sql(`update public.app_settings set payments_enabled=${originalPaymentsEnabled === "t"}`);
   sql(
     `update public.app_settings set ${Object.entries(originalAssistantFlags)
@@ -2161,7 +2239,9 @@ try {
   if (ids.length) {
     const listed = ids.map((id) => `'${id}'`).join(",");
     const owned = sql(`select count(*) from auth.users where id in (${listed})
-      and (email like 'after-e2e-%@verify.local' or email like 'after-e2e-fresh-%@gmail.com')`);
+      and (email like 'after-e2e-%@verify.local' or email like 'after-e2e-fresh-%@gmail.com'
+        or (id='${syntheticCarrierId ?? "00000000-0000-0000-0000-000000000000"}'
+          and phone='${carrierPhone.slice(1)}' and raw_app_meta_data->>'after_phone_signup'='true'))`);
     if (owned !== String(ids.length)) throw new Error("Refusing to clean up non-E2E users");
     sql(`begin;
       delete from public.ops_cases where subject_id in (${listed}) and source_id like 'e2e-worklist-%';

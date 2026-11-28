@@ -224,8 +224,20 @@ export const PASSWORD_MIN_LENGTH = 8;
  * 로그인 뒤 판정은 signInExisting 과 **같아야 한다** — 탈퇴·제명·미완료 가입이
  * 비밀번호 경로로 들어오면 그 검사를 우회하게 된다.
  */
-export async function signInWithPassword(email: string, password: string): Promise<SignInResult> {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+export function loginPhone(value: string): string | null {
+  const number = value.trim().replace(/[ -]/g, "");
+  if (/^01[016789]\d{7,8}$/.test(number)) return "+82" + number.slice(1);
+  return /^\+821[016789]\d{7,8}$/.test(number) ? number : null;
+}
+
+export async function signInWithPassword(
+  identifier: string,
+  password: string,
+): Promise<SignInResult> {
+  const phone = loginPhone(identifier);
+  const { data, error } = await supabase.auth.signInWithPassword(
+    phone ? { phone, password } : { email: identifier.trim(), password },
+  );
   if (error) throw error;
   const uid = data.user?.id;
   if (!uid) throw new Error("로그인에 실패했습니다.");
@@ -246,19 +258,7 @@ export async function setPassword(password: string): Promise<void> {
 
 /* ── 카카오 ────────────────────────────────────────────────────────── */
 
-/**
- * 카카오는 **가입 수단이 아니라 재로그인 수단**이다.
- *
- * 카카오는 기존 계정에 연결하는 재로그인 수단이다. 카카오로 계정을 만들 수 있게
- * 하면 그 관문이 무의미해지므로, 카카오는 **이미 있는 계정에 붙이는** 방식만
- * 허용한다(설정 → 카카오 연결). 연결하고 나면 다음부터는 카카오 하나로 들어온다.
- *
- * ── 연결하지 않은 카카오로 로그인하면 ──
- * Supabase 는 그 카카오 이메일로 **새 auth 유저**를 만든다. 프로필이 없으므로
- * landAfterSignIn 이 no-profile 을 돌려주고, 화면이 로그아웃시킨 뒤 안내한다.
- * (자동 연결은 이메일이 같고 검증됐을 때만 일어나는데, 회사 메일과 카카오 계정
- * 메일이 같은 경우는 거의 없다 — 기대하지 않는다.)
- */
+/** Kakao authenticates the account. The carrier gate verifies the member separately. */
 export const KAKAO_PROVIDER = "kakao" as const;
 
 /** 브라우저(웹)에서 카카오 로그인 — 같은 탭에서 리다이렉트되고 돌아온다. */

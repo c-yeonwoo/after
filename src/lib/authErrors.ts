@@ -37,6 +37,8 @@ export function authErrorMessage(error: unknown): string {
     }
   }
   const m = message.toLowerCase();
+  if (m === "weak password") return "비밀번호는 8자 이상, 72바이트 이내로 입력해 주세요.";
+  if (m === "verified login required") return "가입을 시작한 계정으로 다시 로그인해 주세요.";
   if (m === "invite unavailable")
     return "이미 사용됐거나 유효하지 않은 초대장이에요. 초대한 분에게 링크를 확인해 주세요.";
   if (m === "invite audience mismatch")
@@ -62,7 +64,7 @@ export function authErrorMessage(error: unknown): string {
     return "이메일을 확인하지 못했어요. 새로고침 후 다시 시도해 주세요.";
   }
   if (code === "invalid_credentials" || m.includes("invalid login credentials")) {
-    return "이메일이나 비밀번호를 다시 확인해 주세요. 비밀번호를 잊었다면 코드로 로그인할 수 있어요.";
+    return "로그인 정보와 비밀번호를 다시 확인해 주세요.";
   }
   if (code.includes("rate_limit") || /rate limit|too many/.test(m)) {
     return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";

@@ -331,17 +331,12 @@ function SettingsPage() {
       </section>
 
       {/* ── 카카오 ───────────────────────────── */}
-      {/*
-        카카오는 **가입 수단이 아니라 재로그인 수단**이다. 여기서 연결해 둔
-        사람만 로그인 화면의 카카오 버튼으로 들어올 수 있다 — 카카오로 계정을
-        만들 수 있게 하면 기존 가입·성인 확인 경로를 우회하게 된다.
-      */}
       {!APP_BUILD ? (
         <section className="settings-section-break">
           <h2 className="text-sm font-semibold">카카오</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {kakaoLinked
-              ? "카카오로 로그인하실 수 있습니다. 가입 이메일과 비밀번호도 그대로 쓸 수 있습니다."
+              ? "카카오로 로그인할 수 있어요."
               : "연결하면 다음부터 카카오로 로그인하실 수 있습니다. 카카오 계정 이메일과 회원 식별자는 로그인·계정 연결에만 사용하며, 소개 상대에게 공개되지 않습니다."}
           </p>
           {!kakaoLinked ? (

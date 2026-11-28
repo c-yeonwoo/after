@@ -23,7 +23,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
   if (Number(req.headers.get("content-length") ?? 0) > 4096)
     return json({ error: "invalid request" }, 413);
-  let body: { action?: string; email?: string; token?: string; identityVerificationId?: string };
+  let body: {
+    action?: string;
+    email?: string;
+    password?: string;
+    token?: string;
+    identityVerificationId?: string;
+  };
   try {
     const raw = await req.text();
     if (raw.length > 4096) return json({ error: "invalid request" }, 413);
@@ -47,10 +53,13 @@ Deno.serve(async (req) => {
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const config = carrierConfig();
-  if (!url || !serviceKey || !config) return json({ error: "not configured" }, 503);
-  const preview = isKcpDevicePreview(config);
+  // Provisioning consumes an existing DB receipt and performs no provider lookup.
+  if (!url || !serviceKey || (!config && body.action !== "phone-account"))
+    return json({ error: "not configured" }, 503);
+  const preview = config !== null && isKcpDevicePreview(config);
   const isPreviewAction = body.action === "preview-email" || body.action === "preview-access";
   if (isPreviewAction && !preview) return json({ error: "preview closed" }, 403);
+  if (preview && body.action === "phone-account") return json({ error: "preview closed" }, 403);
   if (preview) {
     const anon = Deno.env.get("SUPABASE_ANON_KEY");
     if (!anon || !Deno.env.get("KCP_DEVICE_TESTER_EMAIL")?.trim())
@@ -81,14 +90,45 @@ Deno.serve(async (req) => {
   if (
     typeof body.token !== "string" ||
     !/^[0-9a-f]{64}$/.test(body.token) ||
-    !["start", "complete"].includes(body.action ?? "")
+    !["start", "complete", "phone-account"].includes(body.action ?? "")
   )
     return json({ error: "invalid request" }, 400);
   const db = createClient(url, serviceKey);
   try {
+    if (body.action === "phone-account") {
+      const password = body.password;
+      if (
+        typeof password !== "string" ||
+        password.length < 8 ||
+        new TextEncoder().encode(password).length > 72
+      )
+        return json({ error: "weak password" }, 400);
+      const { data: phone, error } = await db.rpc("signup_account_phone", { p_token: body.token });
+      if (error || !phone) throw new Error(error?.message ?? "signup identity required");
+      const { error: provisionError } = await db.auth.admin.createUser({
+        phone,
+        password,
+        phone_confirm: true,
+        app_metadata: { after_phone_signup: true },
+      });
+      // A lost response can leave an Auth user without a profile. The original
+      // password must still succeed in GoTrue. Never overwrite an existing password.
+      if (
+        provisionError &&
+        !["phone_exists", "user_already_exists"].includes(provisionError.code ?? "")
+      ) {
+        if (provisionError.code === "weak_password") return json({ error: "weak password" }, 400);
+        throw new Error("signup unavailable");
+      }
+      return json({ phone });
+    }
+    if (!config) return json({ error: "not configured" }, 503);
     if (body.action === "start") {
       const id = `av${crypto.randomUUID().replaceAll("-", "")}`;
-      const { error } = await db.rpc("start_signup_identity", { p_token: body.token, p_id: id });
+      const { error } = await db.rpc(
+        preview ? "start_preview_signup_identity" : "start_signup_identity",
+        { p_token: body.token, p_id: id },
+      );
       if (error) throw new Error(error.message);
       return json(await startCarrierProvider(db, config, id, "signup", req.headers.get("origin")));
     }

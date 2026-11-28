@@ -47,7 +47,7 @@ set local request.jwt.claims =
  '{"sub":"65000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}';
 select is((public.admin_activate_policy_reconsent(
   current_setting('test.policy_control_version')::integer,now()+interval '2 days','법률 검토 완료 후 적용합니다',gen_random_uuid())->>'required_version'),
-  '2026-11-28.2','operator can schedule a future effective date');
+  '2026-11-29.1','operator can schedule a future effective date');
 reset role;
 select is(public.member_policy_current('65000000-0000-0000-0000-000000000002'),true,
  'future effective date does not block current access');
@@ -67,8 +67,8 @@ select is(public.home_state_v2()->>'primary_state','policy_required',
  'home points to the dedicated reconsent flow');
 select throws_ok($$select public.create_ticket_order(1::smallint,'meeting'::public.ticket_kind)$$,'PT409',null,
  'new order is blocked while reconsent is required');
-select is((public.record_consent('2026-11-28.2')).agreed_policy_version,
- '2026-11-28.2','explicit consent is recorded for approved version');
+select is((public.record_consent('2026-11-29.1')).agreed_policy_version,
+ '2026-11-29.1','explicit consent is recorded for approved version');
 reset role;
 select is(public.member_policy_current('65000000-0000-0000-0000-000000000002'),true,
  'matching access resumes after explicit consent');
