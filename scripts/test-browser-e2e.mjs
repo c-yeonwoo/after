@@ -1256,7 +1256,7 @@ try {
   await checkPage(femalePage, "meeting request received");
   await femalePage.getByText(/까지 답해 주세요/).waitFor();
   const deadlineRpc = "**/rest/v1/rpc/my_request_deadlines";
-  await femalePage.route(deadlineRpc, (route) =>
+  const expiredDeadline = (route) =>
     route.fulfill({
       json: [
         {
@@ -1265,8 +1265,8 @@ try {
           as_of: new Date().toISOString(),
         },
       ],
-    }),
-  );
+    });
+  await femalePage.route(deadlineRpc, expiredDeadline);
   await femalePage.reload();
   await femalePage.getByText("답변 기한이 지났어요.").waitFor();
   assert.equal(
@@ -1276,8 +1276,22 @@ try {
     0,
   );
   assert.equal(await femalePage.getByRole("link", { name: "다른 날이 좋아요" }).count(), 0);
-  await femalePage.goto(baseUrl + "/prefs?meetingId=" + requestMeetingId);
-  await femalePage.waitForURL(baseUrl + "/requests");
+  // Exercise the incoming expired link in its own tab. WebKit may change the
+  // URL before React has rendered the request list; verify the destination UI.
+  const expiredLink = await femalePage.context().newPage();
+  try {
+    await expiredLink.route(deadlineRpc, expiredDeadline);
+    await expiredLink.goto(baseUrl + "/prefs?meetingId=" + requestMeetingId, {
+      waitUntil: "commit",
+    });
+    await expiredLink.waitForURL(baseUrl + "/requests");
+    await expiredLink
+      .getByRole("list")
+      .getByText("답변 기한이 지났어요.", { exact: true })
+      .waitFor();
+  } finally {
+    await expiredLink.close();
+  }
   await femalePage.unroute(deadlineRpc);
   await femalePage.route(deadlineRpc, (route) => route.fulfill({ json: [] }));
   await femalePage.reload();
