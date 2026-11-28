@@ -207,6 +207,7 @@ function RootComponent() {
 }
 
 const identityOptionalPaths = new Set([
+  "/invite",
   "/",
   "/login",
   "/signup",

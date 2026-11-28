@@ -3,6 +3,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createHmac, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
+import { stripVTControlCharacters } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 import AxeBuilder from "@axe-core/playwright";
 import { chromium, webkit } from "playwright";
@@ -36,6 +37,7 @@ const report = {
   checks: [],
   personas: [],
 };
+const testInvites = [];
 const ids = [],
   paths = [],
   contexts = [];
@@ -257,7 +259,17 @@ async function signup(person, i) {
   );
   person.page = page;
   person.email = `cycle-${run}-${person.key}@verify.local`;
-  await page.goto(`${base}/signup`);
+  if (person.key === "f1" || person.key === "m1") {
+    const free = sql(
+      `select code from beta_wave_one_invites where gender='${person.gender}' and opened_at is null and joined_at is null order by seat limit 1`,
+    );
+    assert.ok(free, "QA needs an untouched local invitation");
+    testInvites.push(free);
+    await page.goto(`${base}/invite#${free}`);
+    await page.getByRole("button", { name: "초대로 가입하기" }).click();
+  } else {
+    await page.goto(`${base}/signup`);
+  }
   await page.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
   const startButton = page.getByRole("button", { name: "동의하고 시작하기" });
   assert.equal(await startButton.isDisabled(), true);
@@ -546,7 +558,7 @@ try {
   server.stdout.setEncoding("utf8").on("data", (chunk) => {
     startup = (startup + chunk).slice(-8192);
   });
-  for (let n = 0; !startup.includes(base); n++) {
+  for (let n = 0; !stripVTControlCharacters(startup).includes(base); n++) {
     if (server.exitCode !== null || n >= 150)
       throw new Error("Local QA server did not start on " + base);
     await delay(200);
@@ -561,6 +573,50 @@ try {
     personas.some((p) => !p.id || !paths.some((x) => x.startsWith(p.id)))
   )
     throw new Error("A signup failed; dependent scenarios cannot be trusted");
+  await check("invited member can return from a used link by logging in", async () => {
+    const member = personas.find((p) => p.key === "m1");
+    const code = sql(`select code from beta_wave_one_invites where member_id='${member.id}'`);
+    const p = await pageFor();
+    await p.goto(base + "/invite#" + code);
+    await p.getByRole("button", { name: "참여한 계정으로 로그인" }).click();
+    await p.getByLabel("가입한 이메일").fill(member.email);
+    await p.getByLabel("비밀번호", { exact: true }).fill(password);
+    await p.getByRole("button", { name: "로그인", exact: true }).click();
+    await p.getByRole("heading", { name: "첫 베타에 참여 중이에요" }).waitFor();
+    await p.getByRole("button", { name: "홈으로 가기" }).click();
+    await p.waitForURL("**/home");
+    assert.equal(await p.evaluate(() => sessionStorage.getItem("after-signup-session")), null);
+  });
+  await check(
+    "switching an invitation preserves the old signup until explicit restart",
+    async () => {
+      const [a, b] = sql(
+        "select code from beta_wave_one_invites where opened_at is null and joined_at is null order by seat,gender limit 2",
+      ).split("\n");
+      assert.ok(a && b);
+      testInvites.push(a, b);
+      const p = await pageFor();
+      await p.goto(base + "/invite#" + a);
+      await p.getByRole("button", { name: "초대로 가입하기" }).click();
+      await p.getByRole("checkbox", { name: "이용약관 동의 (필수)", exact: true }).check();
+      await p
+        .getByRole("checkbox", { name: "개인정보 수집·이용 동의 (필수)", exact: true })
+        .check();
+      await p.getByRole("button", { name: "동의하고 시작하기" }).click();
+      await p.getByRole("button", { name: "여성", exact: true }).waitFor();
+      const initial = await p.evaluate(() => sessionStorage.getItem("after-signup-session"));
+      assert.ok(initial);
+      await p.goto(base + "/invite#" + b);
+      await p.getByRole("button", { name: "초대로 가입하기" }).click();
+      await p.getByRole("button", { name: "이 초대로 처음부터 가입" }).waitFor();
+      assert.equal(await p.evaluate(() => sessionStorage.getItem("after-signup-session")), initial);
+      await p.getByRole("button", { name: "이 초대로 처음부터 가입" }).click();
+      await p.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
+      assert.equal(await p.evaluate(() => sessionStorage.getItem("after-signup-session")), null);
+    },
+  );
+  if (report.checks.some((c) => c.status === "FAIL"))
+    throw new Error("An invitation check failed; dependent scenarios cannot be trusted");
   sql(
     `update profiles set profile_public_signals='{"topics":["영화·드라마"]}'
        where id in (${personas
@@ -1146,6 +1202,17 @@ try {
       const before = summary();
       await ap.goto(base + "/admin");
       const board = ap.getByRole("region", { name: "초대 베타 관찰" });
+      const wave = board.getByRole("region", { name: "1차 초대 진행" });
+      for (const person of [f1, m1]) {
+        const seat = sql(`select seat from beta_wave_one_invites where member_id='${person.id}'`);
+        assert.ok(seat);
+        const label = (person.gender === "male" ? "남성 " : "여성 ") + seat;
+        await wave
+          .getByRole("listitem")
+          .filter({ hasText: label })
+          .getByText("첫 소개 전달 · 만남 전")
+          .waitFor();
+      }
       const pool = board.getByRole("region", { name: "모집 현황" });
       for (const [label, key] of [
         ["여성", "women"],
@@ -1796,6 +1863,12 @@ try {
       delete from intro_queue where male_id in (${listed}) or female_id in (${listed}) or curated_by in (${listed});
       delete from ticket_orders where user_id in (${listed}) or fulfilled_by in (${listed});
       commit;`);
+  }
+  if (testInvites.length) {
+    const slots = testInvites.map((code) => `'${code}'`).join(",");
+    const owners = ids.map((id) => `'${id}'`).join(",") || "null";
+    sql(`update beta_wave_one_invites set opened_at=null,started_at=null,member_id=null,joined_at=null
+      where code in (${slots}) and ((member_id is null and joined_at is null) or member_id in (${owners}))`);
   }
   if (ids.length)
     sql(

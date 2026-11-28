@@ -56,6 +56,7 @@ import {
   verifySignupEmail,
   type Profile,
 } from "@/lib/api";
+import { waveInviteCode, forgetWaveInvite } from "@/lib/waveInvite";
 import { useMe } from "@/lib/me";
 import { isNative } from "@/lib/native";
 import { pruneMyPhotos } from "@/lib/photo";
@@ -68,7 +69,8 @@ export const Route = createFileRoute("/signup")({
     if (["1", "true"].includes(new URLSearchParams(location.searchStr).get("edit") ?? ""))
       throw redirect({ to: "/profile-edit", replace: true });
   },
-  validateSearch: (search: Record<string, unknown>): { prepare?: true } => ({
+  validateSearch: (search: Record<string, unknown>): { prepare?: true; wave?: true } => ({
+    ...(search.wave === true || search.wave === "true" ? { wave: true as const } : {}),
     ...(search.prepare === "1" || search.prepare === true || search.prepare === "true"
       ? { prepare: true as const }
       : {}),
@@ -125,7 +127,7 @@ function resumeStep(me: Profile) {
 
 function Onboarding() {
   const navigate = useNavigate();
-  const { prepare } = Route.useSearch();
+  const { prepare, wave: fromInvite } = Route.useSearch();
   const { me, ready, refresh, setMe } = useMe();
   const [step, setStep] = useState(CONSENT);
   const TOTAL = PROFILE_ORDER.includes(step) ? PROFILE_ORDER.length : ACCOUNT_ORDER.length;
@@ -142,6 +144,7 @@ function Onboarding() {
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const agreed = termsAgreed && privacyAgreed;
   const [signupSession, setSignupSession] = useState<SignupSession | null>(null);
+  const wave = fromInvite || signupSession?.invited;
   const [signupResumeRequired, setSignupResumeRequired] = useState(false);
   const [signupRestoreError, setSignupRestoreError] = useState(false);
   const [signupReady, setSignupReady] = useState(false);
@@ -360,6 +363,7 @@ function Onboarding() {
         toast("비밀번호는 나중에 설정에서 정해 주세요.");
       }
       clearSignupSession();
+      forgetWaveInvite();
       setMe(created);
       setUserId(created.id);
       setResumeConfirmed(true);
@@ -439,7 +443,7 @@ function Onboarding() {
                   await signOut();
                   clearSignupSession();
                   // 이전 계정에서 불러온 폼 상태까지 버리고 새 화면을 연다.
-                  window.location.replace("/signup");
+                  window.location.replace(wave ? "/signup?wave=true" : "/signup");
                 } catch (err) {
                   setAuthError(authErrorMessage(err));
                   setAuthBusy(false);
@@ -567,6 +571,7 @@ function Onboarding() {
         eyebrowAction={
           <Link
             to="/login"
+            search={wave ? { next: "/invite" } : {}}
             className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary-strong"
           >
             로그인
@@ -586,7 +591,9 @@ function Onboarding() {
                   setMe(updated);
                   setStep(resumeStep(updated));
                 } else {
-                  const session = signupSession ?? (await beginSignup());
+                  const invitation = wave ? waveInviteCode() : null;
+                  if (wave && !invitation) throw new Error("invite unavailable");
+                  const session = signupSession ?? (await beginSignup(invitation ?? undefined));
                   setSignupSession(session);
                   setStep(carrierIdentityEnabled ? (session.verified ? 4 : PHONE) : 1);
                 }
@@ -1024,6 +1031,7 @@ function Onboarding() {
               <p>{authError}</p>
               <Link
                 to="/login"
+                search={wave ? { next: "/invite" } : {}}
                 className="mt-2 inline-flex min-h-11 items-center text-foreground underline underline-offset-4"
               >
                 로그인 화면으로
@@ -1082,7 +1090,9 @@ function Onboarding() {
                     );
                   } else if (result.kind === "existing") {
                     setMe(result.profile);
-                    if (result.profile.onboarding_step >= 7) {
+                    if (wave) {
+                      navigate({ to: "/invite", replace: true });
+                    } else if (result.profile.onboarding_step >= 7) {
                       toast("이미 가입된 계정으로 로그인했어요.");
                       navigate({ to: "/home", replace: true });
                     } else {
