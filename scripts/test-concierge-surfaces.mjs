@@ -722,8 +722,7 @@ try {
               });
             return fulfill(currentDraft ? { data: currentDraft, revision } : null);
           }
-          if (path.endsWith("/rest/v1/app_settings") && request.method() === "GET")
-            return fulfill({ payments_enabled: false });
+          if (path.endsWith("/rpc/public_payment_mode")) return fulfill(false);
           if (path.endsWith("/rpc/home_state_v2"))
             return fulfill({
               schema_version: 2,
@@ -1054,7 +1053,9 @@ try {
             );
           }
           if (fixture.name === "home-liked") {
-            await page.getByText("만남 요청이 오면 알려드릴게요.", { exact: true }).waitFor();
+            await page
+              .getByText(/만남 요청은 앱 알림함에서 확인하고 날짜를 보고 결정해요/)
+              .waitFor();
             assert.equal(
               await page.getByRole("button", { name: "일정 정리", exact: true }).count(),
               0,

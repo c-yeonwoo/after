@@ -1,3 +1,4 @@
+import { AFTER_LIKE_GUIDE } from "@/lib/brand";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -671,9 +672,7 @@ function FemaleIntroInbox({ owner, onRead }: { owner: string; onRead: () => void
                 {state.hasLikes ? "호감을 보냈어요." : "지금 살펴볼 소개를 모두 확인했어요"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {state.hasLikes
-                  ? "만남 요청이 오면 알려드릴게요."
-                  : "새 소개가 준비되면 이어서 보여드릴게요."}
+                {state.hasLikes ? AFTER_LIKE_GUIDE : "새 소개가 준비되면 이어서 보여드릴게요."}
               </p>
             </div>
           </div>
@@ -722,7 +721,9 @@ function TeaserCard({
           detailsOnly
         />
       ) : null}
-      <p className="text-xs text-muted-foreground">이름·사진·소개글은 열면 보여요.</p>
+      <p className="text-xs text-muted-foreground">
+        열면 이름·사진·소개글을 볼 수 있어요. 실제로 만날 날짜는 요청한 뒤 서로 정해요.
+      </p>
     </div>
   );
 }

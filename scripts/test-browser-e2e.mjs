@@ -342,6 +342,21 @@ try {
   await publicPage.unroute(emailPreviewRoute);
   await publicPage.goto(baseUrl);
   await publicPage.getByRole("link", { name: "로그인" }).waitFor();
+  await publicPage.getByText(/티켓을 사용하는 소개는/).waitFor();
+  await publicPage.getByText("매니저가 고른 이유", { exact: true }).waitFor();
+  await publicPage.getByText("화요일 저녁 7시 · 목요일 저녁 8시").waitFor();
+  await publicPage.getByText("사업자 정보", { exact: true }).click();
+  await publicPage.getByText(/사업자등록번호/).waitFor();
+  const modeRoute = "**/rpc/public_payment_mode";
+  await publicPage.route(modeRoute, (route) => route.fulfill({ json: false }));
+  await publicPage.reload();
+  await publicPage.getByRole("heading", { name: "무료 베타 안내" }).waitFor();
+  await publicPage.unroute(modeRoute);
+  await publicPage.route(modeRoute, (route) => route.fulfill({ status: 503, json: {} }));
+  await publicPage.reload();
+  await publicPage.getByText(/현재 이용 요금을 불러오지 못했어요/).waitFor();
+  assert.equal(await publicPage.getByRole("heading", { name: "무료 베타 안내" }).count(), 0);
+  await publicPage.unroute(modeRoute);
   const landingPhoto = publicPage.locator(
     '.landing-photo img[src="/brand/after-first-conversation.jpg"]',
   );

@@ -1,3 +1,4 @@
+import { AFTER_LIKE_GUIDE } from "@/lib/brand";
 import { NotificationBell } from "@/components/app/NotificationBell";
 import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { comparePublicSignals } from "../../supabase/functions/_shared/profile-signals";
@@ -296,7 +297,7 @@ function HomePage() {
                     {holding
                       ? "다음 소개는 만남 당일이 지난 뒤 다시 준비해요. 후기는 나중에 남겨도 괜찮아요."
                       : waitingForRequest
-                        ? "만남 요청이 오면 알려드릴게요."
+                        ? AFTER_LIKE_GUIDE
                         : "프로필 준비가 끝났어요. 잘 맞는 분의 소개가 준비되면 여기서 알려드릴게요."}
                   </p>
                   {!waitingForRequest && !holding && (

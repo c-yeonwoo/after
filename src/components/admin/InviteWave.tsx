@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Copy } from "lucide-react";
 import { waveInviteUrl } from "@/lib/waveInvite";
-import type { WaveSeat } from "@/lib/betaObservations";
+import type { InviteBetaObservationsData, WaveSeat } from "@/lib/betaObservations";
 
 const stageLabels = {
   issued: "링크 열기 전",
@@ -28,7 +28,13 @@ const stageLabels = {
   ended: "참여 종료",
 } as const;
 
-export function InviteWave({ seats }: { seats: WaveSeat[] }) {
+export function InviteWave({
+  seats,
+  attendance,
+}: {
+  seats: WaveSeat[];
+  attendance?: InviteBetaObservationsData["wave_attendance"];
+}) {
   const [notice, setNotice] = useState("");
   const [manual, setManual] = useState("");
   async function copy(code: string, label: string) {
@@ -49,6 +55,21 @@ export function InviteWave({ seats }: { seats: WaveSeat[] }) {
         참여 {seats.filter((s) => s.code === null && s.stage !== "ended").length}/{seats.length}명 ·
         참여 후 후기 반영 {seats.filter((s) => s.stage === "reflected").length}명
       </p>
+      {attendance && (
+        <div className="mt-3 rounded-control bg-surface-subtle p-3 text-sm">
+          <p className="font-semibold">첫 14일 · 두 사람이 확인한 만남</p>
+          <p className="mt-1">
+            {attendance.matured
+              ? `${attendance.meetings}건 · 참여 ${attendance.attendees}/${attendance.matured}명`
+              : "14일 관찰을 마친 참여자가 아직 없어요."}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            초대 참여와 프로필 준비를 모두 확인한 날부터 14일을 봐요. 이 기간에 요청한 약속에 두
+            사람 모두 만났다고 후기를 남기면 1건이에요. 관찰 중 {attendance.observing}명 · 준비 시점
+            미확인 {attendance.no_clock}명 · 참여 종료로 집계 제외 {attendance.unlinked}명
+          </p>
+        </div>
+      )}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {(["female", "male"] as const).map((gender) => {
           const label = gender === "female" ? "여성" : "남성";

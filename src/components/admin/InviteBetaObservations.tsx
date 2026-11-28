@@ -77,7 +77,7 @@ export function InviteBetaObservations({
         <p className="mt-2 text-sm text-muted-foreground">아직 집계 결과가 없습니다.</p>
       ) : (
         <div className="mt-4 grid gap-6 lg:grid-cols-2">
-          {data.wave_one && <InviteWave seats={data.wave_one} />}
+          {data.wave_one && <InviteWave seats={data.wave_one} attendance={data.wave_attendance} />}
           {data.pool && data.followup && (
             <section
               className="rounded-control bg-muted/60 p-4 lg:col-span-2"

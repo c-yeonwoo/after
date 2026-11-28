@@ -17,6 +17,14 @@ export type WaveSeat = {
 };
 export type InviteBetaObservationsData = {
   wave_one?: WaveSeat[];
+  wave_attendance?: {
+    matured: number;
+    observing: number;
+    no_clock: number;
+    unlinked: number;
+    attendees: number;
+    meetings: number;
+  };
   pool?: {
     week_start: string;
     week_end: string;

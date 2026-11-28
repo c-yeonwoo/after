@@ -880,6 +880,7 @@ export type Database = {
           body: string | null
           created_at: string
           id: string
+          received_at: string | null
           meeting_id: string
           met: boolean
           next_preference: string | null
@@ -890,6 +891,7 @@ export type Database = {
           body?: string | null
           created_at?: string
           id?: string
+          received_at?: string | null
           meeting_id: string
           met: boolean
           next_preference?: string | null
@@ -900,6 +902,7 @@ export type Database = {
           body?: string | null
           created_at?: string
           id?: string
+          received_at?: string | null
           meeting_id?: string
           met?: boolean
           next_preference?: string | null
@@ -3054,6 +3057,7 @@ export type Database = {
       }
     }
     Functions: {
+      public_payment_mode: { Args: never; Returns: boolean }
       meet_places_for_intro: {
         Args: { p_intro: string }
         Returns: Database["public"]["Functions"]["meet_places_for_me"]["Returns"]

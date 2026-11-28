@@ -2,7 +2,7 @@ begin;
 select no_plan();
 set local request.headers='{"x-forwarded-for":"wave-one-qa"}';
 set local request.jwt.claims='{"role":"service_role","aal":"aal2"}';
-update app_settings set identity_required=false,admin_mfa_required=false where id;
+update app_settings set payments_enabled=false,identity_required=false,admin_mfa_required=false where id;
 update beta_wave_one_invites set opened_at=null,started_at=null,joined_at=null,member_id=null;
 create temp table wave_codes as select gender,seat,code from beta_wave_one_invites;
 grant select on wave_codes to anon,authenticated;
@@ -86,6 +86,31 @@ select is(pg_temp.stage('female',1),'second_wait','first attended review with pr
 select pg_temp.login(2);
 select submit_meeting_feedback(pg_temp.person(23),true,'friend',null);
 select is(pg_temp.stage('male',1),'no_preference','ordinary optional review is not a preference');
+select is((wave_one_attendance()->>'observing')::int,2,'real first readiness captured after photo approval');
+savepoint outcome_window;
+update beta_wave_one_invites set joined_at=now()-interval '20 days' where member_id is not null;
+update beta_wave_one_invites set first_ready_at=now()-interval '15 days' where member_id is not null;
+update feedbacks set received_at=now()-interval '20 days' where meeting_id=pg_temp.person(23);
+select ok((select bool_and(received_at>=now()) from feedbacks where meeting_id=pg_temp.person(23)),
+  'database stamps new receipts and preserves them across edits');
+-- Model old server receipts in this rolled-back transaction only.
+alter table feedbacks disable trigger stamp_feedback_receipt;
+update feedbacks set received_at=now()-interval '2 days' where meeting_id=pg_temp.person(23);
+select is(wave_one_attendance(), '{"attendees":2,"meetings":1,"matured":2,"observing":0,"no_clock":0,"unlinked":0}'::jsonb,
+  'two separate positive post-date reviews, one meeting, two distinct eligible participants');
+update meetings set created_at=now()-interval '16 days' where id=pg_temp.person(23);
+select is((wave_one_attendance()->>'meetings')::int,0,'a meeting requested before enrollment is excluded');
+update meetings set created_at=now()-interval '4 days' where id=pg_temp.person(23);
+update feedbacks set received_at=null where author_id=pg_temp.person(2);
+select is((wave_one_attendance()->>'meetings')::int,0,'an unknown legacy receipt cannot complete a pair');
+update feedbacks set received_at=now() where author_id=pg_temp.person(2);
+select is((wave_one_attendance()->>'meetings')::int,0,'confirmation outside original 14 days does not count');
+update feedbacks set received_at=now()-interval '2 days',met=false where author_id=pg_temp.person(2);
+select is((wave_one_attendance()->>'attendees')::int,0,'one-sided attendance does not count');
+update beta_wave_one_invites set first_ready_at=now()-interval '1 day' where member_id=pg_temp.person(2);
+select is((wave_one_attendance()->>'observing')::int,1,'newly eligible participant is still observing');
+select is((wave_one_attendance()->>'matured')::int,1,'immature member excluded from denominator');
+rollback to outcome_window;
 savepoint unmatched;
 update beta_second_intros set reflected=false,shown_at=clock_timestamp() where member_id=pg_temp.person(1);
 select is(pg_temp.stage('female',1),'not_reflected','receiving a second card does not itself mean the preference was used');
@@ -105,5 +130,21 @@ set local request.jwt.claims='{"role":"service_role","aal":"aal2"}';
 update profiles set account_state='withdrawn' where id=pg_temp.person(1);
 select is(pg_temp.stage('female',1),'ended','withdrawal unlinks the individual and leaves the seat closed');
 select is(open_wave_invite(pg_temp.inv('female',1)),'used','withdrawal does not recycle a shared invitation');
+select is((wave_one_attendance()->>'unlinked')::int,1,'erased participant is counted separately');
+set local role anon;
+select throws_ok('select wave_one_attendance()','42501',null,'raw cohort data is private');
+select is(public_payment_mode(), false, 'signed-out landing reads the free switch');
+reset role;
+-- Joining while a newer global gate applies must not reuse an old ready transition.
+set local request.jwt.claims='{"role":"service_role","aal":"aal2"}';
+update app_settings set identity_required=true where id;
+select pg_temp.login(3);
+select join_wave_invite(pg_temp.inv('male',2));
+select is((select first_ready_at from beta_wave_one_invites where member_id=pg_temp.person(3)),null::timestamptz,
+  'existing profile without required carrier verification gets no clock on joining');
+set local request.jwt.claims='{"role":"service_role","aal":"aal2"}';
+update app_settings set identity_required=false where id;
+select ok((select first_ready_at>=joined_at from beta_wave_one_invites where member_id=pg_temp.person(3)),
+  'relaxing the gate observes the newly eligible seat');
 select * from finish();
 rollback;

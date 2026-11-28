@@ -1,3 +1,4 @@
+import { TICKET_RETURN, TICKET_VALIDITY } from "@/lib/ticketTerms";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -170,7 +171,9 @@ function PaymentConfirmation({
               {order.kind === "intro" ? "소개 티켓" : "만남 티켓"} {order.quantity}장
             </p>
             <p className="mt-1 tabular-nums">{order.amount.toLocaleString("ko-KR")}원</p>
-            <p className="mt-2 text-xs">발급일부터 12개월 동안 사용할 수 있어요.</p>
+            <p className="mt-2 text-xs">
+              {TICKET_VALIDITY} {TICKET_RETURN[order.kind]}
+            </p>
           </>
         ) : (
           <p>
