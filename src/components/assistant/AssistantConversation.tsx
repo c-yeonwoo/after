@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { createPortal } from "react-dom";
+import { HomeComposer } from "./HomeComposer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Send, Settings2, Trash2 } from "lucide-react";
@@ -42,10 +42,6 @@ function ConversationFrame({
   footer?: ReactNode;
   children: ReactNode;
 }) {
-  const [homeFooter, setHomeFooter] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    setHomeFooter(compact ? document.getElementById("assistant-home-composer") : null);
-  }, [compact]);
   if (embedded)
     return (
       <div className="flex min-h-0 flex-1 flex-col">
@@ -61,13 +57,7 @@ function ConversationFrame({
   return compact ? (
     <section aria-label="나와 매니저의 대화" className="assistant-dock">
       {children}
-      {footer ? (
-        homeFooter ? (
-          createPortal(footer, homeFooter)
-        ) : (
-          <div className="mt-4">{footer}</div>
-        )
-      ) : null}
+      {footer ? <HomeComposer>{footer}</HomeComposer> : null}
     </section>
   ) : (
     <AppScreen

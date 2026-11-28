@@ -1,3 +1,4 @@
+import { NotificationBell } from "@/components/app/NotificationBell";
 import { useAssistantFlags } from "@/lib/useAssistantFlags";
 import { comparePublicSignals } from "../../supabase/functions/_shared/profile-signals";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -265,7 +266,11 @@ function HomePage() {
   }
 
   return (
-    <AppScreen keyboardAware footer={<div id="assistant-home-composer" />}>
+    <AppScreen
+      action={<NotificationBell />}
+      keyboardAware
+      footer={<div id="assistant-home-composer" />}
+    >
       <section className="home-greeting assistant-home-greeting" aria-label="애프터 매니저 안내">
         <div className="flex items-center gap-3">
           <AssistantMark />

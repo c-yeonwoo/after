@@ -3,6 +3,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createHmac, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
+import { stripVTControlCharacters } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 import AxeBuilder from "@axe-core/playwright";
 import { chromium, webkit } from "playwright";
@@ -21,7 +22,10 @@ const sql = (s) =>
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
-const base = "http://127.0.0.1:4178";
+const port = Number(process.env.AFTER_CYCLE_PORT ?? 4178);
+if (!Number.isInteger(port) || port < 1024 || port > 65535)
+  throw new Error("Invalid local cycle port");
+const base = `http://127.0.0.1:${port}`;
 const password = "after-local-cycle-qa-only";
 const run = randomUUID().slice(0, 8);
 const output = `/tmp/after-full-cycle-${run}`;
@@ -62,9 +66,9 @@ async function check(name, fn) {
     console.log(`FAIL ${name}: ${e.message.slice(0, 240)}`);
   }
 }
-async function pageFor(width = 390) {
+async function pageFor(width = 390, height = 900) {
   const context = await browser.newContext({
-    viewport: { width, height: 900 },
+    viewport: { width, height },
     isMobile: width < 768,
     hasTouch: width < 768,
     locale: "ko-KR",
@@ -247,7 +251,7 @@ const personas = [
 ];
 
 async function signup(person, i) {
-  const page = await pageFor();
+  const page = await pageFor(320, 568);
   await page.route("**/functions/v1/signup-identity", (route) =>
     route.request().postDataJSON()?.action === "dev-status"
       ? route.fulfill({ json: { enabled: true } })
@@ -267,6 +271,17 @@ async function signup(person, i) {
     await page.goto(`${base}/signup`);
   }
   await page.getByRole("heading", { name: "시작하기 전에, 확인해 주세요" }).waitFor();
+  const startButton = page.getByRole("button", { name: "동의하고 시작하기" });
+  assert.equal(await startButton.isDisabled(), true);
+  const startBox = await startButton.boundingBox();
+  assert.ok(
+    startBox && startBox.y >= 0 && startBox.y + startBox.height <= 568,
+    JSON.stringify({
+      startBox,
+      viewport: await page.evaluate(() => [innerWidth, innerHeight, visualViewport?.height]),
+    }),
+  );
+  assert.equal(await page.getByRole("checkbox").count(), 2);
   await page.getByRole("checkbox", { name: "이용약관 동의 (필수)", exact: true }).check();
   await page.getByRole("checkbox", { name: "개인정보 수집·이용 동의 (필수)", exact: true }).check();
   await page.getByRole("button", { name: "동의하고 시작하기" }).click();
@@ -274,6 +289,7 @@ async function signup(person, i) {
     .getByRole("button", { name: person.gender === "male" ? "남성" : "여성", exact: true })
     .click();
   await page.getByRole("button", { name: "다음", exact: true }).click();
+  await page.setViewportSize({ width: 375, height: 667 });
   await page.getByLabel("이메일").fill(person.email);
   await page.getByRole("button", { name: "개발 계정 만들기" }).click();
   await page.getByText("로컬 개발 환경").waitFor();
@@ -333,6 +349,7 @@ async function signup(person, i) {
   await page.getByLabel("직업", { exact: true }).fill(person.job);
   await page.getByLabel("가장 편한 지역", { exact: true }).selectOption("gangnam");
   await page.getByRole("button", { name: "다음", exact: true }).click();
+  assert.equal(await page.getByText("종교 (선택)", { exact: true }).count(), 0);
   await page.getByRole("button", { name: "비흡연", exact: true }).click();
   await page.getByRole("button", { name: "가끔 한 잔", exact: true }).click();
   await page.getByRole("button", { name: "다음", exact: true }).click();
@@ -343,7 +360,7 @@ async function signup(person, i) {
   await page.getByLabel("카드에서 보일 짧은 소개", { exact: true }).fill(person.story);
   await page.locator('textarea[id^="section-"]').first().fill(person.story);
   await page.getByRole("button", { name: "프로필 저장하기", exact: true }).click();
-  await page.waitForURL(/\/(home|profile)$/);
+  await page.waitForURL("**/home");
   paths.push(
     ...JSON.parse(sql(`select to_json(photo_paths) from profiles where id='${person.id}'`)),
   );
@@ -353,6 +370,23 @@ async function signup(person, i) {
     ),
     "7:true:true",
   );
+  assert.equal(
+    sql(`select exists(select 1 from policy_consents c join policy_control p on p.id
+      and p.signup_version=c.policy_version where c.user_id='${person.id}' and c.evidence_source='explicit')`),
+    "t",
+    "signup records an explicit receipt for the currently published notice",
+  );
+  const help = page
+    .locator("#assistant-home-composer input, #assistant-home-composer textarea")
+    .first();
+  await help.waitFor({ state: "visible" });
+  const box = await help.boundingBox();
+  const tab = await page.locator(".app-tab").first().boundingBox();
+  assert.ok(box && tab && box.y >= 0 && box.y + box.height <= tab.y);
+  await page.locator('header a[href^="/notifications"]').click();
+  await page.getByRole("heading", { name: "알림", exact: true }).waitFor();
+  await page.getByRole("link", { name: "뒤로", exact: true }).click();
+  await page.waitForURL("**/home");
   report.personas.push({ key: person.key, name: person.name, scenario: person.scenario });
   await screen(page, `signup-${person.key}`);
 }
@@ -504,7 +538,14 @@ try {
   );
   server = spawn(
     process.execPath,
-    ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "4178", "--strictPort"],
+    [
+      "node_modules/vite/bin/vite.js",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      String(port),
+      "--strictPort",
+    ],
     {
       env: {
         ...process.env,
@@ -515,13 +556,17 @@ try {
         VITE_DEV_AUTH_BYPASS: "true",
         VITE_TOSS_CLIENT_KEY: "test_gck_cycle_fixture",
       },
-      stdio: "ignore",
+      stdio: ["ignore", "pipe", "inherit"],
     },
   );
-  for (let n = 0; n < 100; n++) {
-    try {
-      if ((await fetch(base)).ok) break;
-    } catch {}
+  // An unrelated dev server may already answer the same URL. Only trust our child's ready output.
+  let startup = "";
+  server.stdout.setEncoding("utf8").on("data", (chunk) => {
+    startup = (startup + chunk).slice(-8192);
+  });
+  for (let n = 0; !stripVTControlCharacters(startup).includes(base); n++) {
+    if (server.exitCode !== null || n >= 150)
+      throw new Error("Local QA server did not start on " + base);
     await delay(200);
   }
   browser = await (process.env.AFTER_TEST_BROWSER === "webkit" ? webkit : chromium).launch({
@@ -529,6 +574,11 @@ try {
   });
   for (const [i, person] of personas.entries())
     await check(`signup ${person.key}: consent → SMS → photos → profile`, () => signup(person, i));
+  if (
+    report.checks.some((c) => c.status === "FAIL") ||
+    personas.some((p) => !p.id || !paths.some((x) => x.startsWith(p.id)))
+  )
+    throw new Error("A signup failed; dependent scenarios cannot be trusted");
   await check("invited member can return from a used link by logging in", async () => {
     const member = personas.find((p) => p.key === "m1");
     const code = sql(`select code from beta_wave_one_invites where member_id='${member.id}'`);
@@ -571,8 +621,8 @@ try {
       assert.equal(await p.evaluate(() => sessionStorage.getItem("after-signup-session")), null);
     },
   );
-  if (personas.some((p) => !p.id || !paths.some((x) => x.startsWith(p.id))))
-    throw new Error("A signup failed; dependent scenarios cannot be trusted");
+  if (report.checks.some((c) => c.status === "FAIL"))
+    throw new Error("An invitation check failed; dependent scenarios cannot be trusted");
   sql(
     `update profiles set profile_public_signals='{"topics":["영화·드라마"]}'
        where id in (${personas

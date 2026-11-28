@@ -16,7 +16,6 @@ import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
   MBTI_AXES,
-  RELIGION_OPTIONS,
   SMOKING_OPTIONS,
   ageFrom,
   basicsIssues,
@@ -64,8 +63,6 @@ import { pruneMyPhotos } from "@/lib/photo";
 import { enablePush, pushPermission } from "@/lib/push";
 import { cn } from "@/lib/utils";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
-import { ManagerConsentNotice } from "@/components/assistant/ManagerConsentNotice";
-import { recordManagerSignupConsent } from "@/lib/signupSession";
 
 export const Route = createFileRoute("/signup")({
   beforeLoad: ({ location }) => {
@@ -144,7 +141,6 @@ function Onboarding() {
   const [codeSent, setCodeSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
-  const [managerAgreed, setManagerAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const agreed = termsAgreed && privacyAgreed;
   const [signupSession, setSignupSession] = useState<SignupSession | null>(null);
@@ -209,7 +205,6 @@ function Onboarding() {
         setSignupSession(session);
         setTermsAgreed(true);
         setPrivacyAgreed(true);
-        setManagerAgreed(session.managerConsented === true);
         if (session.gender) setGender(session.gender);
         if (session.birth) setBasics((value) => ({ ...value, birth: session.birth! }));
         if (session.verified) setAuthError(null);
@@ -250,7 +245,6 @@ function Onboarding() {
       mbti: me.mbti ?? "",
       smoking: me.smoking ?? "",
       drinking: me.drinking ?? "",
-      religion: me.religion ?? "",
     };
     setBasics(nextBasics);
     setStep(resumeStep(me));
@@ -332,7 +326,6 @@ function Onboarding() {
     setSignupSession(null);
     setSignupResumeRequired(false);
     setTermsAgreed(false);
-    setManagerAgreed(false);
     setPrivacyAgreed(false);
     setGender(null);
     setHubId("");
@@ -574,17 +567,45 @@ function Onboarding() {
         eyebrow="가입"
         title="시작하기 전에, 확인해 주세요"
         description="서비스 이용과 개인정보 처리에 대한 동의가 필요해요."
+        assistant={false}
+        eyebrowAction={
+          <Link
+            to="/login"
+            search={wave ? { next: "/invite" } : {}}
+            className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary-strong"
+          >
+            로그인
+          </Link>
+        }
         footer={
-          <p className="text-center text-sm text-muted-foreground">
-            이미 가입하셨나요?{" "}
-            <Link
-              to="/login"
-              search={wave ? { next: "/invite" } : {}}
-              className="font-semibold text-primary-strong underline"
-            >
-              로그인
-            </Link>
-          </p>
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!agreed || authBusy}
+            onClick={async () => {
+              setAuthBusy(true);
+              setAuthError(null);
+              try {
+                if (me) {
+                  const updated = await recordConsent();
+                  setMe(updated);
+                  setStep(resumeStep(updated));
+                } else {
+                  const invitation = wave ? waveInviteCode() : null;
+                  if (wave && !invitation) throw new Error("invite unavailable");
+                  const session = signupSession ?? (await beginSignup(invitation ?? undefined));
+                  setSignupSession(session);
+                  setStep(carrierIdentityEnabled ? (session.verified ? 4 : PHONE) : 1);
+                }
+              } catch (error) {
+                setAuthError(authErrorMessage(error));
+              } finally {
+                setAuthBusy(false);
+              }
+            }}
+          >
+            {authBusy ? "확인 중…" : "동의하고 시작하기"}
+          </Button>
         }
       >
         <div className="app-elevated divide-y divide-border rounded-surface bg-card px-5">
@@ -627,42 +648,11 @@ function Onboarding() {
             </span>
           </label>
         </div>
-        <ManagerConsentNotice checked={managerAgreed} onChange={setManagerAgreed} />
         {authError ? (
           <p role="alert" className="mt-4 text-sm text-destructive">
             {authError}
           </p>
         ) : null}
-        <Button
-          className="mt-8 w-full"
-          size="lg"
-          disabled={!agreed || authBusy}
-          onClick={async () => {
-            setAuthBusy(true);
-            setAuthError(null);
-            try {
-              if (me) {
-                const updated = await recordConsent();
-                if (managerAgreed) await recordManagerSignupConsent();
-                setMe(updated);
-                setStep(resumeStep(updated));
-              } else {
-                const invitation = wave ? waveInviteCode() : null;
-                if (wave && !invitation) throw new Error("invite unavailable");
-                const session =
-                  signupSession ?? (await beginSignup(managerAgreed, invitation ?? undefined));
-                setSignupSession(session);
-                setStep(carrierIdentityEnabled ? (session.verified ? 4 : PHONE) : 1);
-              }
-            } catch (error) {
-              setAuthError(authErrorMessage(error));
-            } finally {
-              setAuthBusy(false);
-            }
-          }}
-        >
-          {authBusy ? "확인 중…" : "동의하고 시작하기"}
-        </Button>
       </StepShell>
     );
   }
@@ -980,7 +970,7 @@ function Onboarding() {
           </p>
         ) : (
           <p id="work-email-hint" className="mt-2 text-sm text-muted-foreground">
-            개인·회사 이메일 모두 가능해요. 재직 인증은 필수가 아니에요.
+            개인·회사 이메일 모두 가능해요. 이메일은 주소 소유 여부를 확인하는 데 써요.
           </p>
         )}
 
@@ -1219,7 +1209,7 @@ function Onboarding() {
         total={TOTAL}
         eyebrow="생활 정보"
         title="만나기 전에 알아 두면 좋은 것"
-        description="흡연·음주는 소개 전에 알려드려요. MBTI·종교는 선택입니다."
+        description="흡연·음주는 소개 전에 알려드려요. MBTI는 선택이에요."
       >
         <div className="app-elevated space-y-6 rounded-surface bg-card p-5">
           <div>
@@ -1276,21 +1266,6 @@ function Onboarding() {
               ))}
             </div>
           </div>
-
-          <div>
-            <p className="text-sm font-semibold text-foreground">종교 (선택)</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {RELIGION_OPTIONS.map((o) => (
-                <Chip
-                  key={o.id}
-                  selected={basics.religion === o.id}
-                  onClick={() => setB({ religion: basics.religion === o.id ? "" : o.id })}
-                >
-                  {o.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
         </div>
 
         {missingConditions.length ? (
@@ -1315,7 +1290,6 @@ function Onboarding() {
                   smoking: basics.smoking,
                   drinking: basics.drinking,
                   mbti: basics.mbti || null,
-                  religion: basics.religion || null,
                 });
                 setStep(Q_FIRST);
               } catch (err) {

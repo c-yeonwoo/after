@@ -255,13 +255,13 @@ for (const p of PEOPLE) {
   sql(`
     insert into profiles (
       id, gender, hub_id, company_email, email_verified_at, account_state, role,
-      name, birth, job, mbti, smoking, drinking, religion, headline,
+      name, birth, job, mbti, smoking, drinking, headline,
       interests, match_tags, topics, intro, details,
       onboarding_step, terms_agreed_at, privacy_agreed_at, agreed_policy_version,
       feedback_emails, paused_at, photo_state
     ) values (
       '${id}', '${p.gender}', 'gangnam', '${q(p.email)}', now(), 'active', '${p.role ?? "member"}',
-      '${q(p.name)}', '${p.birth}', '${q(p.job)}', '${p.mbti}', 'none', 'social', 'none',
+      '${q(p.name)}', '${p.birth}', '${q(p.job)}', '${p.mbti}', 'none', 'social',
       '${q(p.headline)}',
       ${arr(p.interests)}, ${arr(p.matchTags)}, ${arr(p.topics)},
       '${q(p.headline)}', '{}'::jsonb,

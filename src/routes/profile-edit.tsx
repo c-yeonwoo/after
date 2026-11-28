@@ -10,7 +10,6 @@ import { Chip } from "@/components/onboarding/Chip";
 import {
   DRINKING_OPTIONS,
   MBTI_AXES,
-  RELIGION_OPTIONS,
   SMOKING_OPTIONS,
   ageFrom,
   basicsIssues,
@@ -360,14 +359,6 @@ function ProfileEditor({ member }: { member: Profile }) {
                 value={basics.drinking}
                 options={DRINKING_OPTIONS}
                 onChange={(drinking) => setB({ drinking })}
-              />
-              <Choices
-                label="종교 (선택)"
-                value={basics.religion}
-                options={RELIGION_OPTIONS}
-                onChange={(religion) =>
-                  setB({ religion: religion === basics.religion ? "" : religion })
-                }
               />
             </section>
             {Object.hasOwn(member, "profile_public_signals") ? (

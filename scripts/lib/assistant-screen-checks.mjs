@@ -128,9 +128,16 @@ export async function checkAssistantScreens({ page, baseUrl, target, checkPage, 
   });
   await page.waitForFunction(() => {
     const field = document.querySelector('input[aria-label="매니저에게 물어볼 내용"]');
+    const nav = document.querySelector('nav[aria-label="주요 메뉴"]');
+    if (!field || document.activeElement !== field || !nav) return false;
     const bounds = field.getBoundingClientRect();
-    const main = field.closest("main").getBoundingClientRect();
-    return bounds.top >= main.top && bounds.bottom <= main.bottom;
+    const tabs = nav.getBoundingClientRect();
+    return (
+      bounds.top >= 0 &&
+      bounds.bottom <= tabs.top &&
+      tabs.bottom <= window.innerHeight - 300 + 1 &&
+      document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2) === field
+    );
   });
   await page.evaluate(() => {
     document.activeElement?.blur();

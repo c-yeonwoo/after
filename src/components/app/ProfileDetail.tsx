@@ -17,7 +17,6 @@ export type ProfileView = {
   mbti?: string;
   smoking?: string;
   drinking?: string;
-  religion?: string;
   area?: string;
   /** Storage 경로들. 첫 장이 대표. */
   photos: string[];
@@ -91,17 +90,12 @@ export function ProfileDetail({
   // 가입 기본값이 "소개글 = 한 줄 소개" 라 둘이 같은 사람이 많다. 같은 문장을 두 번 쓰지 않는다.
   if (paragraphs[0] && paragraphs[0] === p.headline?.trim()) paragraphs.shift();
 
-  /*
-    기본 정보 3×2. MBTI·종교는 선택 항목이라 비어 있을 수 있는데, 비었다고 칸을
-    빼면 사람마다 그리드가 달라진다. 항상 6칸을 두고 값이 없으면 "—" 로 쓴다.
-  */
   const facts = [
     { k: "직업", v: p.job },
     { k: "지역", v: p.area },
     { k: "MBTI", v: p.mbti },
     { k: "흡연", v: p.smoking },
     { k: "음주", v: p.drinking },
-    { k: "종교", v: p.religion },
   ].map((f) => ({ ...f, v: f.v?.trim() || null }));
   const hasAnyFact = facts.some((f) => f.v);
   const styleComparison = comparePublicSignals(viewer?.publicSignals, p.publicSignals);

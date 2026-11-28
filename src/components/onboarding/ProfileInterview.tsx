@@ -194,7 +194,6 @@ export function ProfileInterview({
     mbti: basics.mbti,
     smoking: basics.smoking,
     drinking: basics.drinking,
-    religion: basics.religion,
     hub_id: member?.hub_id ?? null,
     photo_url: basics.photos[0] ?? null,
     photo_paths: basics.photos,

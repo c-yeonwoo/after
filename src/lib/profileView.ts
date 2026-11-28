@@ -1,10 +1,5 @@
 import { publicProfileSignals } from "../../supabase/functions/_shared/profile-signals";
-import {
-  DRINKING_OPTIONS,
-  RELIGION_OPTIONS,
-  SMOKING_OPTIONS,
-  ageFrom,
-} from "@/components/onboarding/basics";
+import { DRINKING_OPTIONS, SMOKING_OPTIONS, ageFrom } from "@/components/onboarding/basics";
 import { followUpFor } from "@/components/onboarding/profile";
 import { HUBS } from "@/lib/brand";
 import type { ProfileView } from "@/components/app/ProfileDetail";
@@ -28,7 +23,6 @@ export type ProfileSource = {
   mbti: string | null;
   smoking: string | null;
   drinking: string | null;
-  religion: string | null;
   // public_profiles 뷰는 nullable 로 나온다(뷰의 컬럼은 not null 이 안 붙는다).
   hub_id: string | null;
   photo_url: string | null;
@@ -55,7 +49,6 @@ export function toProfileView(p: ProfileSource): ProfileView {
     mbti: p.mbti ?? undefined,
     smoking: SMOKING_OPTIONS.find((o) => o.id === p.smoking)?.label,
     drinking: DRINKING_OPTIONS.find((o) => o.id === p.drinking)?.label,
-    religion: RELIGION_OPTIONS.find((o) => o.id === p.religion)?.label,
     area: HUBS.find((h) => h.id === p.hub_id)?.label,
     photos: p.photo_paths?.length ? p.photo_paths : p.photo_url ? [p.photo_url] : [],
     headline: p.headline ?? "",

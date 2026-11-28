@@ -308,10 +308,10 @@ if (command === "dev") {
           conversationHooks: [],
           publishedRevision: 1,
         };
-        sql(`insert into profiles(id,gender,hub_id,company_email,email_verified_at,name,birth,job,mbti,smoking,drinking,religion,
+        sql(`insert into profiles(id,gender,hub_id,company_email,email_verified_at,name,birth,job,mbti,smoking,drinking,
           headline,intro,profile_story,profile_preferences,photo_paths,photo_state,onboarding_step,terms_agreed_at,privacy_agreed_at,
           agreed_policy_version,phone_verified_at,role,paused_at)
-          values(${q(person.id)},${q(person.gender)},'gangnam',${q(person.email)},now(),${q(person.name)},${q(person.birth)},${q(person.job)},${person.mbti ? q(person.mbti) : "null"},'none','social','none',
+          values(${q(person.id)},${q(person.gender)},'gangnam',${q(person.email)},now(),${q(person.name)},${q(person.birth)},${q(person.job)},${person.mbti ? q(person.mbti) : "null"},'none','social',
           ${q(person.headline)},${q(person.answers.join(" "))},${q(JSON.stringify(story))}::jsonb,'{"first_date":["짧게 커피"]}',array[${photoPaths.map(q)}],'approved',7,now(),now(),
           '2026-10-31.1',now(),${q(person.key === "admin" ? "admin" : "member")},${person.key === "admin" ? "now()" : "null"})
           on conflict(id) do update set account_state='active',paused_at=excluded.paused_at,gender=excluded.gender,
