@@ -10,7 +10,7 @@ import { forgetWaveInvite, rememberWaveInvite, waveInviteCode } from "@/lib/wave
 
 export const Route = createFileRoute("/invite")({
   head: () => ({
-    meta: [{ title: "애프터 · 첫 초대 베타" }, { name: "robots", content: "noindex,nofollow" }],
+    meta: [{ title: "애프터 · 베타 초대장" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: WaveInvitation,
 });
@@ -91,7 +91,7 @@ function WaveInvitation() {
   }
 
   return (
-    <AppScreen title="첫 초대 베타" hideTabs>
+    <AppScreen title="베타 초대장" hideTabs>
       <div className="mx-auto max-w-md pt-10">
         {status === "loading" ? (
           <p role="status">초대장을 확인하고 있어요.</p>
@@ -129,14 +129,20 @@ function WaveInvitation() {
         ) : (
           <>
             <h1 className="headline text-3xl">
-              {status === "mine" ? "첫 베타에 참여 중이에요" : "애프터에 초대받았어요"}
+              {status === "mine" ? "첫 베타에 참여 중이에요" : "애프터 베타에 초대해요"}
             </h1>
             <p className="mt-3 text-base leading-relaxed">
-              매니저가 왜 두 분을 소개하고 싶은지 들려드릴게요. 서로 마음이 가면 약속도 함께 잡아요.
+              {status === "mine"
+                ? "홈에서 내 진행 상황을 확인해 보세요."
+                : me
+                  ? "지금 쓰는 계정으로 베타에 참여할 수 있어요."
+                  : "어떤 사람을 만나고 싶은지 프로필에 담아 주세요. 프로필이 승인되면 매니저가 첫 소개를 준비해요."}
             </p>
-            <p className="mt-4 text-sm text-muted-foreground">
-              무료 초대예요. 운영자는 초대 번호별로 가입부터 다음 소개까지 진행 단계를 확인해요.
-            </p>
+            {status !== "mine" && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                베타 참여는 무료예요. 운영팀은 초대장별로 가입과 소개 진행 상황을 확인해요.
+              </p>
+            )}
             <Button
               size="lg"
               className="mt-8 w-full"
