@@ -1285,7 +1285,10 @@ try {
       waitUntil: "commit",
     });
     await expiredLink.waitForURL(baseUrl + "/requests");
-    await expiredLink.getByText("답변 기한이 지났어요.").waitFor();
+    await expiredLink
+      .getByRole("list")
+      .getByText("답변 기한이 지났어요.", { exact: true })
+      .waitFor();
   } finally {
     await expiredLink.close();
   }
