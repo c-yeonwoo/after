@@ -29,6 +29,16 @@ export function carrierConfig(): Config | null {
     ? { direct: false, apiSecret, channelKey, storeId }
     : null;
 }
+// LIVE stays restricted until a separate, explicit rollout. Missing settings deny access.
+export function isKcpDevicePreview(config: Config) {
+  return config.direct && !config.kcp.sandbox && Deno.env.get("KCP_LIVE_ACCESS") !== "public";
+}
+
+export function isDeviceTester(email?: string) {
+  const allowed = Deno.env.get("KCP_DEVICE_TESTER_EMAIL")?.trim().toLowerCase();
+  return Boolean(allowed && email && email.trim().toLowerCase() === allowed);
+}
+
 export async function startCarrierProvider(
   db: SupabaseClient,
   config: Config,
@@ -40,7 +50,10 @@ export async function startCarrierProvider(
     return { identityVerificationId: id, storeId: config.storeId, channelKey: config.channelKey };
   try {
     const appOrigin = kcpAppOrigin(config.kcp, requestOrigin, (key) => Deno.env.get(key));
-    const registered = await registerKcp(config.kcp, id, flow);
+    const settings = isKcpDevicePreview(config)
+      ? { ...config.kcp, callback: config.kcp.callback + "?preview=1" }
+      : config.kcp;
+    const registered = await registerKcp(settings, id, flow);
     const { error } = await db
       .from("kcp_direct_registrations")
       .insert({ id, flow, app_origin: appOrigin, registration_key: registered.registrationKey });

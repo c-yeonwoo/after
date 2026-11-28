@@ -212,6 +212,7 @@ const identityOptionalPaths = new Set([
   "/login",
   "/signup",
   "/verify-phone",
+  "/kcp-preview",
   "/support",
   "/terms",
   "/privacy",
