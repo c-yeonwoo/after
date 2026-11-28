@@ -88,6 +88,7 @@ select submit_meeting_feedback(pg_temp.person(23),true,'friend',null);
 select is(pg_temp.stage('male',1),'no_preference','ordinary optional review is not a preference');
 select is((wave_one_attendance()->>'observing')::int,2,'real first readiness captured after photo approval');
 savepoint outcome_window;
+update meetings set created_at=now()-interval '4 days' where id=pg_temp.person(23);
 update beta_wave_one_invites set joined_at=now()-interval '20 days' where member_id is not null;
 update beta_wave_one_invites set first_ready_at=now()-interval '15 days' where member_id is not null;
 update feedbacks set received_at=now()-interval '20 days' where meeting_id=pg_temp.person(23);
