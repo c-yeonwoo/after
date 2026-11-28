@@ -370,6 +370,12 @@ async function signup(person, i) {
     ),
     "7:true:true",
   );
+  assert.equal(
+    sql(`select exists(select 1 from policy_consents c join policy_control p on p.id
+      and p.signup_version=c.policy_version where c.user_id='${person.id}' and c.evidence_source='explicit')`),
+    "t",
+    "signup records an explicit receipt for the currently published notice",
+  );
   const help = page
     .locator("#assistant-home-composer input, #assistant-home-composer textarea")
     .first();
