@@ -483,3 +483,8 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Hosted KCP form returns a cross-site POST without a Supabase JWT. The
+# callback binds the order and registration key; completion requires ownership.
+[functions.kcp-identity-return]
+verify_jwt = false

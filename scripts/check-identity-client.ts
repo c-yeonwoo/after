@@ -12,16 +12,21 @@ for (const signup of [true, false]) {
   let result: { identityVerificationId?: string; code?: string } | undefined;
   const calls: string[] = [];
   const file = signup ? "signupSession" : "carrierIdentity";
-  const source = readFileSync(`src/lib/${file}.ts`, "utf8")
+  const source = [
+    readFileSync("src/lib/hostedIdentity.ts", "utf8"),
+    readFileSync(`src/lib/${file}.ts`, "utf8"),
+  ]
+    .join("\n")
+    .replace("import.meta.env.DEV", "true")
     .replace(/^import[\s\S]*?;\n/gm, "")
-    .replace('await import("@portone/browser-sdk/v2")', "sdk")
+    .replace('await import("@portone/browser-sdk/v2")', "fixtureSdk")
     .replace('import.meta.env.VITE_CARRIER_IDENTITY_ENABLED === "true"', "true");
   const code = new Transpiler({ loader: "ts" }).transformSync(source).replace(/^export /gm, "");
   const client = new Function(
     "supabase",
     "sessionStorage",
     "window",
-    "sdk",
+    "fixtureSdk",
     "assertPortoneIdentityResult",
     "POLICY_VERSION",
     code +

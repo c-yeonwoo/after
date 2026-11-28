@@ -1,15 +1,15 @@
-// KCP 휴대폰 본인확인 via PortOne V2. 브라우저 응답은 인증 증거가 아니다.
-// 서버가 PortOne API의 VERIFIED 결과와 검증된 생년월일/번호/DI를 직접 조회한다.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { readVerifiedCarrierIdentity } from "../_shared/verified-carrier.ts";
+import {
+  carrierConfig,
+  startCarrierProvider,
+  finishCarrierProvider,
+} from "../_shared/carrier-provider.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const storeId = Deno.env.get("PORTONE_STORE_ID");
-const channelKey = Deno.env.get("PORTONE_KCP_IDENTITY_CHANNEL_KEY");
-const apiSecret = Deno.env.get("PORTONE_API_SECRET");
+const config = carrierConfig();
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     error: authError,
   } = await caller.auth.getUser();
   if (authError || !user) return json({ error: "unauthenticated" }, 401);
-  if (!serviceKey || !storeId || !channelKey || !apiSecret) {
+  if (!serviceKey || !config) {
     return json({ error: "not configured" }, 503);
   }
 
@@ -55,21 +55,18 @@ Deno.serve(async (req) => {
       return json({ error: "no active profile" }, 403);
     if (profile.identity_verified_at) return json({ error: "already verified" }, 409);
 
-    const { count, error: countError } = await db
-      .from("identity_verification_attempts")
-      .select("id", { head: true, count: "exact" })
-      .eq("user_id", user.id)
-      .gte("created_at", new Date(Date.now() - 86_400_000).toISOString());
-    if (countError) return json({ error: "verification unavailable" }, 503);
-    if ((count ?? 0) >= 5) return json({ error: "daily limit" }, 429);
-
     // KCP V2: 영문/숫자 40자 이하. id는 서버에서 만들고 user_id에 묶는다.
     const id = `av${crypto.randomUUID().replaceAll("-", "")}`;
     const { error } = await db
       .from("identity_verification_attempts")
       .insert({ id, user_id: user.id });
+    if (error?.message.includes("daily limit")) return json({ error: "daily limit" }, 429);
     if (error) return json({ error: "verification unavailable" }, 503);
-    return json({ identityVerificationId: id, storeId, channelKey });
+    try {
+      return json(await startCarrierProvider(db, config, id, "member", req.headers.get("origin")));
+    } catch {
+      return json({ error: "verification unavailable" }, 503);
+    }
   }
 
   if (body.action !== "complete") return json({ error: "invalid action" }, 400);
@@ -101,7 +98,7 @@ Deno.serve(async (req) => {
   if (Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000)
     return json({ error: "verification expired" }, 409);
   try {
-    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey, storeId });
+    const verified = await finishCarrierProvider(db, config, id, "member");
     const { error } = await db.rpc("finish_carrier_identity", {
       p_user: user.id,
       p_id: id,

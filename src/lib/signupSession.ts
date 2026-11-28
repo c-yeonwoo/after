@@ -1,4 +1,4 @@
-import { assertPortoneIdentityResult } from "./portoneIdentityResult";
+import { launchHostedIdentity, type IdentityLaunch } from "./hostedIdentity";
 import { supabase } from "@/lib/supabase";
 import { POLICY_VERSION } from "@/lib/policy";
 
@@ -87,19 +87,9 @@ export async function startSignupIdentity(): Promise<SignupSession> {
       sessionStorage.removeItem(PENDING_KEY);
     }
   }
-  const started = await invoke<{
-    identityVerificationId: string;
-    storeId: string;
-    channelKey: string;
-  }>({ action: "start" });
+  const started = await invoke<IdentityLaunch>({ action: "start" });
   sessionStorage.setItem(PENDING_KEY, started.identityVerificationId);
-  const PortOne = await import("@portone/browser-sdk/v2");
-  const result = await PortOne.requestIdentityVerification({
-    ...started,
-    redirectUrl: `${window.location.origin}/signup`,
-  });
-  if (result?.code !== undefined) sessionStorage.removeItem(PENDING_KEY);
-  assertPortoneIdentityResult(started.identityVerificationId, result);
+  await launchHostedIdentity(started, "/signup", () => sessionStorage.removeItem(PENDING_KEY));
   return finishSignupIdentity(started.identityVerificationId);
 }
 

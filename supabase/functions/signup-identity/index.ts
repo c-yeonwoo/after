@@ -1,6 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { readVerifiedCarrierIdentity } from "../_shared/verified-carrier.ts";
+import {
+  carrierConfig,
+  startCarrierProvider,
+  finishCarrierProvider,
+} from "../_shared/carrier-provider.ts";
 import { localAuthBypassAllowed } from "../_shared/local-auth.ts";
 
 function json(body: unknown, status = 200) {
@@ -47,18 +51,15 @@ Deno.serve(async (req) => {
   }
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const storeId = Deno.env.get("PORTONE_STORE_ID");
-  const channelKey = Deno.env.get("PORTONE_KCP_IDENTITY_CHANNEL_KEY");
-  const apiSecret = Deno.env.get("PORTONE_API_SECRET");
-  if (!url || !serviceKey || !storeId || !channelKey || !apiSecret)
-    return json({ error: "not configured" }, 503);
+  const config = carrierConfig();
+  if (!url || !serviceKey || !config) return json({ error: "not configured" }, 503);
   const db = createClient(url, serviceKey);
   try {
     if (body.action === "start") {
       const id = `av${crypto.randomUUID().replaceAll("-", "")}`;
       const { error } = await db.rpc("start_signup_identity", { p_token: body.token, p_id: id });
       if (error) throw new Error(error.message);
-      return json({ identityVerificationId: id, storeId, channelKey });
+      return json(await startCarrierProvider(db, config, id, "signup", req.headers.get("origin")));
     }
     const id = body.identityVerificationId;
     if (!id || !/^av[0-9a-f]{32}$/.test(id)) return json({ error: "invalid id" }, 400);
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
       return json(status);
     if (attempt.consumed_at || Date.now() - new Date(attempt.created_at).getTime() > 15 * 60_000)
       throw new Error("verification expired");
-    const verified = await readVerifiedCarrierIdentity(id, { apiSecret, channelKey, storeId });
+    const verified = await finishCarrierProvider(db, config, id, "signup");
     const { data, error } = await db.rpc("finish_signup_identity", {
       p_token: body.token,
       p_id: id,
