@@ -1059,8 +1059,10 @@ try {
   const kakaoPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await kakaoPage.route("**/auth/v1/authorize?**", (route) =>
     route.fulfill({
-      status: 302,
-      headers: { location: carrierBase + "/login?code=local-kakao-fixture" },
+      // WebKit cannot fulfill an intercepted 3xx. A fixture page returns to
+      // the same real PKCE callback on both engines.
+      contentType: "text/html",
+      body: `<!doctype html><meta http-equiv="refresh" content="0;url=${carrierBase}/login?code=local-kakao-fixture">`,
     }),
   );
   await kakaoPage.route("**/auth/v1/token?grant_type=pkce", (route) =>
