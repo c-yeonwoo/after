@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { Transpiler } from "bun";
+import { kcpAppOrigin, kcpConfig } from "../supabase/functions/_shared/kcp-direct";
 import { localAuthBypassAllowed } from "../supabase/functions/_shared/local-auth";
 
 // Execute the actual Edge handlers with isolated transports. No provider/network calls.
@@ -39,16 +40,19 @@ async function invoke(
     from: (name: string) => {
       const result = () => ({ data: options.tables?.[name]?.shift() ?? null, error: null });
       const query: Record<string, unknown> = {};
-      for (const method of ["select", "eq", "gte", "insert"]) query[method] = () => query;
+      for (const method of ["select", "eq", "gte", "gt", "is", "insert", "delete"])
+        query[method] = () => query;
       query.maybeSingle = async () => result();
       query.then = (resolve: (v: unknown) => void) => resolve(result());
       return query;
     },
   };
-  const source = readFileSync(`supabase/functions/${name}/index.ts`, "utf8").replace(
-    /^import[\s\S]*?;\n/gm,
-    "",
-  );
+  const source = [
+    readFileSync("supabase/functions/_shared/carrier-provider.ts", "utf8"),
+    readFileSync(`supabase/functions/${name}/index.ts`, "utf8"),
+  ]
+    .join("\n")
+    .replace(/^import[\s\S]*?;\n/gm, "");
   const code = new Transpiler({ loader: "ts" }).transformSync(source).replace(/^export /gm, "");
   const config = { ...env, ...options.env };
   new Function(
@@ -57,6 +61,10 @@ async function invoke(
     "corsHeaders",
     "readVerifiedCarrierIdentity",
     "localAuthBypassAllowed",
+    "kcpAppOrigin",
+    "kcpConfig",
+    "registerKcp",
+    "queryKcp",
     code,
   )(
     {
@@ -74,11 +82,26 @@ async function invoke(
       return { gender: "female", birth: "1994-02-15", phone: "+821012345678", di: "synthetic-di" };
     },
     localAuthBypassAllowed,
+    kcpAppOrigin,
+    kcpConfig,
+    async () => {
+      providerCalls++;
+      if (options.providerError) throw Error(options.providerError);
+      return { callUrl: "https://cert.kcp.co.kr/form", registrationKey: "fixture" };
+    },
+    async () => {
+      providerCalls++;
+      return { gender: "female", birth: "1994-02-15", phone: "+821012345678", di: "fixture" };
+    },
   );
   const response = await handler!(
     new Request("http://local.test", {
       method: "POST",
-      headers: { Authorization: "Bearer synthetic", "Content-Type": "application/json" },
+      headers: {
+        Authorization: "Bearer synthetic",
+        "Content-Type": "application/json",
+        Origin: "https://www.aftersunset.kr",
+      },
       body: JSON.stringify(body),
     }),
   );
@@ -192,6 +215,49 @@ assert.equal(
   ).status,
   409,
 );
+
+const directEnv = {
+  CARRIER_IDENTITY_PROVIDER: "kcp_direct",
+  KCP_SITE_CODE: "Z9999",
+  KCP_ENC_KEY: "fixture",
+  SUPABASE_URL: "https://project.supabase.co",
+};
+for (const isSignup of [true, false]) {
+  const name = isSignup ? "signup-identity" : "carrier-identity";
+  const rpc = {
+    signup_session_status: { verified: false },
+    finish_signup_identity: { verified: true },
+  };
+  const tables = () => (isSignup ? owned() : { identity_verification_attempts: [attempt()] });
+  const start = { action: "start", ...(isSignup ? { token } : {}) };
+  const profile = () => ({ profiles: [{ account_state: "active", identity_verified_at: null }] });
+  const launched = await invoke(name, start, { env: directEnv, tables: profile(), rpc });
+  assert.equal(launched.status, 200);
+  assert.equal(launched.body.provider, "kcp_direct");
+  assert.equal(launched.body.registrationKey, "fixture");
+  assert.ok(!Object.hasOwn(launched.body, "key"));
+  const failed = await invoke(name, start, {
+    env: directEnv,
+    tables: profile(),
+    rpc,
+    providerError: "registration unavailable",
+  });
+  assert.equal(failed.status, 503);
+  for (const returned of [false, true]) {
+    const completed = await invoke(name, isSignup ? signupBody : carrierBody, {
+      env: directEnv,
+      rpc,
+      tables: {
+        ...tables(),
+        kcp_direct_registrations: [
+          { registration_key: "fixture", returned_at: returned ? "2026-01-01" : null },
+        ],
+      },
+    });
+    assert.equal(completed.status, returned ? 200 : 409);
+    assert.equal(completed.providerCalls, returned ? 1 : 0);
+  }
+}
 
 for (const [url, flag, bypass, expected] of [
   ["http://kong:8000", "true", true, 200],

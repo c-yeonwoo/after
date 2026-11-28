@@ -1,10 +1,8 @@
-import { assertPortoneIdentityResult } from "./portoneIdentityResult";
+import { launchHostedIdentity, type IdentityLaunch } from "./hostedIdentity";
 import { supabase } from "@/lib/supabase";
 
 /** 공급자 계약/시크릿 및 DB 게이트 검증 전에는 빌드에서 열지 않는다. */
 export const carrierIdentityEnabled = import.meta.env.VITE_CARRIER_IDENTITY_ENABLED === "true";
-
-type StartResult = { identityVerificationId: string; storeId: string; channelKey: string };
 
 async function invoke<T>(body: Record<string, string>): Promise<T> {
   const { data, error } = await supabase.functions.invoke<T>("carrier-identity", { body });
@@ -62,18 +60,11 @@ export async function startCarrierIdentity(): Promise<string> {
       sessionStorage.removeItem(PENDING_KEY);
     }
   }
-  const started = await invoke<StartResult>({ action: "start" });
+  const started = await invoke<IdentityLaunch>({ action: "start" });
   sessionStorage.setItem(PENDING_KEY, started.identityVerificationId);
-  const PortOne = await import("@portone/browser-sdk/v2");
-  const result = await PortOne.requestIdentityVerification({
-    storeId: started.storeId,
-    channelKey: started.channelKey,
-    identityVerificationId: started.identityVerificationId,
-    redirectUrl: `${window.location.origin}/verify-phone`,
-  });
-  // 모바일은 리다이렉트되므로 이 지점에 돌아오지 않는다.
-  if (result?.code !== undefined) sessionStorage.removeItem(PENDING_KEY);
-  assertPortoneIdentityResult(started.identityVerificationId, result);
+  await launchHostedIdentity(started, "/verify-phone", () =>
+    sessionStorage.removeItem(PENDING_KEY),
+  );
   return finishCarrierIdentity(started.identityVerificationId);
 }
 
