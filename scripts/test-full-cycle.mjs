@@ -1008,7 +1008,7 @@ try {
       );
       await f.page.goto(`${base}/home`);
       await f.page.getByRole("heading", { name: "호감을 보냈어요.", exact: true }).waitFor();
-      await f.page.getByText("만남 요청이 오면 알려드릴게요.", { exact: true }).waitFor();
+      await f.page.getByText(/만남 요청은 앱 알림함에서 확인하고 날짜를 보고 결정해요/).waitFor();
       await f.page
         .getByRole("navigation", { name: "주요 메뉴", exact: true })
         .getByRole("link", { name: "소개", exact: true })
@@ -1276,7 +1276,9 @@ try {
     );
     const waitingFemale = personas.find((p) => p.id === firstId);
     await waitingFemale.page.goto(`${base}/intro`);
-    await waitingFemale.page.getByText("만남 요청이 오면 알려드릴게요.", { exact: true }).waitFor();
+    await waitingFemale.page
+      .getByText(/만남 요청은 앱 알림함에서 확인하고 날짜를 보고 결정해요/)
+      .waitFor();
     assert.equal(
       await waitingFemale.page.getByRole("link", { name: "만남 요청 보기", exact: true }).count(),
       0,

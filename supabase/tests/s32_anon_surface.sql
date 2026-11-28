@@ -32,13 +32,14 @@ select is_empty(
        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.prokind = 'f' and p.prosecdef
         and has_function_privilege('anon', p.oid, 'EXECUTE')
-        and p.oid not in ('public.begin_signup(text,text)'::regprocedure,
+        and p.oid not in ('public.public_payment_mode()'::regprocedure,
+                          'public.begin_signup(text,text)'::regprocedure,
                           'public.begin_signup_with_manager(text,text,text)'::regprocedure,
                           'public.signup_session_status(text)'::regprocedure,
                           'public.open_wave_invite(uuid)'::regprocedure,
                           'public.start_wave_signup(uuid,text)'::regprocedure,
                           'public.begin_wave_signup(uuid,text,text,text)'::regprocedure) $$,
-  'T2 사전 가입 세션과 초대 링크 외에는 anon이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
+  'T2 판매 여부·사전 가입 세션·초대 링크 외에는 anon이 실행할 수 있는 SECURITY DEFINER 함수가 없다'
 );
 select ok(has_function_privilege('anon','public.begin_signup(text,text)','EXECUTE')
   and has_function_privilege('anon','public.begin_signup_with_manager(text,text,text)','EXECUTE')

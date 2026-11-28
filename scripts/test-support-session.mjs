@@ -101,7 +101,7 @@ try {
         return json(null);
       }
       if (path.endsWith("/rpc/unread_notification_count")) return json(0);
-      if (path.endsWith("/app_settings")) return json({ payments_enabled: false });
+      if (path.endsWith("/rpc/public_payment_mode")) return json(false);
       unexpected.push(path);
       return route.fulfill({ status: 503, json: { message: "unmocked synthetic request" } });
     }

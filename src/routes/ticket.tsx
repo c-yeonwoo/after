@@ -1,3 +1,4 @@
+import { TICKET_RETURN } from "@/lib/ticketTerms";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Ticket } from "lucide-react";
@@ -129,7 +130,7 @@ function TicketPage() {
           <ul className="space-y-2.5 px-6 py-5 text-sm">
             {[
               paid
-                ? "상대가 거절하거나 24시간 안에 답이 없으면 티켓을 돌려드립니다"
+                ? TICKET_RETURN.meeting
                 : "상대가 거절하거나 24시간 안에 답이 없으면 요청이 종료됩니다",
               "평일 저녁 후보와 장소를 한 번에 보냅니다",
               "상대가 하나를 고르면 약속이 정해지고 대화가 열립니다",

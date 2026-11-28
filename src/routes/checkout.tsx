@@ -1,3 +1,4 @@
+import { TICKET_USE, TICKET_RETURN, TICKET_VALIDITY } from "@/lib/ticketTerms";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { useEffect, useRef, useState } from "react";
@@ -236,9 +237,7 @@ function PaymentForm({ order, me }: { order: TicketOrder; me: Profile }) {
           </h2>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          {order.kind === "intro"
-            ? "도착한 소개 프로필을 여는 데 1장씩 사용합니다."
-            : "상대와 만남을 조율할 때 1장씩 사용합니다."}
+          {TICKET_USE[order.kind]}
         </p>
         <dl className="mt-4 flex items-baseline justify-between gap-3 border-t border-border pt-4">
           <dt className="text-sm text-muted-foreground">총 결제 금액</dt>
@@ -246,7 +245,9 @@ function PaymentForm({ order, me }: { order: TicketOrder; me: Profile }) {
             {won(order.amount)}
           </dd>
         </dl>
-        <p className="mt-2 text-xs text-muted-foreground">티켓 사용기한 · 발급일부터 12개월</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {TICKET_VALIDITY} {TICKET_RETURN[order.kind]}
+        </p>
       </section>
       <section aria-labelledby="payment-method-title" className="mt-7">
         <h2 id="payment-method-title" className="text-base font-semibold">

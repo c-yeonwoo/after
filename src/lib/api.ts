@@ -13,7 +13,7 @@ import type { MeetPrefs } from "@/lib/meet";
 import { deleteMyPhotos } from "@/lib/photo";
 import { POLICY_VERSION } from "@/lib/policy";
 import { supabase } from "@/lib/supabase";
-import { paymentModeCache } from "@/lib/sharedConfigCache";
+export { paymentsEnabled } from "@/lib/paymentMode";
 import { localAuthBypassEnabled } from "@/lib/auth-mode";
 
 import type { Database, Json } from "./database.types";
@@ -1730,29 +1730,4 @@ export async function reportContent(
   });
   if (error) throw error;
   return data as ContentReport;
-}
-
-/**
- * 지금 티켓을 무엇이 발급하는가(s27).
- *
- * false 면 베타 — 운영자가 주문을 승인해 0원으로 낸다.
- * true 면 토스 결제 승인만이 티켓을 낸다.
- *
- * **어드민이 아니라 여기에 둔다.** 상점 화면이 이 값으로 문구를 가르는데,
- * src/lib/admin.ts 에서 가져오면 운영자용 RPC 래퍼가 통째로 앱 번들에 딸려
- * 들어간다 — 라우트 이름으로 어드민을 걷어내는 장치(vite.config.ts)가 lib 까지는
- * 막아 주지 않는다.
- */
-export async function paymentsEnabled(): Promise<boolean> {
-  // SSR must never share a process-wide cache between requests/accounts.
-  return typeof window === "undefined" ? readPaymentMode() : paymentModeCache.read(readPaymentMode);
-}
-
-async function readPaymentMode(): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("app_settings")
-    .select("payments_enabled")
-    .maybeSingle();
-  if (error) throw error;
-  return data?.payments_enabled ?? false;
 }

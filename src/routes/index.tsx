@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
-import { BRAND } from "@/lib/brand";
+import { BRAND, INTRO_TICKET_PRICE_LABEL, MEETING_TICKET_PRICE_LABEL } from "@/lib/brand";
 import { BRAND_LOGO } from "@/lib/brandLogo";
 import { Logo } from "@/components/Logo";
 import { useMe } from "@/lib/me";
 import { Button } from "@/components/ui/button";
+
+import { BUSINESS_LINES } from "@/lib/policy";
+import { paymentsEnabled } from "@/lib/paymentMode";
 
 const OG_IMAGE = `https://${BRAND.domain}/og-image.png?v=${BRAND_LOGO.revision}`;
 
@@ -50,6 +53,23 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const navigate = useNavigate();
   const { me, ready } = useMe();
+
+  const [paid, setPaid] = useState<boolean | "unavailable" | null>(null);
+  useEffect(() => {
+    if (!ready || me) return;
+    let active = true;
+    void paymentsEnabled().then(
+      (value) => {
+        if (active) setPaid(value);
+      },
+      () => {
+        if (active) setPaid("unavailable");
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [ready, me]);
 
   // 이미 로그인한 사용자는 완료 상태에 맞는 화면으로 보낸다.
   useEffect(() => {
@@ -102,7 +122,9 @@ function Landing() {
             애프터 시작하기 <ArrowRight aria-hidden="true" />
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            무료 베타 진행 중 · 개인 이메일도 가능해요
+            {paid === false
+              ? "무료 베타 · 소개와 만남 요청을 무료로 이용해요"
+              : "소개를 읽고, 만남은 직접 선택해요"}
           </p>
         </section>
 
@@ -138,14 +160,19 @@ function Landing() {
 
         <section aria-labelledby="cost-title" className="border-t border-border py-8">
           <h2 id="cost-title" className="text-base font-semibold text-foreground">
-            무료 베타 안내
+            {paid === false ? "무료 베타 안내" : "이용 안내"}
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-foreground">
-            지금은 결제를 받지 않아요.
+          <p className="mt-4 break-keep text-base leading-relaxed text-foreground">
+            {paid === false
+              ? "무료 베타에서는 소개를 열고 만남을 요청할 수 있어요."
+              : paid === true
+                ? `티켓을 사용하는 소개는 한 사람의 프로필 열람에 1장(단건 ${INTRO_TICKET_PRICE_LABEL}), 만남 조율 요청에 1장(단건 ${MEETING_TICKET_PRICE_LABEL})이에요.`
+                : paid === "unavailable"
+                  ? "현재 이용 요금을 불러오지 못했어요. 소개를 열기 전에 적용 조건을 확인해 주세요."
+                  : "소개와 만남 요청에 적용되는 조건을 확인하고 있어요."}
           </p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            소개가 도착하면 무료로 확인하고 만남을 요청할 수 있어요. 소개까지 걸리는 시간은 참여
-            상황에 따라 다르고, 만남은 두 분의 선택으로 정해집니다.
+            소개까지 걸리는 시간은 참여 상황에 따라 다르고, 만남은 두 분의 선택으로 정해져요.
           </p>
           <Button type="button" onClick={start} className="mt-7 min-h-[52px] w-full text-base">
             애프터 시작하기 <ArrowRight aria-hidden="true" />
@@ -184,6 +211,14 @@ function Landing() {
               계정 삭제
             </Link>
           </nav>
+          <details className="mx-auto max-w-prose pb-3 text-xs text-muted-foreground">
+            <summary className="min-h-11 cursor-pointer py-3">사업자 정보</summary>
+            <ul className="space-y-1 leading-relaxed">
+              {BUSINESS_LINES.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </details>
         </footer>
       </main>
     </div>
@@ -204,24 +239,20 @@ function SampleIntro() {
         지원 <span className="font-sans text-base font-medium text-muted-foreground">31</span>
       </p>
       <p className="mt-0.5 text-sm text-muted-foreground">회계</p>
-      <dl className="mt-5 space-y-5">
-        <div>
-          <dt className="text-xs leading-relaxed font-medium text-muted-foreground">
-            퇴근 후에는 어떻게 보내세요?
-          </dt>
-          <dd className="serif mt-2 break-keep text-pretty text-lg leading-[1.5] text-foreground">
-            퇴근하고 한강까지 뛰는 게 요즘 제일 좋아하는 시간이에요.
-          </dd>
-        </div>
-        <div className="border-t border-border pt-4">
-          <dt className="text-xs leading-relaxed font-medium text-muted-foreground">
-            어떤 만남에서 편해지나요?
-          </dt>
-          <dd className="mt-2 break-keep text-pretty text-[0.9375rem] leading-[1.6] text-foreground">
-            처음 만나는 자리라면 길게 걷기보다 가볍게 저녁을 먹으며 이야기하는 쪽이 편해요.
-          </dd>
-        </div>
-      </dl>
+      <blockquote className="serif mt-4 break-keep text-pretty text-lg leading-snug text-foreground">
+        “처음 보는 날엔 가볍게 저녁을 먹으면서 이야기하는 게 편해요.”
+      </blockquote>
+      <div className="mt-5 rounded-control bg-surface-subtle p-4">
+        <p className="text-sm font-semibold text-foreground">매니저가 고른 이유</p>
+        <p className="mt-1 break-keep text-sm leading-relaxed text-foreground">
+          퇴근길에 맛있는 곳을 발견하면 누군가와 다시 가고 싶다고 하셨죠. 지원님도 첫 만남은 저녁
+          식사로 시작하고 싶대요.
+        </p>
+        <p className="mt-3 text-xs font-medium text-muted-foreground">
+          두 분이 고를 수 있는 시간 예시
+        </p>
+        <p className="mt-1 text-sm text-foreground">화요일 저녁 7시 · 목요일 저녁 8시</p>
+      </div>
     </figure>
   );
 }

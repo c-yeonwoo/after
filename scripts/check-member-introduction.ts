@@ -157,3 +157,52 @@ assert.equal(
   false,
   "a copied source is not a manager explanation",
 );
+
+// Six distinct public stories yield 30 directional introductions. A changes places
+// with B deliberately: attribution, exact wording and privacy have to hold in both directions.
+const stories = [
+  "매일 운동하진 않지만 주말에는 집 근처 수영장에서 자유형을 배워요.",
+  "아직 악기를 배우지 않았어요. 좋아하는 공연을 보러 가는 건 즐겨요.",
+  "야근이 드문 금요일 저녁에만 동네 서점에서 새로 나온 책을 골라요.",
+  "커피를 잘 못 마셔서 카페에 가면 주로 따뜻한 차를 골라요.",
+  "친구는 등산을 좋아하고 저는 걷다가 사진을 찍는 쪽을 더 좋아해요.",
+  "예전에는 빵을 자주 구웠고 요즘은 작은 식당을 찾아다녀요.",
+];
+let pairs = 0;
+for (const mine of stories) {
+  for (const theirs of stories.filter((entry) => entry !== mine)) {
+    const source = (answer: string) =>
+      introductionSources({
+        topic_note: "비공개 연락은 private@example.test 로 주세요.",
+        profile_story: { version: 3, sections: [{ id: "daily_life", question: "일상", answer }] },
+      });
+    const viewer = source(mine);
+    const peer = source(theirs);
+    assert.deepEqual(Object.values(peer), [theirs]);
+    const info = { person: "other" as const, field: "story_daily_life", quote: theirs };
+    const draft = {
+      portrait: [
+        { text: `“${theirs}” 이 이야기에서 먼저 묻고 싶은 점이 있으세요?`, sources: [info] },
+      ],
+      connections: [],
+      questions: [],
+    };
+    assert.ok(validMemberIntroduction(draft, viewer, peer));
+    assert.equal(validMemberIntroduction(draft, peer, viewer), false);
+    for (const quote of [mine, `항상 ${theirs}`, "상담에서만 공개한 취향이에요"]) {
+      assert.equal(
+        validMemberIntroduction(
+          { ...draft, portrait: [{ ...draft.portrait[0], sources: [{ ...info, quote }] }] },
+          viewer,
+          peer,
+        ),
+        false,
+      );
+    }
+    pairs++;
+  }
+}
+assert.equal(pairs, 30);
+console.log(
+  "30 directional synthetic pairs passed public-source and attribution checks (offline).",
+);

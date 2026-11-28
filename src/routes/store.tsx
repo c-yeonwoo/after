@@ -1,3 +1,4 @@
+import { TICKET_USE, TICKET_RETURN, TICKET_VALIDITY } from "@/lib/ticketTerms";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Check, Ticket } from "lucide-react";
@@ -37,22 +38,14 @@ const KINDS = [
   {
     v: "intro",
     label: "소개 티켓",
-    guide: "도착한 소개의 프로필을 열 때 1장이 사용됩니다.",
-    terms: [
-      "새로 받는 티켓은 발급일부터 12개월 동안 사용할 수 있습니다",
-      "열람에 사용하면 돌려받을 수 없습니다",
-      "열어 본 뒤 만남으로 이어갈지는 자유입니다",
-    ],
+    guide: TICKET_USE.intro,
+    terms: [TICKET_VALIDITY, TICKET_RETURN.intro],
   },
   {
     v: "meeting",
     label: "만남 티켓",
-    guide: "티켓 한 장이 만남 한 번입니다. 상대가 24시간 안에 답하지 않으면 티켓을 돌려드립니다.",
-    terms: [
-      "새로 받는 티켓은 발급일부터 12개월 동안 사용할 수 있습니다",
-      "상대가 24시간 안에 답하지 않으면 티켓 자동 반환",
-      "상대 사유로 약속이 취소된 경우에도 반환",
-    ],
+    guide: TICKET_USE.meeting,
+    terms: [TICKET_VALIDITY, TICKET_RETURN.meeting],
   },
 ] as const;
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;

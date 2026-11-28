@@ -167,6 +167,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_TOSS_CLIENT_KEY: ${{ secrets.VITE_TOSS_CLIENT_KEY }}
+          VITE_PUBLIC_BUSINESS_PHONE: ${{ vars.PUBLIC_BUSINESS_PHONE }}
           VITE_CARRIER_IDENTITY_ENABLED: ${{ vars.CARRIER_IDENTITY_ENABLED || 'false' }}
 
       - name: Link production project

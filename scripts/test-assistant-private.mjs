@@ -207,11 +207,7 @@ try {
   page.on("request", (request) => {
     const url = new URL(request.url());
     if (url.pathname.endsWith("/rpc/assistant_capabilities")) sharedReads.flags++;
-    if (
-      url.pathname.endsWith("/app_settings") &&
-      url.searchParams.get("select") === "payments_enabled"
-    )
-      sharedReads.payments++;
+    if (url.pathname.endsWith("/rpc/public_payment_mode")) sharedReads.payments++;
     if (
       request.resourceType() === "image" &&
       url.pathname.includes("/assets/concierge/female.webp")
